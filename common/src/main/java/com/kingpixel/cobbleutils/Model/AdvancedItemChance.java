@@ -14,6 +14,7 @@ import com.kingpixel.cobbleutils.api.PermissionApi;
 import com.kingpixel.cobbleutils.features.shops.Shop;
 import com.kingpixel.cobbleutils.util.AdventureTranslator;
 import com.kingpixel.cobbleutils.util.PlayerUtils;
+import com.kingpixel.cobbleutils.util.UIUtils;
 import lombok.Getter;
 import net.minecraft.entity.ItemEntity;
 import net.minecraft.item.ItemStack;
@@ -232,6 +233,9 @@ public class AdvancedItemChance {
     ChestTemplate template = ChestTemplate.builder(6)
       .build();
 
+    template.set(49, UIUtils.getCloseButton(action -> {
+      UIManager.closeUI(player);
+    }));
     applyTemplate(player, template);
   }
 
@@ -240,6 +244,8 @@ public class AdvancedItemChance {
 
     Shop.Rectangle rectangle = new Shop.Rectangle(1, 1, 4, 7);
     rectangle.apply(template);
+
+    int freeSlots = rectangle.getSlotsFree(template.getRows());
 
     ItemModel info = CobbleUtils.language.getItemAdvancedRewardsInfo();
     List<String> infoLore = new ArrayList<>(info.getLore());
@@ -254,17 +260,20 @@ public class AdvancedItemChance {
         .build());
     }
 
-    ItemModel itemPrevious = CobbleUtils.language.getItemPrevious();
-    template.set(45, LinkedPageButton.builder()
-      .display(itemPrevious.getItemStack())
-      .linkType(LinkType.Previous)
-      .build());
+    if (getList(null).size() > freeSlots) {
+      ItemModel itemNext = CobbleUtils.language.getItemNext();
+      template.set(53, LinkedPageButton.builder()
+        .display(itemNext.getItemStack())
+        .linkType(LinkType.Next)
+        .build());
 
-    ItemModel itemNext = CobbleUtils.language.getItemNext();
-    template.set(53, LinkedPageButton.builder()
-      .display(itemNext.getItemStack())
-      .linkType(LinkType.Next)
-      .build());
+      ItemModel itemPrevious = CobbleUtils.language.getItemPrevious();
+      template.set(45, LinkedPageButton.builder()
+        .display(itemPrevious.getItemStack())
+        .linkType(LinkType.Previous)
+        .build());
+    }
+
 
     LinkedPage.Builder linkedPageBuilder = LinkedPage.builder()
       .title(AdventureTranslator.toNative(title == null || title.isEmpty() ? CobbleUtils.language.getTitleLoot() : title));

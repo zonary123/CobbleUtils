@@ -37,11 +37,16 @@ public class PlotBreedingUI {
     int size = CobbleUtils.breedconfig.getPlotSlots().size();
     int max = CobbleUtils.breedconfig.getDefaultNumberPlots();
 
-    for (int i = 0; i < size + 1; i++) {
-      int n = i + 1;
-      if (PermissionApi.hasPermission(player, "cobbleutils.breeding.plot." + (n), 2)) {
-        if (max < n) {
-          max = n;
+    if (CobbleUtils.breedconfig.isSyncpasture()) {
+      // By pasture blocks
+    } else {
+      // By permission
+      for (int i = 0; i < size + 1; i++) {
+        int n = i + 1;
+        if (PermissionApi.hasPermission(player, "cobbleutils.breeding.plot." + (n), 2)) {
+          if (max < n) {
+            max = n;
+          }
         }
       }
     }

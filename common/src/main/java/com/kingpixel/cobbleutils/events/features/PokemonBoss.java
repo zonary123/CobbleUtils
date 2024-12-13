@@ -79,9 +79,11 @@ public class PokemonBoss {
     PlayerEvent.ATTACK_ENTITY.register((player, world, entity, hand, entityHitResult) -> {
       if (!CobbleUtils.config.isBoss()) return EventResult.pass();
       if (entity instanceof PokemonEntity pokemonEntity) {
-        BossConfig.openMenuRewards(PlayerUtils.castPlayer(player), pokemonEntity.getPokemon());
-        pokemonEntity.heal(pokemonEntity.getMaxHealth());
-        pokemonEntity.setInvulnerable(true);
+        if (BossConfig.isBoss(pokemonEntity.getPokemon())) {
+          BossConfig.openMenuRewards(PlayerUtils.castPlayer(player), pokemonEntity.getPokemon());
+          return EventResult.interruptTrue();
+        }
+
       }
       return EventResult.pass();
     });

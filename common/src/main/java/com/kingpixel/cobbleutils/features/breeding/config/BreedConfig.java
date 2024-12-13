@@ -29,6 +29,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class BreedConfig {
   private String prefix;
   private boolean active;
+  private boolean syncpasture;
   private boolean showIvs;
   private boolean changeuipasture;
   private boolean shifttoopen;
@@ -101,6 +102,7 @@ public class BreedConfig {
 
   public BreedConfig() {
     this.prefix = "&7[<#82d448>Breeding&7] &8»";
+    this.syncpasture = false;
     this.active = true;
     this.showIvs = false;
     this.eggcommand = List.of("daycare", "pokebreed", "breed");
@@ -250,6 +252,7 @@ public class BreedConfig {
         BreedConfig config = gson.fromJson(el, BreedConfig.class);
         prefix = config.getPrefix();
         active = config.isActive();
+        syncpasture = config.isSyncpasture();
         changeuipasture = config.isChangeuipasture();
         createEgg = config.getCreateEgg();
         ditto = config.isDitto();

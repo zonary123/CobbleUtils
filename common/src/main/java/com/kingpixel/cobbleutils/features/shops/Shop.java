@@ -230,11 +230,13 @@ public class Shop {
     }
 
     try {
-      short rows = this.rows;
+      short rows = 0;
       if (rows >= 6) {
         rows = 6;
       } else if (rows <= 1) {
         rows = 1;
+      } else {
+        rows = this.rows;
       }
 
       ChestTemplate template = ChestTemplate
@@ -427,43 +429,63 @@ public class Shop {
       int slotfree = rectangle.getSlotsFree(rows);
 
       if (!byCommand) {
-        GooeyButton close = getClose().getButton(action -> {
-          if (closeCommand == null || closeCommand.isEmpty()) {
-            ShopConfigMenu.open(player, shopConfig, mod_id, byCommand);
-          } else {
-            PlayerUtils.executeCommand(closeCommand, player);
+        if (UIUtils.isInside(getClose(), rows)) {
+          GooeyButton close = getClose().getButton(action -> {
+            if (closeCommand == null || closeCommand.isEmpty()) {
+              ShopConfigMenu.open(player, shopConfig, mod_id, byCommand);
+            } else {
+              PlayerUtils.executeCommand(closeCommand, player);
+            }
+          });
+          template.set(getClose().getSlot(), close);
+          if (slotsClose != null && !slotsClose.isEmpty()) {
+            for (Integer i : slotsClose) {
+              if (UIUtils.isInside(i, rows)) {
+                template.set(i, close);
+              }
+            }
           }
-        });
-        template.set(getClose().getSlot(), close);
-        if (slotsClose != null && !slotsClose.isEmpty())
-          slotsClose.forEach(slot -> template.set(slot, close));
+        }
       }
 
       if (slotfree - products.size() < 0) {
-        LinkedPageButton next = LinkedPageButton.builder()
-          .display(getNext().getItemStack())
-          .title(AdventureTranslator.toNative(getNext().getDisplayname()))
-          .onClick(action -> {
-            SoundUtil.playSound(getSoundopen(), action.getPlayer());
-          })
-          .linkType(LinkType.Next)
-          .build();
-        template.set(getNext().getSlot(), next);
-        if (slotsNext != null && !slotsNext.isEmpty())
-          slotsNext.forEach(slot -> template.set(slot, next));
+        if (UIUtils.isInside(getNext(), rows)) {
+          LinkedPageButton next = LinkedPageButton.builder()
+            .display(getNext().getItemStack())
+            .title(AdventureTranslator.toNative(getNext().getDisplayname()))
+            .onClick(action -> SoundUtil.playSound(getSoundopen(), action.getPlayer()))
+            .linkType(LinkType.Next)
+            .build();
+          template.set(getNext().getSlot(), next);
+          if (slotsNext != null && !slotsNext.isEmpty()) {
+            for (Integer i : slotsNext) {
+              if (UIUtils.isInside(i, rows)) {
+                template.set(i, next);
+              }
+            }
+            slotsNext.forEach(slot -> template.set(slot, next));
+          }
+        }
 
-        LinkedPageButton previous = LinkedPageButton.builder()
-          .display(getPrevious().getItemStack())
-          .title(AdventureTranslator.toNative(getPrevious().getDisplayname()))
-          .onClick(action -> {
-            SoundUtil.playSound(getSoundopen(), action.getPlayer());
-          })
-          .linkType(LinkType.Previous)
-          .build();
 
-        template.set(getPrevious().getSlot(), previous);
-        if (slotsPrevious != null && !slotsPrevious.isEmpty())
-          slotsPrevious.forEach(slot -> template.set(slot, previous));
+        if (UIUtils.isInside(getPrevious(), rows)) {
+          LinkedPageButton previous = LinkedPageButton.builder()
+            .display(getPrevious().getItemStack())
+            .title(AdventureTranslator.toNative(getPrevious().getDisplayname()))
+            .onClick(action -> {
+              SoundUtil.playSound(getSoundopen(), action.getPlayer());
+            })
+            .linkType(LinkType.Previous)
+            .build();
+          template.set(getPrevious().getSlot(), previous);
+          if (slotsPrevious != null && !slotsPrevious.isEmpty()) {
+            for (Integer i : slotsPrevious) {
+              if (UIUtils.isInside(i, rows)) {
+                template.set(i, previous);
+              }
+            }
+          }
+        }
       }
       PlaceholderButton placeholder = new PlaceholderButton();
       LinkedPage.Builder linkedPageBuilder = LinkedPage.builder();

@@ -15,6 +15,7 @@ import com.kingpixel.cobbleutils.util.PokemonUtils;
 import com.kingpixel.cobbleutils.util.Utils;
 import lombok.Getter;
 import lombok.Setter;
+import net.minecraft.entity.Entity;
 import net.minecraft.entity.effect.StatusEffectInstance;
 import net.minecraft.entity.effect.StatusEffects;
 import net.minecraft.scoreboard.Scoreboard;
@@ -198,9 +199,10 @@ public class BossConfig {
 
   public boolean apply(PokemonEntity pokemonEntity) {
     String form = this.getPokemonData();
-    int level;
-    pokemonEntity.setInvulnerable(true);
     Pokemon pokemon = pokemonEntity.getPokemon();
+    pokemon.setShiny(this.isShiny());
+    int level;
+    ((Entity) pokemonEntity).setInvulnerable(true);
     PokemonProperties.Companion.parse("uncatchable=yes " + form).apply(pokemon);
     if (oldLevel < getMaxlevel()) {
       Cobblemon.INSTANCE.getConfig().setMaxPokemonLevel(this.getMaxlevel());
@@ -215,7 +217,6 @@ public class BossConfig {
     Cobblemon.INSTANCE.getConfig().setMaxPokemonLevel(oldLevel);
     pokemon.getPersistentData().putString(BOSS_RARITY_TAG, this.getRarity());
     pokemon.getPersistentData().putBoolean(BOSS_TAG, true);
-    pokemon.setShiny(this.isShiny());
     pokemon.getPersistentData().putString(SIZE_TAG, SIZE_CUSTOM_TAG);
     if (this.getMinsize() != this.getMaxsize()) {
       pokemon.setScaleModifier(Utils.RANDOM.nextFloat(this.getMinsize(), this.getMaxsize()));
@@ -225,14 +226,16 @@ public class BossConfig {
     if (isGlowing()) {
       pokemonEntity.setGlowing(true);
 
-      pokemonEntity.addStatusEffect(new StatusEffectInstance(StatusEffects.GLOWING, Integer.MAX_VALUE, 0x333333, false,
-        false));
+      pokemonEntity.addStatusEffect(new StatusEffectInstance(StatusEffects.GLOWING, Integer.MAX_VALUE, 1, true,
+        true));
+
       Scoreboard scoreboard = pokemonEntity.getEntityWorld().getScoreboard();
       Team team = scoreboard.getTeam("boss_" + getRarity());
       if (team == null) team = scoreboard.addTeam("boss_" + getRarity());
       team.setColor(glowingColor);
-
-      scoreboard.addPlayerToTeam(pokemonEntity.getEntityName(), team);
+      if (scoreboard.getPlayerTeam(pokemonEntity.getEntityName()) == null) {
+        scoreboard.addPlayerToTeam(pokemonEntity.getEntityName(), team);
+      }
     }
 
 
@@ -241,8 +244,16 @@ public class BossConfig {
         getNickname().replace("%pokemon%", pokemon.getDisplayName().getString())
       )
     );
-    this.getSound().start(pokemonEntity);
-    this.getParticle().sendParticlesNearPlayers(pokemonEntity);
+    getSound().start(pokemonEntity);
+    getParticle().sendParticlesNearPlayers(pokemonEntity);
     return true;
+  }
+
+  public static boolean isBoss(PokemonEntity pokemonEntity) {
+    return pokemonEntity.getPokemon().getPersistentData().getBoolean(BOSS_TAG);
+  }
+
+  public static boolean isBoss(Pokemon pokemon) {
+    return pokemon.getPersistentData().getBoolean(BOSS_TAG);
   }
 }

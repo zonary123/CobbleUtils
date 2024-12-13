@@ -282,6 +282,7 @@ public class EggData {
     // Aplicar la lógica de mecánicas y tamaño
     mechanicsLogic(male, female, usePokemonToEgg, egg);
 
+
     ScaleEvent.solveScale(egg);
 
 
@@ -332,6 +333,8 @@ public class EggData {
 
     // Egg Moves (Done)
     applyEggMoves(male, female, usePokemonToEgg, egg);
+
+    egg.getPersistentData().putString("Date_Breed", new Date().toString());
   }
 
   private static void applyEggMoves(Pokemon male, Pokemon female, Pokemon usePokemonToEgg, Pokemon egg) {
