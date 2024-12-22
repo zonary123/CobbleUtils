@@ -1,31 +1,38 @@
-import com.github.jengelman.gradle.plugins.shadow.transformers.ServiceFileTransformer
-
+plugins {
+    id("dev.architectury.loom")
+    id("architectury-plugin")
+    id("com.github.johnrengelman.shadow") version "8.1.1"
+}
 val shadowCommon: Configuration by configurations.creating
 
 architectury {
     platformSetupLoomIde()
-    fabric()
+    neoForge()
 }
 
 configurations {
+
     compileClasspath.get().extendsFrom(configurations["shadowCommon"])
     runtimeClasspath.get().extendsFrom(configurations["shadowCommon"])
-    getByName("developmentFabric").extendsFrom(configurations["shadowCommon"])
+    getByName("developmentNeoForge").extendsFrom(configurations["shadowCommon"])
+    shadowCommon.isCanBeResolved = true
+    shadowCommon.isCanBeConsumed = false
 }
 
-/*loom {
+loom {
     enableTransitiveAccessWideners.set(true)
     silentMojangMappingsLicense()
-}*/
+}
 
 dependencies {
-    modImplementation("com.cobblemon:fabric:${property("cobblemon_version")}")
-    modImplementation("net.fabricmc:fabric-loader:${property("fabric_loader_version")}")
-    modApi("net.fabricmc.fabric-api:fabric-api:${property("fabric_version")}")
+    minecraft("com.mojang:minecraft:${property("minecraft_version")}")
+    mappings(loom.officialMojangMappings())
 
-    shadowCommon(project(":common", "namedElements")) { isTransitive = false }
-    shadowCommon(project(":common", "transformProductionFabric")) { isTransitive = false }
-
+    neoForge("net.neoforged:neoforge:${property("neoforge_version")}")
+    modImplementation("dev.architectury:architectury-neoforge:${property("architectury_version")}")
+    modImplementation("com.cobblemon:neoforge:${property("cobblemon_version")}")
+    "shadowCommon"(project(":common", "namedElements"))
+    "shadowCommon"(project(":common", "transformProductionNeoForge"))
 
     // Kyori Adventure
     shadowCommon("net.kyori:adventure-text-serializer-gson:${property("kyori_version")}")
@@ -60,10 +67,9 @@ tasks.processResources {
     )
 }
 
-
 tasks {
     base.archivesName.set(
-        "${project.property("mod_version")}/${project.property("archives_base_name")}-fabric" +
+        "${project.property("mod_version")}/${project.property("archives_base_name")}-neoforge" +
                 "-${
                     project.property(
                         "mod_version"
@@ -79,8 +85,6 @@ tasks {
     }
 
     shadowJar {
-        exclude("generations/gg/generations/core/generationscore/fabric/datagen/**")
-        exclude("data/forge/**")
         exclude("architectury.common.json")
         exclude("com/google/gson/**/*")
         exclude("org/intellij/**/*")
@@ -101,18 +105,19 @@ tasks {
             exclude("net/kyori/adventure/key/**/*")
         }
 
-        transformers.add(ServiceFileTransformer())
+        //transformers.add(ServiceFileTransformer())
 
         configurations = listOf(project.configurations.getByName("shadowCommon"))
         archiveClassifier.set("dev-shadow")
     }
 
 
-    /*remapJar {
+
+    remapJar {
         injectAccessWidener.set(true)
         inputFile.set(shadowJar.get().archiveFile)
         dependsOn(shadowJar)
-    }*/
+    }
 
-    //jar.get().archiveClassifier.set("dev")
+    jar.get().archiveClassifier.set("dev")
 }

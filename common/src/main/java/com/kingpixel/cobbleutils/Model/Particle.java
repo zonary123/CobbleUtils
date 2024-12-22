@@ -3,7 +3,7 @@ package com.kingpixel.cobbleutils.Model;
 import lombok.Getter;
 import net.minecraft.entity.Entity;
 import net.minecraft.network.packet.s2c.play.ParticleS2CPacket;
-import net.minecraft.particle.DefaultParticleType;
+import net.minecraft.particle.ParticleEffect;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.registry.Registries;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -74,16 +74,16 @@ public class Particle {
     player.networkHandler.sendPacket(getParticleS2CPacket(entity, getParticleType()));
   }
 
-  private @NotNull DefaultParticleType getParticleType() {
+  private @NotNull ParticleEffect getParticleType() {
     if (getParticle() == null || getParticle().isEmpty()) return null;
 
     String[] split = getParticle().split(":");
-    Identifier identifier = new Identifier(split[0], split[1]);
+    Identifier identifier = Identifier.of(split[0], split[1]);
 
-    DefaultParticleType particleType;
+    ParticleEffect particleType;
     try {
-      if (Registries.PARTICLE_TYPE.get(identifier) instanceof DefaultParticleType) {
-        particleType = (DefaultParticleType) Registries.PARTICLE_TYPE.get(identifier);
+      if (Registries.PARTICLE_TYPE.get(identifier) instanceof ParticleEffect) {
+        particleType = (ParticleEffect) Registries.PARTICLE_TYPE.get(identifier);
       } else {
         particleType = ParticleTypes.LAVA;
       }
@@ -102,7 +102,8 @@ public class Particle {
   }
 
   // Privates
-  private @NotNull ParticleS2CPacket getParticleS2CPacket(@NotNull Entity entity, @NotNull DefaultParticleType particleType) {
+  private @NotNull ParticleS2CPacket getParticleS2CPacket(@NotNull Entity entity,
+                                                          @NotNull ParticleEffect particleType) {
     int offsetX = this.getOffsetX() == null ? 0 : this.getOffsetX();
     int offsetY = this.getOffsetY() == null ? 0 : this.getOffsetY();
     int offsetZ = this.getOffsetZ() == null ? 0 : this.getOffsetZ();

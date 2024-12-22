@@ -28,6 +28,10 @@ pluginManagement {
         maven("https://s01.oss.sonatype.org/content/repositories/snapshots") {
             name = "Sonatype 01 Snapshots"
         }
+        maven("https://maven.neoforged.net/releases") {
+            name = "NeoForged"
+        }
     }
 }
-include("common", "fabric", "forge")
+include("common", "fabric")
+//include("common", "fabric", "neoforge")

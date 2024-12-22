@@ -1,23 +1,47 @@
+import org.gradle.kotlin.dsl.support.kotlinCompilerOptions
+
 plugins {
     id("java")
     id("java-library")
-    kotlin("jvm") version "1.9.0"
-    `maven-publish`
-    id("dev.architectury.loom") version "1.6-SNAPSHOT" apply false
-    id("architectury-plugin") version "3.4-SNAPSHOT" apply false
+    kotlin("jvm")
+
+    id("dev.architectury.loom") version "1.7-SNAPSHOT" apply false
+    id("architectury-plugin") version "3.4-SNAPSHOT"
+    id("com.github.johnrengelman.shadow") version "8.1.1" apply false
 }
 
-group = "${property("maven_group")}"
-
-
+group = property("maven_group") as String
+val targetJavaVersion = 21
 
 java {
     toolchain {
-        languageVersion.set(JavaLanguageVersion.of(17))
+        languageVersion.set(JavaLanguageVersion.of(targetJavaVersion))
     }
+    kotlinCompilerOptions("1.8")
+}
+
+tasks.withType<JavaCompile> {
+    options.encoding = "UTF-8"
+    options.release.set(targetJavaVersion)
+    options.compilerArgs.add("-Xlint:-processing,-classfile,-serial")
+}
+
+tasks.withType<KotlinCompile> {
+    kotlinOptions.jvmTarget = targetJavaVersion.toString()
 }
 
 allprojects {
+    apply(plugin = "java")
+    apply(plugin = "java-library")
+    apply(plugin = "dev.architectury.loom")
+    apply(plugin = "architectury-plugin")
+    apply(plugin = "com.github.johnrengelman.shadow")
+
+    dependencies {
+        "minecraft"("com.mojang:minecraft:${property("minecraft_version")}")
+        "mappings"("net.fabricmc:yarn:${property("yarn_mappings")}:v2")
+    }
+
     repositories {
         mavenCentral()
         maven("https://cursemaven.com")
@@ -44,46 +68,8 @@ allprojects {
         maven("https://s01.oss.sonatype.org/content/repositories/snapshots") {
             name = "Sonatype 01 Snapshots"
         }
-    }
-}
-
-publishing {
-    publications {
-        create<MavenPublication>("mavenJava") {
-            from(components["java"])
-            pom {
-                name.set("CobbleUtils")
-                description.set("A library for Minecraft servers")
-                url.set("https://github.com/zonary123/CobbleUtils")
-                licenses {
-                    license {
-                        name.set("The MIT License")
-                        url.set("https://opensource.org/licenses/MIT")
-                    }
-                }
-                developers {
-                    developer {
-                        id.set("zonary123")
-                        name.set("zonary123")
-                        email.set("carlosvarasalonso10@gmail.com")
-                    }
-                }
-                scm {
-                    url.set("https://github.com/zonary123/CobbleUtils")
-                    connection.set("scm:git:git://github.com/zonary123/CobbleUtils.git")
-                    developerConnection.set("scm:git:ssh://github.com/zonary123/CobbleUtils.git")
-                }
-            }
-        }
-    }
-    repositories {
-        maven {
-            url = uri("https://maven.pkg.github.com/zonary123/CobbleUtils")
-            credentials {
-                username = project.findProperty("gpr.user") as String? ?: System.getenv("USERNAME")
-                password = project.findProperty("gpr.token") as String? ?: System.getenv("TOKEN")
-            }
+        maven("https://maven.neoforged.net/releases") {
+            name = "NeoForged"
         }
     }
 }
-

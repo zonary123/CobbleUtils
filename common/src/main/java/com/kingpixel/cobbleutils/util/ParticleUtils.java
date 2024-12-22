@@ -4,7 +4,7 @@ import com.kingpixel.cobbleutils.Model.Particle;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.ai.TargetPredicate;
 import net.minecraft.network.packet.s2c.play.ParticleS2CPacket;
-import net.minecraft.particle.DefaultParticleType;
+import net.minecraft.particle.ParticleType;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.registry.Registries;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -27,13 +27,13 @@ public class ParticleUtils {
 
   @Deprecated
   public static void sendParticles(Particle particle, ServerPlayerEntity player, Entity entity) {
-    DefaultParticleType particleType;
+    ParticleType particleType;
     String[] split = particle.getParticle().split(":");
-    Identifier identifier = new Identifier(split[0], split[1]);
+    Identifier identifier = Identifier.of(split[0], split[1]);
 
     try {
-      if (Registries.PARTICLE_TYPE.get(identifier) instanceof DefaultParticleType) {
-        particleType = (DefaultParticleType) Registries.PARTICLE_TYPE.get(identifier);
+      if (Registries.PARTICLE_TYPE.get(identifier) instanceof ParticleType<?>) {
+        particleType = Registries.PARTICLE_TYPE.get(identifier);
       } else {
         particleType = ParticleTypes.LAVA;
       }
@@ -55,11 +55,12 @@ public class ParticleUtils {
 
   // Privates
   @Deprecated
-  private static @NotNull ParticleS2CPacket getParticleS2CPacket(Particle particle, Entity entity, DefaultParticleType particleType) {
-    int offsetX = particle.getOffsetX() == null ? 0 : particle.getOffsetX();
-    int offsetY = particle.getOffsetY() == null ? 0 : particle.getOffsetY();
-    int offsetZ = particle.getOffsetZ() == null ? 0 : particle.getOffsetZ();
-    int speed = particle.getSpeed() == null ? 0 : particle.getSpeed();
+  private static @NotNull ParticleS2CPacket getParticleS2CPacket(Particle particle, Entity entity,
+                                                                 ParticleType<?> particleType) {
+    float offsetX = particle.getOffsetX() == null ? 0 : particle.getOffsetX();
+    float offsetY = particle.getOffsetY() == null ? 0 : particle.getOffsetY();
+    float offsetZ = particle.getOffsetZ() == null ? 0 : particle.getOffsetZ();
+    float speed = particle.getSpeed() == null ? 0 : particle.getSpeed();
 
     return new ParticleS2CPacket(particleType, true,
       entity.getX(),

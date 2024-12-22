@@ -1,11 +1,6 @@
-plugins {
-    id("dev.architectury.loom")
-    id("architectury-plugin")
-
-}
 architectury {
-    common("forge", "fabric")
-    platformSetupLoomIde()
+    common("fabric")
+    //platformSetupLoomIde()
 }
 
 dependencies {
@@ -23,8 +18,6 @@ dependencies {
 
     // Fabric API
 
-    // Forge API
-    api("net.minecraftforge:forge:${property("forge_version")}")
 
     // PlaceholderAPI
     modImplementation("eu.pb4:placeholder-api:${property("placeholder_api_version_fabricandforge")}")
@@ -39,7 +32,7 @@ dependencies {
 
     // Permissions
     api("net.luckperms:api:${property("luckperms_version")}")
-    modImplementation(files("libs/fabric-permissions-api-0.3.1.jar"))
+    modImplementation(files("libs/fabric-permissions-api-0.3.2.jar"))
 
     // Economy
     // Economy Impactor
@@ -63,4 +56,6 @@ dependencies {
     api("club.minnced:discord-webhooks:${property("discord_webhooks_version")}")
     api("net.objecthunter:exp4j:0.4.8")
 }
+
+
 
