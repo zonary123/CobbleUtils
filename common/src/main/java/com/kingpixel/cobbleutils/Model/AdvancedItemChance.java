@@ -212,7 +212,7 @@ public class AdvancedItemChance {
 
     ItemModel itemClose = CobbleUtils.language.getItemClose();
     template.set(49, itemClose.getButton(action -> {
-      UIManager.closeUI(player);
+      UIManager.closeUI(action.getPlayer());
     }));
     templateConsumer.accept(template);
     applyTemplate(player, template);
@@ -234,7 +234,7 @@ public class AdvancedItemChance {
       .build();
 
     template.set(49, UIUtils.getCloseButton(action -> {
-      UIManager.closeUI(player);
+      UIManager.closeUI(action.getPlayer());
     }));
     applyTemplate(player, template);
   }
@@ -310,8 +310,8 @@ public class AdvancedItemChance {
 
 
     return GooeyButton.builder()
-      .display(getDisplay(itemChance))
-      .title(AdventureTranslator.toNative(ItemChance.getTitle(itemChance)))
+      .display(itemChance.getItemStack())
+      .title(AdventureTranslator.toNative(itemChance.getTitle()))
       .lore(Text.class, AdventureTranslator.toNativeL(lore))
       .build();
   }

@@ -4,6 +4,8 @@ import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.Model.ItemChance;
 import com.kingpixel.cobbleutils.util.AdventureTranslator;
 import lombok.*;
+import net.minecraft.component.DataComponentTypes;
+import net.minecraft.component.type.CustomModelDataComponent;
 import net.minecraft.item.ItemStack;
 
 import java.math.BigDecimal;
@@ -106,15 +108,16 @@ public class Product {
     itemStack.setCount(amount);
 
     if (getDisplayname() != null && !getDisplayname().isEmpty()) {
-      itemStack.setCustomName(AdventureTranslator.toNative(getDisplayname()));
+      itemStack.set(DataComponentTypes.ITEM_NAME, AdventureTranslator.toNative(getDisplayname()));
     }
 
     if (getLore() != null && !getLore().isEmpty()) {
 
     }
 
-    if (getCustomModelData() != null && getCustomModelData() > 0 && !itemStack.getOrCreateNbt().contains("CustomModelData")) {
-      itemStack.getOrCreateNbt().putLong("CustomModelData", getCustomModelData());
+    if (getCustomModelData() != null && getCustomModelData() > 0 && itemStack.get(DataComponentTypes.CUSTOM_MODEL_DATA) != null) {
+      itemStack.set(DataComponentTypes.CUSTOM_MODEL_DATA,
+        new CustomModelDataComponent(Math.toIntExact(getCustomModelData())));
     }
 
     return itemStack;
@@ -139,15 +142,16 @@ public class Product {
     }
 
     if (getDisplayname() != null && !getDisplayname().isEmpty()) {
-      itemStack.setCustomName(AdventureTranslator.toNative(getDisplayname()));
+      itemStack.set(DataComponentTypes.ITEM_NAME, AdventureTranslator.toNative(getDisplayname()));
     }
 
     if (getLore() != null && !getLore().isEmpty()) {
 
     }
 
-    if (getCustomModelData() != null && getCustomModelData() > 0 && !itemStack.getOrCreateNbt().contains("CustomModelData")) {
-      itemStack.getOrCreateNbt().putLong("CustomModelData", getCustomModelData());
+    if (getCustomModelData() != null && getCustomModelData() > 0 && itemStack.get(DataComponentTypes.CUSTOM_MODEL_DATA) != null) {
+      itemStack.set(DataComponentTypes.CUSTOM_MODEL_DATA,
+        new CustomModelDataComponent(Math.toIntExact(getCustomModelData())));
     }
 
     return itemStack;

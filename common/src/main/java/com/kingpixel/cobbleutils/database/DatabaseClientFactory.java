@@ -6,6 +6,7 @@ import com.cobblemon.mod.common.pokemon.Pokemon;
 import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.Model.DataBaseConfig;
 import com.kingpixel.cobbleutils.features.breeding.models.PlotBreeding;
+import net.minecraft.registry.DynamicRegistryManager;
 import net.minecraft.server.network.ServerPlayerEntity;
 
 import java.util.ArrayList;
@@ -72,7 +73,7 @@ public class DatabaseClientFactory {
 
     // Return Pokémon from removed plots
     try {
-      PCStore pcStore = Cobblemon.INSTANCE.getStorage().getPC(player.getUuid());
+      PCStore pcStore = Cobblemon.INSTANCE.getStorage().getPC(player);
       for (PlotBreeding removedPlot : removedPlots) {
         if (removedPlot.getMale() != null) {
           pcStore.add(removedPlot.obtainMale());
@@ -80,7 +81,8 @@ public class DatabaseClientFactory {
         if (removedPlot.getFemale() != null) {
           pcStore.add(removedPlot.obtainFemale());
         }
-        removedPlot.getEggs().forEach(egg -> pcStore.add(Pokemon.Companion.loadFromJSON(egg)));
+        removedPlot.getEggs().forEach(egg -> pcStore.add(Pokemon.Companion.loadFromJSON(DynamicRegistryManager.EMPTY,
+          egg)));
       }
     } catch (Exception e) {
       e.printStackTrace();

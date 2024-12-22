@@ -50,7 +50,7 @@ public class ShopSell {
         continue;
 
       ItemStack productStack = product.getItemchance().getItemStack();
-      productSet.removeIf(p -> ItemStack.canCombine(p.getItemchance().getItemStack(), productStack));
+      productSet.removeIf(p -> ItemStack.areEqual(p.getItemchance().getItemStack(), productStack));
       productSet.add(product);
     }
   }
@@ -78,7 +78,7 @@ public class ShopSell {
         ItemStack productStack = product.getItemchance().getItemStack();
 
         for (ItemStack itemStack : inventory.main) {
-          if (itemStack.isEmpty() || !ItemStack.canCombine(itemStack, productStack)) continue;
+          if (itemStack.isEmpty() || !ItemStack.areEqual(itemStack, productStack)) continue;
 
           int amount = itemStack.getCount();
           BigDecimal price = sellPrice.multiply(BigDecimal.valueOf(amount));
@@ -158,7 +158,7 @@ public class ShopSell {
         if (sellPrice.compareTo(BigDecimal.ZERO) <= 0) continue;
 
         ItemStack productStack = product.getItemchance().getItemStack();
-        if (ItemStack.canCombine(mainHandStack, productStack)) {
+        if (ItemStack.areEqual(mainHandStack, productStack)) {
           int amount = mainHandStack.getCount();
           BigDecimal price = sellPrice.multiply(BigDecimal.valueOf(amount));
           EconomyUtil.addMoney(player, currency, price);

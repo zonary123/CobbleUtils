@@ -13,6 +13,8 @@ import ca.landonjw.gooeylibs2.api.template.types.ChestTemplate;
 import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.util.AdventureTranslator;
 import com.kingpixel.cobbleutils.util.Utils;
+import net.minecraft.component.DataComponentTypes;
+import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
@@ -55,10 +57,12 @@ public class PartyInvitesUI {
       .linkType(LinkType.Next)
       .build();
 
+    ItemStack itemClose = Items.RED_STAINED_GLASS_PANE.getDefaultStack();
+    itemClose.set(DataComponentTypes.CUSTOM_NAME, Text.literal("Close"));
     GooeyButton close = GooeyButton.builder()
-      .display(Items.RED_STAINED_GLASS_PANE.getDefaultStack().setCustomName(Text.literal("Close")))
+      .display(itemClose)
       .onClick(action -> {
-        action.getPlayer().closeHandledScreen();
+        UIManager.closeUI(action.getPlayer());
       })
       .build();
 

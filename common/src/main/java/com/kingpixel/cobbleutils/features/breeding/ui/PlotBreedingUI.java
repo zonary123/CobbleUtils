@@ -17,6 +17,7 @@ import com.kingpixel.cobbleutils.util.PlayerUtils;
 import com.kingpixel.cobbleutils.util.PokemonUtils;
 import com.kingpixel.cobbleutils.util.UIUtils;
 import net.minecraft.item.ItemStack;
+import net.minecraft.registry.DynamicRegistryManager;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
 
@@ -37,7 +38,7 @@ public class PlotBreedingUI {
 
       int size = CobbleUtils.breedconfig.getPlotSlots().size();
       int max = CobbleUtils.breedconfig.getDefaultNumberPlots();
-      
+
       for (int i = 0; i < size + 1; i++) {
         int n = i + 1;
         if (PermissionApi.hasPermission(player, "cobbleutils.breeding.plot." + (n), 2)) {
@@ -84,8 +85,8 @@ public class PlotBreedingUI {
         List<String> lore = new ArrayList<>(CobbleUtils.breedconfig.getPlotItem().getLore());
         int amount = plotBreeding.getEggs().size();
         List<Pokemon> pokemons = new ArrayList<>();
-        pokemons.add(plotBreeding.getMale() != null ? Pokemon.Companion.loadFromJSON(plotBreeding.getMale()) : null);
-        pokemons.add(plotBreeding.getFemale() != null ? Pokemon.Companion.loadFromJSON(plotBreeding.getFemale()) : null);
+        pokemons.add(plotBreeding.getMale() != null ? Pokemon.Companion.loadFromJSON(DynamicRegistryManager.EMPTY, plotBreeding.getMale()) : null);
+        pokemons.add(plotBreeding.getFemale() != null ? Pokemon.Companion.loadFromJSON(DynamicRegistryManager.EMPTY, plotBreeding.getFemale()) : null);
         lore.replaceAll(s -> PokemonUtils.replace(s, pokemons)
           .replace("%cooldown%", PlayerUtils.getCooldown(new Date(plotBreeding.getCooldown())))
           .replace("%eggs%", String.valueOf(amount)));

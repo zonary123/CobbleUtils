@@ -6,6 +6,8 @@ import com.kingpixel.cobbleutils.Model.PokemonData;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
+import net.minecraft.component.DataComponentTypes;
+import net.minecraft.component.type.NbtComponent;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 
@@ -39,8 +41,10 @@ public class Incense extends ItemModel {
   public boolean isIncense(ItemStack itemStack) {
     if (itemStack == null) return false;
     if (itemStack.getItem() == Items.AIR) return false;
-    if (itemStack.getNbt() == null || itemStack.getNbt().isEmpty()) return false;
-    return itemStack.getItem().equals(this.getItemStack().getItem()) && itemStack.getNbt().getInt("CustomModelData") == getCustomModelData();
+    NbtComponent itemStackNbt = itemStack.get(DataComponentTypes.CUSTOM_DATA);
+    if (itemStackNbt == null) return false;
+    // itemStack.getItem().equals(this.getItemStack().getItem()) && itemStack.getNbt().getInt("CustomModelData") == getCustomModelData()
+    return false;
   }
 
   public String getChild(Pokemon pokemon) {

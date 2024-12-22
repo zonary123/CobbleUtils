@@ -229,12 +229,13 @@ public class BossConfig {
       pokemonEntity.addStatusEffect(new StatusEffectInstance(StatusEffects.GLOWING, Integer.MAX_VALUE, 1, true,
         true));
 
+
       Scoreboard scoreboard = pokemonEntity.getEntityWorld().getScoreboard();
       Team team = scoreboard.getTeam("boss_" + getRarity());
       if (team == null) team = scoreboard.addTeam("boss_" + getRarity());
       team.setColor(glowingColor);
-      if (scoreboard.getPlayerTeam(pokemonEntity.getEntityName()) == null) {
-        scoreboard.addPlayerToTeam(pokemonEntity.getEntityName(), team);
+      if (scoreboard.getTeam(pokemonEntity.getNameForScoreboard()) == null) {
+        scoreboard.addTeam(pokemonEntity.getNameForScoreboard());
       }
     }
 

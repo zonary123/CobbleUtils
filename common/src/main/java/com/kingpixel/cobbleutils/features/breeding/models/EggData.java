@@ -1,6 +1,7 @@
 package com.kingpixel.cobbleutils.features.breeding.models;
 
 import com.cobblemon.mod.common.Cobblemon;
+import com.cobblemon.mod.common.api.Priority;
 import com.cobblemon.mod.common.api.abilities.Abilities;
 import com.cobblemon.mod.common.api.abilities.Ability;
 import com.cobblemon.mod.common.api.abilities.AbilityTemplate;
@@ -90,7 +91,7 @@ public class EggData {
     }
 
     if (abilityTemplate != null) {
-      pokemon.updateAbility(abilityTemplate.create(false));
+      pokemon.updateAbility(abilityTemplate.create(false, Priority.NORMAL));
     }
 
     pokemon.setLevel(level);
@@ -583,9 +584,9 @@ public class EggData {
 
     firstEvolution.getForm().getAbilities().forEach(ability -> {
       if (ability.getType() instanceof HiddenAbilityType) {
-        hiddenAbilities.add(ability.getTemplate().create(false));
+        hiddenAbilities.add(ability.getTemplate().create(false, Priority.NORMAL));
       } else {
-        normalAbilities.add(ability.getTemplate().create(false));
+        normalAbilities.add(ability.getTemplate().create(false, Priority.NORMAL));
       }
     });
 

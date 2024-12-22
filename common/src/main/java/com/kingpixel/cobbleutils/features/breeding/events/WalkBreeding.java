@@ -1,7 +1,6 @@
 package com.kingpixel.cobbleutils.features.breeding.events;
 
 import com.cobblemon.mod.common.Cobblemon;
-import com.cobblemon.mod.common.api.storage.NoPokemonStoreException;
 import com.cobblemon.mod.common.api.storage.party.PlayerPartyStore;
 import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.features.breeding.models.EggData;
@@ -39,45 +38,43 @@ public class WalkBreeding {
         if (ticks.get(player.getUuid()) % CobbleUtils.breedconfig.getTickstocheck() != 0)
           return;
         AtomicInteger distanceMoved = new AtomicInteger();
-        try {
-          if (lastPosition.get(player.getUuid()) == null) {
-            lastPosition.put(player.getUuid(), new Vec3d(player.getX(), 0, player.getZ()));
-            return;
-          } else {
-            Vec3d currentPosition = new Vec3d(player.getX(), 0, player.getZ());
-            double total = currentPosition.distanceTo(lastPosition.get(player.getUuid()));
-            if (total >= 25) {
-              lastPosition.put(player.getUuid(), currentPosition);
-              return;
-            }
-            distanceMoved.set((int) Math.min(20, total));
+
+        if (lastPosition.get(player.getUuid()) == null) {
+          lastPosition.put(player.getUuid(), new Vec3d(player.getX(), 0, player.getZ()));
+          return;
+        } else {
+          Vec3d currentPosition = new Vec3d(player.getX(), 0, player.getZ());
+          double total = currentPosition.distanceTo(lastPosition.get(player.getUuid()));
+          if (total >= 25) {
             lastPosition.put(player.getUuid(), currentPosition);
+            return;
           }
-          PlayerPartyStore playerPartyStore = Cobblemon.INSTANCE.getStorage().getParty(player.getUuid());
-          if (playerPartyStore.size() == 0) return;
-
-          boolean duplicate = playerPartyStore.toGappyList().stream().filter(Objects::nonNull).anyMatch(pokemon -> {
-            String name = pokemon.getAbility().getName();
-            return name.equalsIgnoreCase("flamebody") ||
-              name.equalsIgnoreCase("magmaarmor");
-          });
-
-          playerPartyStore.forEach(pokemon -> {
-            if (!pokemon.showdownId().equalsIgnoreCase("egg"))
-              return;
-            pokemon.setCurrentHealth(0);
-            EggData eggData = EggData.from(pokemon);
-            if (eggData == null)
-              return;
-            int distance = distanceMoved.get();
-            if (duplicate) {
-              distance *= 2;
-            }
-            eggData.steps(PlayerUtils.castPlayer(player), pokemon, distance);
-          });
-        } catch (NoPokemonStoreException e) {
-          throw new RuntimeException(e);
+          distanceMoved.set((int) Math.min(20, total));
+          lastPosition.put(player.getUuid(), currentPosition);
         }
+        PlayerPartyStore playerPartyStore = Cobblemon.INSTANCE.getStorage().getParty(PlayerUtils.castPlayer(player));
+        if (playerPartyStore.size() == 0) return;
+
+        boolean duplicate = playerPartyStore.toGappyList().stream().filter(Objects::nonNull).anyMatch(pokemon -> {
+          String name = pokemon.getAbility().getName();
+          return name.equalsIgnoreCase("flamebody") ||
+            name.equalsIgnoreCase("magmaarmor");
+        });
+
+        playerPartyStore.forEach(pokemon -> {
+          if (!pokemon.showdownId().equalsIgnoreCase("egg"))
+            return;
+          pokemon.setCurrentHealth(0);
+          EggData eggData = EggData.from(pokemon);
+          if (eggData == null)
+            return;
+          int distance = distanceMoved.get();
+          if (duplicate) {
+            distance *= 2;
+          }
+          eggData.steps(PlayerUtils.castPlayer(player), pokemon, distance);
+        });
+
       }
     });
 

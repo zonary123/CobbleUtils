@@ -1,7 +1,6 @@
 package com.kingpixel.cobbleutils.command.admin.egg;
 
 import com.cobblemon.mod.common.Cobblemon;
-import com.cobblemon.mod.common.api.storage.NoPokemonStoreException;
 import com.cobblemon.mod.common.command.argument.PartySlotArgumentType;
 import com.cobblemon.mod.common.pokemon.Pokemon;
 import com.kingpixel.cobbleutils.CobbleUtils;
@@ -67,16 +66,14 @@ public class Hatch implements Command<ServerCommandSource> {
                     + TimeUnit.SECONDS.toMillis(CobbleUtils.breedconfig.getCooldowninstaHatchInSeconds()));
               }
 
-              try {
-                Cobblemon.INSTANCE.getStorage().getParty(player.getUuid()).forEach(pokemon -> {
-                  openEgg(player, pokemon);
-                });
-                Cobblemon.INSTANCE.getStorage().getPC(player.getUuid()).forEach(pokemon -> {
-                  openEgg(player, pokemon);
-                });
-              } catch (NoPokemonStoreException e) {
-                throw new RuntimeException(e);
-              }
+
+              Cobblemon.INSTANCE.getStorage().getParty(player).forEach(pokemon -> {
+                openEgg(player, pokemon);
+              });
+              Cobblemon.INSTANCE.getStorage().getPC(player).forEach(pokemon -> {
+                openEgg(player, pokemon);
+              });
+
               return 1;
             }).then(
               CommandManager.argument("player", EntityArgumentType.player())
@@ -94,16 +91,13 @@ public class Hatch implements Command<ServerCommandSource> {
                         + TimeUnit.SECONDS.toMillis(CobbleUtils.breedconfig.getCooldowninstaHatchInSeconds()));
                   }
 
-                  try {
-                    Cobblemon.INSTANCE.getStorage().getParty(player.getUuid()).forEach(pokemon -> {
-                      openEgg(player, pokemon);
-                    });
-                    Cobblemon.INSTANCE.getStorage().getPC(player.getUuid()).forEach(pokemon -> {
-                      openEgg(player, pokemon);
-                    });
-                  } catch (NoPokemonStoreException e) {
-                    throw new RuntimeException(e);
-                  }
+
+                  Cobblemon.INSTANCE.getStorage().getParty(player).forEach(pokemon -> {
+                    openEgg(player, pokemon);
+                  });
+                  Cobblemon.INSTANCE.getStorage().getPC(player).forEach(pokemon -> {
+                    openEgg(player, pokemon);
+                  });
                   return 1;
                 })
             )

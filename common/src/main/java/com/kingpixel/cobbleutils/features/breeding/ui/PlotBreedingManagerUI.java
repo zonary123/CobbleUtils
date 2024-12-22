@@ -19,6 +19,7 @@ import com.kingpixel.cobbleutils.util.AdventureTranslator;
 import com.kingpixel.cobbleutils.util.PokemonUtils;
 import com.kingpixel.cobbleutils.util.RewardsUtils;
 import com.kingpixel.cobbleutils.util.UIUtils;
+import net.minecraft.registry.DynamicRegistryManager;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
 
@@ -92,7 +93,7 @@ public class PlotBreedingManagerUI {
     Pokemon pokemonegg = null;
 
     if (!plotBreeding.getEggs().isEmpty()) {
-      pokemonegg = Pokemon.Companion.loadFromJSON(plotBreeding.getEggs().get(0));
+      pokemonegg = Pokemon.Companion.loadFromJSON(DynamicRegistryManager.EMPTY, plotBreeding.getEggs().get(0));
     } else {
       pokemonegg = PokemonProperties.Companion.parse("egg").create();
     }
@@ -130,7 +131,7 @@ public class PlotBreedingManagerUI {
           if (!plotBreeding.getEggs().isEmpty()) {
             plotBreeding.getEggs().forEach(pokemon -> {
               try {
-                RewardsUtils.saveRewardPokemon(action.getPlayer(), Pokemon.Companion.loadFromJSON(pokemon));
+                RewardsUtils.saveRewardPokemon(action.getPlayer(), Pokemon.Companion.loadFromJSON(DynamicRegistryManager.EMPTY, pokemon));
               } catch (NoPokemonStoreException e) {
                 throw new RuntimeException(e);
               }

@@ -13,6 +13,7 @@ import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import net.minecraft.registry.DynamicRegistryManager;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -63,7 +64,7 @@ public class PokeRename implements Command<ServerCommandSource> {
         pokemonEntity.setCustomName(displayName);
         pokemonEntity.setCustomNameVisible(true);
       }
-      JsonObject json = pokemon.saveToJSON(new JsonObject());
+      JsonObject json = pokemon.saveToJSON(DynamicRegistryManager.EMPTY, new JsonObject());
 
       if (json.has("Nickname")) {
         JsonObject nicknameObj = json.getAsJsonObject("Nickname");
@@ -72,7 +73,7 @@ public class PokeRename implements Command<ServerCommandSource> {
           nicknameObj.addProperty("text", displayName.getString());
         }
       }
-      pokemon.loadFromJSON(json);
+      pokemon.loadFromJSON(DynamicRegistryManager.EMPTY, json);
       context.getSource().getPlayerOrThrow().sendMessage(displayName);
 
     } catch (Exception e) {

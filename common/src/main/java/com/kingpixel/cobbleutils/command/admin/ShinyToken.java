@@ -43,7 +43,13 @@ public class ShinyToken implements Command<ServerCommandSource> {
     ServerPlayerEntity player = EntityArgumentType.getPlayer(context, "player");
     int amount = IntegerArgumentType.getInteger(context, "amount");
     ItemStack itemStack = CobbleUtils.config.getShinytoken().getItemStack(amount);
-    itemStack.getOrCreateNbt().putBoolean("shinytoken", true);
+    /*itemStack.set(DataComponentTypes.CUSTOM_DATA, new CustomDataPredicate(
+      new NbtPredicate(
+        new NbtCompound()
+      )
+    ));
+
+    itemStack.getOrCreateNbt().putBoolean("shinytoken", true);*/
     if (!player.getInventory().insertStack(itemStack)) {
       RewardsUtils.saveRewardItemStack(player, itemStack);
     }

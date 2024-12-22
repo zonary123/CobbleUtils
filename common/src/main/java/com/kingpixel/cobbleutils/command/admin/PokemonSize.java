@@ -86,7 +86,7 @@ public class PokemonSize implements Command<ServerCommandSource> {
   }
 
   private static void scale(ServerPlayerEntity player, int slot, float scale) throws NoPokemonStoreException {
-    Pokemon pokemon = Cobblemon.INSTANCE.getStorage().getParty(player.getUuid()).get(--slot);
+    Pokemon pokemon = Cobblemon.INSTANCE.getStorage().getParty(player).get(--slot);
     if (pokemon == null) {
       PlayerUtils.sendMessage(player, CobbleUtils.language.getMessageNoPokemon());
       return;

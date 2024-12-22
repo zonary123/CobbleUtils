@@ -13,6 +13,7 @@ import com.kingpixel.cobbleutils.util.LuckPermsUtil;
 import com.kingpixel.cobbleutils.util.RewardsUtils;
 import lombok.Getter;
 import lombok.Setter;
+import net.minecraft.registry.DynamicRegistryManager;
 import net.minecraft.server.network.ServerPlayerEntity;
 import org.bson.Document;
 
@@ -121,12 +122,12 @@ public class PlotBreeding {
 
   private Pokemon getPokemonMale() {
     if (male == null) return null;
-    return Pokemon.Companion.loadFromJSON(male);
+    return Pokemon.Companion.loadFromJSON(DynamicRegistryManager.EMPTY, male);
   }
 
   private Pokemon getPokemonFemale() {
     if (female == null) return null;
-    return Pokemon.Companion.loadFromJSON(female);
+    return Pokemon.Companion.loadFromJSON(DynamicRegistryManager.EMPTY, female);
   }
 
   public boolean checking(ServerPlayerEntity player) {
@@ -186,7 +187,7 @@ public class PlotBreeding {
           if (PermissionApi.hasPermission(player, "cobbleutils.breeding.autoclaim", 4)) {
             RewardsUtils.saveRewardPokemon(player, pokemon);
           } else {
-            eggs.add(pokemon.saveToJSON(new JsonObject()));
+            eggs.add(pokemon.saveToJSON(DynamicRegistryManager.EMPTY, new JsonObject()));
           }
           CobbleUtils.breedconfig.getSoundCreateEgg().start(player);
           return true;
@@ -201,23 +202,23 @@ public class PlotBreeding {
   public boolean addMale(Pokemon pokemon) {
     if (pokemon.isLegendary() || pokemon.isUltraBeast())
       return false;
-    setMale(pokemon.saveToJSON(new JsonObject()));
+    setMale(pokemon.saveToJSON(DynamicRegistryManager.EMPTY, new JsonObject()));
     return true;
   }
 
   public boolean addFemale(Pokemon pokemon) {
     if (pokemon.isLegendary() || pokemon.isUltraBeast())
       return false;
-    setFemale(pokemon.saveToJSON(new JsonObject()));
+    setFemale(pokemon.saveToJSON(DynamicRegistryManager.EMPTY, new JsonObject()));
     return true;
   }
 
   public Pokemon obtainMale() {
-    return (male == null ? null : Pokemon.Companion.loadFromJSON(male));
+    return (male == null ? null : Pokemon.Companion.loadFromJSON(DynamicRegistryManager.EMPTY, male));
   }
 
   public Pokemon obtainFemale() {
-    return (female == null ? null : Pokemon.Companion.loadFromJSON(female));
+    return (female == null ? null : Pokemon.Companion.loadFromJSON(DynamicRegistryManager.EMPTY, female));
   }
 
   public void add(Pokemon pokemon, Gender gender) {
@@ -238,6 +239,6 @@ public class PlotBreeding {
 
   public Pokemon getFirstEgg() {
     if (eggs.isEmpty()) return null;
-    return Pokemon.Companion.loadFromJSON(eggs.get(0));
+    return Pokemon.Companion.loadFromJSON(DynamicRegistryManager.EMPTY, eggs.get(0));
   }
 }

@@ -4,9 +4,10 @@ import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.ui.ShinyTokenUI;
 import com.kingpixel.cobbleutils.util.PlayerUtils;
 import dev.architectury.event.CompoundEventResult;
+import net.minecraft.component.DataComponentTypes;
+import net.minecraft.component.type.NbtComponent;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NbtCompound;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
 import net.minecraft.util.Hand;
@@ -17,9 +18,9 @@ import net.minecraft.util.Hand;
 public class ItemRightClickEvents {
   public static CompoundEventResult register(PlayerEntity player, Hand hand) {
     ItemStack itemStack = player.getStackInHand(hand);
-    NbtCompound tag = itemStack.getNbt();
+    NbtComponent tag = itemStack.get(DataComponentTypes.CUSTOM_DATA);
     if (tag == null) return CompoundEventResult.pass();
-    if (itemStack.hasNbt() && tag.contains("shinytoken")
+    if (tag.contains("shinytoken")
       && itemStack.getItem() == CobbleUtils.config.getShinytoken().getItemStack().getItem()) {
       if (!CobbleUtils.config.isActiveshinytoken()) return CompoundEventResult.pass();
       try {

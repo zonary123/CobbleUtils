@@ -1,17 +1,12 @@
 package com.kingpixel.cobbleutils.party.util;
 
-import com.kingpixel.cobbleutils.CobbleUtils;
-import eu.pb4.placeholders.api.PlaceholderResult;
-import eu.pb4.placeholders.api.Placeholders;
-import net.minecraft.util.Identifier;
-
 /**
  * @author Carlos Varas Alonso - 02/07/2024 18:34
  */
 public class PartyPlaceholder {
   public static void register() {
     // Fabric and forge eu.pb4.placeholders
-    try {
+    /*try {
       Placeholders.register(
         new Identifier("cobbleutils", "party"),
         (ctx, arg) -> {
@@ -37,7 +32,7 @@ public class PartyPlaceholder {
           }
         });
     } catch (NoSuchMethodError | NoClassDefFoundError | Exception ignored) {
-    }
+    }*/
     // Spigot PlaceholderAPI
     /*try {
 

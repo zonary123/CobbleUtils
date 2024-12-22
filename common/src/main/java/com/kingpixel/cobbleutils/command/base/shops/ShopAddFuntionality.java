@@ -1,39 +1,10 @@
 package com.kingpixel.cobbleutils.command.base.shops;
 
-import ca.landonjw.gooeylibs2.api.UIManager;
-import ca.landonjw.gooeylibs2.api.button.Button;
-import ca.landonjw.gooeylibs2.api.button.GooeyButton;
-import ca.landonjw.gooeylibs2.api.button.PlaceholderButton;
-import ca.landonjw.gooeylibs2.api.helpers.PaginationHelper;
-import ca.landonjw.gooeylibs2.api.page.GooeyPage;
-import ca.landonjw.gooeylibs2.api.page.LinkedPage;
-import ca.landonjw.gooeylibs2.api.template.types.ChestTemplate;
-import com.cobblemon.mod.common.api.pokemon.PokemonProperties;
-import com.cobblemon.mod.common.item.PokemonItem;
-import com.kingpixel.cobbleutils.CobbleUtils;
-import com.kingpixel.cobbleutils.Model.FilterPokemons;
-import com.kingpixel.cobbleutils.Model.ItemChance;
-import com.kingpixel.cobbleutils.config.ShopConfig;
-import com.kingpixel.cobbleutils.features.shops.models.Product;
-import com.kingpixel.cobbleutils.util.AdventureTranslator;
-import com.kingpixel.cobbleutils.util.EconomyUtil;
-import com.kingpixel.cobbleutils.util.PlayerUtils;
-import com.kingpixel.cobbleutils.util.UIUtils;
-import net.minecraft.item.Items;
-import net.minecraft.registry.Registries;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.text.Text;
-import org.blanketeconomy.Blanketconfig;
-
-import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.List;
-
 /**
  * @author Carlos Varas Alonso - 23/11/2024 4:39
  */
 public class ShopAddFuntionality {
-
+/*
   // shopConfig.getShop().addProduct(product, buy, sell, mod_id, shop);
 
   public static void open(ServerPlayerEntity player, ShopConfig shopConfig, String modId, String shop, Product product) {
@@ -380,4 +351,5 @@ public class ShopAddFuntionality {
 
     UIManager.openUIForcefully(player, page);
   }
+ */
 }
