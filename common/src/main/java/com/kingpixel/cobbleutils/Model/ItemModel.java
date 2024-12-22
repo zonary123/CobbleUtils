@@ -192,8 +192,8 @@ public class ItemModel {
   public static GooeyButton getButton(ItemModel itemModel, Consumer<ButtonAction> action) {
     return GooeyButton.builder()
       .display(getItemStack(itemModel))
-      .title(AdventureTranslator.toNative(itemModel.getDisplayname()))
-      .lore(Text.class, AdventureTranslator.toNativeL(itemModel.getLore()))
+      .with(AdventureTranslator.toNative(itemModel.getDisplayname()))
+      .with(Text.class, AdventureTranslator.toNativeL(itemModel.getLore()))
       .onClick(action)
       .build();
   }

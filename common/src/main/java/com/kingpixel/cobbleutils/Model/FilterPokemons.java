@@ -173,7 +173,7 @@ public class FilterPokemons {
    * @return the pokemon
    */
   private Pokemon getPokemon(Pokemon pokemon) {
-    Pokemon copy = pokemon.clone(true, true);
+    Pokemon copy = pokemon.clone(true);
     copy.createPokemonProperties(List.of(
       PokemonPropertyExtractor.NATURE,
       PokemonPropertyExtractor.IVS,

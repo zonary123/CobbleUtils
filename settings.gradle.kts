@@ -34,4 +34,3 @@ pluginManagement {
     }
 }
 include("common", "fabric")
-//include("common", "fabric", "neoforge")

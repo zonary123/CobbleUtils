@@ -6,6 +6,7 @@ import com.kingpixel.cobbleutils.util.ArraysPokemons;
 import com.kingpixel.cobbleutils.util.PokemonUtils;
 import lombok.Getter;
 import lombok.ToString;
+import net.minecraft.registry.DynamicRegistryManager;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -26,7 +27,7 @@ public class PokemonObject {
 
   public PokemonObject(JsonObject pokemon, Date date) {
     this.pokemon = pokemon;
-    this.rarity = PokemonUtils.getRarityS(Pokemon.Companion.loadFromJSON(pokemon));
+    this.rarity = PokemonUtils.getRarityS(Pokemon.Companion.loadFromJSON(DynamicRegistryManager.EMPTY, pokemon));
     this.date = date;
   }
 
@@ -54,14 +55,14 @@ public class PokemonObject {
    * @return The Pokémon.
    */
   private Pokemon getPokemon() {
-    return Pokemon.Companion.loadFromJSON(pokemon);
+    return Pokemon.Companion.loadFromJSON(DynamicRegistryManager.EMPTY, pokemon);
   }
 
   /**
    * Generate a new Pokémon and update this object's JSON representation.
    */
   private void getNewPokemon() {
-    this.pokemon = ArraysPokemons.getRandomPokemonNormalRarity(this.rarity).saveToJSON(new JsonObject());
+    this.pokemon = ArraysPokemons.getRandomPokemonNormalRarity(this.rarity).saveToJSON(DynamicRegistryManager.EMPTY, new JsonObject());
   }
 
   /**
@@ -81,7 +82,7 @@ public class PokemonObject {
     Date expirationDate = expired ? new Date(System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(minutes)) : null;
 
     pokemons.forEach(pokemon -> {
-      PokemonObject pokemonObject = new PokemonObject(pokemon.saveToJSON(new JsonObject()), expirationDate);
+      PokemonObject pokemonObject = new PokemonObject(pokemon.saveToJSON(DynamicRegistryManager.EMPTY, new JsonObject()), expirationDate);
       pokemonObjects.add(pokemonObject);
     });
 

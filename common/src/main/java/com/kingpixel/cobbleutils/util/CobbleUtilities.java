@@ -12,7 +12,6 @@ import com.mojang.brigadier.ParseResults;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NbtHelper;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
 
@@ -91,7 +90,7 @@ public class CobbleUtilities {
       return;
     }
     Pokemon pokemon = Utils.createPokemonParse(pokemonName);
-    Cobblemon.INSTANCE.getStorage().getParty(player.getUuid()).add(pokemon);
+    Cobblemon.INSTANCE.getStorage().getParty(player).add(pokemon);
   }
 
   /**
@@ -190,13 +189,13 @@ public class CobbleUtilities {
    * @return The ItemStack
    */
   public static ItemStack getItem(String item) {
-    try {
+    /*try {
       return ItemStack.fromNbt(NbtHelper.fromNbtProviderString(item));
     } catch (CommandSyntaxException e) {
       CobbleUtils.LOGGER.fatal("Failed to parse item for NBT: " + item);
       CobbleUtils.LOGGER.fatal("Stacktrace: ");
       e.printStackTrace();
-    }
+    }*/
     return null;
   }
 }

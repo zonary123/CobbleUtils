@@ -21,6 +21,7 @@ import com.cobblemon.mod.common.pokemon.Pokemon;
 import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.Model.ItemModel;
 import com.kingpixel.cobbleutils.action.PokemonButtonAction;
+import net.minecraft.component.DataComponentTypes;
 import net.minecraft.item.ItemStack;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
@@ -49,7 +50,8 @@ public class UIUtils {
     if (pokemon == null) {
       return GooeyButton.builder()
         .display(CobbleUtils.language.getItemNoPokemon().getItemStack())
-        .title(AdventureTranslator.toNative(CobbleUtils.language.getItemNoPokemon().getDisplayname()))
+        .with(DataComponentTypes.class,
+          AdventureTranslator.toNative(CobbleUtils.language.getItemNoPokemon().getDisplayname()))
         .lore(Text.class, AdventureTranslator.toNativeL(CobbleUtils.language.getItemNoPokemon().getLore()))
         .build();
     }

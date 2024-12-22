@@ -4,7 +4,6 @@ import com.kingpixel.cobbleutils.util.SoundUtil;
 import lombok.Getter;
 import net.minecraft.entity.Entity;
 import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvent;
 import net.minecraft.util.math.Box;
 
@@ -54,11 +53,11 @@ public class Sound {
       new Box(entity.getBlockPos()).expand(getRange()), player -> true);
     SoundEvent sound = SoundUtil.getSound(getSound());
     if (players != null && !players.isEmpty()) {
-      players.forEach(player -> player.playSound(sound, SoundCategory.PLAYERS, getVolume(), getPitch()));
+      players.forEach(player -> player.playSound(sound, getVolume(), getPitch()));
     }
   }
 
   public void playSoundPlayer(ServerPlayerEntity player) {
-    player.playSound(SoundUtil.getSound(sound), SoundCategory.PLAYERS, getVolume(), getPitch());
+    player.playSound(SoundUtil.getSound(sound), getVolume(), getPitch());
   }
 }

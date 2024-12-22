@@ -14,18 +14,19 @@ import com.kingpixel.cobbleutils.features.shops.ShopTransactions;
 import com.kingpixel.cobbleutils.features.shops.models.types.ShopActionAdapter;
 import com.kingpixel.cobbleutils.features.shops.models.types.ShopType;
 import com.kingpixel.cobbleutils.features.shops.models.types.ShopTypeAdapter;
-import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import com.mojang.authlib.GameProfile;
 import kotlin.ranges.IntRange;
+import net.minecraft.component.DataComponentTypes;
+import net.minecraft.component.type.CustomModelDataComponent;
+import net.minecraft.component.type.LoreComponent;
+import net.minecraft.component.type.ProfileComponent;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
-import net.minecraft.nbt.NbtCompound;
-import net.minecraft.nbt.NbtHelper;
-import net.minecraft.nbt.NbtList;
-import net.minecraft.nbt.NbtString;
+import net.minecraft.registry.Registries;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.text.Style;
 import net.minecraft.text.Text;
+import net.minecraft.util.Identifier;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -39,7 +40,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Random;
+import java.util.Scanner;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -215,20 +219,11 @@ public abstract class Utils {
   }
 
   public static ItemStack parseItemId(String id) {
-    NbtCompound tag = new NbtCompound();
-    tag.putString("id", id);
-    tag.putInt("Count", 1);
-    ItemStack itemStack = ItemStack.fromNbt(tag);
-    itemStack.setNbt(null);
-    return itemStack;
+    return parseItemId(id, 1);
   }
 
   public static ItemStack parseItemId(String id, int amount) {
-    NbtCompound tag = new NbtCompound();
-    tag.putString("id", id);
-    tag.putInt("Count", amount);
-    ItemStack itemStack = ItemStack.fromNbt(tag);
-    itemStack.setNbt(null);
+    ItemStack itemStack = new ItemStack(Registries.ITEM.get(Identifier.of(id)), amount);
     return itemStack;
   }
 
@@ -268,28 +263,23 @@ public abstract class Utils {
   }
 
   public static ItemStack addThingsItemStack(ItemStack itemStack, ItemModel itemModel) {
-    if (itemModel.getNbt() != null && !itemModel.getNbt().isEmpty()) {
+
+    /*if (itemModel.getNbt() != null && !itemModel.getNbt().isEmpty()) {
       try {
-        itemStack.setNbt(NbtHelper.fromNbtProviderString(itemModel.getNbt()));
+        itemStack.set(DataComponentTypes.CUSTOM_DATA, NbtHelper.fromNbtProviderString(itemModel.getNbt()));
       } catch (CommandSyntaxException ignored) {
       }
-    }
-    itemStack.setCustomName(AdventureTranslator.toNativeWithOutPrefix(
+    }*/
+
+    itemStack.set(DataComponentTypes.CUSTOM_NAME, AdventureTranslator.toNativeWithOutPrefix(
       itemModel.getDisplayname() != null ? itemModel.getDisplayname() : "Please set a displayname for this item"));
+
     if (itemModel.getCustomModelData() != 0)
-      itemStack.getOrCreateNbt().putLong("CustomModelData", itemModel.getCustomModelData());
+      itemStack.set(DataComponentTypes.CUSTOM_MODEL_DATA, new CustomModelDataComponent((int) itemModel.getCustomModelData()));
+
     if (itemModel.getLore() != null && !itemModel.getLore().isEmpty()) {
-      NbtList nbtLore = new NbtList();
-      List<Text> lorecomp = AdventureTranslator.toNativeL(itemModel.getLore());
-      for (Text line : lorecomp) {
-        if (lorecomp.size() == 1 && line.getString().isEmpty())
-          continue;
-        Text result = Text.empty()
-          .setStyle(Style.EMPTY.withItalic(false))
-          .append(line);
-        nbtLore.add(NbtString.of(Text.Serializer.toJson(result)));
-      }
-      itemStack.getOrCreateSubNbt("display").put("Lore", nbtLore);
+      itemStack.set(DataComponentTypes.LORE,
+        LoreComponent.DEFAULT.with(AdventureTranslator.toNative(itemModel.getLore().toString())));
     }
     return itemStack;
   }
@@ -307,14 +297,16 @@ public abstract class Utils {
 
   public static ItemStack getHead(String replace, int amount) {
     ItemStack itemStack = Items.PLAYER_HEAD.getDefaultStack();
-    itemStack.getOrCreateNbt().putString("SkullOwner", replace);
+    var profile = new GameProfile(UUID.randomUUID(), replace);
+    itemStack.set(DataComponentTypes.PROFILE, new ProfileComponent(profile));
     itemStack.setCount(amount);
     return itemStack;
   }
 
   public static ItemStack parseItemId(String item, int amount, long customModelData) {
     ItemStack itemStack = parseItemId(item, amount);
-    if (customModelData != 0) itemStack.getOrCreateNbt().putLong("CustomModelData", customModelData);
+    if (customModelData != 0)
+      itemStack.set(DataComponentTypes.CUSTOM_MODEL_DATA, new CustomModelDataComponent((int) customModelData));
     return itemStack;
   }
 

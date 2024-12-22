@@ -53,7 +53,7 @@ public class AdventureTranslator {
   }
 
   public static Text toNative(net.kyori.adventure.text.Component component) {
-    return Text.Serializer.fromJson(GsonComponentSerializer.gson().serialize(component));
+    return Text.literal(GsonComponentSerializer.gson().serialize(component));
   }
 
   public static List<Text> toNativeL(List<String> lore) {
@@ -89,7 +89,7 @@ public class AdventureTranslator {
   }
 
   public static net.kyori.adventure.text.Component fromNative(Text component) {
-    return GsonComponentSerializer.gson().deserialize(Text.Serializer.toJson(component));
+    return GsonComponentSerializer.gson().deserialize(component.getString());
   }
 
   public static net.kyori.adventure.text.Component toNativeFromString(String displayname) {

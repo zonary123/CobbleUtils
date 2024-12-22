@@ -1,9 +1,6 @@
-import org.gradle.kotlin.dsl.support.kotlinCompilerOptions
-
 plugins {
     id("java")
     id("java-library")
-    kotlin("jvm")
 
     id("dev.architectury.loom") version "1.7-SNAPSHOT" apply false
     id("architectury-plugin") version "3.4-SNAPSHOT"
@@ -11,26 +8,15 @@ plugins {
 }
 
 group = property("maven_group") as String
-val targetJavaVersion = 21
 
 java {
-    toolchain {
-        languageVersion.set(JavaLanguageVersion.of(targetJavaVersion))
-    }
-    kotlinCompilerOptions("1.8")
-}
-
-tasks.withType<JavaCompile> {
-    options.encoding = "UTF-8"
-    options.release.set(targetJavaVersion)
-    options.compilerArgs.add("-Xlint:-processing,-classfile,-serial")
-}
-
-tasks.withType<KotlinCompile> {
-    kotlinOptions.jvmTarget = targetJavaVersion.toString()
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
 }
 
 allprojects {
+
+
     apply(plugin = "java")
     apply(plugin = "java-library")
     apply(plugin = "dev.architectury.loom")

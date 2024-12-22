@@ -16,8 +16,6 @@ dependencies {
     modImplementation("dev.architectury:architectury:${property("architectury_version")}")
     modImplementation("ca.landonjw.gooeylibs:api:${property("gooeylibs_version")}")
 
-    // Fabric API
-
 
     // PlaceholderAPI
     modImplementation("eu.pb4:placeholder-api:${property("placeholder_api_version_fabricandforge")}")

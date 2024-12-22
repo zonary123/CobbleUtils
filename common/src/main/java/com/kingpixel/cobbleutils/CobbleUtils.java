@@ -2,7 +2,6 @@ package com.kingpixel.cobbleutils;
 
 import com.cobblemon.mod.common.Cobblemon;
 import com.cobblemon.mod.common.api.properties.CustomPokemonProperty;
-import com.cobblemon.mod.common.api.storage.NoPokemonStoreException;
 import com.kingpixel.cobbleutils.Model.RewardsData;
 import com.kingpixel.cobbleutils.command.CommandTree;
 import com.kingpixel.cobbleutils.config.*;
@@ -30,7 +29,6 @@ import dev.architectury.event.events.common.CommandRegistrationEvent;
 import dev.architectury.event.events.common.InteractionEvent;
 import dev.architectury.event.events.common.LifecycleEvent;
 import dev.architectury.event.events.common.PlayerEvent;
-import net.minecraft.nbt.NbtCompound;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 
@@ -175,7 +173,7 @@ public class CobbleUtils extends ShopExtend {
       if (CobbleUtils.config.getPokerus().isActive())
         CustomPokemonProperty.Companion.register(PokerusPropertyType.getInstance());
     });
-    
+
 
     LifecycleEvent.SERVER_STOPPING.register(server -> {
       scheduledTasks.forEach(task -> task.cancel(true));
@@ -202,9 +200,6 @@ public class CobbleUtils extends ShopExtend {
     LifecycleEvent.SERVER_LEVEL_LOAD.register(level -> server = level.getServer());
 
     PlayerEvent.PLAYER_JOIN.register(player -> {
-      // Fix Inventory
-      fixInventory(player);
-
       //Rewards
       RewardsData rewardsData = rewardsManager.getRewardsData().computeIfAbsent(
         player.getUuid(),
@@ -247,20 +242,6 @@ public class CobbleUtils extends ShopExtend {
 
     PlayerEvent.DROP_ITEM.register(DropItemEvent::register);
 
-    // Fix empty nbt
-    PlayerEvent.PICKUP_ITEM_PRE.register((player, itemEntity, itemStack) -> {
-      NbtCompound nbt = itemStack.getNbt();
-      if (nbt != null) {
-        if (nbt.isEmpty()) {
-          if (config.isDebug()) {
-            LOGGER.info("Item: " + ItemUtils.getTranslatedName(itemStack) + " has been fixed");
-          }
-          itemStack.setNbt(null);
-        }
-      }
-      return EventResult.pass();
-    });
-
     PartyPlaceholder.register();
   }
 
@@ -286,43 +267,17 @@ public class CobbleUtils extends ShopExtend {
       scheduler.scheduleAtFixedRate(() -> server.getPlayerManager().getPlayerList().forEach(
         player -> {
           Cobblemon.INSTANCE.getStorage().getParty(player).forEach(ScaleEvent::solveScale);
-          try {
-            Cobblemon.INSTANCE.getStorage().getPC(player.getUuid()).forEach(ScaleEvent::solveScale);
-          } catch (NoPokemonStoreException e) {
-            throw new RuntimeException(e);
-          }
+          Cobblemon.INSTANCE.getStorage().getPC(player).forEach(ScaleEvent::solveScale);
         }
       ), 0, 30, TimeUnit.MINUTES);
 
-    ScheduledFuture<?> fixnbt =
-      scheduler.scheduleAtFixedRate(
-        () -> server.getPlayerManager().getPlayerList().forEach(CobbleUtils::fixInventory),
-        0, 1, TimeUnit.MINUTES);
 
     scheduledTasks.add(alertreward);
-    scheduledTasks.add(fixnbt);
     scheduledTasks.add(fixSize);
 
     setEconomyType();
   }
 
-
-  private static void fixInventory(ServerPlayerEntity player) {
-    player.getInventory().combinedInventory.forEach(inv -> {
-      inv.forEach(itemStack -> {
-        NbtCompound nbt = itemStack.getNbt();
-        if (nbt != null) {
-          if (nbt.isEmpty()) {
-            if (config.isDebug()) {
-              LOGGER.info("Item: " + ItemUtils.getTranslatedName(itemStack) + " has been fixed");
-            }
-            itemStack.setNbt(null);
-          }
-
-        }
-      });
-    });
-  }
 
   private static String isActive(boolean active) {
     if (active) {

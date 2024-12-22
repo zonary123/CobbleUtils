@@ -13,10 +13,10 @@ configurations {
     getByName("developmentFabric").extendsFrom(configurations["shadowCommon"])
 }
 
-/*loom {
+loom {
     enableTransitiveAccessWideners.set(true)
     silentMojangMappingsLicense()
-}*/
+}
 
 dependencies {
     modImplementation("com.cobblemon:fabric:${property("cobblemon_version")}")
@@ -108,11 +108,11 @@ tasks {
     }
 
 
-    /*remapJar {
+    remapJar {
         injectAccessWidener.set(true)
         inputFile.set(shadowJar.get().archiveFile)
         dependsOn(shadowJar)
-    }*/
+    }
 
-    //jar.get().archiveClassifier.set("dev")
+    jar.get().archiveClassifier.set("dev")
 }

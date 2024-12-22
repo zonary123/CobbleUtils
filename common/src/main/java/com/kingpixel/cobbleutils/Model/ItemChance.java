@@ -108,7 +108,7 @@ public class ItemChance {
 
       ItemModel itemClose = CobbleUtils.language.getItemClose();
       template.set(49, itemClose.getButton(action -> {
-        action.getPlayer().closeHandledScreen();
+        UIManager.closeUI(action.getPlayer());
       }));
 
       ItemModel itemNext = CobbleUtils.language.getItemNext();

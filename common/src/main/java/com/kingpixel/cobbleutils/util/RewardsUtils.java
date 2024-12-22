@@ -206,7 +206,7 @@ public class RewardsUtils {
         newRewardsData.init();
         return newRewardsData;
       });
-    rewardsData.getCommands().add(command.replace("%player%", player.getGameProfile().getName()));
+    rewardsData.getCommands().add(command.trim().replace("%player%", player.getGameProfile().getName()));
     giveCommandRewards(rewardsData.getCommands());
     return true;
   }
