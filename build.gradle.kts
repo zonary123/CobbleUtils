@@ -9,10 +9,6 @@ plugins {
 
 group = property("maven_group") as String
 
-java {
-    sourceCompatibility = JavaVersion.VERSION_17
-    targetCompatibility = JavaVersion.VERSION_17
-}
 
 allprojects {
 
@@ -26,6 +22,32 @@ allprojects {
     dependencies {
         "minecraft"("com.mojang:minecraft:${property("minecraft_version")}")
         "mappings"("net.fabricmc:yarn:${property("yarn_mappings")}:v2")
+    }
+
+    java {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+
+    tasks.processResources {
+        expand(
+            mapOf(
+                "mod_name" to project.property("mod_name"),
+                "mod_id" to project.property("mod_id"),
+                "mod_version" to project.property("mod_version"),
+                "mod_description" to project.property("mod_description"),
+                "author" to project.property("author"),
+                "repository" to project.property("repository"),
+                "license" to project.property("license"),
+                "mod_icon" to project.property("mod_icon"),
+                "environment" to project.property("environment"),
+                "supported_minecraft_versions" to project.property("supported_minecraft_versions")
+            )
+        )
+    }
+
+    tasks.withType<JavaCompile>().configureEach {
+        options.release = 21
     }
 
     repositories {

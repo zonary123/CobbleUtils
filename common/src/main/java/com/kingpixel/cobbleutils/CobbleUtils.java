@@ -6,8 +6,6 @@ import com.kingpixel.cobbleutils.Model.RewardsData;
 import com.kingpixel.cobbleutils.command.CommandTree;
 import com.kingpixel.cobbleutils.config.*;
 import com.kingpixel.cobbleutils.database.DatabaseClientFactory;
-import com.kingpixel.cobbleutils.events.BlockRightClickEvents;
-import com.kingpixel.cobbleutils.events.DropItemEvent;
 import com.kingpixel.cobbleutils.events.ItemRightClickEvents;
 import com.kingpixel.cobbleutils.events.ScaleEvent;
 import com.kingpixel.cobbleutils.events.features.FeaturesRegister;
@@ -24,13 +22,11 @@ import com.kingpixel.cobbleutils.party.event.DeletePartyEvent;
 import com.kingpixel.cobbleutils.party.util.PartyPlaceholder;
 import com.kingpixel.cobbleutils.properties.*;
 import com.kingpixel.cobbleutils.util.*;
-import dev.architectury.event.EventResult;
 import dev.architectury.event.events.common.CommandRegistrationEvent;
 import dev.architectury.event.events.common.InteractionEvent;
 import dev.architectury.event.events.common.LifecycleEvent;
 import dev.architectury.event.events.common.PlayerEvent;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.network.ServerPlayerEntity;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -225,22 +221,11 @@ public class CobbleUtils extends ShopExtend {
     });
 
 
-    InteractionEvent.RIGHT_CLICK_BLOCK.register((player, hand, blockpos, direction) -> {
-      try {
-        BlockRightClickEvents.register((ServerPlayerEntity) player, hand, blockpos, direction);
-      } catch (ClassCastException e) {
-        BlockRightClickEvents.register(PlayerUtils.castPlayer(player), hand, blockpos, direction);
-      }
-      return EventResult.pass();
-    });
-
     InteractionEvent.RIGHT_CLICK_ITEM.register(ItemRightClickEvents::register);
 
 
     // ? Add the event for fishing a pokemon
     FeaturesRegister.register();
-
-    PlayerEvent.DROP_ITEM.register(DropItemEvent::register);
 
     PartyPlaceholder.register();
   }
