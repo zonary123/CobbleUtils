@@ -160,16 +160,19 @@ public class ItemChance {
    */
   public static List<ItemChance> defaultItemChances() {
     List<ItemChance> itemChances = new ArrayList<>();
-    itemChances.add(new ItemChance("minecraft:dirt", 100));
-    itemChances.add(new ItemChance("item:1:minecraft:dirt", 100));
-    itemChances.add(new ItemChance("item:1:minecraft:dirt#{CustomModelData:1}", 100));
-    itemChances.add(new ItemChance("pokemon:rattata alola", 100));
-    itemChances.add(new ItemChance("command:lp user %player% permission set a", 100, "minecraft:emerald", "Give permission a"));
-    itemChances.add(new ItemChance("command:lp user %player% permission set a|lp user %player% permission set b", 100
+    itemChances.add(new ItemChance("minecraft:dirt", 999));
+    itemChances.add(new ItemChance("item:1:minecraft:dirt", 1));
+    itemChances.add(new ItemChance("item:1:minecraft:dirt#{CustomModelData:1}", 1));
+    itemChances.add(new ItemChance("pokemon:rattata alola", 1));
+    itemChances.add(new ItemChance("command:lp user %player% permission set a", 1, "minecraft:emerald", "Give " +
+      "permission a"));
+    itemChances.add(new ItemChance("command:lp user %player% permission set a|lp user %player% permission set b", 1
       , "minecraft:emerald", "Give permission a and b"));
-    itemChances.add(new ItemChance("money:1", 100));
-    itemChances.add(new ItemChance("money:tokens:1", 100));
-    itemChances.add(new ItemChance("mod:cobblehunt:radar", 100));
+    itemChances.add(new ItemChance("money:1", 1));
+    itemChances.add(new ItemChance("money:tokens:1", 1));
+    itemChances.add(new ItemChance("mod:cobblehunt:radar", 1));
+    itemChances.add(new ItemChance("cobblemon:poke_ball|cobblemon:great_ball|cobblemon:ultra_ball|command:lp user " +
+      "%player% permission set a|pokemon:rattata alola", 1));
     return itemChances;
   }
 
@@ -216,7 +219,14 @@ public class ItemChance {
         Pokemon pokemon = getRewardPokemon(item);
         return RewardsUtils.saveRewardPokemon(player, pokemon);
       } else if (item.startsWith("command:")) {
-        RewardsUtils.saveRewardCommand(player, item.replace("command:", ""));
+        String[] commandParts = item.split("#");
+        if (commandParts.length > 1) {
+          for (String commandPart : commandParts) {
+            RewardsUtils.saveRewardCommand(player, commandPart.replace("command:", ""));
+          }
+        } else {
+          RewardsUtils.saveRewardCommand(player, item.replace("command:", ""));
+        }
         return true;
       } else if (item.startsWith("money:")) {
         return handleMoneyReward(player, item);
@@ -351,7 +361,7 @@ public class ItemChance {
     if (item == null) {
       return Items.AIR.getDefaultStack();
     }
-    String[] parts = item.split("#");
+    String[] parts = item.split("\\|");
     if (parts.length > 1) {
       return getRewardItemStack(parts[0], amount);
     }
@@ -416,7 +426,7 @@ public class ItemChance {
       return itemChance.getDisplayname();
 
     String item = itemChance.getItem();
-    String[] parts = item.split("#");
+    String[] parts = item.split("\\|");
     if (parts.length > 1) {
       return getTitle(new ItemChance(parts[0], itemChance.getChance()));
     }

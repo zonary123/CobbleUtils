@@ -77,7 +77,7 @@ public class Particle {
   private @NotNull DefaultParticleType getParticleType() {
     if (getParticle() == null || getParticle().isEmpty()) return null;
 
-    String[] split = this.getParticle().split(":");
+    String[] split = getParticle().split(":");
     Identifier identifier = new Identifier(split[0], split[1]);
 
     DefaultParticleType particleType;

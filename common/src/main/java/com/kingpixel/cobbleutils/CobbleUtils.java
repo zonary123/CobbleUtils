@@ -175,7 +175,7 @@ public class CobbleUtils extends ShopExtend {
       if (CobbleUtils.config.getPokerus().isActive())
         CustomPokemonProperty.Companion.register(PokerusPropertyType.getInstance());
     });
-
+    
 
     LifecycleEvent.SERVER_STOPPING.register(server -> {
       scheduledTasks.forEach(task -> task.cancel(true));
