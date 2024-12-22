@@ -34,6 +34,7 @@ import net.minecraft.nbt.NbtCompound;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.*;
 
@@ -70,14 +71,17 @@ public class CobbleUtils extends ShopExtend {
   public static PartyConfig partyConfig = new PartyConfig();
   public static PartyLang partyLang = new PartyLang();
   public static PartyManager partyManager = new PartyManager();
+  public static List<String> modsInUse = new ArrayList<>();
   // Rewards
   public static RewardsManager rewardsManager = new RewardsManager();
   // Tasks
   private static final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
   private static final List<ScheduledFuture<?>> scheduledTasks = new CopyOnWriteArrayList<>();
 
+
   public static void init() {
     events();
+    modsInUse.add(MOD_ID);
   }
 
   public static void load() {
@@ -116,11 +120,10 @@ public class CobbleUtils extends ShopExtend {
     BossConfig.init();
     shopConfig.init(PATH_SHOP, MOD_ID, PATH_SHOPS);
     DatabaseClientFactory.createDatabaseClient(config.getDatabase());
-
   }
 
   private static void sign() {
-    info(MOD_NAME, "1.1.1", "CobbleUtils");
+    info(MOD_NAME, "1.1.2", "CobbleUtils");
     LOGGER.info("§e| §6Pokemons size: " + isActive(CobbleUtils.config.isRandomsize()));
     LOGGER.info("§e| §6Shulkers: §cUnimplemented");
     LOGGER.info("§e| §6Fossil: " + isActive(CobbleUtils.config.isFossil()));

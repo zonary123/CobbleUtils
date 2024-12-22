@@ -29,7 +29,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class BreedConfig {
   private String prefix;
   private boolean active;
-  private boolean syncpasture;
   private boolean showIvs;
   private boolean changeuipasture;
   private boolean shifttoopen;
@@ -102,7 +101,6 @@ public class BreedConfig {
 
   public BreedConfig() {
     this.prefix = "&7[<#82d448>Breeding&7] &8»";
-    this.syncpasture = false;
     this.active = true;
     this.showIvs = false;
     this.eggcommand = List.of("daycare", "pokebreed", "breed");
@@ -169,12 +167,7 @@ public class BreedConfig {
       10,
       12,
       14,
-      16,
-      18,
-      20,
-      22,
-      24,
-      26
+      16
     );
     this.plotThereAreEggs = new ItemModel(0, "minecraft:lime_wool", "", List.of(), 0);
     this.maleSlots = List.of();
@@ -252,7 +245,6 @@ public class BreedConfig {
         BreedConfig config = gson.fromJson(el, BreedConfig.class);
         prefix = config.getPrefix();
         active = config.isActive();
-        syncpasture = config.isSyncpasture();
         changeuipasture = config.isChangeuipasture();
         createEgg = config.getCreateEgg();
         ditto = config.isDitto();
@@ -362,11 +354,11 @@ public class BreedConfig {
     int rows = rowmenuplot;
     for (Integer plotSlot : plotSlots) {
       int currentRow = (plotSlot + 8) / 9;
-      if (currentRow > rows) {
+      if (rows < currentRow) {
         rows = currentRow;
       }
     }
     if (rows >= 6) return 6;
-    return rowmenuplot >= rows ? rowmenuselectplot : rows;
+    return rows;
   }
 }

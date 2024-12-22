@@ -50,7 +50,7 @@ dependencies {
 
     // CobbleDollars
     api(files("libs/CobbleDollars-fabric-1.5.2+1.20.1.jar"))
-    
+
     // Economy Vault
     api("org.spigotmc:spigot-api:1.20.1-R0.1-SNAPSHOT")
     api("com.github.MilkBowl:VaultAPI:1.7")
@@ -61,5 +61,6 @@ dependencies {
 
     //Discord
     api("club.minnced:discord-webhooks:${property("discord_webhooks_version")}")
+    api("net.objecthunter:exp4j:0.4.8")
 }
 

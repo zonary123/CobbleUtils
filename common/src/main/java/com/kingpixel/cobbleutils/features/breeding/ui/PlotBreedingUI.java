@@ -29,18 +29,15 @@ import java.util.List;
  */
 public class PlotBreedingUI {
   public static void open(ServerPlayerEntity player) {
-    int rows = CobbleUtils.breedconfig.getNeedRows();
-    DatabaseClientFactory.CheckDaycarePlots(player);
-    ChestTemplate template = ChestTemplate.builder(rows).build();
+    try {
+      int rows = CobbleUtils.breedconfig.getNeedRows();
+      DatabaseClientFactory.CheckDaycarePlots(player);
+      ChestTemplate template = ChestTemplate.builder(rows).build();
 
 
-    int size = CobbleUtils.breedconfig.getPlotSlots().size();
-    int max = CobbleUtils.breedconfig.getDefaultNumberPlots();
-
-    if (CobbleUtils.breedconfig.isSyncpasture()) {
-      // By pasture blocks
-    } else {
-      // By permission
+      int size = CobbleUtils.breedconfig.getPlotSlots().size();
+      int max = CobbleUtils.breedconfig.getDefaultNumberPlots();
+      
       for (int i = 0; i < size + 1; i++) {
         int n = i + 1;
         if (PermissionApi.hasPermission(player, "cobbleutils.breeding.plot." + (n), 2)) {
@@ -49,75 +46,78 @@ public class PlotBreedingUI {
           }
         }
       }
-    }
 
-    if (max > size) max = size;
 
-    ItemModel info = CobbleUtils.breedconfig.getInfoItem();
+      if (max >= size) max = size;
 
-    BreedConfig.SuccessItems successItems = CobbleUtils.breedconfig.getSuccessItems();
+      ItemModel info = CobbleUtils.breedconfig.getInfoItem();
 
-    List<String> infoLore = new ArrayList<>(info.getLore());
-    infoLore.replaceAll(s ->
-      s.replace("%ah%", String.format("%.2f%%", successItems.getPercentageTransmitAH()))
-        .replace("%destinyknot%", String.format("%.2f%%", successItems.getPercentageDestinyKnot()))
-        .replace("%everstone%", String.format("%.2f%%", successItems.getPercentageEverStone()))
-        .replace("%poweritem%", String.format("%.2f%%", successItems.getPercentagePowerItem()))
-        .replace("%eggmoves%", String.format("%.2f%%", CobbleUtils.breedconfig.getSuccessItems().getPercentageEggMoves()))
-        .replace("%masuda%", CobbleUtils.breedconfig.isMethodmasuda() ? CobbleUtils.language.getYes() : CobbleUtils.language.getNo())
-        .replace("%multipliermasuda%", String.valueOf(CobbleUtils.breedconfig.getMultipliermasuda()))
-        .replace("%maxivs%", String.valueOf(CobbleUtils.breedconfig.getMaxIvsRandom()))
-        .replace("%shinyrate%", String.valueOf(Cobblemon.INSTANCE.getConfig().getShinyRate()))
-        .replace("%multipliershiny%", String.valueOf(CobbleUtils.breedconfig.getMultiplierShiny()))
-        .replace("%cooldown%", PlayerUtils.getCooldown(CobbleUtils.breedconfig.getCooldown(player)))
-    );
+      BreedConfig.SuccessItems successItems = CobbleUtils.breedconfig.getSuccessItems();
 
-    if (UIUtils.isInside(info, rows)) {
-      GooeyButton button = GooeyButton.builder()
-        .display(info.getItemStack())
-        .title(AdventureTranslator.toNative(info.getDisplayname()))
-        .lore(Text.class, AdventureTranslator.toNativeL(infoLore))
-        .build();
-      template.set(info.getSlot(), button);
-    }
+      List<String> infoLore = new ArrayList<>(info.getLore());
+      infoLore.replaceAll(s ->
+        s.replace("%ah%", String.format("%.2f%%", successItems.getPercentageTransmitAH()))
+          .replace("%destinyknot%", String.format("%.2f%%", successItems.getPercentageDestinyKnot()))
+          .replace("%everstone%", String.format("%.2f%%", successItems.getPercentageEverStone()))
+          .replace("%poweritem%", String.format("%.2f%%", successItems.getPercentagePowerItem()))
+          .replace("%eggmoves%", String.format("%.2f%%", CobbleUtils.breedconfig.getSuccessItems().getPercentageEggMoves()))
+          .replace("%masuda%", CobbleUtils.breedconfig.isMethodmasuda() ? CobbleUtils.language.getYes() : CobbleUtils.language.getNo())
+          .replace("%multipliermasuda%", String.valueOf(CobbleUtils.breedconfig.getMultipliermasuda()))
+          .replace("%maxivs%", String.valueOf(CobbleUtils.breedconfig.getMaxIvsRandom()))
+          .replace("%shinyrate%", String.valueOf(Cobblemon.INSTANCE.getConfig().getShinyRate()))
+          .replace("%multipliershiny%", String.valueOf(CobbleUtils.breedconfig.getMultiplierShiny()))
+          .replace("%cooldown%", PlayerUtils.getCooldown(CobbleUtils.breedconfig.getCooldown(player)))
+      );
 
-    List<PlotBreeding> plots = DatabaseClientFactory.databaseClient.getPlots(player);
-    for (int i = 0; i < max; i++) {
-      PlotBreeding plotBreeding = plots.get(i);
-      List<String> lore = new ArrayList<>(CobbleUtils.breedconfig.getPlotItem().getLore());
-      int amount = plotBreeding.getEggs().size();
-      List<Pokemon> pokemons = new ArrayList<>();
-      pokemons.add(plotBreeding.getMale() != null ? Pokemon.Companion.loadFromJSON(plotBreeding.getMale()) : null);
-      pokemons.add(plotBreeding.getFemale() != null ? Pokemon.Companion.loadFromJSON(plotBreeding.getFemale()) : null);
-      lore.replaceAll(s -> PokemonUtils.replace(s, pokemons)
-        .replace("%cooldown%", PlayerUtils.getCooldown(new Date(plotBreeding.getCooldown())))
-        .replace("%eggs%", String.valueOf(amount)));
-
-      ItemStack itemStack;
-      if (plotBreeding.getEggs().isEmpty()) {
-        itemStack = CobbleUtils.breedconfig.getPlotItem().getItemStack();
-      } else {
-        itemStack = CobbleUtils.breedconfig.getPlotThereAreEggs().getItemStack(amount);
+      if (UIUtils.isInside(info, rows)) {
+        GooeyButton button = GooeyButton.builder()
+          .display(info.getItemStack())
+          .title(AdventureTranslator.toNative(info.getDisplayname()))
+          .lore(Text.class, AdventureTranslator.toNativeL(infoLore))
+          .build();
+        template.set(info.getSlot(), button);
       }
 
-      int finalI = i;
-      GooeyButton button = GooeyButton.builder()
-        .display(itemStack)
-        .title(AdventureTranslator.toNative(CobbleUtils.breedconfig.getPlotItem().getDisplayname()))
-        .lore(Text.class, AdventureTranslator.toNativeL(lore))
-        .onClick(action -> {
-          plotBreeding.checking(player);
-          PlotBreedingManagerUI.open(player, plotBreeding, finalI);
-        })
+      List<PlotBreeding> plots = DatabaseClientFactory.databaseClient.getPlots(player);
+      for (int i = 0; i < max; i++) {
+        PlotBreeding plotBreeding = plots.get(i);
+        List<String> lore = new ArrayList<>(CobbleUtils.breedconfig.getPlotItem().getLore());
+        int amount = plotBreeding.getEggs().size();
+        List<Pokemon> pokemons = new ArrayList<>();
+        pokemons.add(plotBreeding.getMale() != null ? Pokemon.Companion.loadFromJSON(plotBreeding.getMale()) : null);
+        pokemons.add(plotBreeding.getFemale() != null ? Pokemon.Companion.loadFromJSON(plotBreeding.getFemale()) : null);
+        lore.replaceAll(s -> PokemonUtils.replace(s, pokemons)
+          .replace("%cooldown%", PlayerUtils.getCooldown(new Date(plotBreeding.getCooldown())))
+          .replace("%eggs%", String.valueOf(amount)));
+
+        ItemStack itemStack;
+        if (plotBreeding.getEggs().isEmpty()) {
+          itemStack = CobbleUtils.breedconfig.getPlotItem().getItemStack();
+        } else {
+          itemStack = CobbleUtils.breedconfig.getPlotThereAreEggs().getItemStack(amount);
+        }
+
+        int finalI = i;
+        GooeyButton button = GooeyButton.builder()
+          .display(itemStack)
+          .title(AdventureTranslator.toNative(CobbleUtils.breedconfig.getPlotItem().getDisplayname()))
+          .lore(Text.class, AdventureTranslator.toNativeL(lore))
+          .onClick(action -> {
+            plotBreeding.checking(player);
+            PlotBreedingManagerUI.open(player, plotBreeding, finalI);
+          })
+          .build();
+        template.set(CobbleUtils.breedconfig.getPlotSlots().get(i), button);
+      }
+
+      GooeyPage page = GooeyPage.builder()
+        .template(template)
+        .title(AdventureTranslator.toNative(CobbleUtils.breedconfig.getTitleselectplot()))
         .build();
-      template.set(CobbleUtils.breedconfig.getPlotSlots().get(i), button);
+
+      UIManager.openUIForcefully(player, page);
+    } catch (Exception e) {
+      e.printStackTrace();
     }
-
-    GooeyPage page = GooeyPage.builder()
-      .template(template)
-      .title(AdventureTranslator.toNative(CobbleUtils.breedconfig.getTitleselectplot()))
-      .build();
-
-    UIManager.openUIForcefully(player, page);
   }
 }

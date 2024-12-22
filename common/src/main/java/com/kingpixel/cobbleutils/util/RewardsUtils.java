@@ -13,6 +13,7 @@ import net.minecraft.server.network.ServerPlayerEntity;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Utility class for managing player rewards.
@@ -37,8 +38,10 @@ public class RewardsUtils {
         newRewardsData.init();
         return newRewardsData;
       });
-    saveItemToRewardsData(player, rewardsData, itemStack);
-    rewardsData.writeInfo();
+
+    if (saveItemToRewardsData(player, rewardsData, itemStack)) {
+      rewardsData.writeInfo();
+    }
     return true;
   }
 
@@ -57,10 +60,14 @@ public class RewardsUtils {
         return newRewardsData;
       });
 
+    boolean update = false;
+
     for (ItemStack itemStack : itemStacks) {
-      saveItemToRewardsData(player, rewardsData, itemStack);
+      update = saveItemToRewardsData(player, rewardsData, itemStack);
     }
-    rewardsData.writeInfo();
+    if (update) {
+      rewardsData.writeInfo();
+    }
   }
 
   /**
@@ -70,18 +77,18 @@ public class RewardsUtils {
    * @param rewardsData RewardsData object to save the item to
    * @param itemStack   ItemStack to save
    */
-  private static void saveItemToRewardsData(ServerPlayerEntity player, RewardsData rewardsData, ItemStack itemStack) {
+  private static boolean saveItemToRewardsData(ServerPlayerEntity player, RewardsData rewardsData, ItemStack itemStack) {
     // Intentar dar el objeto directamente al jugador
     if (!CobbleUtils.config.isStorageRewards() || CobbleUtils.config.isDirectreward()) {
       if (!player.giveItemStack(itemStack)) {
         CobbleUtils.server.execute(() -> player.dropItem(itemStack, true));
       }
-      return;
+      return false;
     }
 
     // Intentar dar el objeto al jugador
     if (player.giveItemStack(itemStack)) {
-      return; // Objeto entregado, no es necesario procesar más
+      return false; // Objeto entregado, no es necesario procesar más
     }
 
     int remainingCount = itemStack.getCount();
@@ -113,6 +120,7 @@ public class RewardsUtils {
       rewardsData.getItems().add(ItemObject.createItemObject(newItemStack));
       remainingCount -= toAdd;
     }
+    return true;
   }
 
 
@@ -124,22 +132,27 @@ public class RewardsUtils {
    *
    * @return
    */
+  @Deprecated
   public static boolean saveRewardPokemon(ServerPlayerEntity player, Pokemon pokemon) throws NoPokemonStoreException {
+    boolean update = false;
     if (pokemon == null)
-      return false;
-    if (Cobblemon.INSTANCE.getStorage().getParty(player.getUuid()).add(pokemon)) {
-      return true;
+      return update;
+    if (!Cobblemon.INSTANCE.getStorage().getParty(player.getUuid()).add(pokemon)) {
+      update = true;
     }
-    RewardsData rewardsData = CobbleUtils.rewardsManager.getRewardsData().computeIfAbsent(
-      player.getUuid(),
-      uuid -> {
-        RewardsData newRewardsData = new RewardsData(player.getGameProfile().getName(), player.getUuid());
-        newRewardsData.init();
-        return newRewardsData;
-      });
-    rewardsData.getPokemons().add(pokemon.saveToJSON(new JsonObject()));
-    rewardsData.writeInfo();
-    return true;
+
+    if (update) {
+      RewardsData rewardsData = CobbleUtils.rewardsManager.getRewardsData().computeIfAbsent(
+        player.getUuid(),
+        uuid -> {
+          RewardsData newRewardsData = new RewardsData(player.getGameProfile().getName(), player.getUuid());
+          newRewardsData.init();
+          return newRewardsData;
+        });
+      rewardsData.getPokemons().add(pokemon.saveToJSON(new JsonObject()));
+      rewardsData.writeInfo();
+    }
+    return update;
   }
 
   /**
@@ -156,12 +169,25 @@ public class RewardsUtils {
         newRewardsData.init();
         return newRewardsData;
       });
-    for (Pokemon pokemon : pokemons) {
-      if (pokemon == null)
-        continue;
-      rewardsData.getPokemons().add(pokemon.saveToJSON(new JsonObject()));
+
+    boolean update = false;
+
+    try {
+      var party = Cobblemon.INSTANCE.getStorage().getParty(player.getUuid());
+      for (Pokemon pokemon : pokemons) {
+        if (pokemon == null) continue;
+        if (!party.add(pokemon)) {
+          update = true;
+          rewardsData.getPokemons().add(pokemon.saveToJSON(new JsonObject()));
+        }
+      }
+    } catch (NoPokemonStoreException e) {
+      throw new RuntimeException(e);
     }
-    rewardsData.writeInfo();
+
+    if (update) {
+      rewardsData.writeInfo();
+    }
   }
 
   /**
@@ -182,7 +208,6 @@ public class RewardsUtils {
       });
     rewardsData.getCommands().add(command.replace("%player%", player.getGameProfile().getName()));
     giveCommandRewards(rewardsData.getCommands());
-    rewardsData.writeInfo();
     return true;
   }
 
@@ -203,7 +228,6 @@ public class RewardsUtils {
     commands.replaceAll(command -> command.replace("%player%", player.getGameProfile().getName()));
     rewardsData.getCommands().addAll(commands);
     giveCommandRewards(rewardsData.getCommands());
-    rewardsData.writeInfo();
   }
 
   private static void giveCommandRewards(List<String> commands) {
@@ -223,6 +247,7 @@ public class RewardsUtils {
    * @param player ServerPlayerEntity to claim rewards
    */
   public static void claimRewards(ServerPlayerEntity player) {
+    AtomicBoolean update = new AtomicBoolean(false);
     RewardsData rewardsData = CobbleUtils.rewardsManager.getRewardsData().get(player.getUuid());
     if (rewardsData == null) {
       rewardsData = CobbleUtils.rewardsManager.getRewardsData().computeIfAbsent(
@@ -249,6 +274,7 @@ public class RewardsUtils {
           Pokemon pokemon1 = Pokemon.Companion.loadFromJSON(pokemon);
           if (finalPlayerPartyStore.add(pokemon1)) {
             pokemonsToRemove.add(pokemon);
+            update.set(true);
           }
         } catch (Exception e) {
           CobbleUtils.LOGGER.info(e.getMessage());
@@ -267,6 +293,7 @@ public class RewardsUtils {
             return;
           boolean success = player.getInventory().insertStack(itemStack);
           if (success) {
+            update.set(true);
             itemsToRemove.add(item);
           }
         } catch (Exception e) {
@@ -282,6 +309,7 @@ public class RewardsUtils {
       rewardsData.getCommands().forEach(command -> {
         try {
           if (CobbleUtilities.executeCommand(command)) {
+            update.set(true);
             commandsToRemove.add(command);
           }
         } catch (Exception e) {
@@ -292,7 +320,9 @@ public class RewardsUtils {
       rewardsData.getCommands().removeAll(commandsToRemove);
     }
 
-    rewardsData.writeInfo();
+    if (update.get()) {
+      rewardsData.writeInfo();
+    }
   }
 
   /**

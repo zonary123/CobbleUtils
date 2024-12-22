@@ -11,11 +11,11 @@ import com.cobblemon.mod.common.api.pokemon.Natures;
 import com.cobblemon.mod.common.api.pokemon.PokemonProperties;
 import com.cobblemon.mod.common.api.pokemon.PokemonPropertyExtractor;
 import com.cobblemon.mod.common.api.pokemon.egg.EggGroup;
-import com.cobblemon.mod.common.api.pokemon.evolution.PreEvolution;
 import com.cobblemon.mod.common.api.pokemon.stats.Stats;
 import com.cobblemon.mod.common.api.storage.NoPokemonStoreException;
 import com.cobblemon.mod.common.item.CobblemonItem;
 import com.cobblemon.mod.common.pokemon.Pokemon;
+import com.cobblemon.mod.common.pokemon.abilities.HiddenAbilityType;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -35,9 +35,11 @@ import lombok.Setter;
 import lombok.ToString;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
-import org.jetbrains.annotations.NotNull;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -227,8 +229,8 @@ public class EggData {
   public static Pokemon createEgg(
     Pokemon male, Pokemon female, ServerPlayerEntity player) throws NoPokemonStoreException {
 
-    // Intercambiar posiciones si Ditto está en la posición female
-    if (female.getSpecies().showdownId().equalsIgnoreCase("ditto")) {
+
+    if (isDitto(female)) {
       Pokemon temp = male;
       male = female;
       female = temp;
@@ -237,10 +239,9 @@ public class EggData {
     Pokemon usePokemonToEgg;
     Pokemon egg;
     boolean random = false;
-    // Caso cuando Ditto está en la posición male
-    if (male.getSpecies().showdownId().equalsIgnoreCase("ditto")) {
-      if (female.getSpecies().showdownId().equalsIgnoreCase("ditto")) {
-        // Ambos Pokémon son Ditto
+
+    if (isDitto(male)) {
+      if (isDitto(female)) {
         if (!CobbleUtils.breedconfig.isDoubleditto())
           return null;
         do {
@@ -248,16 +249,13 @@ public class EggData {
         } while (usePokemonToEgg.isUltraBeast() || usePokemonToEgg.isLegendary());
         random = true;
       } else {
-        // Solo uno es Ditto
         if (!CobbleUtils.breedconfig.isDitto())
           return null;
         usePokemonToEgg = female;
       }
     } else if (male.getSpecies().showdownId().equalsIgnoreCase(female.getSpecies().showdownId())) {
-      // Ambos Pokémon son de la misma especie (y ninguno es Ditto)
       usePokemonToEgg = female;
     } else {
-      // Diferentes especies, verificar compatibilidad
       if (isCompatible(male, female)) {
         usePokemonToEgg = female;
       } else {
@@ -279,14 +277,12 @@ public class EggData {
 
     if (random) egg.getPersistentData().putBoolean("random", true);
 
-    // Aplicar la lógica de mecánicas y tamaño
+
     mechanicsLogic(male, female, usePokemonToEgg, egg);
 
 
     ScaleEvent.solveScale(egg);
 
-
-    // Enviar mensaje al jugador
     PlayerUtils.sendMessage(player, PokemonUtils.replace(CobbleUtils.breedconfig.getCreateEgg()
         .replace("%egg%", egg.getPersistentData().getString("species")),
       List.of(male, female, egg)), CobbleUtils.breedconfig.getPrefix());
@@ -304,7 +300,8 @@ public class EggData {
 
   public static boolean isDitto(Pokemon pokemon) {
     if (pokemon == null) return false;
-    return pokemon.getSpecies().showdownId().equalsIgnoreCase("ditto");
+    return pokemon.getSpecies().showdownId().equalsIgnoreCase("ditto") ||
+      pokemon.getForm().getEggGroups().contains(EggGroup.DITTO);
   }
 
   private static void mechanicsLogic(Pokemon male, Pokemon female, Pokemon usePokemonToEgg, Pokemon egg) {
@@ -332,25 +329,31 @@ public class EggData {
     applyPokeBall(male, female, egg);
 
     // Egg Moves (Done)
-    applyEggMoves(male, female, usePokemonToEgg, egg);
+    applyEggMoves(male, female, firstEvolution, egg);
 
     egg.getPersistentData().putString("Date_Breed", new Date().toString());
   }
 
-  private static void applyEggMoves(Pokemon male, Pokemon female, Pokemon usePokemonToEgg, Pokemon egg) {
+  private static List<String> getMoves(Pokemon pokemon) {
+    List<String> s = new ArrayList<>();
+    pokemon.getMoveSet().forEach(move -> s.add(move.getName()));
+    pokemon.getBenchedMoves().forEach(move -> s.add(move.getMoveTemplate().getName()));
+    return s;
+  }
+
+  private static void applyEggMoves(Pokemon male, Pokemon female, Pokemon firstEvolution, Pokemon egg) {
     if (Utils.RANDOM.nextDouble(100) >= CobbleUtils.breedconfig.getSuccessItems().getPercentageEggMoves()) return; //
     // default 0%
-    List<String> moves = new ArrayList<>();
-    male.getAllAccessibleMoves().forEach(move -> moves.add(move.getName()));
-    female.getAllAccessibleMoves().forEach(move -> moves.add(move.getName()));
+    List<String> moves = new ArrayList<>(getMoves(male));
+    moves.addAll(getMoves(female));
+
 
     List<String> names = new ArrayList<>();
-    usePokemonToEgg.getForm().getMoves().getEggMoves().forEach(eggmove -> {
+    firstEvolution.getForm().getMoves().getEggMoves().forEach(eggmove -> {
       if (moves.contains(eggmove.getName())) {
         names.add(eggmove.getName());
       }
     });
-
 
     if (!names.isEmpty()) {
       JsonArray jsonArray = new JsonArray();
@@ -563,54 +566,49 @@ public class EggData {
   }
 
   private static void applyAbility(Pokemon male, Pokemon female, Pokemon firstEvolution, Pokemon egg) {
+    // Double ditto
     if (isDitto(male) && isDitto(female)) {
       Ability randomAbility = PokemonUtils.getRandomAbility(firstEvolution);
       egg.getPersistentData().putString("ability", randomAbility.getName());
       return;
     }
-    List<Pokemon> pokemons = new ArrayList<>();
-    if (!isDitto(male)) pokemons.add(male);
-    if (!isDitto(female)) pokemons.add(female);
 
-    boolean applyAh = false;
-
-    if (!pokemons.isEmpty()) {
-      boolean isAH = pokemons.stream().anyMatch(PokemonUtils::isAH);
-      boolean success = Utils.RANDOM.nextDouble(100) <= CobbleUtils.breedconfig.getSuccessItems().getPercentageTransmitAH();
-      boolean evolutionOrSameSpecie = isEvolutionOrSameSpecie(male, female);
-      if (isAH && evolutionOrSameSpecie && success) applyAh = true;
+    if (isDitto(female)) {
+      egg.getPersistentData().putString("ability", PokemonUtils.getRandomAbility(firstEvolution).getName());
+      return;
     }
-    if (applyAh) {
+
+    List<Ability> normalAbilities = new ArrayList<>();
+    List<Ability> hiddenAbilities = new ArrayList<>();
+
+    firstEvolution.getForm().getAbilities().forEach(ability -> {
+      if (ability.getType() instanceof HiddenAbilityType) {
+        hiddenAbilities.add(ability.getTemplate().create(false));
+      } else {
+        normalAbilities.add(ability.getTemplate().create(false));
+      }
+    });
+
+    boolean femaleAh = PokemonUtils.isAH(female);
+    boolean success = Utils.RANDOM.nextDouble(100) <= CobbleUtils.breedconfig.getSuccessItems().getPercentageTransmitAH();
+
+    if (femaleAh && success) {
       egg.getPersistentData().putString("ability", PokemonUtils.getAH(firstEvolution).getName());
     } else {
-      egg.getPersistentData().putString("ability", PokemonUtils.getRandomAbility(firstEvolution).getName());
+      Ability femaleAbility = female.getAbility();
+      if (normalAbilities.contains(femaleAbility)) {
+        double probability = normalAbilities.size() == 2 ? 80.0 : 100.0;
+        if (Utils.RANDOM.nextDouble(100) <= probability) {
+          egg.getPersistentData().putString("ability", femaleAbility.getName());
+        } else {
+          normalAbilities.remove(femaleAbility);
+          egg.getPersistentData().putString("ability", normalAbilities.get(0).getName());
+        }
+      } else {
+        egg.getPersistentData().putString("ability", PokemonUtils.getRandomAbility(firstEvolution).getName());
+      }
     }
   }
-
-  private static boolean isEvolutionOrSameSpecie(@NotNull Pokemon male, @NotNull Pokemon female) {
-    if (isDitto(male) || isDitto(female)) return true;
-    if (male.getForm().showdownId().equalsIgnoreCase(female.getForm().showdownId())) return true;
-
-    Set<String> evolutionsMale = new HashSet<>();
-    evolutionsMale.add(male.getForm().showdownId());
-    Set<String> evolutionsFemale = new HashSet<>();
-    evolutionsFemale.add(female.getForm().showdownId());
-
-    PreEvolution malePreEvolution = male.getForm().getPreEvolution();
-    while (malePreEvolution != null) {
-      evolutionsMale.add(malePreEvolution.getForm().showdownId());
-      malePreEvolution = malePreEvolution.getForm().getPreEvolution();
-    }
-
-    PreEvolution femalePreEvolution = female.getForm().getPreEvolution();
-    while (femalePreEvolution != null) {
-      evolutionsFemale.add(femalePreEvolution.getForm().showdownId());
-      femalePreEvolution = femalePreEvolution.getForm().getPreEvolution();
-    }
-
-    return evolutionsMale.contains(female.getForm().showdownId()) || evolutionsFemale.contains(male.getForm().showdownId());
-  }
-
 
   private static Pokemon pokemonToEgg(Pokemon usePokemon, boolean dittos, Pokemon female) {
     String specie = getExcepcionalSpecie(usePokemon);

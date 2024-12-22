@@ -187,7 +187,7 @@ public class ShopConfigMenu {
 
   public static void open(ServerPlayerEntity player, ShopConfig shopConfig, String mod_id, boolean byCommand) {
     try {
-      int rows = shopConfig.getShop().getRows();
+      int rows = shopConfig.getShopConfigMenu().getRows();
       ChestTemplate template = ChestTemplate
         .builder(rows)
         .build();
@@ -253,20 +253,21 @@ public class ShopConfigMenu {
         template.set(itemModelShop.getSlot(), button);
       });
 
-      template.fill(GooeyButton.of(shopConfig.getShop().fill.getItemStack()));
 
-      if (shopConfig.getShop().fillItems != null && !shopConfig.getShop().fillItems.isEmpty()) {
-        shopConfig.getShop().fillItems.forEach(fill -> {
-          GooeyButton button = GooeyButton.builder()
-            .display(fill.getItemStack())
-            .title(AdventureTranslator.toNative(fill.getDisplayname()))
-            .lore(Text.class, AdventureTranslator.toNativeL(fill.getLore()))
-            .onClick(action -> {
-              SoundUtil.playSound(CobbleUtils.shopLang.getSoundError(), player);
-            })
-            .build();
+      List<Shop.FillItems> fillItems = shopConfig.getShopConfigMenu().getFillItems();
 
-          fill.getSlots().forEach(slot -> template.set(slot, button));
+      template.fill(shopConfig.getShopConfigMenu().getFill().getButton(action -> {
+      }));
+
+      if (fillItems != null && !fillItems.isEmpty()) {
+        fillItems.forEach(fillItem -> {
+          GooeyButton button = fillItem.getButton(action -> {
+          });
+          fillItem.getSlots().forEach(slot -> {
+            if (UIUtils.isInside(slot, rows)) {
+              template.set(slot, button);
+            }
+          });
         });
       }
 
@@ -274,14 +275,14 @@ public class ShopConfigMenu {
         UIManager.closeUI(action.getPlayer());
       });
 
-      template.set(shopConfig.getShop().getRows() * 9 - 5, close);
+      template.set(shopConfig.getShopConfigMenu().getRows() * 9 - 5, close);
 
       GooeyPage page = GooeyPage
         .builder()
         .template(template)
-        .title(AdventureTranslator.toNative(shopConfig.getShop().title))
+        .title(AdventureTranslator.toNative(shopConfig.getShopConfigMenu().title))
         .onClose(pageAction -> {
-          SoundUtil.playSound(shopConfig.getShop().getSoundclose(), player);
+          SoundUtil.playSound(shopConfig.getShopConfigMenu().getSoundclose(), player);
         })
         .build();
 

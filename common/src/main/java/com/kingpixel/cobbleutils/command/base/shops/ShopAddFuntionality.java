@@ -73,7 +73,7 @@ public class ShopAddFuntionality {
     //
     GooeyButton confirm = UIUtils.getConfirmButton(action -> {
       if (product != null && product.getBuy() != null && product.getSell() != null && product.getProduct() != null) {
-        shopConfig.getShop().addProduct(product, modId, shop);
+        shopConfig.getShopConfigMenu().addProduct(product, modId, shop);
         UIManager.closeUI(player);
       } else {
         PlayerUtils.sendMessage(

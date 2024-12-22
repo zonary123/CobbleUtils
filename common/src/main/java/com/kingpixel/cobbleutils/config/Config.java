@@ -81,7 +81,7 @@ public class Config {
     pickup = true;
     shinyparticle = true;
     party = true;
-    storageRewards = true;
+    storageRewards = false;
     directreward = false;
     activeshinytoken = true;
     alertreward = 15;

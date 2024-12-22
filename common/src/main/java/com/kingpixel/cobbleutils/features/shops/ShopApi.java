@@ -29,6 +29,7 @@ public class ShopApi {
                               boolean active, String pathShop, String pathShops) {
     if (active) {
       shopConfig.init(pathShop, modid, pathShops);
+      
       for (String command : commands) {
         //LiteralArgumentBuilder<ServerCommandSource> shopliteral = CommandManager.literal(command + "shop");
         ShopCommand.register(dispatcher, command, shopConfig, modid, true);

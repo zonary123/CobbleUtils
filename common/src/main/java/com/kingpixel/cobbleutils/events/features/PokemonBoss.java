@@ -51,8 +51,7 @@ public class PokemonBoss {
 
         BossConfig config = BossConfig.getBossConfig(pokemon);
         if (config == null) return Unit.INSTANCE;
-        config.apply(pokemonEntity);
-
+        if (Utils.RANDOM.nextInt(CobbleUtils.config.getBosschance()) == 1) config.apply(pokemonEntity);
       } catch (Exception e) {  // Reemplaza con excepciones específicas
         e.printStackTrace();
       }

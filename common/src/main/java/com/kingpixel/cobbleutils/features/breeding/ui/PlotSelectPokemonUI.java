@@ -63,6 +63,7 @@ public class PlotSelectPokemonUI {
 
   private static void addIfAcceptable(List<Pokemon> pokemons, Pokemon pokemon, ServerPlayerEntity player,
                                       Gender gender, PlotBreeding plotBreeding) {
+    if (pokemon.getForm().getEggGroups().contains(EggGroup.UNDISCOVERED)) return;
     if (isAcceptablePokemon(pokemon, gender, plotBreeding, player, false)) {
       pokemons.add(pokemon);
     }
@@ -131,7 +132,7 @@ public class PlotSelectPokemonUI {
   }
 
   private static boolean isPokemonBreedable(Pokemon pokemon, ServerPlayerEntity player, boolean notify) {
-    boolean isNotBreedable = pokemon.getSpecies().getEggGroups().contains(EggGroup.UNDISCOVERED)
+    boolean isNotBreedable = pokemon.getForm().getEggGroups().contains(EggGroup.UNDISCOVERED)
       || pokemon.getSpecies().showdownId().equalsIgnoreCase("egg")
       || (pokemon.getSpecies().showdownId().equalsIgnoreCase("ditto") && !CobbleUtils.breedconfig.isDitto())
       || !PokemonUtils.isBreedable(pokemon)

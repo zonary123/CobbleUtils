@@ -64,6 +64,7 @@ public class Shop {
   private List<Integer> slotsClose;
   private List<Integer> slotsNext;
   //private ItemModel money;
+  private ItemModel fill;
   private List<FillItems> fillItems;
 
   public Shop() {
@@ -86,6 +87,7 @@ public class Shop {
     this.next = CobbleUtils.language.getItemNext();
     this.previous = CobbleUtils.language.getItemPrevious();
     this.products = getDefaultProducts();
+    this.fill = new ItemModel("");
     this.fillItems = new ArrayList<>();
     this.fillItems.add(new FillItems());
     this.shopType = new ShopTypePermanent();
@@ -117,6 +119,7 @@ public class Shop {
     display.setLore(lore);
     this.itemInfoShop = display;
     this.products = getDefaultProducts();
+    this.fill = new ItemModel("");
     this.fillItems = new ArrayList<>();
     this.fillItems.add(new FillItems());
     switch (shopType.getTypeShop()) {
@@ -230,15 +233,6 @@ public class Shop {
     }
 
     try {
-      short rows = 0;
-      if (rows >= 6) {
-        rows = 6;
-      } else if (rows <= 1) {
-        rows = 1;
-      } else {
-        rows = this.rows;
-      }
-
       ChestTemplate template = ChestTemplate
         .builder(rows)
         .build();
@@ -256,7 +250,7 @@ public class Shop {
       }
 
       products.forEach(product -> {
-        if (!shopConfig.getShop().isViewItemsWithOptionPermission()) {
+        if (!shopConfig.getShopConfigMenu().isViewItemsWithOptionPermission()) {
           if (product.getPermission() != null) {
             if (LuckPermsUtil.checkPermission(player, product.getPermission()) && product.getNotCanBuyWithPermission() != null && product.getNotCanBuyWithPermission())
               return;
@@ -295,7 +289,7 @@ public class Shop {
           )))
           .onClick(action -> {
             if (typeError == TypeError.NONE) {
-              if (shopConfig.getShop().isViewItemsWithOptionPermission()) {
+              if (shopConfig.getShopConfigMenu().isViewItemsWithOptionPermission()) {
                 if (product.getPermission() != null) {
                   if (LuckPermsUtil.checkPermission(player, product.getPermission()) && product.getNotCanBuyWithPermission() != null && product.getNotCanBuyWithPermission()) {
                     PlayerUtils.sendMessage(
@@ -348,6 +342,8 @@ public class Shop {
         buttons.add(button);
       });
 
+      template.fill(fill.getButton(action -> {
+      }));
 
       if (!getFillItems().isEmpty()) {
         getFillItems().forEach(fillItem -> {
@@ -356,16 +352,8 @@ public class Shop {
             template.set(fillItemSlot, GooeyButton.of(itemStack));
           });
         });
-      } else {
-        template.fill(GooeyButton.of(Utils.parseItemId(CobbleUtils.config.getFill())));
       }
 
-
-      template.rectangle(getRectangle().getStartRow(),
-        getRectangle().getStartColumn(),
-        getRectangle().getLength(),
-        getRectangle().getWidth(),
-        new PlaceholderButton());
 
       // Item Show Cooldown and Amount Products
       ItemModel itemInfoShop = shop.getItemInfoShop();
@@ -409,7 +397,7 @@ public class Shop {
       }
 
       // Balance
-      if (UIUtils.isInside(CobbleUtils.shopLang.getBalance(), rows)) {
+      if (UIUtils.isInside(getSlotbalance(), rows)) {
         ItemModel balance = CobbleUtils.shopLang.getBalance();
         List<String> lorebalance = new ArrayList<>(balance.getLore());
 
@@ -417,12 +405,11 @@ public class Shop {
           .replace("%balance%", EconomyUtil.getBalance(player, getCurrency(), EconomyUtil.getDecimals(getCurrency())))
           .replace("%currency%", getCurrency())
           .replace("%symbol%", symbol));
-        template.set(this.slotbalance, GooeyButton.builder()
+        template.set(getSlotbalance(), GooeyButton.builder()
           .display(balance.getItemStack())
           .title(AdventureTranslator.toNative(balance.getDisplayname()))
           .lore(Text.class, AdventureTranslator.toNativeL(lorebalance))
           .build());
-
       }
 
       // Display
@@ -487,11 +474,11 @@ public class Shop {
           }
         }
       }
-      PlaceholderButton placeholder = new PlaceholderButton();
       LinkedPage.Builder linkedPageBuilder = LinkedPage.builder();
 
-      template.rectangle(rectangle.getStartRow(), rectangle.getStartColumn(), rectangle.getLength(), rectangle.getWidth(),
-        placeholder);
+      rectangle.apply(template);
+
+
       linkedPageBuilder
         .template(template)
         .title(AdventureTranslator.toNative(title))
@@ -661,7 +648,7 @@ public class Shop {
                                Product product, TypeMenu typeMenu,
                                int amount, String mod_id, boolean byCommand, Shop shop) {
     ChestTemplate template = ChestTemplate
-      .builder(shopConfig.getShop().getRowsBuySellMenu())
+      .builder(shopConfig.getShopConfigMenu().getRowsBuySellMenu())
       .build();
 
     int maxStack = product.getItemchance().getItemStack().getMaxCount();
@@ -701,7 +688,7 @@ public class Shop {
         if (buyProduct(player, product, finalamount, price)) {
           ShopTransactions.addTransaction(player.getUuid(), this, ShopTransactions.ShopAction.BUY, product, BigDecimal.valueOf(finalamount), price);
           open(player, shopConfig, mod_id, false, shop);
-          ShopTransactions.updateTransaction(player.getUuid(), shopConfig.getShop());
+          ShopTransactions.updateTransaction(player.getUuid(), shopConfig.getShopConfigMenu());
         }
       }
       if (typeMenu == TypeMenu.SELL) {
@@ -709,7 +696,7 @@ public class Shop {
           ShopTransactions.addTransaction(player.getUuid(), this, ShopTransactions.ShopAction.SELL, product,
             BigDecimal.valueOf(finalamount), price);
           open(player, shopConfig, mod_id, false, shop);
-          ShopTransactions.updateTransaction(player.getUuid(), shopConfig.getShop());
+          ShopTransactions.updateTransaction(player.getUuid(), shopConfig.getShopConfigMenu());
         }
       }
 
@@ -946,7 +933,7 @@ public class Shop {
     }
 
     viewProduct.setCount((amount == 0 ? 1 : amount));
-    template.set(shopConfig.getShop().getSlotViewProduct(), GooeyButton.builder()
+    template.set(shopConfig.getShopConfigMenu().getSlotViewProduct(), GooeyButton.builder()
       .display(viewProduct)
       .title(AdventureTranslator.toNative(getTitleItem(product)))
       .lore(Text.class, AdventureTranslator.toNativeL(getLoreProduct(
@@ -1013,7 +1000,7 @@ public class Shop {
 
   private void createCloseButton(ChestTemplate template, ShopConfig shopConfig,
                                  String mod_id, ServerPlayerEntity player, boolean byCommand, Shop shop) {
-    template.set((shopConfig.getShop().getRowsBuySellMenu() * 9) - 5, UIUtils.getCloseButton(action -> open(player,
+    template.set((shopConfig.getShopConfigMenu().getRowsBuySellMenu() * 9) - 5, UIUtils.getCloseButton(action -> open(player,
       shopConfig, mod_id, byCommand, shop)));
   }
 

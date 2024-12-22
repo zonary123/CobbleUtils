@@ -34,7 +34,7 @@ public class ShopSellCommand implements Command<ServerCommandSource> {
                 return 0;
               }
               ServerPlayerEntity player = context.getSource().getPlayerOrThrow();
-              ShopConfigMenu shopConfigMenu = CobbleUtils.shopConfig.getShop();
+              ShopConfigMenu shopConfigMenu = CobbleUtils.shopConfig.getShopConfigMenu();
               ShopSell.sellProducts(player, shopConfigMenu);
               return 1;
             })
@@ -45,7 +45,7 @@ public class ShopSellCommand implements Command<ServerCommandSource> {
                 return 0;
               }
               ServerPlayerEntity player = context.getSource().getPlayerOrThrow();
-              ShopConfigMenu shopConfigMenu = CobbleUtils.shopConfig.getShop();
+              ShopConfigMenu shopConfigMenu = CobbleUtils.shopConfig.getShopConfigMenu();
               ShopSell.sellProductHand(player, shopConfigMenu);
               return 1;
             })

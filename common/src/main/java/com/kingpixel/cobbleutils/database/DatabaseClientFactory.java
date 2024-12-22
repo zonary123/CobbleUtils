@@ -1,5 +1,8 @@
 package com.kingpixel.cobbleutils.database;
 
+import com.cobblemon.mod.common.Cobblemon;
+import com.cobblemon.mod.common.api.storage.pc.PCStore;
+import com.cobblemon.mod.common.pokemon.Pokemon;
 import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.Model.DataBaseConfig;
 import com.kingpixel.cobbleutils.features.breeding.models.PlotBreeding;
@@ -30,22 +33,58 @@ public class DatabaseClientFactory {
 
   // Daycare
   public static void CheckDaycarePlots(ServerPlayerEntity player) {
+    AtomicBoolean update = new AtomicBoolean(false);
     List<PlotBreeding> plots = databaseClient.getPlots(player);
+    int size = CobbleUtils.breedconfig.getPlotSlots().size();
+    List<PlotBreeding> removedPlots = new ArrayList<>();
+
     if (plots == null || plots.isEmpty()) {
       plots = new ArrayList<>();
-      for (int i = 0; i < CobbleUtils.breedconfig.getPlotSlots().size(); i++) {
+      for (int i = 0; i < size; i++) {
         plots.add(new PlotBreeding());
       }
+      update.set(true);
     }
-    AtomicBoolean update = new AtomicBoolean(false);
+    if (plots.size() < size) {
+      for (int i = plots.size(); i < size; i++) {
+        plots.add(new PlotBreeding());
+      }
+      update.set(true);
+    }
+
+    if (plots.size() > size) {
+      removedPlots = new ArrayList<>(plots.subList(size, plots.size()));
+      plots = plots.subList(0, size);
+      update.set(true);
+    }
+
+
     plots.forEach(plotBreeding -> {
       if (plotBreeding.checking(player)) {
         update.set(true);
       }
     });
+
     if (update.get()) {
       databaseClient.savePlots(player, plots);
     }
-  }
 
+
+    // Return Pokémon from removed plots
+    try {
+      PCStore pcStore = Cobblemon.INSTANCE.getStorage().getPC(player.getUuid());
+      for (PlotBreeding removedPlot : removedPlots) {
+        if (removedPlot.getMale() != null) {
+          pcStore.add(removedPlot.obtainMale());
+        }
+        if (removedPlot.getFemale() != null) {
+          pcStore.add(removedPlot.obtainFemale());
+        }
+        removedPlot.getEggs().forEach(egg -> pcStore.add(Pokemon.Companion.loadFromJSON(egg)));
+      }
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
+  }
 }
+

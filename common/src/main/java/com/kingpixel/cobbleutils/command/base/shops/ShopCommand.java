@@ -105,7 +105,7 @@ public class ShopCommand implements Command<ServerCommandSource> {
             return 0;
           }
           ServerPlayerEntity player = context.getSource().getPlayerOrThrow();
-          UIManager.openUIForcefully(player, getTransactionsPlayers(player, CobbleUtils.shopConfig.getShop()));
+          UIManager.openUIForcefully(player, getTransactionsPlayers(player, CobbleUtils.shopConfig.getShopConfigMenu()));
           return 1;
         })
         .then(CommandManager.argument("player", EntityArgumentType.player())
@@ -116,7 +116,7 @@ public class ShopCommand implements Command<ServerCommandSource> {
             ServerPlayerEntity player = context.getSource().getPlayerOrThrow();
             UUID targetUUID = EntityArgumentType.getPlayer(context, "player").getUuid();
 
-            UIManager.openUIForcefully(player, getTransactionPlayer(player, targetUUID, CobbleUtils.shopConfig.getShop()));
+            UIManager.openUIForcefully(player, getTransactionPlayer(player, targetUUID, CobbleUtils.shopConfig.getShopConfigMenu()));
             return 1;
           })
         )
@@ -140,7 +140,7 @@ public class ShopCommand implements Command<ServerCommandSource> {
     ServerPlayerEntity player = context.getSource().getPlayerOrThrow();
     String shop = StringArgumentType.getString(context, "shop");
     if (LuckPermsUtil.checkPermission(player, mod_id + ".shop." + shop)) {
-      shopConfig.getShop().open(player, shop, shopConfig, mod_id, isForOtherPlayer);
+      shopConfig.getShopConfigMenu().open(player, shop, shopConfig, mod_id, isForOtherPlayer);
       return 1;
     } else {
       player.sendMessage(
@@ -156,7 +156,7 @@ public class ShopCommand implements Command<ServerCommandSource> {
   private static int executeOpenShopForOtherPlayer(CommandContext<ServerCommandSource> context, ShopConfig shopConfig, String mod_id) throws CommandSyntaxException {
     ServerPlayerEntity player = EntityArgumentType.getPlayer(context, "player");
     String shop = StringArgumentType.getString(context, "shop");
-    shopConfig.getShop().open(player, shop, shopConfig, mod_id, true);
+    shopConfig.getShopConfigMenu().open(player, shop, shopConfig, mod_id, true);
     return 1;
   }
 
@@ -164,7 +164,7 @@ public class ShopCommand implements Command<ServerCommandSource> {
     ServerPlayerEntity player = EntityArgumentType.getPlayer(context, "player");
     String shop = StringArgumentType.getString(context, "shop");
     boolean close = Boolean.parseBoolean(StringArgumentType.getString(context, "close"));
-    shopConfig.getShop().open(player, shop, shopConfig, mod_id, close);
+    shopConfig.getShopConfigMenu().open(player, shop, shopConfig, mod_id, close);
     return 1;
   }
 

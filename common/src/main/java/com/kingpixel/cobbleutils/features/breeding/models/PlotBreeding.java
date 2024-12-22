@@ -1,6 +1,7 @@
 package com.kingpixel.cobbleutils.features.breeding.models;
 
 import com.cobblemon.mod.common.Cobblemon;
+import com.cobblemon.mod.common.api.pokemon.egg.EggGroup;
 import com.cobblemon.mod.common.api.storage.NoPokemonStoreException;
 import com.cobblemon.mod.common.pokemon.Gender;
 import com.cobblemon.mod.common.pokemon.Pokemon;
@@ -135,7 +136,8 @@ public class PlotBreeding {
     if (male != null) {
       if (CobbleUtils.breedconfig.getBlacklist().contains(getPokemonMale().showdownId())
         || CobbleUtils.breedconfig.getBlacklistForm().contains(getPokemonMale().getForm().formOnlyShowdownId())
-        || (haveDoubleDitto && !CobbleUtils.breedconfig.isDoubleditto())) {
+        || (haveDoubleDitto && !CobbleUtils.breedconfig.isDoubleditto())
+        || getPokemonMale().getForm().getEggGroups().contains(EggGroup.UNDISCOVERED)) {
         Cobblemon.INSTANCE.getStorage().getParty(player).add(getPokemonMale());
         male = null;
         banPokemon = true;
@@ -145,7 +147,8 @@ public class PlotBreeding {
     if (female != null) {
       if (CobbleUtils.breedconfig.getBlacklist().contains(getPokemonFemale().showdownId())
         || CobbleUtils.breedconfig.getBlacklistForm().contains(getPokemonFemale().getForm().formOnlyShowdownId())
-        || (haveDoubleDitto && !CobbleUtils.breedconfig.isDoubleditto())) {
+        || (haveDoubleDitto && !CobbleUtils.breedconfig.isDoubleditto())
+        || getPokemonFemale().getForm().getEggGroups().contains(EggGroup.UNDISCOVERED)) {
         Cobblemon.INSTANCE.getStorage().getParty(player).add(getPokemonFemale());
         female = null;
         banPokemon = true;

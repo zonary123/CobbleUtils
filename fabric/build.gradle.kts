@@ -52,6 +52,7 @@ dependencies {
     // Discord
     shadowCommon("club.minnced:discord-webhooks:${property("discord_webhooks_version")}")
     shadowCommon("org.json:json:20210307")
+    shadowCommon("net.objecthunter:exp4j:0.4.8")
 }
 
 tasks.processResources {

@@ -165,7 +165,8 @@ public class ItemChance {
     itemChances.add(new ItemChance("item:1:minecraft:dirt#{CustomModelData:1}", 100));
     itemChances.add(new ItemChance("pokemon:rattata alola", 100));
     itemChances.add(new ItemChance("command:lp user %player% permission set a", 100, "minecraft:emerald", "Give permission a"));
-    itemChances.add(new ItemChance("command:lp user %player% permission set a#lp user %player% permission set b", 100, "minecraft:emerald", "Give permission a and b"));
+    itemChances.add(new ItemChance("command:lp user %player% permission set a|lp user %player% permission set b", 100
+      , "minecraft:emerald", "Give permission a and b"));
     itemChances.add(new ItemChance("money:1", 100));
     itemChances.add(new ItemChance("money:tokens:1", 100));
     itemChances.add(new ItemChance("mod:cobblehunt:radar", 100));
@@ -202,17 +203,20 @@ public class ItemChance {
   public static boolean giveReward(ServerPlayerEntity player, ItemChance itemChance, int amount) {
     try {
       String item = itemChance.getItem();
+      String[] parts = item.split("\\|");
+      if (parts.length > 1) {
+        for (String part : parts) {
+          giveReward(player, new ItemChance(part, itemChance.getChance()), amount);
+        }
+        return true;
+      }
       ItemStack itemStack;
 
       if (item.startsWith("pokemon:")) {
         Pokemon pokemon = getRewardPokemon(item);
         return RewardsUtils.saveRewardPokemon(player, pokemon);
       } else if (item.startsWith("command:")) {
-        String command = item.replace("command:", "");
-        String[] parts = command.split("#");
-        for (String part : parts) {
-          RewardsUtils.saveRewardCommand(player, part);
-        }
+        RewardsUtils.saveRewardCommand(player, item.replace("command:", ""));
         return true;
       } else if (item.startsWith("money:")) {
         return handleMoneyReward(player, item);
@@ -347,6 +351,10 @@ public class ItemChance {
     if (item == null) {
       return Items.AIR.getDefaultStack();
     }
+    String[] parts = item.split("#");
+    if (parts.length > 1) {
+      return getRewardItemStack(parts[0], amount);
+    }
     if (item.startsWith("pokemon:")) {
       return PokemonItem.from(getRewardPokemon(item));
     } else if (item.startsWith("command:")) {
@@ -408,6 +416,10 @@ public class ItemChance {
       return itemChance.getDisplayname();
 
     String item = itemChance.getItem();
+    String[] parts = item.split("#");
+    if (parts.length > 1) {
+      return getTitle(new ItemChance(parts[0], itemChance.getChance()));
+    }
     if (item.startsWith("pokemon:")) {
       return getPokemonTitle(item);
     } else if (item.startsWith("command:")) {
@@ -470,6 +482,7 @@ public class ItemChance {
    *
    * @throws IllegalArgumentException If the list of item chances is empty.
    */
+  @Deprecated
   public static void getRandomReward(List<ItemChance> itemChances, ServerPlayerEntity player) {
     if (itemChances == null || itemChances.isEmpty()) {
       throw new IllegalArgumentException("The list of item chances cannot be empty");

@@ -54,6 +54,7 @@ dependencies {
     // Discord
     shadowCommon("club.minnced:discord-webhooks:${property("discord_webhooks_version")}")
     shadowCommon("org.json:json:20210307")
+    shadowCommon("net.objecthunter:exp4j:0.4.8")
 }
 
 tasks.processResources {
@@ -113,7 +114,7 @@ tasks {
         relocate("net.kyori", "com.kingpixel.cobbleutils.kyori") {
             exclude("net/kyori/adventure/key/**/*")
         }
-        
+
         transformers.add(ServiceFileTransformer())
 
         configurations = listOf(project.configurations.getByName("shadowCommon"))

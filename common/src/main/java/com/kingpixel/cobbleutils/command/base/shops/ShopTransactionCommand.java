@@ -110,7 +110,7 @@ public class ShopTransactionCommand implements Command<ServerCommandSource> {
       .display(itemStack)
       .title(AdventureTranslator.toNative("&b" + title))
       .lore(Text.class, AdventureTranslator.toNativeL(lore))  // Utiliza la lista `lore` completa
-      .onClick(action -> UIManager.openUIForcefully(action.getPlayer(), getTransactionPlayer(viewer, uuid, CobbleUtils.shopConfig.getShop())))
+      .onClick(action -> UIManager.openUIForcefully(action.getPlayer(), getTransactionPlayer(viewer, uuid, CobbleUtils.shopConfig.getShopConfigMenu())))
       .build();
   }
 

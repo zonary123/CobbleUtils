@@ -200,7 +200,7 @@ public class BossConfig {
   public boolean apply(PokemonEntity pokemonEntity) {
     String form = this.getPokemonData();
     Pokemon pokemon = pokemonEntity.getPokemon();
-    pokemon.setShiny(this.isShiny());
+
     int level;
     ((Entity) pokemonEntity).setInvulnerable(true);
     PokemonProperties.Companion.parse("uncatchable=yes " + form).apply(pokemon);
@@ -218,10 +218,10 @@ public class BossConfig {
     pokemon.getPersistentData().putString(BOSS_RARITY_TAG, this.getRarity());
     pokemon.getPersistentData().putBoolean(BOSS_TAG, true);
     pokemon.getPersistentData().putString(SIZE_TAG, SIZE_CUSTOM_TAG);
-    if (this.getMinsize() != this.getMaxsize()) {
-      pokemon.setScaleModifier(Utils.RANDOM.nextFloat(this.getMinsize(), this.getMaxsize()));
+    if (this.getMinsize() == this.getMaxsize()) {
+      pokemon.setScaleModifier(this.getMaxsize());
     } else {
-      pokemon.setScaleModifier(this.getMinsize());
+      pokemon.setScaleModifier(Utils.RANDOM.nextFloat(this.getMinsize(), this.getMaxsize()));
     }
     if (isGlowing()) {
       pokemonEntity.setGlowing(true);
@@ -238,7 +238,7 @@ public class BossConfig {
       }
     }
 
-
+    pokemon.setShiny(this.isShiny());
     pokemonEntity.setCustomName(
       Text.literal(
         getNickname().replace("%pokemon%", pokemon.getDisplayName().getString())

@@ -1,6 +1,7 @@
 package com.kingpixel.cobbleutils.config;
 
 import com.google.gson.Gson;
+import com.google.gson.annotations.SerializedName;
 import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.Model.ItemModel;
 import com.kingpixel.cobbleutils.features.shops.Shop;
@@ -32,11 +33,12 @@ import static com.kingpixel.cobbleutils.features.shops.ShopTransactions.loadTran
 @Setter
 @ToString
 public class ShopConfig {
-  private ShopConfigMenu shop;
+  @SerializedName("shop")
+  private ShopConfigMenu shopConfigMenu;
   public static final Map<ShopConfigMenu.ShopMod, List<Shop>> shops = new ConcurrentHashMap<>();
 
   public ShopConfig() {
-    shop = new ShopConfigMenu();
+    shopConfigMenu = new ShopConfigMenu();
   }
 
   public void createConfigIfNotExists(String pathShop) {
@@ -44,7 +46,7 @@ public class ShopConfig {
       el -> {
         Gson gson = Utils.newGson();
         ShopConfig config = gson.fromJson(el, ShopConfig.class);
-        this.shop = config.getShop();
+        this.shopConfigMenu = config.getShopConfigMenu();
         CobbleUtils.LOGGER.info("shopconfig.json loaded successfully from " + pathShop);
       });
 
@@ -186,7 +188,7 @@ public class ShopConfig {
 
     List<Shop> shopList = addShopsFromPath(mod_id, pathShops);
     shopList.forEach(ShopConfig::checkShop);
-    loadTransactions(shop);
+    loadTransactions(shopConfigMenu);
     ShopConfigMenu.addShops(mod_id, pathShops, shopList);
   }
 }
