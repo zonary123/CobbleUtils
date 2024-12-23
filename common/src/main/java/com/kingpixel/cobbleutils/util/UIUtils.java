@@ -13,7 +13,6 @@ import ca.landonjw.gooeylibs2.api.page.LinkedPage;
 import ca.landonjw.gooeylibs2.api.template.types.ChestTemplate;
 import com.cobblemon.mod.common.Cobblemon;
 import com.cobblemon.mod.common.api.moves.Move;
-import com.cobblemon.mod.common.api.storage.NoPokemonStoreException;
 import com.cobblemon.mod.common.api.storage.party.PlayerPartyStore;
 import com.cobblemon.mod.common.api.storage.pc.PCStore;
 import com.cobblemon.mod.common.item.PokemonItem;
@@ -22,6 +21,7 @@ import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.Model.ItemModel;
 import com.kingpixel.cobbleutils.action.PokemonButtonAction;
 import net.minecraft.component.DataComponentTypes;
+import net.minecraft.component.type.LoreComponent;
 import net.minecraft.item.ItemStack;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
@@ -50,16 +50,15 @@ public class UIUtils {
     if (pokemon == null) {
       return GooeyButton.builder()
         .display(CobbleUtils.language.getItemNoPokemon().getItemStack())
-        .with(DataComponentTypes.class,
-          AdventureTranslator.toNative(CobbleUtils.language.getItemNoPokemon().getDisplayname()))
-        .lore(Text.class, AdventureTranslator.toNativeL(CobbleUtils.language.getItemNoPokemon().getLore()))
+        .with(DataComponentTypes.ITEM_NAME, AdventureTranslator.toNative(CobbleUtils.language.getItemNoPokemon().getDisplayname()))
+        .with(DataComponentTypes.LORE, new LoreComponent(AdventureTranslator.toNativeL(CobbleUtils.language.getItemNoPokemon().getLore())))
         .build();
     }
 
     return GooeyButton.builder()
       .display(PokemonItem.from(pokemon))
-      .title(AdventureTranslator.toNative(PokemonUtils.replace(CobbleUtils.language.getPokemonnameformat(), pokemon)))
-      .lore(Text.class, AdventureTranslator.toNativeL(lorepokemon(pokemon)))
+      .with(DataComponentTypes.ITEM_NAME, AdventureTranslator.toNative(PokemonUtils.replace(CobbleUtils.language.getPokemonnameformat(), pokemon)))
+      .with(DataComponentTypes.LORE, new LoreComponent(AdventureTranslator.toNativeL(lorepokemon(pokemon))))
       .onClick(action -> actionpokemon.accept(new PokemonButtonAction(action, pokemon)))
       .build();
   }
@@ -130,15 +129,18 @@ public class UIUtils {
     if (pokemon == null) {
       return GooeyButton.builder()
         .display(CobbleUtils.language.getItemNoPokemon().getItemStack())
-        .title(AdventureTranslator.toNative(CobbleUtils.language.getItemNoPokemon().getDisplayname()))
-        .lore(Text.class, AdventureTranslator.toNativeL(CobbleUtils.language.getItemNoPokemon().getLore()))
+        .with(DataComponentTypes.ITEM_NAME,
+          AdventureTranslator.toNative(CobbleUtils.language.getItemNoPokemon().getDisplayname()))
+        .with(DataComponentTypes.LORE, new LoreComponent(AdventureTranslator.toNativeL(CobbleUtils.language.getItemNoPokemon().getLore())))
         .build();
     }
 
     return GooeyButton.builder()
       .display(PokemonItem.from(pokemon))
-      .title(AdventureTranslator.toNative(PokemonUtils.replace(CobbleUtils.language.getPokemonnameformat(), pokemon)))
-      .lore(Text.class, AdventureTranslator.toNativeL(lorepokemon(pokemon, lore, add)))
+      .with(DataComponentTypes.ITEM_NAME,
+        AdventureTranslator.toNative(PokemonUtils.replace(CobbleUtils.language.getPokemonnameformat(),
+          pokemon)))
+      .with(DataComponentTypes.LORE, new LoreComponent(AdventureTranslator.toNativeL(lorepokemon(pokemon, lore, add))))
       .onClick(action -> actionpokemon.accept(new PokemonButtonAction(action, pokemon)))
       .build();
   }
@@ -238,8 +240,8 @@ public class UIUtils {
       if (command.startsWith(c) && button.get() == null) {
         button.set(GooeyButton.builder()
           .display(i.getItemStack())
-          .title(AdventureTranslator.toNative(i.getDisplayname()))
-          .lore(Text.class, AdventureTranslator.toNativeL(i.getLore()))
+          .with(DataComponentTypes.ITEM_NAME, AdventureTranslator.toNative(i.getDisplayname()))
+          .with(DataComponentTypes.LORE, new LoreComponent(AdventureTranslator.toNativeL(i.getLore())))
           .onClick(action)
           .build());
       }
@@ -248,8 +250,8 @@ public class UIUtils {
       return button.get();
     return GooeyButton.builder()
       .display(CobbleUtils.language.getItemCommand().getItemStack())
-      .title(command)
-      .lore(Text.class, AdventureTranslator.toNativeL(CobbleUtils.language.getItemCommand().getLore()))
+      .with(DataComponentTypes.ITEM_NAME, AdventureTranslator.toNative(command))
+      .with(DataComponentTypes.LORE, new LoreComponent(AdventureTranslator.toNativeL(CobbleUtils.language.getItemCommand().getLore())))
       .onClick(action)
       .build();
   }
@@ -265,14 +267,14 @@ public class UIUtils {
   public static GooeyButton createButtonItem(ItemStack itemStack, Consumer<ButtonAction> action) {
     Text title;
     ItemStack item = itemStack.copy();
-    if (item.getNbt() != null) {
-      title = AdventureTranslator.toNative(item.getNbt().getCompound("display").getString("Name"));
+    if (item.get(DataComponentTypes.CUSTOM_DATA) != null) {
+      title = item.get(DataComponentTypes.ITEM_NAME);
     } else {
       title = AdventureTranslator.toNative(CobbleUtils.language.getColoritem() + item.getName().getString());
     }
     return GooeyButton.builder()
       .display(item)
-      .title(title)
+      .with(DataComponentTypes.ITEM_NAME, title)
       .onClick(action)
       .build();
   }
@@ -439,7 +441,7 @@ public class UIUtils {
   public static LinkedPageButton getLinkedPageButton(ItemModel itemModel, LinkType linkType) {
     return LinkedPageButton.builder()
       .display(itemModel.getItemStack())
-      .title(AdventureTranslator.toNative(itemModel.getDisplayname()))
+      .with(DataComponentTypes.ITEM_NAME, AdventureTranslator.toNative(itemModel.getDisplayname()))
       .onClick(action -> {
         SoundUtil.playSound(CobbleUtils.language.getSoundopen(), action.getPlayer());
       })
@@ -460,7 +462,7 @@ public class UIUtils {
                                                      Consumer<ButtonAction> action) {
     return LinkedPageButton.builder()
       .display(itemModel.getItemStack())
-      .title(AdventureTranslator.toNative(itemModel.getDisplayname()))
+      .with(DataComponentTypes.ITEM_NAME, AdventureTranslator.toNative(itemModel.getDisplayname()))
       .linkType(linkType)
       .onClick(action)
       .build();
@@ -477,7 +479,7 @@ public class UIUtils {
     ItemModel itemModel = CobbleUtils.language.getItemClose();
     return GooeyButton.builder()
       .display(itemModel.getItemStack())
-      .title(AdventureTranslator.toNativeWithOutPrefix(itemModel.getDisplayname()))
+      .with(DataComponentTypes.ITEM_NAME, AdventureTranslator.toNativeWithOutPrefix(itemModel.getDisplayname()))
       .onClick(action)
       .build();
   }
@@ -494,20 +496,13 @@ public class UIUtils {
   public static GooeyButton getPcButton(ServerPlayerEntity player, Consumer<PokemonButtonAction> actionpokemon,
                                         Consumer<ButtonAction> closeaction) {
     ItemModel itemModel = CobbleUtils.language.getItemPc();
-    PCStore pcStore = null;
-    try {
-      pcStore = Cobblemon.INSTANCE.getStorage().getPC(player.getUuid());
-    } catch (NoPokemonStoreException e) {
-      e.printStackTrace();
-
-    }
-    PCStore finalPcStore = pcStore;
+    PCStore pcStore = Cobblemon.INSTANCE.getStorage().getPC(player);
     return GooeyButton.builder()
       .display(itemModel.getItemStack())
-      .title(AdventureTranslator.toNative(itemModel.getDisplayname()))
+      .with(DataComponentTypes.ITEM_NAME, AdventureTranslator.toNative(itemModel.getDisplayname()))
       .onClick(action -> {
         try {
-          UIManager.openUIForcefully(action.getPlayer(), createPagePc(finalPcStore, actionpokemon,
+          UIManager.openUIForcefully(action.getPlayer(), createPagePc(pcStore, actionpokemon,
             closeaction, CobbleUtils.language.getTitlepc()));
         } catch (ExecutionException | InterruptedException e) {
           e.printStackTrace();
@@ -527,8 +522,8 @@ public class UIUtils {
     ItemModel itemModel = CobbleUtils.language.getItemConfirm();
     return GooeyButton.builder()
       .display(itemModel.getItemStack())
-      .title(AdventureTranslator.toNative(itemModel.getDisplayname()))
-      .lore(Text.class, AdventureTranslator.toNativeLWithOutPrefix(itemModel.getLore()))
+      .with(DataComponentTypes.ITEM_NAME, AdventureTranslator.toNative(itemModel.getDisplayname()))
+      .with(DataComponentTypes.LORE, new LoreComponent(AdventureTranslator.toNativeLWithOutPrefix(itemModel.getLore())))
       .onClick(action)
       .build();
   }
@@ -545,8 +540,8 @@ public class UIUtils {
     ItemModel itemModel = CobbleUtils.language.getItemConfirm();
     return GooeyButton.builder()
       .display(itemModel.getItemStack())
-      .title(AdventureTranslator.toNative(itemModel.getDisplayname()))
-      .lore(Text.class, AdventureTranslator.toNativeLWithOutPrefix(itemModel.getLore()))
+      .with(DataComponentTypes.ITEM_NAME, AdventureTranslator.toNative(itemModel.getDisplayname()))
+      .with(DataComponentTypes.LORE, new LoreComponent(AdventureTranslator.toNativeLWithOutPrefix(itemModel.getLore())))
       .onClick(action -> actionPokemon.accept(new PokemonButtonAction(action, pokemon)))
       .build();
   }
@@ -562,7 +557,7 @@ public class UIUtils {
     ItemModel itemModel = CobbleUtils.language.getItemCancel();
     return GooeyButton.builder()
       .display(itemModel.getItemStack())
-      .title(AdventureTranslator.toNativeWithOutPrefix(itemModel.getDisplayname()))
+      .with(DataComponentTypes.ITEM_NAME, AdventureTranslator.toNativeWithOutPrefix(itemModel.getDisplayname()))
       .onClick(action)
       .build();
   }
@@ -579,8 +574,8 @@ public class UIUtils {
     ItemModel itemModel = CobbleUtils.language.getItemCancel();
     return GooeyButton.builder()
       .display(itemModel.getItemStack())
-      .title(AdventureTranslator.toNativeWithOutPrefix(itemModel.getDisplayname()))
-      .lore(Text.class, AdventureTranslator.toNativeLWithOutPrefix(itemModel.getLore()))
+      .with(DataComponentTypes.ITEM_NAME, AdventureTranslator.toNativeWithOutPrefix(itemModel.getDisplayname()))
+      .with(DataComponentTypes.LORE, new LoreComponent(AdventureTranslator.toNativeLWithOutPrefix(itemModel.getLore())))
       .onClick(action -> actionPokemon.accept(new PokemonButtonAction(action, pokemon)))
       .build();
   }
@@ -596,7 +591,7 @@ public class UIUtils {
     ItemModel itemModel = CobbleUtils.language.getItemPrevious();
     return LinkedPageButton.builder()
       .display(itemModel.getItemStack())
-      .title(AdventureTranslator.toNativeWithOutPrefix(itemModel.getDisplayname()))
+      .with(DataComponentTypes.ITEM_NAME, AdventureTranslator.toNativeWithOutPrefix(itemModel.getDisplayname()))
       .linkType(LinkType.Previous)
       .onClick(action)
       .build();
@@ -613,7 +608,7 @@ public class UIUtils {
     ItemModel itemModel = CobbleUtils.language.getItemNext();
     return LinkedPageButton.builder()
       .display(itemModel.getItemStack())
-      .title(AdventureTranslator.toNativeWithOutPrefix(itemModel.getDisplayname()))
+      .with(DataComponentTypes.ITEM_NAME, AdventureTranslator.toNativeWithOutPrefix(itemModel.getDisplayname()))
       .linkType(LinkType.Next)
       .onClick(action)
       .build();

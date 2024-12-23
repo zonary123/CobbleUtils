@@ -4,6 +4,8 @@ import com.kingpixel.cobbleutils.CobbleUtils;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.ParseResults;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import net.minecraft.component.DataComponentTypes;
+import net.minecraft.component.type.ProfileComponent;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
@@ -112,7 +114,7 @@ public class PlayerUtils {
   public static ItemStack getHeadItem(ServerPlayerEntity player) {
     if (player != null) {
       ItemStack itemStack = Items.PLAYER_HEAD.getDefaultStack();
-      itemStack.getOrCreateNbt().putString("SkullOwner", player.getGameProfile().getName());
+      itemStack.set(DataComponentTypes.PROFILE, new ProfileComponent(player.getGameProfile()));
       return itemStack;
     }
     return Utils.parseItemId("minecraft:player_head");

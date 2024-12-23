@@ -7,6 +7,7 @@ import ca.landonjw.gooeylibs2.api.template.types.ChestTemplate;
 import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.util.AdventureTranslator;
 import com.kingpixel.cobbleutils.util.Utils;
+import net.minecraft.component.DataComponentTypes;
 import net.minecraft.server.network.ServerPlayerEntity;
 
 /**
@@ -18,7 +19,7 @@ public class PartyUI {
 
     GooeyButton invites = GooeyButton.builder()
       .display(Utils.parseItemId("minecraft:emerald"))
-      .title("Invites")
+      .with(DataComponentTypes.ITEM_NAME, AdventureTranslator.toNative("Invites"))
       .onClick(action -> {
         ServerPlayerEntity player = action.getPlayer();
         if (!CobbleUtils.partyManager.isPlayerInParty(player)) {
@@ -31,7 +32,7 @@ public class PartyUI {
 
     GooeyButton members = GooeyButton.builder()
       .display(Utils.parseItemId("minecraft:emerald"))
-      .title("Members")
+      .with(DataComponentTypes.ITEM_NAME, AdventureTranslator.toNative("Members"))
       .onClick(action -> {
         ServerPlayerEntity player = action.getPlayer();
         if (CobbleUtils.partyManager.isPlayerInParty(player)) {

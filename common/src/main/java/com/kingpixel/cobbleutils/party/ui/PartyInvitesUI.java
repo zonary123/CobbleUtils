@@ -34,7 +34,7 @@ public class PartyInvitesUI {
     CobbleUtils.partyManager.getInvites(player).forEach((partyData) -> {
       GooeyButton invite = GooeyButton.builder()
         .display(Utils.parseItemId("minecraft:emerald"))
-        .title(partyData.getName())
+        .with(DataComponentTypes.ITEM_NAME, AdventureTranslator.toNative(partyData.getName()))
         .onClick(action -> {
           CobbleUtils.partyManager.acceptInvite(player, partyData.getId());
           UIManager.openUIForcefully(player, getPartyInvites(player));
@@ -47,13 +47,13 @@ public class PartyInvitesUI {
 
     LinkedPageButton previus = LinkedPageButton.builder()
       .display(Utils.parseItemId("minecraft:arrow"))
-      .title(AdventureTranslator.toNative("Previous Page"))
+      .with(DataComponentTypes.ITEM_NAME, AdventureTranslator.toNative("Previous Page"))
       .linkType(LinkType.Previous)
       .build();
 
     LinkedPageButton next = LinkedPageButton.builder()
       .display(Utils.parseItemId("minecraft:arrow"))
-      .title(AdventureTranslator.toNative("Next Page"))
+      .with(DataComponentTypes.ITEM_NAME, AdventureTranslator.toNative("Next Page"))
       .linkType(LinkType.Next)
       .build();
 
@@ -68,8 +68,11 @@ public class PartyInvitesUI {
 
     PlaceholderButton placeholder = new PlaceholderButton();
 
+    ItemStack fillItem = Items.GRAY_STAINED_GLASS_PANE.getDefaultStack();
+    fillItem.set(DataComponentTypes.ITEM_NAME, Text.empty());
+
     GooeyButton fill = GooeyButton.builder()
-      .display(Items.GRAY_STAINED_GLASS_PANE.getDefaultStack().setCustomName(Text.literal(""))).build();
+      .display(fillItem).build();
     template.fill(fill)
       .rectangle(0, 0, 2, 9, placeholder)
       .fillFromList(buttons)

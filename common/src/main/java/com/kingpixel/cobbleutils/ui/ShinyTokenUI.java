@@ -12,61 +12,57 @@ import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.util.AdventureTranslator;
 import com.kingpixel.cobbleutils.util.UIUtils;
 import com.kingpixel.cobbleutils.util.Utils;
+import net.minecraft.component.DataComponentTypes;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.text.Text;
 
 /**
  * @author Carlos Varas Alonso - 28/06/2024 20:09
  */
 public class ShinyTokenUI {
   public static GooeyPage openmenu(ServerPlayerEntity player) {
-    try {
-      PlayerPartyStore partyStore = Cobblemon.INSTANCE.getStorage().getParty(player.getUuid());
 
-      ChestTemplate templateBuilder = ChestTemplate.builder(4).build();
+    PlayerPartyStore partyStore = Cobblemon.INSTANCE.getStorage().getParty(player);
 
-      for (int i = 0; i < partyStore.size(); i++) {
-        GooeyButton slot;
-        Pokemon pokemon = partyStore.get(i);
-        slot = UIUtils.createButtonPokemon(pokemon, action -> {
-          try {
-            if (pokemon == null)
-              return;
-            if (CobbleUtils.config.isShinyTokenBlacklisted(pokemon))
-              return;
-            if (!pokemon.getShiny()) {
-              UIManager.openUIForcefully(player, confirmShiny(player, pokemon));
-            }
-          } catch (NoPokemonStoreException e) {
-            e.printStackTrace();
+    ChestTemplate templateBuilder = ChestTemplate.builder(4).build();
+
+    for (int i = 0; i < partyStore.size(); i++) {
+      GooeyButton slot;
+      Pokemon pokemon = partyStore.get(i);
+      slot = UIUtils.createButtonPokemon(pokemon, action -> {
+        try {
+          if (pokemon == null)
+            return;
+          if (CobbleUtils.config.isShinyTokenBlacklisted(pokemon))
+            return;
+          if (!pokemon.getShiny()) {
+            UIManager.openUIForcefully(player, confirmShiny(player, pokemon));
           }
-        });
-        int row = i / 3;
-        int col = i % 3 + 3;
-        templateBuilder.set(row + 1, col, slot);
-      }
-      templateBuilder.set(0, 4,
-        CobbleUtils.language.getItemPc().getButton(action -> UIManager.openUIForcefully(action.getPlayer(),
-          ShinyTokenPcUI.getMenuShinyTokenPc(action.getPlayer()))));
-
-      GooeyButton fill = GooeyButton.builder()
-        .display(Utils.parseItemId(CobbleUtils.config.getFill()))
-        .title("")
-        .build();
-
-      templateBuilder.fill(fill);
-
-      GooeyPage page = GooeyPage.builder().template(templateBuilder)
-        .title(AdventureTranslator.toNative(CobbleUtils.language.getTitlemenushiny())).build();
-
-      UIManager.openUIForcefully(player, page);
-      return page;
-    } catch (NoPokemonStoreException e) {
-      player.sendMessage(
-        AdventureTranslator.toNative("An error occurred while trying to access your Pokémon party."));
-      e.printStackTrace();
+        } catch (NoPokemonStoreException e) {
+          e.printStackTrace();
+        }
+      });
+      int row = i / 3;
+      int col = i % 3 + 3;
+      templateBuilder.set(row + 1, col, slot);
     }
-    return null;
+    templateBuilder.set(0, 4,
+      CobbleUtils.language.getItemPc().getButton(action -> UIManager.openUIForcefully(action.getPlayer(),
+        ShinyTokenPcUI.getMenuShinyTokenPc(action.getPlayer()))));
+
+    GooeyButton fill = GooeyButton.builder()
+      .display(Utils.parseItemId(CobbleUtils.config.getFill()))
+      .with(DataComponentTypes.ITEM_NAME, Text.empty())
+      .build();
+
+    templateBuilder.fill(fill);
+
+    GooeyPage page = GooeyPage.builder().template(templateBuilder)
+      .title(AdventureTranslator.toNative(CobbleUtils.language.getTitlemenushiny())).build();
+
+    UIManager.openUIForcefully(player, page);
+    return page;
   }
 
   public static GooeyPage confirmShiny(ServerPlayerEntity player, Pokemon pokemon) throws NoPokemonStoreException {
@@ -86,7 +82,9 @@ public class ShinyTokenUI {
         .set(1, 2, confirm)
         .set(1, 6, cancel)
         .set(1, 4, buttonPokemon)
-        .fill(GooeyButton.builder().display(Utils.parseItemId(CobbleUtils.config.getFill())).title("").build())
+        .fill(GooeyButton.builder().display(Utils.parseItemId(CobbleUtils.config.getFill()))
+          .with(DataComponentTypes.ITEM_NAME, Text.empty())
+          .build())
         .build())
       .title(AdventureTranslator.toNative(CobbleUtils.language.getTitlemenushinyoperation())).build();
   }

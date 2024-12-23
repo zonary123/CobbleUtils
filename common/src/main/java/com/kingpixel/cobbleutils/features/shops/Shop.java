@@ -21,6 +21,8 @@ import com.kingpixel.cobbleutils.features.shops.models.Product;
 import com.kingpixel.cobbleutils.features.shops.models.types.*;
 import com.kingpixel.cobbleutils.util.*;
 import lombok.*;
+import net.minecraft.component.DataComponentTypes;
+import net.minecraft.component.type.LoreComponent;
 import net.minecraft.item.ItemStack;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
@@ -283,10 +285,11 @@ public class Shop {
 
         GooeyButton button = GooeyButton.builder()
           .display(itemStack)
-          .title(AdventureTranslator.toNative(colorItem == null ? getTitleItem(product) : colorItem + getTitleItem(product)))
-          .lore(Text.class, AdventureTranslator.toNativeL(getLoreProduct(
+          .with(DataComponentTypes.ITEM_NAME, AdventureTranslator.toNative(colorItem == null ? getTitleItem(product) :
+            colorItem + getTitleItem(product)))
+          .with(DataComponentTypes.LORE, new LoreComponent(AdventureTranslator.toNativeL(getLoreProduct(
             buy, sell, product, player, symbol, typeError, BigDecimal.ONE
-          )))
+          ))))
           .onClick(action -> {
             if (typeError == TypeError.NONE) {
               if (shopConfig.getShopConfigMenu().isViewItemsWithOptionPermission()) {
@@ -391,8 +394,8 @@ public class Shop {
 
         template.set(itemInfoShop.getSlot(), GooeyButton.builder()
           .display(itemInfoShop.getItemStack())
-          .title(AdventureTranslator.toNative(itemInfoShop.getDisplayname()))
-          .lore(Text.class, AdventureTranslator.toNativeL(lore))
+          .with(DataComponentTypes.ITEM_NAME, AdventureTranslator.toNative(itemInfoShop.getDisplayname()))
+          .with(DataComponentTypes.LORE, new LoreComponent(AdventureTranslator.toNativeL(lore)))
           .build());
       }
 
@@ -407,8 +410,8 @@ public class Shop {
           .replace("%symbol%", symbol));
         template.set(getSlotbalance(), GooeyButton.builder()
           .display(balance.getItemStack())
-          .title(AdventureTranslator.toNative(balance.getDisplayname()))
-          .lore(Text.class, AdventureTranslator.toNativeL(lorebalance))
+          .with(DataComponentTypes.ITEM_NAME, AdventureTranslator.toNative(balance.getDisplayname()))
+          .with(DataComponentTypes.LORE, new LoreComponent(AdventureTranslator.toNativeL(lorebalance)))
           .build());
       }
 
@@ -439,7 +442,7 @@ public class Shop {
         if (UIUtils.isInside(getNext(), rows)) {
           LinkedPageButton next = LinkedPageButton.builder()
             .display(getNext().getItemStack())
-            .title(AdventureTranslator.toNative(getNext().getDisplayname()))
+            .with(DataComponentTypes.ITEM_NAME, AdventureTranslator.toNative(getNext().getDisplayname()))
             .onClick(action -> SoundUtil.playSound(getSoundopen(), action.getPlayer()))
             .linkType(LinkType.Next)
             .build();
@@ -458,7 +461,7 @@ public class Shop {
         if (UIUtils.isInside(getPrevious(), rows)) {
           LinkedPageButton previous = LinkedPageButton.builder()
             .display(getPrevious().getItemStack())
-            .title(AdventureTranslator.toNative(getPrevious().getDisplayname()))
+            .with(DataComponentTypes.ITEM_NAME, AdventureTranslator.toNative(getPrevious().getDisplayname()))
             .onClick(action -> {
               SoundUtil.playSound(getSoundopen(), action.getPlayer());
             })
@@ -783,7 +786,7 @@ public class Shop {
 
     // Verifica si el jugador tiene la cantidad requerida del producto en su inventario
     int amountItemInv = player.getInventory().main.stream()
-      .filter(itemInv -> !itemInv.isEmpty() && ItemStack.canCombine(itemInv, product.getItemchance().getItemStack(amount)))
+      .filter(itemInv -> !itemInv.isEmpty() && ItemStack.areItemsEqual(itemInv, product.getItemchance().getItemStack(amount)))
       .mapToInt(ItemStack::getCount)
       .sum();
 
@@ -792,7 +795,7 @@ public class Shop {
 
       // Remueve los ítems del inventario del jugador
       for (ItemStack itemStack : player.getInventory().main) {
-        if (!itemStack.isEmpty() && ItemStack.canCombine(itemStack, product.getItemchance().getItemStack(amount))) {
+        if (!itemStack.isEmpty() && ItemStack.areItemsEqual(itemStack, product.getItemchance().getItemStack(amount))) {
           int count = itemStack.getCount();
 
           if (count >= remaining) {
@@ -887,8 +890,8 @@ public class Shop {
       return;
     template.set(addModel.getSlot(), GooeyButton.builder()
       .display(addModel.getItemStack(increment))
-      .title(AdventureTranslator.toNative(addModel.getDisplayname()))
-      .lore(Text.class, AdventureTranslator.toNativeL(addModel.getLore()))
+      .with(DataComponentTypes.ITEM_NAME, AdventureTranslator.toNative(addModel.getDisplayname()))
+      .with(DataComponentTypes.LORE, new LoreComponent(AdventureTranslator.toNativeL(addModel.getLore())))
       .onClick(action -> {
         SoundUtil.playSound(CobbleUtils.shopLang.getSoundAdd(), player);
         openBuySellMenu(player, shopConfig, product, typeMenu, amount + increment, mod_id, byCommand, shop);
@@ -898,8 +901,8 @@ public class Shop {
 
     template.set(removeModel.getSlot(), GooeyButton.builder()
       .display(removeModel.getItemStack(increment))
-      .title(AdventureTranslator.toNative(removeModel.getDisplayname()))
-      .lore(Text.class, AdventureTranslator.toNativeL(removeModel.getLore()))
+      .with(DataComponentTypes.ITEM_NAME, AdventureTranslator.toNative(removeModel.getDisplayname()))
+      .with(DataComponentTypes.LORE, new LoreComponent(AdventureTranslator.toNativeL(removeModel.getLore())))
       .onClick(action -> {
         SoundUtil.playSound(CobbleUtils.shopLang.getSoundRemove(), player);
         openBuySellMenu(player, shopConfig, product, typeMenu, Math.max(amount - increment, 1), mod_id, byCommand, shop);
@@ -935,13 +938,13 @@ public class Shop {
     viewProduct.setCount((amount == 0 ? 1 : amount));
     template.set(shopConfig.getShopConfigMenu().getSlotViewProduct(), GooeyButton.builder()
       .display(viewProduct)
-      .title(AdventureTranslator.toNative(getTitleItem(product)))
-      .lore(Text.class, AdventureTranslator.toNativeL(getLoreProduct(
+      .with(DataComponentTypes.ITEM_NAME, AdventureTranslator.toNative(getTitleItem(product)))
+      .with(DataComponentTypes.LORE, new LoreComponent(AdventureTranslator.toNativeL(getLoreProduct(
         buy, sell,
         product, player,
         symbol, TypeError.NONE,
         BigDecimal.valueOf(amount)
-      )))
+      ))))
       .onClick(action -> {
         TypeError typeError = getTypeError(product, player);
         if (typeError == TypeError.NONE) {

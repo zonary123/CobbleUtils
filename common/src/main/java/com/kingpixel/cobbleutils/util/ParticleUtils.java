@@ -4,7 +4,7 @@ import com.kingpixel.cobbleutils.Model.Particle;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.ai.TargetPredicate;
 import net.minecraft.network.packet.s2c.play.ParticleS2CPacket;
-import net.minecraft.particle.ParticleType;
+import net.minecraft.particle.ParticleEffect;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.registry.Registries;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -27,13 +27,13 @@ public class ParticleUtils {
 
   @Deprecated
   public static void sendParticles(Particle particle, ServerPlayerEntity player, Entity entity) {
-    ParticleType particleType;
+    ParticleEffect particleType;
     String[] split = particle.getParticle().split(":");
     Identifier identifier = Identifier.of(split[0], split[1]);
 
     try {
-      if (Registries.PARTICLE_TYPE.get(identifier) instanceof ParticleType<?>) {
-        particleType = Registries.PARTICLE_TYPE.get(identifier);
+      if (Registries.PARTICLE_TYPE.get(identifier) instanceof ParticleEffect) {
+        particleType = (ParticleEffect) Registries.PARTICLE_TYPE.get(identifier);
       } else {
         particleType = ParticleTypes.LAVA;
       }
@@ -56,7 +56,7 @@ public class ParticleUtils {
   // Privates
   @Deprecated
   private static @NotNull ParticleS2CPacket getParticleS2CPacket(Particle particle, Entity entity,
-                                                                 ParticleType<?> particleType) {
+                                                                 ParticleEffect particleType) {
     float offsetX = particle.getOffsetX() == null ? 0 : particle.getOffsetX();
     float offsetY = particle.getOffsetY() == null ? 0 : particle.getOffsetY();
     float offsetZ = particle.getOffsetZ() == null ? 0 : particle.getOffsetZ();

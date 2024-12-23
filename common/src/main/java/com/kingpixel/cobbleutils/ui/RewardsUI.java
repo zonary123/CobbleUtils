@@ -11,7 +11,6 @@ import ca.landonjw.gooeylibs2.api.page.LinkedPage;
 import ca.landonjw.gooeylibs2.api.page.Page;
 import ca.landonjw.gooeylibs2.api.template.types.ChestTemplate;
 import com.cobblemon.mod.common.Cobblemon;
-import com.cobblemon.mod.common.api.storage.NoPokemonStoreException;
 import com.cobblemon.mod.common.pokemon.Pokemon;
 import com.google.gson.JsonObject;
 import com.kingpixel.cobbleutils.CobbleUtils;
@@ -24,8 +23,10 @@ import com.kingpixel.cobbleutils.util.Utils;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.ParseResults;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import net.minecraft.component.DataComponentTypes;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
+import net.minecraft.registry.DynamicRegistryManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
@@ -46,18 +47,16 @@ public class RewardsUI {
       RewardsData rewardsData = CobbleUtils.rewardsManager.getRewardsData().get(player.getUuid());
 
       rewardsData.getPokemons().forEach(
-        pokemon -> buttons.add(UIUtils.createButtonPokemon(Pokemon.Companion.loadFromJSON(pokemon), action -> {
-          try {
-            if (Cobblemon.INSTANCE.getStorage().getParty(player.getUuid())
-              .add(Pokemon.Companion.loadFromJSON(pokemon))) {
+        pokemon -> buttons.add(UIUtils.createButtonPokemon(Pokemon.Companion.loadFromJSON(DynamicRegistryManager.EMPTY,
+            pokemon),
+          action -> {
+            if (Cobblemon.INSTANCE.getStorage().getParty(player)
+              .add(Pokemon.Companion.loadFromJSON(DynamicRegistryManager.EMPTY, pokemon))) {
               rewardsData.getPokemons().remove(pokemon);
               rewardsData.writeInfo();
             }
             UIManager.openUIForcefully(action.getAction().getPlayer(), getRewards(player));
-          } catch (NoPokemonStoreException e) {
-            throw new RuntimeException(e);
-          }
-        })));
+          })));
 
       rewardsData.getItems().forEach(item -> {
         ItemStack itemStack = ItemObject.toItemStack(item.getItem());
@@ -94,7 +93,7 @@ public class RewardsUI {
 
       GooeyButton getAllRewards = GooeyButton.builder()
         .display(Utils.parseItemId("minecraft:chest"))
-        .title(AdventureTranslator.toNative("&7Get all rewards"))
+        .with(DataComponentTypes.ITEM_NAME, AdventureTranslator.toNative("&7Get all rewards"))
         .onClick(action -> {
           List<ItemObject> itemsToRemove = new ArrayList<>();
           for (ItemObject item : rewardsData.getItems()) {
@@ -107,13 +106,9 @@ public class RewardsUI {
 
           List<JsonObject> pokemonsToRemove = new ArrayList<>();
           for (JsonObject pokemon : rewardsData.getPokemons()) {
-            try {
-              if (Cobblemon.INSTANCE.getStorage().getParty(action.getPlayer().getUuid())
-                .add(Pokemon.Companion.loadFromJSON(pokemon))) {
-                pokemonsToRemove.add(pokemon);
-              }
-            } catch (NoPokemonStoreException e) {
-              throw new RuntimeException(e);
+            if (Cobblemon.INSTANCE.getStorage().getParty(action.getPlayer())
+              .add(Pokemon.Companion.loadFromJSON(DynamicRegistryManager.EMPTY, pokemon))) {
+              pokemonsToRemove.add(pokemon);
             }
           }
           rewardsData.getPokemons().removeAll(pokemonsToRemove);
@@ -128,19 +123,19 @@ public class RewardsUI {
 
       LinkedPageButton previus = LinkedPageButton.builder()
         .display(Utils.parseItemId("minecraft:arrow"))
-        .title(AdventureTranslator.toNative(CobbleUtils.language.getPrevious()))
+        .with(DataComponentTypes.ITEM_NAME, AdventureTranslator.toNative(CobbleUtils.language.getPrevious()))
         .linkType(LinkType.Previous)
         .build();
 
       LinkedPageButton next = LinkedPageButton.builder()
         .display(Utils.parseItemId("minecraft:arrow"))
-        .title(AdventureTranslator.toNative(CobbleUtils.language.getNext()))
+        .with(DataComponentTypes.ITEM_NAME, AdventureTranslator.toNative(CobbleUtils.language.getNext()))
         .linkType(LinkType.Next)
         .build();
 
       GooeyButton close = GooeyButton.builder()
         .display(Items.RED_STAINED_GLASS_PANE.getDefaultStack())
-        .title(AdventureTranslator.toNative(CobbleUtils.language.getClose()))
+        .with(DataComponentTypes.ITEM_NAME, AdventureTranslator.toNative(CobbleUtils.language.getClose()))
         .onClick(action -> {
           action.getPlayer().closeHandledScreen();
         })
@@ -148,8 +143,11 @@ public class RewardsUI {
 
       PlaceholderButton placeholder = new PlaceholderButton();
 
+      ItemStack fillItem = Items.GRAY_STAINED_GLASS_PANE.getDefaultStack();
+      fillItem.set(DataComponentTypes.ITEM_NAME, Text.literal(""));
+
       GooeyButton fill = GooeyButton.builder()
-        .display(Items.GRAY_STAINED_GLASS_PANE.getDefaultStack().setCustomName(Text.literal(""))).build();
+        .display(fillItem).build();
       template.fill(fill)
         .rectangle(0, 0, 5, 9, placeholder)
         .fillFromList(buttons)

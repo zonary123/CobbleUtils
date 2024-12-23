@@ -5,6 +5,7 @@ import com.cobblemon.mod.common.api.types.ElementalType;
 import com.cobblemon.mod.common.api.types.adapters.ElementalTypeAdapter;
 import com.cobblemon.mod.common.pokemon.Pokemon;
 import com.cobblemon.mod.common.util.adapters.IntRangeAdapter;
+import com.cobblemon.mod.common.util.adapters.NbtCompoundAdapter;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.internal.bind.DateTypeAdapter;
@@ -22,6 +23,7 @@ import net.minecraft.component.type.LoreComponent;
 import net.minecraft.component.type.ProfileComponent;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
+import net.minecraft.nbt.NbtCompound;
 import net.minecraft.registry.Registries;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -76,6 +78,7 @@ public abstract class Utils {
       .registerTypeAdapter(ShopTransactions.ShopAction.class, new ShopActionAdapter())
       .registerTypeAdapter(ElementalType.class, ElementalTypeAdapter.INSTANCE)
       .registerTypeAdapter(IntRange.class, IntRangeAdapter.INSTANCE)
+      .registerTypeAdapter(NbtCompound.class, NbtCompoundAdapter.INSTANCE)
       .registerTypeAdapter(DateTypeAdapter.class, new DateTypeAdapter());
   }
 

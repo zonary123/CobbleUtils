@@ -1,5 +1,6 @@
 package com.kingpixel.cobbleutils.util;
 
+import com.cobblemon.mod.common.api.Priority;
 import com.cobblemon.mod.common.api.abilities.*;
 import com.cobblemon.mod.common.api.moves.Move;
 import com.cobblemon.mod.common.api.pokemon.PokemonProperties;
@@ -154,7 +155,7 @@ public class PokemonUtils {
       Pokemon p = PokemonProperties.Companion.parse(pokemon.getSpecies().showdownId()).create();
       String ability = pokemon.getPersistentData().getString("ability");
       if (!ability.isEmpty()) {
-        p.updateAbility(Abilities.INSTANCE.get(ability).create(false));
+        p.updateAbility(Abilities.INSTANCE.get(ability).create(false, Priority.NORMAL));
       } else {
         p.updateAbility(getRandomAbility(p));
       }
@@ -676,7 +677,7 @@ public class PokemonUtils {
   public static Ability getAH(Pokemon pokemon) {
     for (PotentialAbility ability : pokemon.getForm().getAbilities()) {
       if (ability.getType() instanceof HiddenAbilityType) {
-        return ability.getTemplate().create(false);
+        return ability.getTemplate().create(false, Priority.NORMAL);
       }
     }
     return getRandomAbility(pokemon);
@@ -710,7 +711,7 @@ public class PokemonUtils {
   public static boolean isAH(Pokemon pokemon, AbilityTemplate ability) {
     for (PotentialAbility potentialAbility : pokemon.getForm().getAbilities()) {
       if (potentialAbility.getType() instanceof HiddenAbilityType) {
-        if (potentialAbility.getTemplate().create(false).getName().equalsIgnoreCase(ability.getName())) {
+        if (potentialAbility.getTemplate().create(false, Priority.NORMAL).getName().equalsIgnoreCase(ability.getName())) {
           return true;
         }
       }
@@ -729,7 +730,7 @@ public class PokemonUtils {
   public static boolean isAH(Pokemon pokemon, Ability ability) {
     for (PotentialAbility potentialAbility : pokemon.getForm().getAbilities()) {
       if (potentialAbility.getType() instanceof HiddenAbilityType) {
-        if (potentialAbility.getTemplate().create(false).getName().equalsIgnoreCase(ability.getName())) {
+        if (potentialAbility.getTemplate().create(false, Priority.NORMAL).getName().equalsIgnoreCase(ability.getName())) {
           return true;
         }
       }
@@ -738,12 +739,11 @@ public class PokemonUtils {
   }
 
   public static Ability getRandomAbility(Pokemon pokemon) {
-
     AbilityPool abilities = pokemon.getForm().getAbilities();
     List<Ability> abilityList = new ArrayList<>();
     for (PotentialAbility potentialAbility : abilities) {
       if (!(potentialAbility.getType() instanceof HiddenAbilityType)) {
-        abilityList.add(potentialAbility.getTemplate().create(false));
+        abilityList.add(potentialAbility.getTemplate().create(false, Priority.NORMAL));
       }
     }
 

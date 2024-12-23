@@ -18,7 +18,7 @@ import java.util.concurrent.ExecutionException;
 public class ShinyTokenPcUI {
   public static GooeyPage getMenuShinyTokenPc(ServerPlayerEntity player) {
     try {
-      return UIUtils.createPagePc(Cobblemon.INSTANCE.getStorage().getPC(player.getUuid()), actionpokemon -> {
+      return UIUtils.createPagePc(Cobblemon.INSTANCE.getStorage().getPC(player), actionpokemon -> {
           try {
             if (CobbleUtils.config.isShinyTokenBlacklisted(actionpokemon.getPokemon()))
               return;
@@ -37,7 +37,7 @@ public class ShinyTokenPcUI {
         actionclose -> UIManager.openUIForcefully(actionclose.getPlayer(),
           Objects.requireNonNull(ShinyTokenUI.openmenu(player))),
         CobbleUtils.language.getTitlepc());
-    } catch (NoPokemonStoreException | InterruptedException | ExecutionException e) {
+    } catch (InterruptedException | ExecutionException e) {
       e.printStackTrace();
     }
     return null;

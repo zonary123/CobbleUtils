@@ -16,10 +16,11 @@ import com.kingpixel.cobbleutils.util.AdventureTranslator;
 import com.kingpixel.cobbleutils.util.PlayerUtils;
 import com.kingpixel.cobbleutils.util.PokemonUtils;
 import com.kingpixel.cobbleutils.util.UIUtils;
+import net.minecraft.component.DataComponentTypes;
+import net.minecraft.component.type.LoreComponent;
 import net.minecraft.item.ItemStack;
 import net.minecraft.registry.DynamicRegistryManager;
 import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.text.Text;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -73,8 +74,8 @@ public class PlotBreedingUI {
       if (UIUtils.isInside(info, rows)) {
         GooeyButton button = GooeyButton.builder()
           .display(info.getItemStack())
-          .title(AdventureTranslator.toNative(info.getDisplayname()))
-          .lore(Text.class, AdventureTranslator.toNativeL(infoLore))
+          .with(DataComponentTypes.ITEM_NAME, AdventureTranslator.toNative(info.getDisplayname()))
+          .with(DataComponentTypes.LORE, new LoreComponent(AdventureTranslator.toNativeL(infoLore)))
           .build();
         template.set(info.getSlot(), button);
       }
@@ -101,8 +102,9 @@ public class PlotBreedingUI {
         int finalI = i;
         GooeyButton button = GooeyButton.builder()
           .display(itemStack)
-          .title(AdventureTranslator.toNative(CobbleUtils.breedconfig.getPlotItem().getDisplayname()))
-          .lore(Text.class, AdventureTranslator.toNativeL(lore))
+          .with(DataComponentTypes.ITEM_NAME,
+            AdventureTranslator.toNative(CobbleUtils.breedconfig.getPlotItem().getDisplayname()))
+          .with(DataComponentTypes.LORE, new LoreComponent(AdventureTranslator.toNativeL(lore)))
           .onClick(action -> {
             plotBreeding.checking(player);
             PlotBreedingManagerUI.open(player, plotBreeding, finalI);

@@ -10,8 +10,9 @@ import com.kingpixel.cobbleutils.util.Utils;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
+import net.minecraft.component.DataComponentTypes;
+import net.minecraft.component.type.LoreComponent;
 import net.minecraft.item.ItemStack;
-import net.minecraft.text.Text;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -192,9 +193,23 @@ public class ItemModel {
   public static GooeyButton getButton(ItemModel itemModel, Consumer<ButtonAction> action) {
     return GooeyButton.builder()
       .display(getItemStack(itemModel))
-      .with(AdventureTranslator.toNative(itemModel.getDisplayname()))
-      .with(Text.class, AdventureTranslator.toNativeL(itemModel.getLore()))
+      .with(DataComponentTypes.ITEM_NAME, AdventureTranslator.toNative(itemModel.getDisplayname()))
+      .with(DataComponentTypes.LORE, new LoreComponent(AdventureTranslator.toNativeL(itemModel.getLore())))
       .onClick(action)
+      .build();
+  }
+
+  public static GooeyButton getButton(ItemModel itemModel, Consumer<ButtonAction> action, int amount, String name,
+                                      List<String> lore) {
+    GooeyButton.Builder builder = GooeyButton.builder()
+      .display(getItemStack(itemModel, amount));
+    if (name != null) {
+      builder.with(DataComponentTypes.ITEM_NAME, AdventureTranslator.toNative(name));
+    }
+    if (lore != null) {
+      builder.with(DataComponentTypes.LORE, new LoreComponent(AdventureTranslator.toNativeL(lore)));
+    }
+    return builder.onClick(action)
       .build();
   }
 

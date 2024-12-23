@@ -1,7 +1,6 @@
 package com.kingpixel.cobbleutils.util;
 
 import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvent;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.util.Identifier;
@@ -23,11 +22,11 @@ public class SoundUtil {
   }
 
   public static void playSound(SoundEvent sound, ServerPlayerEntity player) {
-    player.playSound(sound, SoundCategory.PLAYERS, 1.0F, 1.0F);
+    player.playSound(sound, 1.0F, 1.0F);
   }
 
   public static void playSound(String soundopen, ServerPlayerEntity player) {
     if (soundopen == null || soundopen.isEmpty()) return;
-    player.playSound(getSound(soundopen), SoundCategory.PLAYERS, 1.0F, 1.0F);
+    player.playSound(getSound(soundopen), 1.0F, 1.0F);
   }
 }

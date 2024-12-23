@@ -16,10 +16,11 @@ import com.kingpixel.cobbleutils.util.*;
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import net.minecraft.component.DataComponentTypes;
+import net.minecraft.component.type.LoreComponent;
 import net.minecraft.item.ItemStack;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.text.Text;
 
 import java.math.BigDecimal;
 import java.util.*;
@@ -108,8 +109,9 @@ public class ShopTransactionCommand implements Command<ServerCommandSource> {
 
     return GooeyButton.builder()
       .display(itemStack)
-      .title(AdventureTranslator.toNative("&b" + title))
-      .lore(Text.class, AdventureTranslator.toNativeL(lore))  // Utiliza la lista `lore` completa
+      .with(DataComponentTypes.ITEM_NAME, AdventureTranslator.toNative("&b" + title))
+      .with(DataComponentTypes.LORE, new LoreComponent(AdventureTranslator.toNativeL(lore)))  // Utiliza la lista `lore`
+      // completa
       .onClick(action -> UIManager.openUIForcefully(action.getPlayer(), getTransactionPlayer(viewer, uuid, CobbleUtils.shopConfig.getShopConfigMenu())))
       .build();
   }
@@ -155,8 +157,8 @@ public class ShopTransactionCommand implements Command<ServerCommandSource> {
     ItemStack itemStack = shop.getProductById(product).getItemStack();
     return GooeyButton.builder()
       .display(itemStack)
-      .title(AdventureTranslator.toNative(itemStack.getName().getString()))
-      .lore(Text.class, AdventureTranslator.toNativeL(lore))
+      .with(DataComponentTypes.ITEM_NAME, AdventureTranslator.toNative(itemStack.getName().getString()))
+      .with(DataComponentTypes.LORE, new LoreComponent(AdventureTranslator.toNativeL(lore)))
       .build();
   }
 

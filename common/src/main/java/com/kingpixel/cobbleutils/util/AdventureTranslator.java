@@ -27,6 +27,7 @@ package com.kingpixel.cobbleutils.util;
 import com.kingpixel.cobbleutils.CobbleUtils;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
+import net.minecraft.registry.DynamicRegistryManager;
 import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
 
@@ -89,7 +90,7 @@ public class AdventureTranslator {
   }
 
   public static net.kyori.adventure.text.Component fromNative(Text component) {
-    return GsonComponentSerializer.gson().deserialize(component.getString());
+    return GsonComponentSerializer.gson().deserialize(Text.Serialization.toJsonString(component, DynamicRegistryManager.EMPTY));
   }
 
   public static net.kyori.adventure.text.Component toNativeFromString(String displayname) {

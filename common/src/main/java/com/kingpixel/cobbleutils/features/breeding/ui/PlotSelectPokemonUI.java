@@ -9,7 +9,6 @@ import ca.landonjw.gooeylibs2.api.page.LinkedPage;
 import ca.landonjw.gooeylibs2.api.template.types.ChestTemplate;
 import com.cobblemon.mod.common.Cobblemon;
 import com.cobblemon.mod.common.api.pokemon.egg.EggGroup;
-import com.cobblemon.mod.common.api.storage.NoPokemonStoreException;
 import com.cobblemon.mod.common.item.PokemonItem;
 import com.cobblemon.mod.common.pokemon.Gender;
 import com.cobblemon.mod.common.pokemon.Pokemon;
@@ -21,6 +20,8 @@ import com.kingpixel.cobbleutils.util.AdventureTranslator;
 import com.kingpixel.cobbleutils.util.PokemonUtils;
 import com.kingpixel.cobbleutils.util.UIUtils;
 import com.kingpixel.cobbleutils.util.Utils;
+import net.minecraft.component.DataComponentTypes;
+import net.minecraft.component.type.LoreComponent;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
 
@@ -50,14 +51,10 @@ public class PlotSelectPokemonUI {
 
   private static List<Pokemon> getPlayerPokemons(ServerPlayerEntity player, Gender gender, PlotBreeding plotBreeding) {
     List<Pokemon> pokemons = new ArrayList<>();
-    try {
-      Cobblemon.INSTANCE.getStorage().getParty(player)
-        .forEach(pokemon -> addIfAcceptable(pokemons, pokemon, player, gender, plotBreeding));
-      Cobblemon.INSTANCE.getStorage().getPC(player.getUuid())
-        .forEach(pokemon -> addIfAcceptable(pokemons, pokemon, player, gender, plotBreeding));
-    } catch (NoPokemonStoreException e) {
-      throw new RuntimeException(e);
-    }
+    Cobblemon.INSTANCE.getStorage().getParty(player)
+      .forEach(pokemon -> addIfAcceptable(pokemons, pokemon, player, gender, plotBreeding));
+    Cobblemon.INSTANCE.getStorage().getPC(player)
+      .forEach(pokemon -> addIfAcceptable(pokemons, pokemon, player, gender, plotBreeding));
     return pokemons;
   }
 
@@ -82,22 +79,17 @@ public class PlotSelectPokemonUI {
                                                  PlotBreeding plotBreeding, Gender gender, int finalI) {
     return GooeyButton.builder()
       .display(PokemonItem.from(pokemon))
-      .title(AdventureTranslator.toNative(PokemonUtils.replace(pokemon)))
-      .lore(Text.class, AdventureTranslator.toNativeL(PokemonUtils.replaceLore(pokemon)))
+      .with(DataComponentTypes.ITEM_NAME, AdventureTranslator.toNative(PokemonUtils.replace(pokemon)))
+      .with(DataComponentTypes.LORE, new LoreComponent(AdventureTranslator.toNativeL(PokemonUtils.replaceLore(pokemon))))
       .onClick(action -> handlePokemonSelection(pokemon, player, plotBreeding, gender, finalI))
       .build();
   }
 
   private static void handlePokemonSelection(Pokemon pokemon, ServerPlayerEntity player,
                                              PlotBreeding plotBreeding, Gender gender, int finalI) {
-    boolean pc = false, party = false;
-    try {
-      pc = Cobblemon.INSTANCE.getStorage().getPC(player.getUuid()).remove(pokemon);
-      party = Cobblemon.INSTANCE.getStorage().getParty(player).remove(pokemon);
-    } catch (NoPokemonStoreException e) {
-      e.printStackTrace();
-      CobbleUtils.LOGGER.error("Error while removing pokemon from player's storage");
-    }
+    boolean pc, party;
+    pc = Cobblemon.INSTANCE.getStorage().getPC(player).remove(pokemon);
+    party = Cobblemon.INSTANCE.getStorage().getParty(player).remove(pokemon);
     if (CobbleUtils.config.isDebug()) {
       CobbleUtils.LOGGER.info("Pokemon removed from storage");
       CobbleUtils.LOGGER.info("Pokemon: " + pokemon.getSpecies().showdownId());
@@ -120,7 +112,9 @@ public class PlotSelectPokemonUI {
     template.set(row - 1, 8, UIUtils.getNextButton(action -> {
       // Implement next page action if needed
     }));
-    template.fill(GooeyButton.builder().display(Utils.parseItemId(CobbleUtils.config.getFill())).title("").build());
+    template.fill(GooeyButton.builder().display(Utils.parseItemId(CobbleUtils.config.getFill()))
+      .with(DataComponentTypes.ITEM_NAME, Text.empty())
+      .build());
     template.rectangle(0, 0, row - 1, 9, new PlaceholderButton());
     template.fillFromList(buttons);
   }

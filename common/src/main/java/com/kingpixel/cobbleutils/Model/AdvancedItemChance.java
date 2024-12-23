@@ -16,10 +16,11 @@ import com.kingpixel.cobbleutils.util.AdventureTranslator;
 import com.kingpixel.cobbleutils.util.PlayerUtils;
 import com.kingpixel.cobbleutils.util.UIUtils;
 import lombok.Getter;
+import net.minecraft.component.DataComponentTypes;
+import net.minecraft.component.type.LoreComponent;
 import net.minecraft.entity.ItemEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.text.Text;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -256,7 +257,7 @@ public class AdvancedItemChance {
     if (info.getSlot() >= 0) {
       template.set(info.getSlot(), GooeyButton.builder()
         .display(info.getItemStack())
-        .lore(Text.class, AdventureTranslator.toNativeL(infoLore))
+        .with(DataComponentTypes.LORE, new LoreComponent(AdventureTranslator.toNativeL(infoLore)))
         .build());
     }
 
@@ -311,8 +312,8 @@ public class AdvancedItemChance {
 
     return GooeyButton.builder()
       .display(itemChance.getItemStack())
-      .title(AdventureTranslator.toNative(itemChance.getTitle()))
-      .lore(Text.class, AdventureTranslator.toNativeL(lore))
+      .with(DataComponentTypes.ITEM_NAME, AdventureTranslator.toNative(itemChance.getTitle()))
+      .with(DataComponentTypes.LORE, new LoreComponent(AdventureTranslator.toNativeL(lore)))
       .build();
   }
 

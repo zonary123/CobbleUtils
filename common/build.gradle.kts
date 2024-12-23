@@ -1,6 +1,6 @@
 architectury {
     common("fabric")
-    //platformSetupLoomIde()
+    platformSetupLoomIde()
 }
 
 dependencies {
@@ -14,7 +14,7 @@ dependencies {
     modCompileOnly("net.fabricmc.fabric-api:fabric-api:${property("fabric_version")}")
 
     modImplementation("dev.architectury:architectury:${property("architectury_version")}")
-    modImplementation("ca.landonjw.gooeylibs:api:${property("gooeylibs_version")}")
+    modImplementation("ca.landonjw.gooeylibs:fabric-api-repack:${property("gooeylibs_version")}")
 
 
     // PlaceholderAPI

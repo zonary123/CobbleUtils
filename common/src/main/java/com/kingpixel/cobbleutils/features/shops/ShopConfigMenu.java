@@ -12,6 +12,8 @@ import com.kingpixel.cobbleutils.features.shops.models.Product;
 import com.kingpixel.cobbleutils.features.shops.models.types.*;
 import com.kingpixel.cobbleutils.util.*;
 import lombok.*;
+import net.minecraft.component.DataComponentTypes;
+import net.minecraft.component.type.LoreComponent;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
 
@@ -227,8 +229,8 @@ public class ShopConfigMenu {
         }
         GooeyButton button = GooeyButton.builder()
           .display(itemModelShop.getItemStack())
-          .title(AdventureTranslator.toNative(itemModelShop.getDisplayname()))
-          .lore(Text.class, AdventureTranslator.toNativeL(lore))
+          .with(DataComponentTypes.ITEM_NAME, AdventureTranslator.toNative(itemModelShop.getDisplayname()))
+          .with(DataComponentTypes.LORE, new LoreComponent(AdventureTranslator.toNativeL(lore)))
           .onClick(action -> {
             if (shop.isActive()) {
               if (shop.getShopType() == null) shop.setShopType(new ShopTypePermanent());

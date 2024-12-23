@@ -15,22 +15,20 @@ import com.cobblemon.mod.common.item.PokemonItem;
 import com.cobblemon.mod.common.pokemon.Pokemon;
 import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.util.*;
-import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
+import net.minecraft.component.DataComponentTypes;
+import net.minecraft.component.type.LoreComponent;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
-import net.minecraft.nbt.NbtHelper;
 import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.text.Text;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.PatternSyntaxException;
 
 /**
  * Represents an item chance model with methods to handle rewards.
@@ -90,7 +88,7 @@ public class ItemChance {
         items.forEach(item -> {
           buttons.add(GooeyButton.builder()
             .display(item.getItemStack().copy())
-            .title("mod:" + modid + ":" + item.getItemId())
+            .with(DataComponentTypes.ITEM_NAME, AdventureTranslator.toNative("mod:" + modid + ":" + item.getItemId()))
             .onClick((action) -> {
               action.getPlayer().giveItemStack(item.getItemStack().copy());
             })
@@ -278,10 +276,7 @@ public class ItemChance {
     itemStack = Utils.parseItemId(iditem, Integer.parseInt(itemSplit[1]));
     itemStack.setCount(amount);
     if (split.length > 1) {
-      try {
-        itemStack.setNbt(NbtHelper.fromNbtProviderString(split[1]));
-      } catch (PatternSyntaxException | CommandSyntaxException | ArrayIndexOutOfBoundsException ignored) {
-      }
+      //itemStack.set(DataComponentTypes.CUSTOM_DATA, NbtHelper.fromNbtProviderString(split[1]));
     }
     return itemStack;
   }
@@ -344,8 +339,8 @@ public class ItemChance {
     lore.replaceAll(s -> s.replace("%chance%", percentage));
     return GooeyButton.builder()
       .display(getItemStack())
-      .title(AdventureTranslator.toNative(title))
-      .lore(Text.class, AdventureTranslator.toNativeL(lore))
+      .with(DataComponentTypes.ITEM_NAME, AdventureTranslator.toNative(title))
+      .with(DataComponentTypes.LORE, new LoreComponent(AdventureTranslator.toNativeL(lore)))
       .build();
   }
 
@@ -606,7 +601,7 @@ public class ItemChance {
       lore.replaceAll(s -> s.replace("%chance%", String.valueOf(itemChance.getChance())));
       buttons.add(GooeyButton.builder()
         .display(itemChance.getItemStack())
-        .lore(Text.class, AdventureTranslator.toNativeL(lore))
+        .with(DataComponentTypes.LORE, new LoreComponent(AdventureTranslator.toNativeL(lore)))
         .build());
     }
     return buttons;

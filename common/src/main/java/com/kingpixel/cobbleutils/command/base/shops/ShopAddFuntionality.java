@@ -1,10 +1,40 @@
 package com.kingpixel.cobbleutils.command.base.shops;
 
+import ca.landonjw.gooeylibs2.api.UIManager;
+import ca.landonjw.gooeylibs2.api.button.Button;
+import ca.landonjw.gooeylibs2.api.button.GooeyButton;
+import ca.landonjw.gooeylibs2.api.button.PlaceholderButton;
+import ca.landonjw.gooeylibs2.api.helpers.PaginationHelper;
+import ca.landonjw.gooeylibs2.api.page.GooeyPage;
+import ca.landonjw.gooeylibs2.api.page.LinkedPage;
+import ca.landonjw.gooeylibs2.api.template.types.ChestTemplate;
+import com.cobblemon.mod.common.api.pokemon.PokemonProperties;
+import com.cobblemon.mod.common.item.PokemonItem;
+import com.kingpixel.cobbleutils.CobbleUtils;
+import com.kingpixel.cobbleutils.Model.FilterPokemons;
+import com.kingpixel.cobbleutils.Model.ItemChance;
+import com.kingpixel.cobbleutils.config.ShopConfig;
+import com.kingpixel.cobbleutils.features.shops.models.Product;
+import com.kingpixel.cobbleutils.util.AdventureTranslator;
+import com.kingpixel.cobbleutils.util.EconomyUtil;
+import com.kingpixel.cobbleutils.util.PlayerUtils;
+import com.kingpixel.cobbleutils.util.UIUtils;
+import net.minecraft.component.DataComponentTypes;
+import net.minecraft.component.type.LoreComponent;
+import net.minecraft.item.Items;
+import net.minecraft.registry.Registries;
+import net.minecraft.server.network.ServerPlayerEntity;
+import org.blanketeconomy.Blanketconfig;
+
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * @author Carlos Varas Alonso - 23/11/2024 4:39
  */
 public class ShopAddFuntionality {
-/*
+
   // shopConfig.getShop().addProduct(product, buy, sell, mod_id, shop);
 
   public static void open(ServerPlayerEntity player, ShopConfig shopConfig, String modId, String shop, Product product) {
@@ -15,12 +45,12 @@ public class ShopAddFuntionality {
     // Product
     GooeyButton productButton = GooeyButton.builder()
       .display(product.getItemStack())
-      .title("§aProduct")
-      .lore(Text.class,
-        AdventureTranslator.toNativeL(
+      .with(DataComponentTypes.ITEM_NAME, AdventureTranslator.toNative("§aProduct"))
+      .with(DataComponentTypes.LORE,
+        new LoreComponent(AdventureTranslator.toNativeL(
           List.of("§7Current: §f" + product.getProduct() + "",
             "§7Click to change product")
-        )
+        ))
       ).onClick(action -> {
         openChangeProduct(player, shopConfig, modId, shop, product);
       })
@@ -29,13 +59,13 @@ public class ShopAddFuntionality {
     // Change Prices
     GooeyButton changePrices = GooeyButton.builder()
       .display(Items.EMERALD.getDefaultStack())
-      .title("§aChange Prices")
-      .lore(Text.class,
-        AdventureTranslator.toNativeL(
+      .with(DataComponentTypes.ITEM_NAME, AdventureTranslator.toNativeComponent("§aChange Prices"))
+      .with(DataComponentTypes.LORE,
+        new LoreComponent(AdventureTranslator.toNativeL(
           List.of("§7Current Buy: §f" + product.getBuy() + "",
             "§7Current Sell: §f" + product.getSell() + "",
             "§7Click to change prices")
-        )
+        ))
       ).onClick(action -> {
         openChangePrices(player, shopConfig, modId, shop, product);
       })
@@ -85,7 +115,7 @@ public class ShopAddFuntionality {
 
     GooeyButton pokemon = GooeyButton.builder()
       .display(PokemonItem.from(PokemonProperties.Companion.parse("pikachu")))
-      .title("§aPokemon")
+      .with(DataComponentTypes.ITEM_NAME, AdventureTranslator.toNative("§aPokemon"))
       .onClick(action -> {
         defaultChangeProduct(player, shopConfig, modId, shop, product, getPokemonButtons(player, shopConfig, modId, shop, product)
           , "Pokemons");
@@ -94,7 +124,7 @@ public class ShopAddFuntionality {
 
     GooeyButton item = GooeyButton.builder()
       .display(Items.DIAMOND.getDefaultStack())
-      .title("§aItem")
+      .with(DataComponentTypes.ITEM_NAME, AdventureTranslator.toNative("§aItem"))
       .onClick(action -> {
         defaultChangeProduct(player, shopConfig, modId, shop, product, getItemButtons(player, shopConfig, modId, shop, product)
           , "Items");
@@ -103,7 +133,7 @@ public class ShopAddFuntionality {
 
     GooeyButton money = GooeyButton.builder()
       .display(Items.EMERALD.getDefaultStack())
-      .title("§aMoney")
+      .with(DataComponentTypes.ITEM_NAME, AdventureTranslator.toNative("§aMoney"))
       .onClick(action -> {
         defaultChangeProduct(player, shopConfig, modId, shop, product, getMoneyButtons(player, shopConfig, modId, shop, product)
           , "Money");
@@ -113,7 +143,7 @@ public class ShopAddFuntionality {
 
     GooeyButton moditem = GooeyButton.builder()
       .display(Items.DIAMOND.getDefaultStack())
-      .title("§aMod Item")
+      .with(DataComponentTypes.ITEM_NAME, AdventureTranslator.toNative("§aMod Item"))
       .onClick(action -> {
         defaultChangeProduct(player, shopConfig, modId, shop, product, getModItemButtons(player, shopConfig, modId,
           shop, product), "Mod Items");
@@ -164,7 +194,7 @@ public class ShopAddFuntionality {
         EconomyUtil.impactorService.currencies().registered().forEach(currency -> {
           GooeyButton button = GooeyButton.builder()
             .display(Items.EMERALD.getDefaultStack())
-            .title(currency.key().asString())
+            .with(DataComponentTypes.ITEM_NAME, AdventureTranslator.toNative(currency.key().asString()))
             .onClick(action -> {
               product.setProduct("money:" + currency.key().asString()
                 .replace("impactor:", "") + ":1");
@@ -178,7 +208,7 @@ public class ShopAddFuntionality {
         Blanketconfig.INSTANCE.getConfig().getEconomy().forEach(economyConfig -> {
           GooeyButton button = GooeyButton.builder()
             .display(Items.EMERALD.getDefaultStack())
-            .title(economyConfig.getCurrencyType())
+            .with(DataComponentTypes.ITEM_NAME, AdventureTranslator.toNative(economyConfig.getCurrencyType()))
             .onClick(action -> {
               product.setProduct("money:" + economyConfig.getCurrencyType() + ":1");
               open(player, shopConfig, modId, shop, product);
@@ -269,16 +299,16 @@ public class ShopAddFuntionality {
 
     GooeyButton buy = GooeyButton.builder()
       .display(Items.EMERALD.getDefaultStack())
-      .title("§aBuy")
-      .lore(Text.class,
-        AdventureTranslator.toNativeL(
+      .with(DataComponentTypes.ITEM_NAME, AdventureTranslator.toNative("§aBuy"))
+      .with(DataComponentTypes.LORE,
+        new LoreComponent(AdventureTranslator.toNativeL(
           List.of("§7Current: §f" + product.getBuy() + "",
             "§7Left Click to increase by 1",
             "&7Right Click to increase by 10",
             "&7Shift + Left Click to increase by 100",
             "&7Shift + Right Click to increase by 1000",
             "&7Middle Click to set to 0")
-        )
+        ))
       ).onClick(action -> {
         switch (action.getClickType()) {
           case LEFT_CLICK:
@@ -307,15 +337,16 @@ public class ShopAddFuntionality {
 
     GooeyButton sell = GooeyButton.builder()
       .display(Items.EMERALD.getDefaultStack())
-      .title("§aSell")
-      .lore(Text.class,
-        AdventureTranslator.toNativeL(
-          List.of("§7Current: §f" + product.getSell() + "",
-            "§7Left Click to increase by 1",
-            "&7Right Click to increase by 10",
-            "&7Shift + Left Click to increase by 100",
-            "&7Shift + Right Click to increase by 1000",
-            "&7Middle Click to set to 0")
+      .with(DataComponentTypes.ITEM_NAME, AdventureTranslator.toNative("§aSell"))
+      .with(DataComponentTypes.LORE, new LoreComponent(
+          AdventureTranslator.toNativeL(
+            List.of("§7Current: §f" + product.getSell() + "",
+              "§7Left Click to increase by 1",
+              "&7Right Click to increase by 10",
+              "&7Shift + Left Click to increase by 100",
+              "&7Shift + Right Click to increase by 1000",
+              "&7Middle Click to set to 0")
+          )
         )
       ).onClick(action -> {
         switch (action.getClickType()) {
@@ -351,5 +382,5 @@ public class ShopAddFuntionality {
 
     UIManager.openUIForcefully(player, page);
   }
- */
+
 }

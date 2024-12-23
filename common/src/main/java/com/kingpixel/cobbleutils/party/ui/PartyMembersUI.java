@@ -13,6 +13,8 @@ import ca.landonjw.gooeylibs2.api.template.types.ChestTemplate;
 import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.util.AdventureTranslator;
 import com.kingpixel.cobbleutils.util.Utils;
+import net.minecraft.component.DataComponentTypes;
+import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
@@ -31,10 +33,9 @@ public class PartyMembersUI {
 
     CobbleUtils.partyManager.getMembers(player)
       .forEach((playerInfo) -> {
-        ;
         GooeyButton invite = GooeyButton.builder()
           .display(Utils.parseItemId("minecraft:emerald"))
-          .title(playerInfo.getName())
+          .with(DataComponentTypes.ITEM_NAME, AdventureTranslator.toNative(playerInfo.getName()))
           .onClick(action -> {
             if (action.getPlayer().getUuid().equals(playerInfo.getPlayeruuid())) return;
             if (CobbleUtils.partyManager.isOwner(action.getPlayer())) {
@@ -50,20 +51,22 @@ public class PartyMembersUI {
 
     LinkedPageButton previus = LinkedPageButton.builder()
       .display(Utils.parseItemId("minecraft:arrow"))
-      .title(AdventureTranslator.toNative("Previous Page"))
+      .with(DataComponentTypes.ITEM_NAME, AdventureTranslator.toNative("Previous Page"))
       .linkType(LinkType.Previous)
       .build();
 
     LinkedPageButton next = LinkedPageButton.builder()
       .display(Utils.parseItemId("minecraft:arrow"))
-      .title(AdventureTranslator.toNative("Next Page"))
+      .with(DataComponentTypes.ITEM_NAME, AdventureTranslator.toNative("Next Page"))
       .linkType(LinkType.Next)
       .build();
 
     PlaceholderButton placeholder = new PlaceholderButton();
 
+    ItemStack fillItem = Items.GRAY_STAINED_GLASS_PANE.getDefaultStack();
+    fillItem.set(DataComponentTypes.ITEM_NAME, Text.empty());
     GooeyButton fill = GooeyButton.builder()
-      .display(Items.GRAY_STAINED_GLASS_PANE.getDefaultStack().setCustomName(Text.literal(""))).build();
+      .display(fillItem).build();
     template.fill(fill)
       .rectangle(0, 0, 2, 9, placeholder)
       .fillFromList(buttons)

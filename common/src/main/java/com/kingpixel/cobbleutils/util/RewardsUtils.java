@@ -9,6 +9,7 @@ import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.Model.ItemObject;
 import com.kingpixel.cobbleutils.Model.RewardsData;
 import net.minecraft.item.ItemStack;
+import net.minecraft.registry.DynamicRegistryManager;
 import net.minecraft.server.network.ServerPlayerEntity;
 
 import java.util.ArrayList;
@@ -100,7 +101,7 @@ public class RewardsUtils {
         break;
 
       ItemStack existingItemStack = item.toItemStack();
-      if (ItemStack.canCombine(itemStack, existingItemStack)) {
+      if (ItemStack.areItemsEqual(itemStack, existingItemStack)) {
         int existingCount = existingItemStack.getCount();
         int spaceAvailable = maxStackSize - existingCount;
 
@@ -137,7 +138,7 @@ public class RewardsUtils {
     boolean update = false;
     if (pokemon == null)
       return update;
-    if (!Cobblemon.INSTANCE.getStorage().getParty(player.getUuid()).add(pokemon)) {
+    if (!Cobblemon.INSTANCE.getStorage().getParty(player).add(pokemon)) {
       update = true;
     }
 
@@ -149,7 +150,7 @@ public class RewardsUtils {
           newRewardsData.init();
           return newRewardsData;
         });
-      rewardsData.getPokemons().add(pokemon.saveToJSON(new JsonObject()));
+      rewardsData.getPokemons().add(pokemon.saveToJSON(DynamicRegistryManager.EMPTY, new JsonObject()));
       rewardsData.writeInfo();
     }
     return update;
@@ -172,18 +173,16 @@ public class RewardsUtils {
 
     boolean update = false;
 
-    try {
-      var party = Cobblemon.INSTANCE.getStorage().getParty(player.getUuid());
-      for (Pokemon pokemon : pokemons) {
-        if (pokemon == null) continue;
-        if (!party.add(pokemon)) {
-          update = true;
-          rewardsData.getPokemons().add(pokemon.saveToJSON(new JsonObject()));
-        }
+
+    var party = Cobblemon.INSTANCE.getStorage().getParty(player);
+    for (Pokemon pokemon : pokemons) {
+      if (pokemon == null) continue;
+      if (!party.add(pokemon)) {
+        update = true;
+        rewardsData.getPokemons().add(pokemon.saveToJSON(DynamicRegistryManager.EMPTY, new JsonObject()));
       }
-    } catch (NoPokemonStoreException e) {
-      throw new RuntimeException(e);
     }
+
 
     if (update) {
       rewardsData.writeInfo();
@@ -259,19 +258,15 @@ public class RewardsUtils {
       && rewardsData.getPokemons().isEmpty()) {
       return;
     }
-    PlayerPartyStore playerPartyStore = null;
-    try {
-      playerPartyStore = Cobblemon.INSTANCE.getStorage().getParty(player.getUuid());
-    } catch (NoPokemonStoreException e) {
-      throw new RuntimeException(e);
-    }
+    PlayerPartyStore playerPartyStore = Cobblemon.INSTANCE.getStorage().getParty(player);
+
 
     if (!rewardsData.getPokemons().isEmpty()) {
       PlayerPartyStore finalPlayerPartyStore = playerPartyStore;
       List<JsonObject> pokemonsToRemove = new ArrayList<>();
       rewardsData.getPokemons().forEach(pokemon -> {
         try {
-          Pokemon pokemon1 = Pokemon.Companion.loadFromJSON(pokemon);
+          Pokemon pokemon1 = Pokemon.Companion.loadFromJSON(DynamicRegistryManager.EMPTY, pokemon);
           if (finalPlayerPartyStore.add(pokemon1)) {
             pokemonsToRemove.add(pokemon);
             update.set(true);

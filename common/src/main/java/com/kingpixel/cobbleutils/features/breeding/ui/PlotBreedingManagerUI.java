@@ -19,9 +19,10 @@ import com.kingpixel.cobbleutils.util.AdventureTranslator;
 import com.kingpixel.cobbleutils.util.PokemonUtils;
 import com.kingpixel.cobbleutils.util.RewardsUtils;
 import com.kingpixel.cobbleutils.util.UIUtils;
+import net.minecraft.component.DataComponentTypes;
+import net.minecraft.component.type.LoreComponent;
 import net.minecraft.registry.DynamicRegistryManager;
 import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.text.Text;
 
 import java.util.List;
 import java.util.function.Consumer;
@@ -101,13 +102,14 @@ public class PlotBreedingManagerUI {
     GooeyButton egg = GooeyButton.builder()
       .display(PokemonItem.from(pokemonegg,
         plotBreeding.getEggs().size()))
-      .title(AdventureTranslator.toNative(plotBreeding.getEggs().isEmpty() ? "" :
+      .with(DataComponentTypes.ITEM_NAME, AdventureTranslator.toNative(plotBreeding.getEggs().isEmpty() ? "" :
         PokemonUtils.getTranslatedName(plotBreeding.getFirstEgg())))
       .onClick(action -> {
         if (!plotBreeding.getEggs().isEmpty()) {
           plotBreeding.getEggs().forEach(pokemon -> {
             try {
-              RewardsUtils.saveRewardPokemon(action.getPlayer(), Pokemon.Companion.loadFromJSON(pokemon));
+              RewardsUtils.saveRewardPokemon(action.getPlayer(),
+                Pokemon.Companion.loadFromJSON(DynamicRegistryManager.EMPTY, pokemon));
             } catch (NoPokemonStoreException e) {
               e.printStackTrace();
             }
@@ -123,7 +125,7 @@ public class PlotBreedingManagerUI {
     CobbleUtils.breedconfig.getEggSlots().forEach(slot -> {
       template.set(slot, GooeyButton.builder()
         .display(CobbleUtils.breedconfig.getEmptySlots().getItemStack())
-        .title(AdventureTranslator.toNative(
+        .with(DataComponentTypes.ITEM_NAME, AdventureTranslator.toNative(
           plotBreeding.getEggs().isEmpty() ? "" :
             PokemonUtils.getTranslatedName(plotBreeding.getFirstEgg())
         ))
@@ -174,11 +176,11 @@ public class PlotBreedingManagerUI {
     }
     return GooeyButton.builder()
       .display((pokemon != null ? PokemonItem.from(pokemon) : itemModel.getItemStack()))
-      .title(AdventureTranslator
+      .with(DataComponentTypes.ITEM_NAME, AdventureTranslator
         .toNative((pokemon != null ? PokemonUtils.replace(pokemon) :
           CobbleUtils.language.getGender().getOrDefault(gender.getShowdownName(), gender.name()))))
-      .lore(Text.class,
-        AdventureTranslator.toNativeL((pokemon != null ? PokemonUtils.replaceLore(pokemon) : itemModel.getLore())))
+      .with(DataComponentTypes.LORE,
+        new LoreComponent(AdventureTranslator.toNativeL((pokemon != null ? PokemonUtils.replaceLore(pokemon) : itemModel.getLore()))))
       .onClick(action)
       .build();
   }
@@ -193,11 +195,11 @@ public class PlotBreedingManagerUI {
     }
     return GooeyButton.builder()
       .display(emptyItemModel.getItemStack())
-      .title(AdventureTranslator
+      .with(DataComponentTypes.ITEM_NAME, AdventureTranslator
         .toNative((pokemon != null ? PokemonUtils.replace(pokemon) :
           CobbleUtils.language.getGender().getOrDefault(gender.getShowdownName(), gender.name()))))
-      .lore(Text.class,
-        AdventureTranslator.toNativeL((pokemon != null ? PokemonUtils.replaceLore(pokemon) : supportItemModel.getLore())))
+      .with(DataComponentTypes.LORE,
+        new LoreComponent(AdventureTranslator.toNativeL((pokemon != null ? PokemonUtils.replaceLore(pokemon) : supportItemModel.getLore()))))
       .onClick(action)
       .build();
   }

@@ -25,8 +25,8 @@ loom {
 }
 
 dependencies {
-    minecraft("com.mojang:minecraft:${property("minecraft_version")}")
-    mappings(loom.officialMojangMappings())
+    //minecraft("com.mojang:minecraft:${property("minecraft_version")}")
+    //mappings(loom.officialMojangMappings())
 
     neoForge("net.neoforged:neoforge:${property("neoforge_version")}")
     modImplementation("dev.architectury:architectury-neoforge:${property("architectury_version")}")
