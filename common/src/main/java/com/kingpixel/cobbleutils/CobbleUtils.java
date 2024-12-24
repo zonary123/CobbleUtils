@@ -117,7 +117,7 @@ public class CobbleUtils extends ShopExtend {
   }
 
   private static void sign() {
-    info(MOD_NAME, "1.1.2", "CobbleUtils");
+    info(MOD_NAME, "1.1.3", "CobbleUtils");
     LOGGER.info("§e| §6Pokemons size: " + isActive(CobbleUtils.config.isRandomsize()));
     LOGGER.info("§e| §6Shulkers: §cUnimplemented");
     LOGGER.info("§e| §6Fossil: " + isActive(CobbleUtils.config.isFossil()));

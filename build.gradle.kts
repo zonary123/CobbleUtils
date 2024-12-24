@@ -49,6 +49,23 @@ allprojects {
     tasks.withType<JavaCompile>().configureEach {
         options.release = 21
     }
+    
+    tasks.processResources {
+        expand(
+            mapOf(
+                "mod_name" to project.property("mod_name"),
+                "mod_id" to project.property("mod_id"),
+                "mod_version" to project.property("mod_version"),
+                "mod_description" to project.property("mod_description"),
+                "author" to project.property("author"),
+                "repository" to project.property("repository"),
+                "license" to project.property("license"),
+                "mod_icon" to project.property("mod_icon"),
+                "environment" to project.property("environment"),
+                "supported_minecraft_versions" to project.property("supported_minecraft_versions")
+            )
+        )
+    }
 
     repositories {
         mavenCentral()

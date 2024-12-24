@@ -25,9 +25,9 @@ package com.kingpixel.cobbleutils.util;
  */
 
 import com.kingpixel.cobbleutils.CobbleUtils;
+import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
-import net.minecraft.registry.DynamicRegistryManager;
 import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
 
@@ -53,12 +53,13 @@ public class AdventureTranslator {
       .replace("%partyprefix%", CobbleUtils.partyLang.getPrefix()))));
   }
 
-  public static Text toNative(net.kyori.adventure.text.Component component) {
-    return Text.literal(GsonComponentSerializer.gson().serialize(component));
+  public static Text toNative(Component component) {
+    // return Text.Serializer.fromJson(GsonComponentSerializer.gson().serialize(component)); // TODO: Change this to the correct method
+    return Text.of(miniMessage.serialize(component));
   }
 
   public static List<Text> toNativeL(List<String> lore) {
-    List<net.kyori.adventure.text.Component> loreString = new ArrayList<>();
+    List<Component> loreString = new ArrayList<>();
     for (String loreLine : lore) {
       loreString.add(miniMessage.deserialize(replaceNative(loreLine)));
     }
@@ -66,34 +67,35 @@ public class AdventureTranslator {
   }
 
   public static List<Text> toNativeLWithOutPrefix(List<String> lore) {
-    List<net.kyori.adventure.text.Component> loreString = new ArrayList<>();
+    List<Component> loreString = new ArrayList<>();
     for (String loreLine : lore) {
       loreString.add(miniMessage.deserialize(replaceNative(loreLine)));
     }
     return toNativeLWithOut(loreString);
   }
 
-  private static List<Text> toNativeLWithOut(List<net.kyori.adventure.text.Component> components) {
+  private static List<Text> toNativeLWithOut(List<Component> components) {
     List<Text> nativeComponents = new ArrayList<>();
-    for (net.kyori.adventure.text.Component component : components) {
+    for (Component component : components) {
       nativeComponents.add(toNative(component));
     }
     return nativeComponents;
   }
 
-  private static List<Text> toNative(List<net.kyori.adventure.text.Component> components) {
+  private static List<Text> toNative(List<Component> components) {
     List<Text> nativeComponents = new ArrayList<>();
-    for (net.kyori.adventure.text.Component component : components) {
+    for (Component component : components) {
       nativeComponents.add(toNative(component));
     }
     return nativeComponents;
   }
 
-  public static net.kyori.adventure.text.Component fromNative(Text component) {
-    return GsonComponentSerializer.gson().deserialize(Text.Serialization.toJsonString(component, DynamicRegistryManager.EMPTY));
+  public static Component fromNative(Text text) {
+    // TODO: Check if this is correct
+    return GsonComponentSerializer.gson().deserialize(text.getString());
   }
 
-  public static net.kyori.adventure.text.Component toNativeFromString(String displayname) {
+  public static Component toNativeFromString(String displayname) {
     return miniMessage.deserialize(replaceNative(displayname));
   }
 

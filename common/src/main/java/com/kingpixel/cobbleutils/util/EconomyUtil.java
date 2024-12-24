@@ -124,7 +124,7 @@ public abstract class EconomyUtil {
 
   private static boolean isBlankEconomyPresent() {
     try {
-      BlanketEconomy.INSTANCE.getAPI(CobbleUtils.server);
+      BlanketEconomy.INSTANCE.getAPI();
       return true;
     } catch (IllegalStateException | NullPointerException | NoClassDefFoundError e) {
       CobbleUtils.LOGGER.error("BlanketEconomy not found");

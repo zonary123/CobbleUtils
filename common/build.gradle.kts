@@ -37,7 +37,7 @@ dependencies {
     implementation("net.impactdev.impactor.api:economy:${property("impactor_version")}")
 
     // Economy Blanket
-    api(files("libs/BlanketEconomy-1.3.jar"))
+    api(files("libs/blanketeconomy-1.4.jar"))
 
     // CobbleDollars
     api(files("libs/CobbleDollars-fabric-1.5.2+1.20.1.jar"))
