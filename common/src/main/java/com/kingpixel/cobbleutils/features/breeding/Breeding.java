@@ -1,5 +1,7 @@
 package com.kingpixel.cobbleutils.features.breeding;
 
+import com.cobblemon.mod.common.api.Priority;
+import com.cobblemon.mod.common.api.events.CobblemonEvents;
 import com.cobblemon.mod.common.api.storage.NoPokemonStoreException;
 import com.cobblemon.mod.common.entity.pokemon.PokemonEntity;
 import com.cobblemon.mod.common.pokemon.Pokemon;
@@ -15,6 +17,7 @@ import dev.architectury.event.EventResult;
 import dev.architectury.event.events.common.InteractionEvent;
 import dev.architectury.event.events.common.LifecycleEvent;
 import dev.architectury.event.events.common.PlayerEvent;
+import kotlin.Unit;
 import net.minecraft.entity.Entity;
 import net.minecraft.server.network.ServerPlayerEntity;
 
@@ -68,6 +71,13 @@ public class Breeding {
     PlayerEvent.PLAYER_JOIN.register(player -> {
       DatabaseClientFactory.databaseClient.getPlots(player);
       countryPlayer(player);
+    });
+
+    CobblemonEvents.POKEMON_HEALED.subscribe(Priority.HIGHEST, pokemon -> {
+      if (pokemon.getPokemon().getSpecies().showdownId().equalsIgnoreCase("egg")) {
+        pokemon.cancel();
+      }
+      return Unit.INSTANCE;
     });
 
     PlayerEvent.PLAYER_QUIT.register(player -> {

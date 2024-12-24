@@ -38,35 +38,69 @@ public class AdventureTranslator {
   private static final MiniMessage miniMessage = MiniMessage.miniMessage();
 
   public static Text toNativeWithOutPrefix(String displayname) {
-    return toNative(miniMessage.deserialize(replaceNative(displayname)));
+    if (CobbleUtils.config.isDebug()) {
+      return toNative(miniMessage.deserialize(replaceNative(displayname)
+        .replace("%prefix%", "")
+        .replace("%partyprefix%", "")));
+    } else {
+      return Text.of(replaceNative(displayname
+        .replace("%prefix%", "")
+        .replace("%partyprefix%", "")));
+    }
   }
 
   public static Text toNative(String displayname) {
-    return toNative(miniMessage.deserialize(replaceNative(displayname
-      .replace("%prefix%", CobbleUtils.config.getPrefix())
-      .replace("%partyprefix%", CobbleUtils.partyLang.getPrefix()))));
+    if (CobbleUtils.config.isDebug()) {
+      return toNative(miniMessage.deserialize(replaceNative(displayname
+        .replace("%prefix%", CobbleUtils.config.getPrefix())
+        .replace("%partyprefix%", CobbleUtils.partyLang.getPrefix()))));
+    } else {
+      return Text.of(replaceNative(displayname
+        .replace("%prefix%", CobbleUtils.config.getPrefix())
+        .replace("%partyprefix%", CobbleUtils.partyLang.getPrefix())));
+    }
   }
 
   public static Text toNative(String displayname, String prefix) {
-    return toNative(miniMessage.deserialize(replaceNative(displayname
-      .replace("%prefix%", prefix)
-      .replace("%partyprefix%", CobbleUtils.partyLang.getPrefix()))));
+    if (CobbleUtils.config.isDebug()) {
+      return toNative(miniMessage.deserialize(replaceNative(displayname
+        .replace("%prefix%", prefix)
+        .replace("%partyprefix%", CobbleUtils.partyLang.getPrefix()))));
+    } else {
+      return Text.of(replaceNative(displayname
+        .replace("%prefix%", prefix)
+        .replace("%partyprefix%", CobbleUtils.partyLang.getPrefix())));
+    }
   }
 
   public static Text toNative(Component component) {
-    // return Text.Serializer.fromJson(GsonComponentSerializer.gson().serialize(component)); // TODO: Change this to the correct method
-    return Text.of(miniMessage.serialize(component));
+    if (CobbleUtils.config.isDebug()) {
+      return Text.of(miniMessage.serialize(component));
+    } else {
+      return Text.of(GsonComponentSerializer.gson().serialize(component));
+    }
+    //return Text.of(GsonComponentSerializer.gson().serialize(component));
+    //Text.Serializer.fromJson(GsonComponentSerializer.gson().serialize(component));
   }
 
   public static List<Text> toNativeL(List<String> lore) {
-    List<Component> loreString = new ArrayList<>();
+    List<Text> loreString = new ArrayList<>();
     for (String loreLine : lore) {
-      loreString.add(miniMessage.deserialize(replaceNative(loreLine)));
+      if (CobbleUtils.config.isDebug()) {
+        loreString.add(toNative(miniMessage.deserialize(replaceNative(loreLine))));
+      } else {
+        loreString.add(toNative(loreLine));
+      }
     }
-    return toNative(loreString);
+    return loreString;
+    /*List<Component> loreString = new ArrayList<>();
+    for (String loreLine : lore) {
+        loreString.add(miniMessage.deserialize(replaceNative(loreLine)));
+    }*/
+    //return toNative(loreString);
   }
 
-  public static List<Text> toNativeLWithOutPrefix(List<String> lore) {
+  /*public static List<Text> toNativeLWithOutPrefix(List<String> lore) {
     List<Component> loreString = new ArrayList<>();
     for (String loreLine : lore) {
       loreString.add(miniMessage.deserialize(replaceNative(loreLine)));
@@ -80,7 +114,7 @@ public class AdventureTranslator {
       nativeComponents.add(toNative(component));
     }
     return nativeComponents;
-  }
+  }*/
 
   private static List<Text> toNative(List<Component> components) {
     List<Text> nativeComponents = new ArrayList<>();
@@ -100,33 +134,59 @@ public class AdventureTranslator {
   }
 
   private static String replaceNative(String displayname) {
-    if (displayname == null || displayname.isEmpty()) {
-      return "";
+    if (displayname == null || displayname.isEmpty()) return "";
+    if (CobbleUtils.config.isDebug()) {
+      displayname = displayname
+        .replace("&", "§")
+        .replace("§0", "<black>")
+        .replace("§1", "<dark_blue>")
+        .replace("§2", "<dark_green>")
+        .replace("§3", "<dark_aqua>")
+        .replace("§4", "<dark_red>")
+        .replace("§5", "<dark_purple>")
+        .replace("§6", "<gold>")
+        .replace("§7", "<gray>")
+        .replace("§8", "<dark_gray>")
+        .replace("§9", "<blue>")
+        .replace("§a", "<green>")
+        .replace("§b", "<aqua>")
+        .replace("§c", "<red>")
+        .replace("§d", "<light_purple>")
+        .replace("§e", "<yellow>")
+        .replace("§f", "<white>")
+        .replace("§k", "<obfuscated>")
+        .replace("§l", "<bold>")
+        .replace("§m", "<strikethrough>")
+        .replace("§n", "<underline>")
+        .replace("§o", "<italic>")
+        .replace("§r", "<reset>");
+    } else {
+      displayname = displayname
+        .replace("&", "§")
+        .replace("<black>", "§0")
+        .replace("<dark_blue>", "§1")
+        .replace("<dark_green>", "§2")
+        .replace("<dark_aqua>", "§3")
+        .replace("<dark_red>", "§4")
+        .replace("<dark_purple>", "§5")
+        .replace("<gold>", "§6")
+        .replace("<gray>", "§7")
+        .replace("<dark_gray>", "§8")
+        .replace("<blue>", "§9")
+        .replace("<green>", "§a")
+        .replace("<aqua>", "§b")
+        .replace("<red>", "§c")
+        .replace("<light_purple>", "§d")
+        .replace("<yellow>", "§e")
+        .replace("<white>", "§f")
+        .replace("<obfuscated>", "§k")
+        .replace("<bold>", "§l")
+        .replace("<strikethrough>", "§m")
+        .replace("<underline>", "§n")
+        .replace("<italic>", "§o")
+        .replace("<reset>", "§r");
     }
-    displayname = displayname
-      .replace("&", "§")
-      .replace("§0", "<black>")
-      .replace("§1", "<dark_blue>")
-      .replace("§2", "<dark_green>")
-      .replace("§3", "<dark_aqua>")
-      .replace("§4", "<dark_red>")
-      .replace("§5", "<dark_purple>")
-      .replace("§6", "<gold>")
-      .replace("§7", "<gray>")
-      .replace("§8", "<dark_gray>")
-      .replace("§9", "<blue>")
-      .replace("§a", "<green>")
-      .replace("§b", "<aqua>")
-      .replace("§c", "<red>")
-      .replace("§d", "<light_purple>")
-      .replace("§e", "<yellow>")
-      .replace("§f", "<white>")
-      .replace("§k", "<obfuscated>")
-      .replace("§l", "<bold>")
-      .replace("§m", "<strikethrough>")
-      .replace("§n", "<underline>")
-      .replace("§o", "<italic>")
-      .replace("§r", "<reset>");
+
     return displayname;
   }
 

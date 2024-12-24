@@ -245,6 +245,7 @@ public class BossConfig {
         getNickname().replace("%pokemon%", pokemon.getDisplayName().getString())
       )
     );
+    pokemonEntity.setCustomNameVisible(true);
     getSound().start(pokemonEntity);
     getParticle().sendParticlesNearPlayers(pokemonEntity);
     return true;

@@ -31,7 +31,6 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 /**
  * @author Carlos Varas Alonso - 02/08/2024 9:25
@@ -689,17 +688,18 @@ public class Shop {
       int finalamount = (amount == 0) ? 1 : amount;
       if (typeMenu == TypeMenu.BUY) {
         if (buyProduct(player, product, finalamount, price)) {
-          ShopTransactions.addTransaction(player.getUuid(), this, ShopTransactions.ShopAction.BUY, product, BigDecimal.valueOf(finalamount), price);
+          //ShopTransactions.addTransaction(player.getUuid(), this, ShopTransactions.ShopAction.BUY, product,
+          //  BigDecimal.valueOf(finalamount), price);
           open(player, shopConfig, mod_id, false, shop);
-          ShopTransactions.updateTransaction(player.getUuid(), shopConfig.getShopConfigMenu());
+          //ShopTransactions.updateTransaction(player.getUuid(), shopConfig.getShopConfigMenu());
         }
       }
       if (typeMenu == TypeMenu.SELL) {
         if (sellProduct(player, product, finalamount)) {
-          ShopTransactions.addTransaction(player.getUuid(), this, ShopTransactions.ShopAction.SELL, product,
-            BigDecimal.valueOf(finalamount), price);
+          //ShopTransactions.addTransaction(player.getUuid(), this, ShopTransactions.ShopAction.SELL, product,
+          // BigDecimal.valueOf(finalamount), price);
           open(player, shopConfig, mod_id, false, shop);
-          ShopTransactions.updateTransaction(player.getUuid(), shopConfig.getShopConfigMenu());
+          //ShopTransactions.updateTransaction(player.getUuid(), shopConfig.getShopConfigMenu());
         }
       }
 
@@ -721,11 +721,12 @@ public class Shop {
       .template(template)
       .build();
 
-    page.subscribe(amount, () -> {
+    /*page.subscribe(amount, () -> {
       createViewProductButton(shopConfig, mod_id, player, template, product, typeMenu, amount, price, symbol, byCommand, shop);
-    });
+    });*/
 
-    UIManager.openUIPassively(player, page, 10, TimeUnit.MILLISECONDS);
+    UIManager.openUIForcefully(player, page);
+    // UIManager.openUIPassively(player, page, 10, TimeUnit.MILLISECONDS); // Old code ? why ?
   }
 
   private boolean buyProduct(ServerPlayerEntity player, Product product, int amount, BigDecimal price) {

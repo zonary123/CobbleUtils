@@ -523,7 +523,7 @@ public class UIUtils {
     return GooeyButton.builder()
       .display(itemModel.getItemStack())
       .with(DataComponentTypes.ITEM_NAME, AdventureTranslator.toNative(itemModel.getDisplayname()))
-      .with(DataComponentTypes.LORE, new LoreComponent(AdventureTranslator.toNativeLWithOutPrefix(itemModel.getLore())))
+      .with(DataComponentTypes.LORE, new LoreComponent(AdventureTranslator.toNativeL(itemModel.getLore())))
       .onClick(action)
       .build();
   }
@@ -541,7 +541,7 @@ public class UIUtils {
     return GooeyButton.builder()
       .display(itemModel.getItemStack())
       .with(DataComponentTypes.ITEM_NAME, AdventureTranslator.toNative(itemModel.getDisplayname()))
-      .with(DataComponentTypes.LORE, new LoreComponent(AdventureTranslator.toNativeLWithOutPrefix(itemModel.getLore())))
+      .with(DataComponentTypes.LORE, new LoreComponent(AdventureTranslator.toNativeL(itemModel.getLore())))
       .onClick(action -> actionPokemon.accept(new PokemonButtonAction(action, pokemon)))
       .build();
   }
@@ -575,7 +575,7 @@ public class UIUtils {
     return GooeyButton.builder()
       .display(itemModel.getItemStack())
       .with(DataComponentTypes.ITEM_NAME, AdventureTranslator.toNativeWithOutPrefix(itemModel.getDisplayname()))
-      .with(DataComponentTypes.LORE, new LoreComponent(AdventureTranslator.toNativeLWithOutPrefix(itemModel.getLore())))
+      .with(DataComponentTypes.LORE, new LoreComponent(AdventureTranslator.toNativeL(itemModel.getLore())))
       .onClick(action -> actionPokemon.accept(new PokemonButtonAction(action, pokemon)))
       .build();
   }
@@ -589,9 +589,11 @@ public class UIUtils {
    */
   public static LinkedPageButton getPreviousButton(Consumer<ButtonAction> action) {
     ItemModel itemModel = CobbleUtils.language.getItemPrevious();
+    ItemStack itemStack = itemModel.getItemStack();
+    itemStack.set(DataComponentTypes.ITEM_NAME,
+      AdventureTranslator.toNative(itemModel.getDisplayname()));
     return LinkedPageButton.builder()
-      .display(itemModel.getItemStack())
-      .with(DataComponentTypes.ITEM_NAME, AdventureTranslator.toNativeWithOutPrefix(itemModel.getDisplayname()))
+      .display(itemStack)
       .linkType(LinkType.Previous)
       .onClick(action)
       .build();
@@ -606,9 +608,11 @@ public class UIUtils {
    */
   public static LinkedPageButton getNextButton(Consumer<ButtonAction> action) {
     ItemModel itemModel = CobbleUtils.language.getItemNext();
+    ItemStack itemStack = itemModel.getItemStack();
+    itemStack.set(DataComponentTypes.ITEM_NAME,
+      AdventureTranslator.toNative(itemModel.getDisplayname()));
     return LinkedPageButton.builder()
-      .display(itemModel.getItemStack())
-      .with(DataComponentTypes.ITEM_NAME, AdventureTranslator.toNativeWithOutPrefix(itemModel.getDisplayname()))
+      .display(itemStack)
       .linkType(LinkType.Next)
       .onClick(action)
       .build();
