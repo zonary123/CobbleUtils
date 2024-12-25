@@ -119,17 +119,13 @@ public class CobbleUtils extends ShopExtend {
   private static void sign() {
     info(MOD_NAME, "1.1.3", "CobbleUtils");
     LOGGER.info("§e| §6Pokemons size: " + isActive(CobbleUtils.config.isRandomsize()));
-    LOGGER.info("§e| §6Shulkers: §cUnimplemented");
     LOGGER.info("§e| §6Fossil: " + isActive(CobbleUtils.config.isFossil()));
-    LOGGER.info("§e| §6Shiny particles: §cUnimplemented");
     LOGGER.info("§e| §6Random item: §aImplemented");
     LOGGER.info("§e| §6Random money: §aImplemented");
     LOGGER.info("§e| §6Random pokemon: §aImplemented");
-    LOGGER.info("§e| §6Pick Up: §cUnimplemented");
-    LOGGER.info("§e| §6Fishing: &cUnimplemented");
     LOGGER.info("§e| §6Shop: " + isActive(CobbleUtils.config.isShops()));
     LOGGER.info("§e| §6Party: " + isActive(CobbleUtils.config.isParty()));
-    LOGGER.info("§e| §Storage Rewards: " + isActive(CobbleUtils.config.isStorageRewards()));
+    LOGGER.info("§e| §6Storage Rewards: " + isActive(CobbleUtils.config.isStorageRewards()));
     LOGGER.info("§e| §6Pokerus: " + isActive(CobbleUtils.config.getPokerus().isActive()));
     LOGGER.info("§e| §6Breeding: " + isActive(CobbleUtils.breedconfig.isActive()));
     LOGGER.info("§e| §6Bosses: " + isActive(CobbleUtils.config.isBoss()));
@@ -195,6 +191,8 @@ public class CobbleUtils extends ShopExtend {
     LifecycleEvent.SERVER_LEVEL_LOAD.register(level -> server = level.getServer());
 
     PlayerEvent.PLAYER_JOIN.register(player -> {
+
+
       //Rewards
       RewardsData rewardsData = rewardsManager.getRewardsData().computeIfAbsent(
         player.getUuid(),

@@ -382,6 +382,8 @@ public class PokemonUtils {
    */
   public static String getTranslatedName(Pokemon pokemon) {
     return "<lang:cobblemon.species." + pokemon.getSpecies().showdownId() + ".name>";
+
+
   }
 
   /**
@@ -488,7 +490,9 @@ public class PokemonUtils {
    */
   public static String getAbilityTranslate(Ability ability) {
     if (ability == null) return CobbleUtils.language.getNone();
+
     return "<lang:cobblemon.ability." + ability.getName() + ">";
+
   }
 
   /**
@@ -500,11 +504,14 @@ public class PokemonUtils {
    */
   public static String getNatureTranslate(Nature nature) {
     if (nature == null) return CobbleUtils.language.getNone();
+
     return "<lang:cobblemon.nature." + nature.getName().getPath() + ">";
+
   }
 
   public static String getMoveColor(ElementalType type, String lang) {
     if (type == null) return CobbleUtils.language.getNone();
+
     String color = CobbleUtils.language.getMovecolor().getOrDefault(type.getName(), "");
     if (color.contains("gradient"))
       return color + "<lang:" + lang + ">" + "</gradient>";
@@ -560,6 +567,7 @@ public class PokemonUtils {
       return "";
     }
 
+
     switch (stat.getIdentifier().toTranslationKey()) {
       case "cobblemon.hp":
         return "<lang:cobblemon.ui.stats.hp>";
@@ -586,6 +594,7 @@ public class PokemonUtils {
    * @return The pokeball translation
    */
   public static String getPokeBallTranslate(PokeBall caughtBall) {
+    if (caughtBall == null) return CobbleUtils.language.getNone();
     return caughtBall == null ? CobbleUtils.language.getNone()
       : Text.translatable("item.cobblemon." + caughtBall.getName().getPath()).getString();
   }

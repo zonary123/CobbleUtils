@@ -287,6 +287,7 @@ public class EggData {
     PlayerUtils.sendMessage(player, PokemonUtils.replace(CobbleUtils.breedconfig.getCreateEgg()
         .replace("%egg%", egg.getPersistentData().getString("species")),
       List.of(male, female, egg)), CobbleUtils.breedconfig.getPrefix());
+
     return egg;
   }
 

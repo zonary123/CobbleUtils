@@ -1,11 +1,11 @@
 package com.kingpixel.cobbleutils.features.shops.models;
 
-import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.Model.ItemChance;
 import com.kingpixel.cobbleutils.util.AdventureTranslator;
 import lombok.*;
 import net.minecraft.component.DataComponentTypes;
 import net.minecraft.component.type.CustomModelDataComponent;
+import net.minecraft.component.type.LoreComponent;
 import net.minecraft.item.ItemStack;
 
 import java.math.BigDecimal;
@@ -27,7 +27,7 @@ public class Product {
   private String display;
   private String displayname;
   private List<String> lore;
-  private Long CustomModelData;
+  private Integer CustomModelData;
   private Integer discount;
   // Always have date
   private String product;
@@ -55,7 +55,7 @@ public class Product {
       this.color = "<#e7af76>";
       this.displayname = "Custom Dirt";
       this.lore = List.of("This is a custom dirt", "You can use it to build");
-      this.CustomModelData = 1L;
+      this.CustomModelData = 0;
       this.permission = "cobbleutils.dirt";
       this.discount = 10;
     } else {
@@ -96,31 +96,7 @@ public class Product {
   }
 
   public ItemStack getItemStack(int amount) {
-    ItemStack itemStack = getItemchance().getItemStack();
-
-    if (getDisplay() != null && !getDisplay().isEmpty()) {
-      if (CobbleUtils.config.isDebug()) {
-        CobbleUtils.LOGGER.info("Display: " + getDisplay());
-      }
-      itemStack = new ItemChance(getDisplay(), 100).getItemStack();
-    }
-
-    itemStack.setCount(amount);
-
-    if (getDisplayname() != null && !getDisplayname().isEmpty()) {
-      itemStack.set(DataComponentTypes.ITEM_NAME, AdventureTranslator.toNative(getDisplayname()));
-    }
-
-    if (getLore() != null && !getLore().isEmpty()) {
-
-    }
-
-    if (getCustomModelData() != null && getCustomModelData() > 0 && itemStack.get(DataComponentTypes.CUSTOM_MODEL_DATA) != null) {
-      itemStack.set(DataComponentTypes.CUSTOM_MODEL_DATA,
-        new CustomModelDataComponent(Math.toIntExact(getCustomModelData())));
-    }
-
-    return itemStack;
+    return getItemStack(amount, true);
   }
 
   public ItemStack getItemStack() {
@@ -128,14 +104,15 @@ public class Product {
   }
 
   public ItemStack getItemStack(int amount, boolean setAmount) {
-    ItemStack itemStack = getItemchance().getItemStack();
+    ItemStack itemStack;
+    ItemChance itemChance;
 
     if (getDisplay() != null && !getDisplay().isEmpty()) {
-      if (CobbleUtils.config.isDebug()) {
-        CobbleUtils.LOGGER.info("Display: " + getDisplay());
-      }
-      itemStack = new ItemChance(getDisplay(), 100).getItemStack();
+      itemChance = new ItemChance(getDisplay(), 100);
+    } else {
+      itemChance = getItemchance();
     }
+    itemStack = itemChance.getItemStack();
 
     if (setAmount) {
       itemStack.setCount(amount);
@@ -146,12 +123,12 @@ public class Product {
     }
 
     if (getLore() != null && !getLore().isEmpty()) {
-
+      itemStack.set(DataComponentTypes.LORE, new LoreComponent(AdventureTranslator.toNativeL(getLore())));
     }
 
-    if (getCustomModelData() != null && getCustomModelData() > 0 && itemStack.get(DataComponentTypes.CUSTOM_MODEL_DATA) != null) {
+    if (getCustomModelData() != null && getCustomModelData() != 0) {
       itemStack.set(DataComponentTypes.CUSTOM_MODEL_DATA,
-        new CustomModelDataComponent(Math.toIntExact(getCustomModelData())));
+        new CustomModelDataComponent(getCustomModelData()));
     }
 
     return itemStack;

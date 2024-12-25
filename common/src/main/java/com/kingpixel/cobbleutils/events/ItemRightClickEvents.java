@@ -9,7 +9,6 @@ import net.minecraft.component.type.NbtComponent;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.text.Text;
 import net.minecraft.util.Hand;
 
 /**
@@ -20,8 +19,7 @@ public class ItemRightClickEvents {
     ItemStack itemStack = player.getStackInHand(hand);
     NbtComponent tag = itemStack.get(DataComponentTypes.CUSTOM_DATA);
     if (tag == null) return CompoundEventResult.pass();
-    if (tag.contains("shinytoken")
-      && itemStack.getItem() == CobbleUtils.config.getShinytoken().getItemStack().getItem()) {
+    if (tag.contains("shinytoken") && itemStack.getItem() == CobbleUtils.config.getShinytoken().getItemStack().getItem()) {
       if (!CobbleUtils.config.isActiveshinytoken()) return CompoundEventResult.pass();
       try {
         ShinyTokenUI.openmenu((ServerPlayerEntity) player);
@@ -29,24 +27,7 @@ public class ItemRightClickEvents {
         ShinyTokenUI.openmenu(PlayerUtils.castPlayer(player));
       }
     }
-    if (itemStack.getItem().getTranslationKey(player.getMainHandStack()).contains("shulker_box")) {
-      if (!CobbleUtils.config.isShulkers())
-        return CompoundEventResult.pass();
-      return shulkers(PlayerUtils.castPlayer(player), hand, itemStack);
-    }
     return CompoundEventResult.pass();
 
-  }
-
-  private static CompoundEventResult shulkers(ServerPlayerEntity player, Hand hand, ItemStack itemStack) {
-    try {
-      player.sendMessageToClient(Text.literal("Shulker Box abierta!"), true);
-      //player.item(itemStack, hand);
-      return CompoundEventResult.pass();
-    } catch (Exception e) {
-      CobbleUtils.LOGGER.error("Error al abrir la Shulker Box: " + e.getMessage());
-      e.printStackTrace();
-    }
-    return CompoundEventResult.pass();
   }
 }

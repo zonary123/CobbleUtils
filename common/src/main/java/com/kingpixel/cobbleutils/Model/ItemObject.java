@@ -8,7 +8,10 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 import net.minecraft.component.DataComponentTypes;
+import net.minecraft.component.type.NbtComponent;
 import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NbtCompound;
+import net.minecraft.nbt.NbtHelper;
 import net.minecraft.registry.Registries;
 import net.minecraft.util.Identifier;
 
@@ -31,13 +34,20 @@ public class ItemObject {
     var jsonObject = new JsonObject();
     jsonObject.addProperty("itemId", Registries.ITEM.getId(itemStack.getItem()).toString());
     jsonObject.addProperty("amount", itemStack.getCount());
+
     if (itemStack.get(DataComponentTypes.ITEM_NAME) != null) {
       jsonObject.addProperty("displayName", itemStack.getName().getString());
     }
     // Save NBT data
     if (itemStack.get(DataComponentTypes.CUSTOM_DATA) != null) {
-      jsonObject.addProperty("nbt", itemStack.get(DataComponentTypes.CUSTOM_DATA).toString());
+      NbtComponent nbtComponent = itemStack.get(DataComponentTypes.CUSTOM_DATA);
+      NbtCompound nbtCompound = nbtComponent.copyNbt();
+      if (nbtCompound != null) {
+        jsonObject.addProperty("nbt", NbtHelper.toNbtProviderString(nbtCompound));
+      }
     }
+
+
     /*if (itemStack.hasNbt() && itemStack.getNbt().contains("display") && itemStack.getNbt().getCompound("display")
     .contains("Lore")) {
 

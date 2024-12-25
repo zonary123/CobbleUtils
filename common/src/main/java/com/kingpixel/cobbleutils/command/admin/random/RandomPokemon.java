@@ -52,7 +52,6 @@ public class RandomPokemon implements Command<ServerCommandSource> {
     String type = StringArgumentType.getString(context, "type");
     if (CobbleUtils.config.isDebug())
       CobbleUtils.LOGGER.info("RandomPokemon command");
-
     try {
       CobbleUtilities.giveRandomPokemon(player, type);
     } catch (NoPokemonStoreException e) {

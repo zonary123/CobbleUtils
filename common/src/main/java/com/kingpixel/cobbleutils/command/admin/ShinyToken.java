@@ -10,7 +10,10 @@ import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.minecraft.command.argument.EntityArgumentType;
+import net.minecraft.component.DataComponentTypes;
+import net.minecraft.component.type.NbtComponent;
 import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NbtCompound;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -43,13 +46,9 @@ public class ShinyToken implements Command<ServerCommandSource> {
     ServerPlayerEntity player = EntityArgumentType.getPlayer(context, "player");
     int amount = IntegerArgumentType.getInteger(context, "amount");
     ItemStack itemStack = CobbleUtils.config.getShinytoken().getItemStack(amount);
-    /*itemStack.set(DataComponentTypes.CUSTOM_DATA, new CustomDataPredicate(
-      new NbtPredicate(
-        new NbtCompound()
-      )
-    ));
-
-    itemStack.getOrCreateNbt().putBoolean("shinytoken", true);*/
+    NbtCompound nbtCompound = new NbtCompound();
+    nbtCompound.putBoolean("shinytoken", true);
+    itemStack.set(DataComponentTypes.CUSTOM_DATA, NbtComponent.of(nbtCompound));
     if (!player.getInventory().insertStack(itemStack)) {
       RewardsUtils.saveRewardItemStack(player, itemStack);
     }

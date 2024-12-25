@@ -20,8 +20,11 @@ import lombok.Setter;
 import lombok.ToString;
 import net.minecraft.component.DataComponentTypes;
 import net.minecraft.component.type.LoreComponent;
+import net.minecraft.component.type.NbtComponent;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
+import net.minecraft.nbt.NbtCompound;
+import net.minecraft.nbt.NbtHelper;
 import net.minecraft.server.network.ServerPlayerEntity;
 
 import java.math.BigDecimal;
@@ -276,7 +279,15 @@ public class ItemChance {
     itemStack = Utils.parseItemId(iditem, Integer.parseInt(itemSplit[1]));
     itemStack.setCount(amount);
     if (split.length > 1) {
-      //itemStack.set(DataComponentTypes.CUSTOM_DATA, NbtHelper.fromNbtProviderString(split[1]));
+      try {
+        NbtCompound nbt = NbtHelper.fromNbtProviderString(split[1]);
+        NbtComponent nbtComponent = NbtComponent.of(nbt);
+        //itemStack.set(DataComponentTypes.CUSTOM_DATA, nbtComponent);
+        NbtComponent.set(DataComponentTypes.CUSTOM_DATA, itemStack, nbt);
+
+      } catch (Exception e) {
+        e.printStackTrace();
+      }
     }
     return itemStack;
   }
@@ -353,9 +364,8 @@ public class ItemChance {
    * @return The ItemStack of the reward.
    */
   private static ItemStack getRewardItemStack(String item, int amount) {
-    if (item == null) {
-      return Items.AIR.getDefaultStack();
-    }
+    if (item == null) return Items.AIR.getDefaultStack();
+
     String[] parts = item.split("\\|");
     if (parts.length > 1) {
       return getRewardItemStack(parts[0], amount);

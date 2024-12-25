@@ -19,6 +19,7 @@ import java.util.Map;
  * @author Carlos Varas Alonso - 28/06/2024 20:44
  */
 public class PlayerUtils {
+  // Comando
   public static void sendMessage(ServerPlayerEntity player, String message) {
     if (!message.isEmpty()) {
       player.sendMessage(AdventureTranslator.toNativeWithOutPrefix(message));
@@ -28,6 +29,14 @@ public class PlayerUtils {
   public static void sendMessage(ServerPlayerEntity player, String message, String prefix) {
     if (!message.isEmpty()) {
       player.sendMessage(AdventureTranslator.toNative(message, prefix));
+    }
+  }
+
+  public static void sendMessage(ServerPlayerEntity player, String message, String prefix, boolean broadcast) {
+    if (broadcast) {
+      broadcast(message, prefix);
+    } else {
+      sendMessage(player, message, prefix);
     }
   }
 

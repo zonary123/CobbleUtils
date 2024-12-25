@@ -291,9 +291,10 @@ public abstract class Utils {
     if (itemModel.getCustomModelData() != 0)
       itemStack.set(DataComponentTypes.CUSTOM_MODEL_DATA, new CustomModelDataComponent((int) itemModel.getCustomModelData()));
 
+
     if (itemModel.getLore() != null && !itemModel.getLore().isEmpty()) {
       itemStack.set(DataComponentTypes.LORE,
-        LoreComponent.DEFAULT.with(AdventureTranslator.toNative(itemModel.getLore().toString())));
+        new LoreComponent(AdventureTranslator.toNativeL(itemModel.getLore())));
     }
     return itemStack;
   }

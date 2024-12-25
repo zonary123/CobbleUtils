@@ -44,7 +44,10 @@ dependencies {
 
 tasks {
     base.archivesName.set(
-        "${project.property("mod_version")}/${project.property("archives_base_name")}-fabric" +
+        "${project.property("minecraft_version")}/${project.property("mod_version")}/${
+            project.property
+                ("archives_base_name")
+        }-fabric" +
                 "-${
                     project.property(
                         "mod_version"

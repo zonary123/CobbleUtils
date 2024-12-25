@@ -7,12 +7,13 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 import net.minecraft.component.DataComponentTypes;
-import net.minecraft.component.type.NbtComponent;
+import net.minecraft.component.type.CustomModelDataComponent;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * @author Carlos Varas Alonso - 12/08/2024 12:37
@@ -41,10 +42,13 @@ public class Incense extends ItemModel {
   public boolean isIncense(ItemStack itemStack) {
     if (itemStack == null) return false;
     if (itemStack.getItem() == Items.AIR) return false;
-    NbtComponent itemStackNbt = itemStack.get(DataComponentTypes.CUSTOM_DATA);
-    if (itemStackNbt == null) return false;
-    // itemStack.getItem().equals(this.getItemStack().getItem()) && itemStack.getNbt().getInt("CustomModelData") == getCustomModelData()
-    return false;
+   /* NbtComponent itemStackNbt = itemStack.get(DataComponentTypes.CUSTOM_DATA);
+    if (itemStackNbt == null) return false;*/
+
+    CustomModelDataComponent customModelDataComponent = itemStack.get(DataComponentTypes.CUSTOM_MODEL_DATA);
+
+    return itemStack.getItem().equals(this.getItemStack().getItem()) && Objects.equals(customModelDataComponent,
+      new CustomModelDataComponent((int) getCustomModelData()));
   }
 
   public String getChild(Pokemon pokemon) {
