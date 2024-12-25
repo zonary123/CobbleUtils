@@ -27,6 +27,8 @@ package com.kingpixel.cobbleutils.util;
 import com.kingpixel.cobbleutils.CobbleUtils;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
+import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
+import net.kyori.adventure.text.minimessage.tag.standard.StandardTags;
 import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
 import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
@@ -35,7 +37,16 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class AdventureTranslator {
-  private static final MiniMessage miniMessage = MiniMessage.miniMessage();
+  private static final MiniMessage miniMessageDebug = MiniMessage.miniMessage();
+  private static final MiniMessage miniMessage = MiniMessage.builder()
+    .tags(TagResolver.builder()
+      .resolver(StandardTags.color())
+      .resolver(StandardTags.translatable())
+      .resolver(StandardTags.gradient())
+      .resolver(StandardTags.clickEvent())
+      .resolver(StandardTags.hoverEvent())
+      .build())
+    .build();
 
   public static Text toNativeWithOutPrefix(String displayname) {
     if (CobbleUtils.config.isDebug()) {
@@ -75,13 +86,13 @@ public class AdventureTranslator {
 
   public static Text toNative(Component component) {
     if (CobbleUtils.config.isDebug()) {
-      return Text.of(miniMessage.serialize(component));
+      return Text.Serialization.fromJsonTree(GsonComponentSerializer.colorDownsamplingGson().serializeToTree(component),
+        null);
     } else {
       return Text.of(GsonComponentSerializer.gson().serialize(component));
     }
-    //return Text.of(GsonComponentSerializer.gson().serialize(component));
-    //Text.Serializer.fromJson(GsonComponentSerializer.gson().serialize(component));
   }
+
 
   public static List<Text> toNativeL(List<String> lore) {
     List<Text> loreString = new ArrayList<>();
@@ -93,36 +104,8 @@ public class AdventureTranslator {
       }
     }
     return loreString;
-    /*List<Component> loreString = new ArrayList<>();
-    for (String loreLine : lore) {
-        loreString.add(miniMessage.deserialize(replaceNative(loreLine)));
-    }*/
-    //return toNative(loreString);
   }
 
-  /*public static List<Text> toNativeLWithOutPrefix(List<String> lore) {
-    List<Component> loreString = new ArrayList<>();
-    for (String loreLine : lore) {
-      loreString.add(miniMessage.deserialize(replaceNative(loreLine)));
-    }
-    return toNativeLWithOut(loreString);
-  }
-
-  private static List<Text> toNativeLWithOut(List<Component> components) {
-    List<Text> nativeComponents = new ArrayList<>();
-    for (Component component : components) {
-      nativeComponents.add(toNative(component));
-    }
-    return nativeComponents;
-  }*/
-
-  private static List<Text> toNative(List<Component> components) {
-    List<Text> nativeComponents = new ArrayList<>();
-    for (Component component : components) {
-      nativeComponents.add(toNative(component));
-    }
-    return nativeComponents;
-  }
 
   public static Component fromNative(Text text) {
     // TODO: Check if this is correct

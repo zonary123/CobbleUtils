@@ -20,7 +20,6 @@ public class ItemUtils {
 
   public static String getTranslatedName(ItemStack itemStack) {
     if (itemStack.getItem() == Items.AIR) return CobbleUtils.language.getUnknown();
-    //if (itemStack.get(DataComponentTypes) == null) return "<lang:" + itemStack.getItem().getTranslationKey() + ">";
     if (itemStack.get(DataComponentTypes.CUSTOM_NAME) != null) return itemStack.getName().getString();
     return "<lang:" + itemStack.getItem().getTranslationKey() + ">";
   }

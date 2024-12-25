@@ -10,8 +10,11 @@ import com.kingpixel.cobbleutils.Model.ItemChance;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.ParseResults;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import net.minecraft.component.DataComponentTypes;
+import net.minecraft.component.type.NbtComponent;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NbtHelper;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
 
@@ -189,6 +192,15 @@ public class CobbleUtilities {
    * @return The ItemStack
    */
   public static ItemStack getItem(String item) {
+    try {
+      ItemStack itemStack = ItemStack.EMPTY;
+      NbtComponent nbtComponent = NbtComponent.of(NbtHelper.fromNbtProviderString(item));
+      itemStack.set(DataComponentTypes.CUSTOM_DATA, nbtComponent);
+      return itemStack;
+    } catch (Exception e) {
+      CobbleUtils.LOGGER.fatal("Failed to parse item for NBT: " + item);
+      CobbleUtils.LOGGER.fatal("Stacktrace: ");
+    }
     /*try {
       return ItemStack.fromNbt(NbtHelper.fromNbtProviderString(item));
     } catch (CommandSyntaxException e) {

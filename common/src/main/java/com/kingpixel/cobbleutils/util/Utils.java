@@ -20,10 +20,12 @@ import kotlin.ranges.IntRange;
 import net.minecraft.component.DataComponentTypes;
 import net.minecraft.component.type.CustomModelDataComponent;
 import net.minecraft.component.type.LoreComponent;
+import net.minecraft.component.type.NbtComponent;
 import net.minecraft.component.type.ProfileComponent;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.nbt.NbtCompound;
+import net.minecraft.nbt.NbtHelper;
 import net.minecraft.registry.Registries;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -55,11 +57,17 @@ import java.util.function.Consumer;
 public abstract class Utils {
   public static final Random RANDOM = new Random();
   private static final Charset charset = StandardCharsets.UTF_8;
+  private static Gson gsonPretty = null;
+  private static Gson gsonnotPretty = null;
+
 
   public static Gson newGson() {
-    return adapters()
-      .setPrettyPrinting()
-      .create();
+    if (gsonPretty == null) {
+      gsonPretty = adapters()
+        .setPrettyPrinting()
+        .create();
+    }
+    return gsonPretty;
   }
 
   private static GsonBuilder adapters() {
@@ -68,8 +76,11 @@ public abstract class Utils {
   }
 
   public static Gson newWithoutSpacingGson() {
-    return adapters()
-      .create();
+    if (gsonnotPretty == null) {
+      gsonnotPretty = adapters()
+        .create();
+    }
+    return gsonnotPretty;
   }
 
   private static GsonBuilder addAdapters(GsonBuilder builder) {
@@ -266,13 +277,13 @@ public abstract class Utils {
   }
 
   public static ItemStack addThingsItemStack(ItemStack itemStack, ItemModel itemModel) {
-
-    /*if (itemModel.getNbt() != null && !itemModel.getNbt().isEmpty()) {
+    if (itemModel.getNbt() != null && !itemModel.getNbt().isEmpty()) {
       try {
-        itemStack.set(DataComponentTypes.CUSTOM_DATA, NbtHelper.fromNbtProviderString(itemModel.getNbt()));
-      } catch (CommandSyntaxException ignored) {
+        NbtComponent nbtComponent = NbtComponent.of(NbtHelper.fromNbtProviderString(itemModel.getNbt()));
+        itemStack.set(DataComponentTypes.CUSTOM_DATA, nbtComponent);
+      } catch (Exception ignored) {
       }
-    }*/
+    }
 
     itemStack.set(DataComponentTypes.CUSTOM_NAME, AdventureTranslator.toNativeWithOutPrefix(
       itemModel.getDisplayname() != null ? itemModel.getDisplayname() : "Please set a displayname for this item"));
