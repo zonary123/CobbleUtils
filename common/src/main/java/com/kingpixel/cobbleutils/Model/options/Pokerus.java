@@ -26,7 +26,7 @@ public class Pokerus {
   private final boolean canspawnwithpokerus;
 
   public Pokerus() {
-    this.active = true;
+    this.active = false;
     this.multiplier = 2;
     this.rarity = 10000;
     this.roundup = true;

@@ -52,6 +52,7 @@ public class Breeding {
     }
     scheduledTasks.clear();
 
+
     // Crear una nueva tarea
     ScheduledFuture<?> checkegg = scheduler.scheduleAtFixedRate(() -> {
       try {
@@ -72,6 +73,8 @@ public class Breeding {
       DatabaseClientFactory.databaseClient.getPlots(player);
       countryPlayer(player);
     });
+
+    // Todo: Add egg generation in the world
 
     CobblemonEvents.POKEMON_HEALED.subscribe(Priority.HIGHEST, pokemon -> {
       if (pokemon.getPokemon().getSpecies().showdownId().equalsIgnoreCase("egg")) {

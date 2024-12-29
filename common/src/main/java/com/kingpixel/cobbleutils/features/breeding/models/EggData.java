@@ -14,6 +14,7 @@ import com.cobblemon.mod.common.api.pokemon.PokemonPropertyExtractor;
 import com.cobblemon.mod.common.api.pokemon.egg.EggGroup;
 import com.cobblemon.mod.common.api.pokemon.stats.Stats;
 import com.cobblemon.mod.common.api.storage.NoPokemonStoreException;
+import com.cobblemon.mod.common.entity.pokemon.PokemonEntity;
 import com.cobblemon.mod.common.item.CobblemonItem;
 import com.cobblemon.mod.common.pokemon.Pokemon;
 import com.cobblemon.mod.common.pokemon.abilities.HiddenAbilityType;
@@ -31,11 +32,17 @@ import com.kingpixel.cobbleutils.util.AdventureTranslator;
 import com.kingpixel.cobbleutils.util.PlayerUtils;
 import com.kingpixel.cobbleutils.util.PokemonUtils;
 import com.kingpixel.cobbleutils.util.Utils;
+import kotlin.Unit;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.Text;
+import net.minecraft.util.math.Vec3d;
+import net.minecraft.world.Heightmap;
+import net.minecraft.world.chunk.Chunk;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -146,6 +153,31 @@ public class EggData {
       pokemon.setIV(stats, pokemon.getPersistentData().getInt(tag));
       pokemon.getPersistentData().remove(tag);
     }
+  }
+
+  public static void createEgg(@Nullable ServerWorld serverWorld, Chunk chunk) {
+    PokemonEntity egg = PokemonProperties.Companion.parse("egg").createEntity(serverWorld);
+
+    Pokemon pokemonEgg = egg.getPokemon();
+    Pokemon pokemon = CobbleUtils.breedconfig.getPokemonsForDoubleDitto().generateRandomPokemon(CobbleUtils.MOD_ID,
+      "breeding");
+
+    int x = chunk.getPos().getStartX() + Utils.RANDOM.nextInt(16);
+    int z = chunk.getPos().getStartZ() + Utils.RANDOM.nextInt(16);
+    int y = serverWorld.getTopY(Heightmap.Type.MOTION_BLOCKING_NO_LEAVES, x, z);
+
+    Vec3d pos = new Vec3d(x, y, z);
+
+    if (CobbleUtils.config.isDebug()) {
+      CobbleUtils.LOGGER.info("Creating egg in " + pos);
+    }
+
+    pokemonEgg.getPersistentData().putString("species", pokemon.getSpecies().showdownId());
+    pokemonEgg.getPersistentData().putInt("level", pokemon.getLevel());
+    pokemonEgg.getPersistentData().putInt("steps", CobbleUtils.breedconfig.getSteps());
+    pokemonEgg.getPersistentData().putInt("cycles", pokemon.getSpecies().getEggCycles());
+
+    pokemonEgg.sendOut(serverWorld, pos, null, e -> Unit.INSTANCE);
   }
 
   public static EggData from(Pokemon pokemon) {

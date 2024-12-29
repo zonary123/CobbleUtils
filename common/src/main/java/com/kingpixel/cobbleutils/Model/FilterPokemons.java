@@ -12,6 +12,7 @@ import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.util.PokemonUtils;
 import com.kingpixel.cobbleutils.util.Utils;
 import lombok.Data;
+import lombok.Getter;
 
 import java.util.*;
 
@@ -25,6 +26,12 @@ public class FilterPokemons {
   // Cache <ModId, <Id, List<Pokemon>>>
   private static final Map<String, Map<String, List<Pokemon>>> cache = new HashMap<>();
 
+  // Also implemented
+  private boolean alsoImplemented;
+  // Also First Evolution
+  private boolean notEvolution;
+  // Legendarys
+  private boolean legendarys;
   // Order
   private Set<orderFilter> order;
 
@@ -57,13 +64,61 @@ public class FilterPokemons {
   // Rarity
   private Set<String> whitelistRarity;
   private Set<String> blacklistRarity;
-  // Also implemented
-  private boolean alsoImplemented;
-  // Also First Evolution
-  private boolean notEvolution;
-  // Legendarys
-  private boolean legendarys;
-  // Allow partial whitelist
+
+  // Use Chances
+  private boolean useChances;
+  private List<AdvancedPokemonChance> pokemonsChances;
+
+  @Getter
+  private static class AdvancedPokemonChance {
+    private List<String> pokemons;
+    private float chance;
+
+    public AdvancedPokemonChance() {
+      this.pokemons = new ArrayList<>();
+      this.chance = 1.0f;
+    }
+
+    public AdvancedPokemonChance(List<String> pokemons, float chance) {
+      this.pokemons = pokemons;
+      this.chance = chance;
+    }
+
+    public static List<AdvancedPokemonChance> defaultChances() {
+      List<AdvancedPokemonChance> chances = new ArrayList<>();
+      chances.add(new AdvancedPokemonChance(List.of("rattata",
+        "rattata alolan"), 5.0f));
+      chances.add(new AdvancedPokemonChance(List.of("pikachu"), 3.0f));
+      return chances;
+    }
+
+    public static List<Pokemon> getPokemons(List<AdvancedPokemonChance> pokemonChances) {
+      List<Pokemon> pokemons = new ArrayList<>();
+      for (AdvancedPokemonChance pokemonChance : pokemonChances) {
+        int size = pokemonChance.getPokemons().size();
+        for (int i = 0; i < size; i++) {
+          Pokemon pokemon = PokemonProperties.Companion.parse(pokemonChance.getPokemons().get(i)).create();
+          pokemons.add(pokemon);
+        }
+      }
+      return pokemons;
+    }
+
+    public static Pokemon getPokemon(List<AdvancedPokemonChance> pokemonChances) {
+      double totalChance = pokemonChances.stream().mapToDouble(pokemon -> pokemon.chance).sum();
+      double randomValue = Utils.RANDOM.nextDouble() * totalChance;
+      for (AdvancedPokemonChance pokemonChance : pokemonChances) {
+        randomValue -= pokemonChance.getChance();
+        if (randomValue <= 0) {
+          int size = pokemonChance.getPokemons().size();
+          Pokemon pokemon = PokemonProperties.Companion.parse(pokemonChance.getPokemons().get(Utils.RANDOM.nextInt(size))).create();
+          return pokemon;
+        }
+      }
+      // En caso de algún error inesperado, retorna el último Pokémon en la lista
+      return PokemonProperties.Companion.parse("rattata").create();
+    }
+  }
 
   public FilterPokemons() {
     // Order
@@ -103,7 +158,10 @@ public class FilterPokemons {
 
     alsoImplemented = true;
     notEvolution = false;
-    legendarys = true;
+    legendarys = false;
+
+    useChances = false;
+    pokemonsChances = AdvancedPokemonChance.defaultChances();
   }
 
   private void checker() {
@@ -148,21 +206,27 @@ public class FilterPokemons {
    *
    * @return the list of pokemons
    */
-  private List<Pokemon> getCachePokemons(String modId, String id) {
-    List<Pokemon> allowedPokemons;
-    if (cache.containsKey(modId) && cache.get(modId).containsKey(id)) {
-      if (cache.get(modId).get(id).isEmpty()) {
+  public List<Pokemon> getCachePokemons(String modId, String id) {
+    if (isUseChances()) {
+      List<Pokemon> allowedPokemons = AdvancedPokemonChance.getPokemons(getPokemonsChances());
+      allowedPokemons = allowedPokemons.stream().map(this::getPokemon).toList();
+      return allowedPokemons;
+    } else {
+      List<Pokemon> allowedPokemons;
+      if (cache.containsKey(modId) && cache.get(modId).containsKey(id)) {
+        if (cache.get(modId).get(id).isEmpty()) {
+          allowedPokemons = getAllowedPokemons();
+          cache.get(modId).put(id, allowedPokemons);
+        }
+        allowedPokemons = cache.get(modId).get(id);
+      } else {
+        checker();
         allowedPokemons = getAllowedPokemons();
+        cache.putIfAbsent(modId, new HashMap<>());
         cache.get(modId).put(id, allowedPokemons);
       }
-      allowedPokemons = cache.get(modId).get(id);
-    } else {
-      checker();
-      allowedPokemons = getAllowedPokemons();
-      cache.putIfAbsent(modId, new HashMap<>());
-      cache.get(modId).put(id, allowedPokemons);
+      return allowedPokemons;
     }
-    return allowedPokemons;
   }
 
   /**
@@ -192,8 +256,13 @@ public class FilterPokemons {
    * @return the pokemon
    */
   public Pokemon generateRandomPokemon(String modId, String id) {
-    List<Pokemon> allowedPokemons = getCachePokemons(modId, id);
-    return getPokemon(allowedPokemons.get(Utils.RANDOM.nextInt(allowedPokemons.size())));
+    if (isUseChances()) {
+      return getPokemon(AdvancedPokemonChance.getPokemon(getPokemonsChances()));
+    } else {
+      List<Pokemon> allowedPokemons = getCachePokemons(modId, id);
+      return getPokemon(allowedPokemons.get(Utils.RANDOM.nextInt(allowedPokemons.size())));
+    }
+
   }
 
 
@@ -207,13 +276,21 @@ public class FilterPokemons {
    * @return the list of pokemons
    */
   public List<Pokemon> generateRandomPokemons(String modId, String id, int size) {
-    List<Pokemon> allowedPokemons = getCachePokemons(modId, id);
+    if (isUseChances()) {
+      List<Pokemon> pokemons = new ArrayList<>();
+      for (int i = 0; i < size; i++) {
+        pokemons.add(AdvancedPokemonChance.getPokemon(getPokemonsChances()));
+      }
+      return pokemons;
+    } else {
+      List<Pokemon> allowedPokemons = getCachePokemons(modId, id);
 
-    List<Pokemon> pokemons = new ArrayList<>();
-    for (int i = 0; i < size; i++) {
-      pokemons.add(getPokemon(allowedPokemons.get(Utils.RANDOM.nextInt(allowedPokemons.size()))));
+      List<Pokemon> pokemons = new ArrayList<>();
+      for (int i = 0; i < size; i++) {
+        pokemons.add(getPokemon(allowedPokemons.get(Utils.RANDOM.nextInt(allowedPokemons.size()))));
+      }
+      return pokemons;
     }
-    return pokemons;
   }
 
   /**

@@ -229,7 +229,7 @@ public class ShopConfigMenu {
         }
         GooeyButton button = GooeyButton.builder()
           .display(itemModelShop.getItemStack())
-          .with(DataComponentTypes.ITEM_NAME, AdventureTranslator.toNative(itemModelShop.getDisplayname()))
+          .with(DataComponentTypes.CUSTOM_NAME, AdventureTranslator.toNative(itemModelShop.getDisplayname()))
           .with(DataComponentTypes.LORE, new LoreComponent(AdventureTranslator.toNativeL(lore)))
           .onClick(action -> {
             if (shop.isActive()) {

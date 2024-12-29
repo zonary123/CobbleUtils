@@ -80,7 +80,7 @@ public class RewardsUtils {
    */
   private static boolean saveItemToRewardsData(ServerPlayerEntity player, RewardsData rewardsData, ItemStack itemStack) {
     // Intentar dar el objeto directamente al jugador
-    if (!CobbleUtils.config.isStorageRewards() || CobbleUtils.config.isDirectreward()) {
+    if (!CobbleUtils.config.isStorageRewards()) {
       if (!player.giveItemStack(itemStack)) {
         CobbleUtils.server.execute(() -> player.dropItem(itemStack, true));
       }
@@ -88,9 +88,8 @@ public class RewardsUtils {
     }
 
     // Intentar dar el objeto al jugador
-    if (player.giveItemStack(itemStack)) {
-      return false; // Objeto entregado, no es necesario procesar más
-    }
+    if (player.giveItemStack(itemStack)) return false; // Objeto entregado, no es necesario procesar más
+
 
     int remainingCount = itemStack.getCount();
     int maxStackSize = itemStack.getItem().getMaxCount();

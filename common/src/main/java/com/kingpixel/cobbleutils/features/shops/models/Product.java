@@ -119,7 +119,7 @@ public class Product {
     }
 
     if (getDisplayname() != null && !getDisplayname().isEmpty()) {
-      itemStack.set(DataComponentTypes.ITEM_NAME, AdventureTranslator.toNative(getDisplayname()));
+      itemStack.set(DataComponentTypes.CUSTOM_NAME, AdventureTranslator.toNative(getDisplayname()));
     }
 
     if (getLore() != null && !getLore().isEmpty()) {

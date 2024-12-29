@@ -69,7 +69,7 @@ public class CobbleUtils extends ShopExtend {
   // Rewards
   public static RewardsManager rewardsManager = new RewardsManager();
   // Tasks
-  private static final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+  public static final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
   private static final List<ScheduledFuture<?>> scheduledTasks = new CopyOnWriteArrayList<>();
 
 
@@ -82,7 +82,6 @@ public class CobbleUtils extends ShopExtend {
     checks();
     files();
     spawnRates.init();
-    ArraysPokemons.init();
     sign();
     tasks();
     Features.register();
@@ -103,6 +102,9 @@ public class CobbleUtils extends ShopExtend {
 
   private static void files() {
     config.init();
+    if (!CobbleUtils.config.isDebug()) {
+      config.setBoss(false);
+    }
     language.init();
     shopLang.init();
     breedconfig.init();
@@ -112,14 +114,13 @@ public class CobbleUtils extends ShopExtend {
     partyConfig.init();
     partyLang.init();
     BossConfig.init();
-    shopConfig.init(PATH_SHOP, MOD_ID, PATH_SHOPS);
     DatabaseClientFactory.createDatabaseClient(config.getDatabase());
+    scheduler.schedule(() -> shopConfig.init(PATH_SHOP, MOD_ID, PATH_SHOPS), 15, TimeUnit.SECONDS);
   }
 
   private static void sign() {
     info(MOD_NAME, "1.1.3", "CobbleUtils");
     LOGGER.info("§e| §6Pokemons size: " + isActive(CobbleUtils.config.isRandomsize()));
-    LOGGER.info("§e| §6Fossil: " + isActive(CobbleUtils.config.isFossil()));
     LOGGER.info("§e| §6Random item: §aImplemented");
     LOGGER.info("§e| §6Random money: §aImplemented");
     LOGGER.info("§e| §6Random pokemon: §aImplemented");
@@ -169,7 +170,6 @@ public class CobbleUtils extends ShopExtend {
     LifecycleEvent.SERVER_STOPPING.register(server -> {
       scheduledTasks.forEach(task -> task.cancel(true));
       scheduledTasks.clear();
-      ArraysPokemons.all.clear();
       CreatePartyEvent.CREATE_PARTY_EVENT.clear();
       DeletePartyEvent.DELETE_PARTY_EVENT.clear();
       scheduler.shutdownNow(); // Apaga los hilos activos

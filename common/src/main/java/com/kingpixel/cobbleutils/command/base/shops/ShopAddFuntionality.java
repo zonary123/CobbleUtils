@@ -45,7 +45,7 @@ public class ShopAddFuntionality {
     // Product
     GooeyButton productButton = GooeyButton.builder()
       .display(product.getItemStack())
-      .with(DataComponentTypes.ITEM_NAME, AdventureTranslator.toNative("§aProduct"))
+      .with(DataComponentTypes.CUSTOM_NAME, AdventureTranslator.toNative("§aProduct"))
       .with(DataComponentTypes.LORE,
         new LoreComponent(AdventureTranslator.toNativeL(
           List.of("§7Current: §f" + product.getProduct() + "",
@@ -59,7 +59,7 @@ public class ShopAddFuntionality {
     // Change Prices
     GooeyButton changePrices = GooeyButton.builder()
       .display(Items.EMERALD.getDefaultStack())
-      .with(DataComponentTypes.ITEM_NAME, AdventureTranslator.toNativeComponent("§aChange Prices"))
+      .with(DataComponentTypes.CUSTOM_NAME, AdventureTranslator.toNative("§aChange Prices"))
       .with(DataComponentTypes.LORE,
         new LoreComponent(AdventureTranslator.toNativeL(
           List.of("§7Current Buy: §f" + product.getBuy() + "",
@@ -115,7 +115,7 @@ public class ShopAddFuntionality {
 
     GooeyButton pokemon = GooeyButton.builder()
       .display(PokemonItem.from(PokemonProperties.Companion.parse("pikachu")))
-      .with(DataComponentTypes.ITEM_NAME, AdventureTranslator.toNative("§aPokemon"))
+      .with(DataComponentTypes.CUSTOM_NAME, AdventureTranslator.toNative("§aPokemon"))
       .onClick(action -> {
         defaultChangeProduct(player, shopConfig, modId, shop, product, getPokemonButtons(player, shopConfig, modId, shop, product)
           , "Pokemons");
@@ -124,7 +124,7 @@ public class ShopAddFuntionality {
 
     GooeyButton item = GooeyButton.builder()
       .display(Items.DIAMOND.getDefaultStack())
-      .with(DataComponentTypes.ITEM_NAME, AdventureTranslator.toNative("§aItem"))
+      .with(DataComponentTypes.CUSTOM_NAME, AdventureTranslator.toNative("§aItem"))
       .onClick(action -> {
         defaultChangeProduct(player, shopConfig, modId, shop, product, getItemButtons(player, shopConfig, modId, shop, product)
           , "Items");
@@ -133,7 +133,7 @@ public class ShopAddFuntionality {
 
     GooeyButton money = GooeyButton.builder()
       .display(Items.EMERALD.getDefaultStack())
-      .with(DataComponentTypes.ITEM_NAME, AdventureTranslator.toNative("§aMoney"))
+      .with(DataComponentTypes.CUSTOM_NAME, AdventureTranslator.toNative("§aMoney"))
       .onClick(action -> {
         defaultChangeProduct(player, shopConfig, modId, shop, product, getMoneyButtons(player, shopConfig, modId, shop, product)
           , "Money");
@@ -143,7 +143,7 @@ public class ShopAddFuntionality {
 
     GooeyButton moditem = GooeyButton.builder()
       .display(Items.DIAMOND.getDefaultStack())
-      .with(DataComponentTypes.ITEM_NAME, AdventureTranslator.toNative("§aMod Item"))
+      .with(DataComponentTypes.CUSTOM_NAME, AdventureTranslator.toNative("§aMod Item"))
       .onClick(action -> {
         defaultChangeProduct(player, shopConfig, modId, shop, product, getModItemButtons(player, shopConfig, modId,
           shop, product), "Mod Items");
@@ -194,7 +194,7 @@ public class ShopAddFuntionality {
         EconomyUtil.impactorService.currencies().registered().forEach(currency -> {
           GooeyButton button = GooeyButton.builder()
             .display(Items.EMERALD.getDefaultStack())
-            .with(DataComponentTypes.ITEM_NAME, AdventureTranslator.toNative(currency.key().asString()))
+            .with(DataComponentTypes.CUSTOM_NAME, AdventureTranslator.toNative(currency.key().asString()))
             .onClick(action -> {
               product.setProduct("money:" + currency.key().asString()
                 .replace("impactor:", "") + ":1");
@@ -208,7 +208,7 @@ public class ShopAddFuntionality {
         Blanketconfig.INSTANCE.getConfig().getEconomy().forEach(economyConfig -> {
           GooeyButton button = GooeyButton.builder()
             .display(Items.EMERALD.getDefaultStack())
-            .with(DataComponentTypes.ITEM_NAME, AdventureTranslator.toNative(economyConfig.getCurrencyType()))
+            .with(DataComponentTypes.CUSTOM_NAME, AdventureTranslator.toNative(economyConfig.getCurrencyType()))
             .onClick(action -> {
               product.setProduct("money:" + economyConfig.getCurrencyType() + ":1");
               open(player, shopConfig, modId, shop, product);
@@ -299,7 +299,7 @@ public class ShopAddFuntionality {
 
     GooeyButton buy = GooeyButton.builder()
       .display(Items.EMERALD.getDefaultStack())
-      .with(DataComponentTypes.ITEM_NAME, AdventureTranslator.toNative("§aBuy"))
+      .with(DataComponentTypes.CUSTOM_NAME, AdventureTranslator.toNative("§aBuy"))
       .with(DataComponentTypes.LORE,
         new LoreComponent(AdventureTranslator.toNativeL(
           List.of("§7Current: §f" + product.getBuy() + "",
@@ -337,7 +337,7 @@ public class ShopAddFuntionality {
 
     GooeyButton sell = GooeyButton.builder()
       .display(Items.EMERALD.getDefaultStack())
-      .with(DataComponentTypes.ITEM_NAME, AdventureTranslator.toNative("§aSell"))
+      .with(DataComponentTypes.CUSTOM_NAME, AdventureTranslator.toNative("§aSell"))
       .with(DataComponentTypes.LORE, new LoreComponent(
           AdventureTranslator.toNativeL(
             List.of("§7Current: §f" + product.getSell() + "",

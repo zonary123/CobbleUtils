@@ -102,7 +102,7 @@ public class PlotBreedingManagerUI {
     GooeyButton egg = GooeyButton.builder()
       .display(PokemonItem.from(pokemonegg,
         plotBreeding.getEggs().size()))
-      .with(DataComponentTypes.ITEM_NAME, AdventureTranslator.toNative(plotBreeding.getEggs().isEmpty() ? "" :
+      .with(DataComponentTypes.CUSTOM_NAME, AdventureTranslator.toNative(plotBreeding.getEggs().isEmpty() ? "" :
         PokemonUtils.getTranslatedName(plotBreeding.getFirstEgg())))
       .onClick(action -> {
         if (!plotBreeding.getEggs().isEmpty()) {
@@ -125,7 +125,7 @@ public class PlotBreedingManagerUI {
     CobbleUtils.breedconfig.getEggSlots().forEach(slot -> {
       template.set(slot, GooeyButton.builder()
         .display(CobbleUtils.breedconfig.getEmptySlots().getItemStack())
-        .with(DataComponentTypes.ITEM_NAME, AdventureTranslator.toNative(
+        .with(DataComponentTypes.CUSTOM_NAME, AdventureTranslator.toNative(
           plotBreeding.getEggs().isEmpty() ? "" :
             PokemonUtils.getTranslatedName(plotBreeding.getFirstEgg())
         ))
@@ -176,7 +176,7 @@ public class PlotBreedingManagerUI {
     }
     return GooeyButton.builder()
       .display((pokemon != null ? PokemonItem.from(pokemon) : itemModel.getItemStack()))
-      .with(DataComponentTypes.ITEM_NAME, AdventureTranslator
+      .with(DataComponentTypes.CUSTOM_NAME, AdventureTranslator
         .toNative((pokemon != null ? PokemonUtils.replace(pokemon) :
           CobbleUtils.language.getGender().getOrDefault(gender.getShowdownName(), gender.name()))))
       .with(DataComponentTypes.LORE,
@@ -195,7 +195,7 @@ public class PlotBreedingManagerUI {
     }
     return GooeyButton.builder()
       .display(emptyItemModel.getItemStack())
-      .with(DataComponentTypes.ITEM_NAME, AdventureTranslator
+      .with(DataComponentTypes.CUSTOM_NAME, AdventureTranslator
         .toNative((pokemon != null ? PokemonUtils.replace(pokemon) :
           CobbleUtils.language.getGender().getOrDefault(gender.getShowdownName(), gender.name()))))
       .with(DataComponentTypes.LORE,

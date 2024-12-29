@@ -35,7 +35,7 @@ public class PartyMembersUI {
       .forEach((playerInfo) -> {
         GooeyButton invite = GooeyButton.builder()
           .display(Utils.parseItemId("minecraft:emerald"))
-          .with(DataComponentTypes.ITEM_NAME, AdventureTranslator.toNative(playerInfo.getName()))
+          .with(DataComponentTypes.CUSTOM_NAME, AdventureTranslator.toNative(playerInfo.getName()))
           .onClick(action -> {
             if (action.getPlayer().getUuid().equals(playerInfo.getPlayeruuid())) return;
             if (CobbleUtils.partyManager.isOwner(action.getPlayer())) {
@@ -51,20 +51,20 @@ public class PartyMembersUI {
 
     LinkedPageButton previus = LinkedPageButton.builder()
       .display(Utils.parseItemId("minecraft:arrow"))
-      .with(DataComponentTypes.ITEM_NAME, AdventureTranslator.toNative("Previous Page"))
+      .with(DataComponentTypes.CUSTOM_NAME, AdventureTranslator.toNative("Previous Page"))
       .linkType(LinkType.Previous)
       .build();
 
     LinkedPageButton next = LinkedPageButton.builder()
       .display(Utils.parseItemId("minecraft:arrow"))
-      .with(DataComponentTypes.ITEM_NAME, AdventureTranslator.toNative("Next Page"))
+      .with(DataComponentTypes.CUSTOM_NAME, AdventureTranslator.toNative("Next Page"))
       .linkType(LinkType.Next)
       .build();
 
     PlaceholderButton placeholder = new PlaceholderButton();
 
     ItemStack fillItem = Items.GRAY_STAINED_GLASS_PANE.getDefaultStack();
-    fillItem.set(DataComponentTypes.ITEM_NAME, Text.empty());
+    fillItem.set(DataComponentTypes.CUSTOM_NAME, Text.empty());
     GooeyButton fill = GooeyButton.builder()
       .display(fillItem).build();
     template.fill(fill)

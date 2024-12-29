@@ -123,20 +123,6 @@ public class Shop {
     this.fill = new ItemModel("");
     this.fillItems = new ArrayList<>();
     this.fillItems.add(new FillItems());
-    switch (shopType.getTypeShop()) {
-      case DYNAMIC:
-        setShopType(new ShopTypeDynamic());
-        break;
-      case DYNAMIC_WEEKLY:
-        setShopType(new ShopTypeDynamicWeekly());
-        break;
-      case WEEKLY:
-        setShopType(new ShopTypeDynamicWeekly());
-        break;
-      default:
-        setShopType(new ShopTypePermanent());
-        break;
-    }
   }
 
   @Getter
@@ -244,9 +230,6 @@ public class Shop {
       List<Product> products = shopType.getProducts(this);
 
       if (products == null) {
-        if (CobbleUtils.config.isDebug()) {
-          CobbleUtils.LOGGER.info("Products null");
-        }
         return;
       }
 
@@ -284,7 +267,7 @@ public class Shop {
 
         GooeyButton button = GooeyButton.builder()
           .display(itemStack)
-          .with(DataComponentTypes.ITEM_NAME, AdventureTranslator.toNative(colorItem == null ? getTitleItem(product) :
+          .with(DataComponentTypes.CUSTOM_NAME, AdventureTranslator.toNative(colorItem == null ? getTitleItem(product) :
             colorItem + getTitleItem(product)))
           .with(DataComponentTypes.LORE, new LoreComponent(AdventureTranslator.toNativeL(getLoreProduct(
             buy, sell, product, player, symbol, typeError, BigDecimal.ONE
@@ -393,7 +376,7 @@ public class Shop {
 
         template.set(itemInfoShop.getSlot(), GooeyButton.builder()
           .display(itemInfoShop.getItemStack())
-          .with(DataComponentTypes.ITEM_NAME, AdventureTranslator.toNative(itemInfoShop.getDisplayname()))
+          .with(DataComponentTypes.CUSTOM_NAME, AdventureTranslator.toNative(itemInfoShop.getDisplayname()))
           .with(DataComponentTypes.LORE, new LoreComponent(AdventureTranslator.toNativeL(lore)))
           .build());
       }
@@ -409,7 +392,7 @@ public class Shop {
           .replace("%symbol%", symbol));
         template.set(getSlotbalance(), GooeyButton.builder()
           .display(balance.getItemStack())
-          .with(DataComponentTypes.ITEM_NAME, AdventureTranslator.toNative(balance.getDisplayname()))
+          .with(DataComponentTypes.CUSTOM_NAME, AdventureTranslator.toNative(balance.getDisplayname()))
           .with(DataComponentTypes.LORE, new LoreComponent(AdventureTranslator.toNativeL(lorebalance)))
           .build());
       }
@@ -441,7 +424,7 @@ public class Shop {
         if (UIUtils.isInside(getNext(), rows)) {
           LinkedPageButton next = LinkedPageButton.builder()
             .display(getNext().getItemStack())
-            .with(DataComponentTypes.ITEM_NAME, AdventureTranslator.toNative(getNext().getDisplayname()))
+            .with(DataComponentTypes.CUSTOM_NAME, AdventureTranslator.toNative(getNext().getDisplayname()))
             .onClick(action -> SoundUtil.playSound(getSoundopen(), action.getPlayer()))
             .linkType(LinkType.Next)
             .build();
@@ -460,7 +443,7 @@ public class Shop {
         if (UIUtils.isInside(getPrevious(), rows)) {
           LinkedPageButton previous = LinkedPageButton.builder()
             .display(getPrevious().getItemStack())
-            .with(DataComponentTypes.ITEM_NAME, AdventureTranslator.toNative(getPrevious().getDisplayname()))
+            .with(DataComponentTypes.CUSTOM_NAME, AdventureTranslator.toNative(getPrevious().getDisplayname()))
             .onClick(action -> {
               SoundUtil.playSound(getSoundopen(), action.getPlayer());
             })
@@ -488,6 +471,7 @@ public class Shop {
 
 
       LinkedPage page = PaginationHelper.createPagesFromPlaceholders(template, buttons, linkedPageBuilder);
+
       UIManager.openUIForcefully(player, page);
     } catch (Exception e) {
       e.printStackTrace();
@@ -726,14 +710,10 @@ public class Shop {
     });*/
 
     UIManager.openUIForcefully(player, page);
-    // UIManager.openUIPassively(player, page, 10, TimeUnit.MILLISECONDS); // Old code ? why ?
   }
 
   private boolean buyProduct(ServerPlayerEntity player, Product product, int amount, BigDecimal price) {
     if (price.compareTo(BigDecimal.ZERO) <= 0) return false;
-    if (CobbleUtils.config.isDebug()) {
-      CobbleUtils.LOGGER.info("Buy product: " + "Currency -> " + currency + " Price -> " + price + " Amount -> " + amount);
-    }
     if (EconomyUtil.hasEnough(player, currency, price)) {
       SoundUtil.playSound(CobbleUtils.shopLang.getSoundBuy(), player);
 
@@ -891,7 +871,7 @@ public class Shop {
       return;
     template.set(addModel.getSlot(), GooeyButton.builder()
       .display(addModel.getItemStack(increment))
-      .with(DataComponentTypes.ITEM_NAME, AdventureTranslator.toNative(addModel.getDisplayname()))
+      .with(DataComponentTypes.CUSTOM_NAME, AdventureTranslator.toNative(addModel.getDisplayname()))
       .with(DataComponentTypes.LORE, new LoreComponent(AdventureTranslator.toNativeL(addModel.getLore())))
       .onClick(action -> {
         SoundUtil.playSound(CobbleUtils.shopLang.getSoundAdd(), player);
@@ -902,7 +882,7 @@ public class Shop {
 
     template.set(removeModel.getSlot(), GooeyButton.builder()
       .display(removeModel.getItemStack(increment))
-      .with(DataComponentTypes.ITEM_NAME, AdventureTranslator.toNative(removeModel.getDisplayname()))
+      .with(DataComponentTypes.CUSTOM_NAME, AdventureTranslator.toNative(removeModel.getDisplayname()))
       .with(DataComponentTypes.LORE, new LoreComponent(AdventureTranslator.toNativeL(removeModel.getLore())))
       .onClick(action -> {
         SoundUtil.playSound(CobbleUtils.shopLang.getSoundRemove(), player);
@@ -939,7 +919,7 @@ public class Shop {
     viewProduct.setCount((amount == 0 ? 1 : amount));
     template.set(shopConfig.getShopConfigMenu().getSlotViewProduct(), GooeyButton.builder()
       .display(viewProduct)
-      .with(DataComponentTypes.ITEM_NAME, AdventureTranslator.toNative(getTitleItem(product)))
+      .with(DataComponentTypes.CUSTOM_NAME, AdventureTranslator.toNative(getTitleItem(product)))
       .with(DataComponentTypes.LORE, new LoreComponent(AdventureTranslator.toNativeL(getLoreProduct(
         buy, sell,
         product, player,

@@ -5,7 +5,6 @@ import ca.landonjw.gooeylibs2.api.button.GooeyButton;
 import ca.landonjw.gooeylibs2.api.page.GooeyPage;
 import ca.landonjw.gooeylibs2.api.template.types.ChestTemplate;
 import com.cobblemon.mod.common.Cobblemon;
-import com.cobblemon.mod.common.api.storage.NoPokemonStoreException;
 import com.cobblemon.mod.common.api.storage.party.PlayerPartyStore;
 import com.cobblemon.mod.common.pokemon.Pokemon;
 import com.kingpixel.cobbleutils.CobbleUtils;
@@ -31,16 +30,12 @@ public class ShinyTokenUI {
       GooeyButton slot;
       Pokemon pokemon = partyStore.get(i);
       slot = UIUtils.createButtonPokemon(pokemon, action -> {
-        try {
-          if (pokemon == null)
-            return;
-          if (CobbleUtils.config.isShinyTokenBlacklisted(pokemon))
-            return;
-          if (!pokemon.getShiny()) {
-            UIManager.openUIForcefully(player, confirmShiny(player, pokemon));
-          }
-        } catch (NoPokemonStoreException e) {
-          e.printStackTrace();
+        if (pokemon == null)
+          return;
+        if (CobbleUtils.config.isShinyTokenBlacklisted(pokemon))
+          return;
+        if (!pokemon.getShiny()) {
+          UIManager.openUIForcefully(player, confirmShiny(player, pokemon));
         }
       });
       int row = i / 3;
@@ -53,19 +48,22 @@ public class ShinyTokenUI {
 
     GooeyButton fill = GooeyButton.builder()
       .display(Utils.parseItemId(CobbleUtils.config.getFill()))
-      .with(DataComponentTypes.ITEM_NAME, Text.empty())
+      .with(DataComponentTypes.CUSTOM_NAME, Text.empty())
       .build();
 
     templateBuilder.fill(fill);
 
+    Text title = AdventureTranslator.toNative(CobbleUtils.language.getTitlemenushiny());
+
     GooeyPage page = GooeyPage.builder().template(templateBuilder)
-      .title(AdventureTranslator.toNative(CobbleUtils.language.getTitlemenushiny())).build();
+      .title(title)
+      .build();
 
     UIManager.openUIForcefully(player, page);
     return page;
   }
 
-  public static GooeyPage confirmShiny(ServerPlayerEntity player, Pokemon pokemon) throws NoPokemonStoreException {
+  public static GooeyPage confirmShiny(ServerPlayerEntity player, Pokemon pokemon) {
     GooeyButton confirm = UIUtils.getConfirmButton(action -> {
       pokemon.setShiny(true);
       player.getMainHandStack().decrement(1);
@@ -83,7 +81,7 @@ public class ShinyTokenUI {
         .set(1, 6, cancel)
         .set(1, 4, buttonPokemon)
         .fill(GooeyButton.builder().display(Utils.parseItemId(CobbleUtils.config.getFill()))
-          .with(DataComponentTypes.ITEM_NAME, Text.empty())
+          .with(DataComponentTypes.CUSTOM_NAME, Text.empty())
           .build())
         .build())
       .title(AdventureTranslator.toNative(CobbleUtils.language.getTitlemenushinyoperation())).build();

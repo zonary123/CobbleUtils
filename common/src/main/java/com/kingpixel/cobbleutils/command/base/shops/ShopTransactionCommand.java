@@ -109,7 +109,7 @@ public class ShopTransactionCommand implements Command<ServerCommandSource> {
 
     return GooeyButton.builder()
       .display(itemStack)
-      .with(DataComponentTypes.ITEM_NAME, AdventureTranslator.toNative("&b" + title))
+      .with(DataComponentTypes.CUSTOM_NAME, AdventureTranslator.toNative("&b" + title))
       .with(DataComponentTypes.LORE, new LoreComponent(AdventureTranslator.toNativeL(lore)))  // Utiliza la lista `lore`
       // completa
       .onClick(action -> UIManager.openUIForcefully(action.getPlayer(), getTransactionPlayer(viewer, uuid, CobbleUtils.shopConfig.getShopConfigMenu())))
@@ -157,7 +157,7 @@ public class ShopTransactionCommand implements Command<ServerCommandSource> {
     ItemStack itemStack = shop.getProductById(product).getItemStack();
     return GooeyButton.builder()
       .display(itemStack)
-      .with(DataComponentTypes.ITEM_NAME, AdventureTranslator.toNative(itemStack.getName().getString()))
+      .with(DataComponentTypes.CUSTOM_NAME, AdventureTranslator.toNative(itemStack.getName().getString()))
       .with(DataComponentTypes.LORE, new LoreComponent(AdventureTranslator.toNativeL(lore)))
       .build();
   }

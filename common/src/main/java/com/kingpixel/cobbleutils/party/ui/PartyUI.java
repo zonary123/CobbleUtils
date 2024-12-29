@@ -19,7 +19,7 @@ public class PartyUI {
 
     GooeyButton invites = GooeyButton.builder()
       .display(Utils.parseItemId("minecraft:emerald"))
-      .with(DataComponentTypes.ITEM_NAME, AdventureTranslator.toNative("Invites"))
+      .with(DataComponentTypes.CUSTOM_NAME, AdventureTranslator.toNative("Invites"))
       .onClick(action -> {
         ServerPlayerEntity player = action.getPlayer();
         if (!CobbleUtils.partyManager.isPlayerInParty(player)) {
@@ -32,7 +32,7 @@ public class PartyUI {
 
     GooeyButton members = GooeyButton.builder()
       .display(Utils.parseItemId("minecraft:emerald"))
-      .with(DataComponentTypes.ITEM_NAME, AdventureTranslator.toNative("Members"))
+      .with(DataComponentTypes.CUSTOM_NAME, AdventureTranslator.toNative("Members"))
       .onClick(action -> {
         ServerPlayerEntity player = action.getPlayer();
         if (CobbleUtils.partyManager.isPlayerInParty(player)) {

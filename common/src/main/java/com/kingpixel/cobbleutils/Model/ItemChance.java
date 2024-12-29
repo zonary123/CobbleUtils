@@ -20,11 +20,8 @@ import lombok.Setter;
 import lombok.ToString;
 import net.minecraft.component.DataComponentTypes;
 import net.minecraft.component.type.LoreComponent;
-import net.minecraft.component.type.NbtComponent;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
-import net.minecraft.nbt.NbtCompound;
-import net.minecraft.nbt.NbtHelper;
 import net.minecraft.server.network.ServerPlayerEntity;
 
 import java.math.BigDecimal;
@@ -91,7 +88,7 @@ public class ItemChance {
         items.forEach(item -> {
           buttons.add(GooeyButton.builder()
             .display(item.getItemStack().copy())
-            .with(DataComponentTypes.ITEM_NAME, AdventureTranslator.toNative("mod:" + modid + ":" + item.getItemId()))
+            .with(DataComponentTypes.CUSTOM_NAME, AdventureTranslator.toNative("mod:" + modid + ":" + item.getItemId()))
             .onClick((action) -> {
               action.getPlayer().giveItemStack(item.getItemStack().copy());
             })
@@ -278,24 +275,16 @@ public class ItemChance {
     String iditem = itemSplit[2] + ":" + itemSplit[3];
     itemStack = Utils.parseItemId(iditem, Integer.parseInt(itemSplit[1]));
     itemStack.setCount(amount);
-    if (split.length > 1) {
-      try {
-        NbtCompound nbt = NbtHelper.fromNbtProviderString(split[1]);
-        NbtComponent nbtComponent = NbtComponent.of(nbt);
-        //itemStack.set(DataComponentTypes.CUSTOM_DATA, nbtComponent);
-        NbtComponent.set(DataComponentTypes.CUSTOM_DATA, itemStack, nbt);
-
-      } catch (Exception e) {
-        e.printStackTrace();
-      }
-    }
+    if (split.length < 2) return itemStack;
+    String nbt = split[1];
+    itemStack = ItemUtils.applyNbt(itemStack, nbt, amount);
     return itemStack;
   }
 
   private static Pokemon getRewardPokemon(String item) {
     String p = item.replace("pokemon:", "");
     if (p.isEmpty()) {
-      return ArraysPokemons.getRandomPokemon();
+      return PokemonProperties.Companion.parse("rattata").create();
     } else {
       return PokemonProperties.Companion.parse(p).create();
     }
@@ -350,7 +339,7 @@ public class ItemChance {
     lore.replaceAll(s -> s.replace("%chance%", percentage));
     return GooeyButton.builder()
       .display(getItemStack())
-      .with(DataComponentTypes.ITEM_NAME, AdventureTranslator.toNative(title))
+      .with(DataComponentTypes.CUSTOM_NAME, AdventureTranslator.toNative(title))
       .with(DataComponentTypes.LORE, new LoreComponent(AdventureTranslator.toNativeL(lore)))
       .build();
   }

@@ -74,7 +74,7 @@ public class PlotBreedingUI {
       if (UIUtils.isInside(info, rows)) {
         GooeyButton button = GooeyButton.builder()
           .display(info.getItemStack())
-          .with(DataComponentTypes.ITEM_NAME, AdventureTranslator.toNative(info.getDisplayname()))
+          .with(DataComponentTypes.CUSTOM_NAME, AdventureTranslator.toNative(info.getDisplayname()))
           .with(DataComponentTypes.LORE, new LoreComponent(AdventureTranslator.toNativeL(infoLore)))
           .build();
         template.set(info.getSlot(), button);
@@ -102,7 +102,7 @@ public class PlotBreedingUI {
         int finalI = i;
         GooeyButton button = GooeyButton.builder()
           .display(itemStack)
-          .with(DataComponentTypes.ITEM_NAME,
+          .with(DataComponentTypes.CUSTOM_NAME,
             AdventureTranslator.toNative(CobbleUtils.breedconfig.getPlotItem().getDisplayname()))
           .with(DataComponentTypes.LORE, new LoreComponent(AdventureTranslator.toNativeL(lore)))
           .onClick(action -> {

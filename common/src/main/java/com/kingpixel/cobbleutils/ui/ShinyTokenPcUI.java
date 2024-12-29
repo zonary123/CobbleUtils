@@ -3,7 +3,6 @@ package com.kingpixel.cobbleutils.ui;
 import ca.landonjw.gooeylibs2.api.UIManager;
 import ca.landonjw.gooeylibs2.api.page.GooeyPage;
 import com.cobblemon.mod.common.Cobblemon;
-import com.cobblemon.mod.common.api.storage.NoPokemonStoreException;
 import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.util.SoundUtil;
 import com.kingpixel.cobbleutils.util.UIUtils;
@@ -19,19 +18,14 @@ public class ShinyTokenPcUI {
   public static GooeyPage getMenuShinyTokenPc(ServerPlayerEntity player) {
     try {
       return UIUtils.createPagePc(Cobblemon.INSTANCE.getStorage().getPC(player), actionpokemon -> {
-          try {
-            if (CobbleUtils.config.isShinyTokenBlacklisted(actionpokemon.getPokemon()))
-              return;
-            if (!actionpokemon.getPokemon().getShiny()) {
-              SoundUtil.playSound(CobbleUtils.language.getSoundopen(), actionpokemon.getAction().getPlayer());
-              UIManager.openUIForcefully(actionpokemon.getAction().getPlayer(), ShinyTokenUI.confirmShiny(player,
-                actionpokemon.getPokemon()));
 
-            }
+          if (CobbleUtils.config.isShinyTokenBlacklisted(actionpokemon.getPokemon()))
+            return;
+          if (!actionpokemon.getPokemon().getShiny()) {
+            SoundUtil.playSound(CobbleUtils.language.getSoundopen(), actionpokemon.getAction().getPlayer());
+            UIManager.openUIForcefully(actionpokemon.getAction().getPlayer(), ShinyTokenUI.confirmShiny(player,
+              actionpokemon.getPokemon()));
 
-
-          } catch (NoPokemonStoreException e) {
-            throw new RuntimeException(e);
           }
         },
         actionclose -> UIManager.openUIForcefully(actionclose.getPlayer(),

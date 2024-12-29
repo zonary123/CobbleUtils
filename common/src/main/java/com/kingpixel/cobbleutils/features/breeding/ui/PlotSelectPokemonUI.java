@@ -79,7 +79,7 @@ public class PlotSelectPokemonUI {
                                                  PlotBreeding plotBreeding, Gender gender, int finalI) {
     return GooeyButton.builder()
       .display(PokemonItem.from(pokemon))
-      .with(DataComponentTypes.ITEM_NAME, AdventureTranslator.toNative(PokemonUtils.replace(pokemon)))
+      .with(DataComponentTypes.CUSTOM_NAME, AdventureTranslator.toNative(PokemonUtils.replace(pokemon)))
       .with(DataComponentTypes.LORE, new LoreComponent(AdventureTranslator.toNativeL(PokemonUtils.replaceLore(pokemon))))
       .onClick(action -> handlePokemonSelection(pokemon, player, plotBreeding, gender, finalI))
       .build();
@@ -113,7 +113,7 @@ public class PlotSelectPokemonUI {
       // Implement next page action if needed
     }));
     template.fill(GooeyButton.builder().display(Utils.parseItemId(CobbleUtils.config.getFill()))
-      .with(DataComponentTypes.ITEM_NAME, Text.empty())
+      .with(DataComponentTypes.CUSTOM_NAME, Text.empty())
       .build());
     template.rectangle(0, 0, row - 1, 9, new PlaceholderButton());
     template.fillFromList(buttons);

@@ -312,7 +312,7 @@ public class AdvancedItemChance {
 
     return GooeyButton.builder()
       .display(itemChance.getItemStack())
-      .with(DataComponentTypes.ITEM_NAME, AdventureTranslator.toNative(itemChance.getTitle()))
+      .with(DataComponentTypes.CUSTOM_NAME, AdventureTranslator.toNative(itemChance.getTitle()))
       .with(DataComponentTypes.LORE, new LoreComponent(AdventureTranslator.toNativeL(lore)))
       .build();
   }

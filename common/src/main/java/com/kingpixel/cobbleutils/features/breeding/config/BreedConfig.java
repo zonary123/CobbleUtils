@@ -123,9 +123,9 @@ public class BreedConfig {
     this.permissionAutoClaim = "cobbleutils.breeding.autoclaim";
     this.cooldown = 30;
     this.cooldowns = Map.of(
-      "cobbleutils.breeding.cooldown.vip", 15,
-      "cobbleutils.breeding.cooldown.vip+", 10,
-      "cobbleutils.breeding.cooldown.vip++", 5
+      "group.vip", 15,
+      "group.legendary", 10,
+      "group.master", 5
     );
     this.defaultNumberPlots = 1;
     this.maxeggperplot = 3;

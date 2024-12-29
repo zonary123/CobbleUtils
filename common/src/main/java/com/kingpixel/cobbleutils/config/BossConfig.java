@@ -2,6 +2,7 @@ package com.kingpixel.cobbleutils.config;
 
 import com.cobblemon.mod.common.Cobblemon;
 import com.cobblemon.mod.common.api.pokemon.PokemonProperties;
+import com.cobblemon.mod.common.api.pokemon.stats.Stats;
 import com.cobblemon.mod.common.entity.pokemon.PokemonEntity;
 import com.cobblemon.mod.common.pokemon.Pokemon;
 import com.google.gson.Gson;
@@ -10,7 +11,6 @@ import com.kingpixel.cobbleutils.Model.AdvancedItemChance;
 import com.kingpixel.cobbleutils.Model.CobbleUtilsTags;
 import com.kingpixel.cobbleutils.Model.Particle;
 import com.kingpixel.cobbleutils.Model.Sound;
-import com.kingpixel.cobbleutils.util.ArraysPokemons;
 import com.kingpixel.cobbleutils.util.PokemonUtils;
 import com.kingpixel.cobbleutils.util.Utils;
 import lombok.Getter;
@@ -18,8 +18,6 @@ import lombok.Setter;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.effect.StatusEffectInstance;
 import net.minecraft.entity.effect.StatusEffects;
-import net.minecraft.scoreboard.Scoreboard;
-import net.minecraft.scoreboard.Team;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
@@ -89,7 +87,7 @@ public class BossConfig {
 
   public static boolean notCanBeBoss(Pokemon pokemon) {
     return pokemon.isPlayerOwned() || pokemon.getShiny() || pokemon.isLegendary() || pokemon.isUltraBeast()
-      || PokemonUtils.getIvsAverage(pokemon.getIvs()) == 31 || ArraysPokemons.getTypePokemon(pokemon) != ArraysPokemons.TypePokemon.NORMAL;
+      || PokemonUtils.getIvsAverage(pokemon.getIvs()) == 31 || PokemonUtils.getTypePokemon(pokemon) != PokemonUtils.TypePokemon.NORMAL;
   }
 
   public static BossConfig getBossConfigByRarity(String boss) {
@@ -198,57 +196,70 @@ public class BossConfig {
   }
 
   public boolean apply(PokemonEntity pokemonEntity) {
-    String form = this.getPokemonData();
-    Pokemon pokemon = pokemonEntity.getPokemon();
+    try {
+      String form = this.getPokemonData();
+      Pokemon pokemon = pokemonEntity.getPokemon();
 
-    int level;
-    ((Entity) pokemonEntity).setInvulnerable(true);
-    PokemonProperties.Companion.parse("uncatchable=yes " + form).apply(pokemon);
-    if (oldLevel < getMaxlevel()) {
-      Cobblemon.INSTANCE.getConfig().setMaxPokemonLevel(this.getMaxlevel());
-    }
-    if (this.getMinlevel() != this.getMaxlevel()) {
-      level = Utils.RANDOM.nextInt(this.getMinlevel(), this.getMaxlevel());
-      pokemon.setLevel(level);
-    } else {
-      level = this.getMinlevel();
-      pokemon.setLevel(level);
-    }
-    Cobblemon.INSTANCE.getConfig().setMaxPokemonLevel(oldLevel);
-    pokemon.getPersistentData().putString(BOSS_RARITY_TAG, this.getRarity());
-    pokemon.getPersistentData().putBoolean(BOSS_TAG, true);
-    pokemon.getPersistentData().putString(SIZE_TAG, SIZE_CUSTOM_TAG);
-    if (this.getMinsize() == this.getMaxsize()) {
-      pokemon.setScaleModifier(this.getMaxsize());
-    } else {
-      pokemon.setScaleModifier(Utils.RANDOM.nextFloat(this.getMinsize(), this.getMaxsize()));
-    }
-    if (isGlowing()) {
-      pokemonEntity.setGlowing(true);
+      int level;
+      ((Entity) pokemonEntity).setInvulnerable(true);
+      PokemonProperties.Companion.parse("uncatchable=yes " + form).apply(pokemon);
 
-      pokemonEntity.addStatusEffect(new StatusEffectInstance(StatusEffects.GLOWING, Integer.MAX_VALUE, 1, true,
-        true));
-
-
-      Scoreboard scoreboard = pokemonEntity.getEntityWorld().getScoreboard();
-      Team team = scoreboard.getTeam("boss_" + getRarity());
-      if (team == null) team = scoreboard.addTeam("boss_" + getRarity());
-      team.setColor(glowingColor);
-      if (scoreboard.getTeam(pokemonEntity.getNameForScoreboard()) == null) {
-        scoreboard.addTeam(pokemonEntity.getNameForScoreboard());
+      if (oldLevel < getMaxlevel()) Cobblemon.INSTANCE.getConfig().setMaxPokemonLevel(this.getMaxlevel());
+      if (this.getMinlevel() != this.getMaxlevel()) {
+        level = Utils.RANDOM.nextInt(this.getMinlevel(), this.getMaxlevel());
+        pokemon.setLevel(level);
+      } else {
+        level = this.getMinlevel();
+        pokemon.setLevel(level);
       }
-    }
+      Cobblemon.INSTANCE.getConfig().setMaxPokemonLevel(oldLevel);
 
-    pokemon.setShiny(this.isShiny());
-    pokemonEntity.setCustomName(
-      Text.literal(
-        getNickname().replace("%pokemon%", pokemon.getDisplayName().getString())
-      )
-    );
-    pokemonEntity.setCustomNameVisible(true);
-    getSound().start(pokemonEntity);
-    getParticle().sendParticlesNearPlayers(pokemonEntity);
-    return true;
+      pokemon.getPersistentData().putString(BOSS_RARITY_TAG, this.getRarity());
+      pokemon.getPersistentData().putBoolean(BOSS_TAG, true);
+      pokemon.getPersistentData().putString(SIZE_TAG, SIZE_CUSTOM_TAG);
+      if (this.getMinsize() == this.getMaxsize()) {
+        pokemon.setScaleModifier(this.getMaxsize());
+      } else {
+        pokemon.setScaleModifier(Utils.RANDOM.nextFloat(this.getMinsize(), this.getMaxsize()));
+      }
+      
+      if (isGlowing()) {
+        pokemonEntity.setGlowing(true);
+
+        pokemonEntity.addStatusEffect(new StatusEffectInstance(StatusEffects.GLOWING, Integer.MAX_VALUE, 2, true,
+          true));
+
+      }
+
+      pokemon.setShiny(this.isShiny());
+      pokemonEntity.setCustomName(
+        Text.literal(
+          getNickname().replace("%pokemon%", pokemon.getDisplayName().getString())
+        )
+      );
+
+      pokemonEntity.setCustomNameVisible(true);
+
+      getSound().start(pokemonEntity);
+      getParticle().sendParticlesNearPlayers(pokemonEntity);
+      if (CobbleUtils.config.isDebug()) {
+        CobbleUtils.LOGGER.info("Ivs: " + pokemon.getIvs());
+        CobbleUtils.LOGGER.info("Level: " + pokemon.getLevel());
+        CobbleUtils.LOGGER.info("Size: " + pokemon.getScaleModifier());
+        CobbleUtils.LOGGER.info("Shiny: " + pokemon.getShiny());
+        CobbleUtils.LOGGER.info("Glowing: " + pokemonEntity.isGlowing());
+        CobbleUtils.LOGGER.info("Stat HP: " + pokemon.getStat(Stats.HP));
+        CobbleUtils.LOGGER.info("Stat Attack: " + pokemon.getStat(Stats.ATTACK));
+        CobbleUtils.LOGGER.info("Stat Defense: " + pokemon.getStat(Stats.DEFENCE));
+        CobbleUtils.LOGGER.info("Stat Special Attack: " + pokemon.getStat(Stats.SPECIAL_ATTACK));
+        CobbleUtils.LOGGER.info("Stat Special Defense: " + pokemon.getStat(Stats.SPECIAL_DEFENCE));
+        CobbleUtils.LOGGER.info("Stat Speed: " + pokemon.getStat(Stats.SPEED));
+      }
+      return true;
+    } catch (Exception e) {
+      e.printStackTrace();
+      return false;
+    }
   }
 
   public static boolean isBoss(PokemonEntity pokemonEntity) {

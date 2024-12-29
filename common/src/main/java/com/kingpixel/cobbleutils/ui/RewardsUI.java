@@ -93,7 +93,7 @@ public class RewardsUI {
 
       GooeyButton getAllRewards = GooeyButton.builder()
         .display(Utils.parseItemId("minecraft:chest"))
-        .with(DataComponentTypes.ITEM_NAME, AdventureTranslator.toNative("&7Get all rewards"))
+        .with(DataComponentTypes.CUSTOM_NAME, AdventureTranslator.toNative("&7Get all rewards"))
         .onClick(action -> {
           List<ItemObject> itemsToRemove = new ArrayList<>();
           for (ItemObject item : rewardsData.getItems()) {
@@ -123,19 +123,19 @@ public class RewardsUI {
 
       LinkedPageButton previus = LinkedPageButton.builder()
         .display(Utils.parseItemId("minecraft:arrow"))
-        .with(DataComponentTypes.ITEM_NAME, AdventureTranslator.toNative(CobbleUtils.language.getPrevious()))
+        .with(DataComponentTypes.CUSTOM_NAME, AdventureTranslator.toNative(CobbleUtils.language.getPrevious()))
         .linkType(LinkType.Previous)
         .build();
 
       LinkedPageButton next = LinkedPageButton.builder()
         .display(Utils.parseItemId("minecraft:arrow"))
-        .with(DataComponentTypes.ITEM_NAME, AdventureTranslator.toNative(CobbleUtils.language.getNext()))
+        .with(DataComponentTypes.CUSTOM_NAME, AdventureTranslator.toNative(CobbleUtils.language.getNext()))
         .linkType(LinkType.Next)
         .build();
 
       GooeyButton close = GooeyButton.builder()
         .display(Items.RED_STAINED_GLASS_PANE.getDefaultStack())
-        .with(DataComponentTypes.ITEM_NAME, AdventureTranslator.toNative(CobbleUtils.language.getClose()))
+        .with(DataComponentTypes.CUSTOM_NAME, AdventureTranslator.toNative(CobbleUtils.language.getClose()))
         .onClick(action -> {
           action.getPlayer().closeHandledScreen();
         })
@@ -144,7 +144,7 @@ public class RewardsUI {
       PlaceholderButton placeholder = new PlaceholderButton();
 
       ItemStack fillItem = Items.GRAY_STAINED_GLASS_PANE.getDefaultStack();
-      fillItem.set(DataComponentTypes.ITEM_NAME, Text.literal(""));
+      fillItem.set(DataComponentTypes.CUSTOM_NAME, Text.literal(""));
 
       GooeyButton fill = GooeyButton.builder()
         .display(fillItem).build();

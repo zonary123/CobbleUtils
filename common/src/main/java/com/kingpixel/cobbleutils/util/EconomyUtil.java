@@ -3,7 +3,7 @@ package com.kingpixel.cobbleutils.util;
 import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.features.breeding.Breeding;
 import fr.harmex.cobbledollars.common.CobbleDollars;
-import fr.harmex.cobbledollars.common.client.ICobbleDollarsData;
+import fr.harmex.cobbledollars.common.utils.CobbleDollarsPlayer;
 import net.impactdev.impactor.api.economy.EconomyService;
 import net.impactdev.impactor.api.economy.accounts.Account;
 import net.impactdev.impactor.api.economy.currency.Currency;
@@ -18,6 +18,7 @@ import org.bukkit.plugin.RegisteredServiceProvider;
 import org.intellij.lang.annotations.Subst;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.math.RoundingMode;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
@@ -217,7 +218,7 @@ public abstract class EconomyUtil {
         return true;
       }
       case COBBLEDOLLARS: {
-        ((ICobbleDollarsData) player).setCobbleDollars((int) (((ICobbleDollarsData) player).getCobbleDollars() + amount.doubleValue()));
+        ((CobbleDollarsPlayer) player).cobbleDollars$addCobbleDollars(BigInteger.valueOf(amount.longValue()));
         return true;
       }
       default:
@@ -254,8 +255,9 @@ public abstract class EconomyUtil {
         BlanketEconomy.INSTANCE.getAPI().setBalance(player.getUuid(), bal.subtract(amount), currency);
         return true;
       case COBBLEDOLLARS:
-        if (((ICobbleDollarsData) player).getCobbleDollars() >= amount.doubleValue()) {
-          ((ICobbleDollarsData) player).setCobbleDollars((int) (((ICobbleDollarsData) player).getCobbleDollars() - amount.doubleValue()));
+        BigInteger balance = ((CobbleDollarsPlayer) player).cobbleDollars$getCobbleDollars();
+        if (balance.compareTo(BigInteger.valueOf(amount.longValue())) >= 0) {
+          ((CobbleDollarsPlayer) player).cobbleDollars$setCobbleDollars(balance.subtract(BigInteger.valueOf(amount.longValue())));
           return true;
         }
         return false;
@@ -358,8 +360,9 @@ public abstract class EconomyUtil {
         sendMessage(player, amount, CobbleUtils.shopLang.getMessageNotHaveMoney());
         return false;
       case COBBLEDOLLARS:
-        if (((ICobbleDollarsData) player).getCobbleDollars() >= amount.doubleValue()) {
-          ((ICobbleDollarsData) player).setCobbleDollars((int) (((ICobbleDollarsData) player).getCobbleDollars() - amount.doubleValue()));
+        BigInteger balance = ((CobbleDollarsPlayer) player).cobbleDollars$getCobbleDollars();
+        if (balance.compareTo(BigInteger.valueOf(amount.longValue())) >= 0) {
+          ((CobbleDollarsPlayer) player).cobbleDollars$setCobbleDollars(balance.subtract(BigInteger.valueOf(amount.longValue())));
           sendMessage(player, amount, CobbleUtils.shopLang.getMessageBought());
           return true;
         }
@@ -546,7 +549,8 @@ public abstract class EconomyUtil {
         // Redondear el balance si es necesario
         yield blanketBalance.setScale(2, RoundingMode.HALF_UP);
       }
-      case COBBLEDOLLARS -> BigDecimal.valueOf(((ICobbleDollarsData) player).getCobbleDollars());
+      case COBBLEDOLLARS ->
+        BigDecimal.valueOf(((CobbleDollarsPlayer) player).cobbleDollars$getCobbleDollars().longValue());
       default -> BigDecimal.ZERO;
     };
   }

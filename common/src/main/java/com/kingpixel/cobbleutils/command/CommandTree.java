@@ -45,6 +45,7 @@ public class CommandTree {
       ModRewardsCommand.register(dispatcher, base);
 
       WikiCommand.register(dispatcher, base, "https://zonary123-dev.gitbook.io/zonary123-dev-docs/mods/cobbleutils");
+
       // /cobbleutils scale <scale> <slot> and /cobbleutils scale <scale> <slot> <player>
       PokemonSize.register(dispatcher, base);
 
@@ -64,22 +65,29 @@ public class CommandTree {
       Reload.register(dispatcher, base);
 
       // /cobbleutils shinytoken <player> <amount>
-      ShinyToken.register(dispatcher, base);
+      if (CobbleUtils.config.isActiveshinytoken()) {
+        ShinyToken.register(dispatcher, base);
+      }
 
       // /cobbleutils pokerename <slot> <name>
       PokeRename.register(dispatcher, base);
 
       // /cobbleutils pokerus <slot> <player>
-      PokerusCommand.register(dispatcher, base);
+      if (CobbleUtils.config.getPokerus().isActive()) {
+        PokerusCommand.register(dispatcher, base);
+      }
 
-      // /cobbleutils breedable <slot> <breedable>
-      BreedableCommand.register(dispatcher, base);
 
+      if (CobbleUtils.config.isBoss()) {
+        // /cobbleutils boss <rarity> <coords>
+        SpawnBoss.register(dispatcher, base);
+      }
 
-      // /cobbleutils boss <rarity> <coords>
-      SpawnBoss.register(dispatcher, base);
 
       if (CobbleUtils.breedconfig.isActive()) {
+        // /cobbleutils breedable <slot> <breedable>
+        BreedableCommand.register(dispatcher, base);
+
         // /cobbleutils egg <pokemon>
         EggCommand.register(dispatcher, base);
 

@@ -185,32 +185,12 @@ public class ItemModel {
   /**
    * Get the button of the item
    *
-   * @param itemModel The item model to get the button
-   * @param action    The action of the button
+   * @param action The action of the button
    *
    * @return The button of the item
    */
-  public static GooeyButton getButton(ItemModel itemModel, Consumer<ButtonAction> action) {
-    return GooeyButton.builder()
-      .display(getItemStack(itemModel))
-      .with(DataComponentTypes.ITEM_NAME, AdventureTranslator.toNative(itemModel.getDisplayname()))
-      .with(DataComponentTypes.LORE, new LoreComponent(AdventureTranslator.toNativeL(itemModel.getLore())))
-      .onClick(action)
-      .build();
-  }
-
-  public static GooeyButton getButton(ItemModel itemModel, Consumer<ButtonAction> action, int amount, String name,
-                                      List<String> lore) {
-    GooeyButton.Builder builder = GooeyButton.builder()
-      .display(getItemStack(itemModel, amount));
-    if (name != null) {
-      builder.with(DataComponentTypes.ITEM_NAME, AdventureTranslator.toNative(name));
-    }
-    if (lore != null) {
-      builder.with(DataComponentTypes.LORE, new LoreComponent(AdventureTranslator.toNativeL(lore)));
-    }
-    return builder.onClick(action)
-      .build();
+  public GooeyButton getButton(Consumer<ButtonAction> action) {
+    return getButton(1, action);
   }
 
   /**
@@ -220,8 +200,50 @@ public class ItemModel {
    *
    * @return The button of the item
    */
-  public GooeyButton getButton(Consumer<ButtonAction> action) {
-    return getButton(this, action);
+  public GooeyButton getButton(int amount, Consumer<ButtonAction> action) {
+    return getButton(amount, null, null, action);
+  }
+
+  /**
+   * Get the button of the item
+   *
+   * @param action The action of the button
+   * @param amount The amount of the item
+   *
+   * @return The button of the item
+   */
+  public GooeyButton getButton(int amount, String name, Consumer<ButtonAction> action) {
+    return getButton(amount, name, null, action);
+  }
+
+  /**
+   * Get the button of the item
+   *
+   * @param action The action of the button
+   * @param amount The amount of the item
+   *
+   * @return The button of the item
+   */
+  public GooeyButton getButton(int amount, String name,
+                               List<String> lore, Consumer<ButtonAction> action) {
+    GooeyButton.Builder builder = GooeyButton.builder()
+      .display(getItemStack(this, amount));
+    if (name != null) {
+      builder.with(DataComponentTypes.CUSTOM_NAME, AdventureTranslator.toNative(name));
+    } else {
+      builder.with(DataComponentTypes.CUSTOM_NAME, AdventureTranslator.toNative(getDisplayname()));
+    }
+    if (lore != null) {
+      builder.with(DataComponentTypes.LORE, new LoreComponent(AdventureTranslator.toNativeL(lore)));
+    } else {
+      builder.with(DataComponentTypes.LORE, new LoreComponent(AdventureTranslator.toNativeL(getLore())));
+    }
+    if (action == null) {
+      return builder.build();
+    }
+    return builder
+      .onClick(action)
+      .build();
   }
 
 

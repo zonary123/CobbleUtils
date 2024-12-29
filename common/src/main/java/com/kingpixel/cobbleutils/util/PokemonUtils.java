@@ -802,4 +802,20 @@ public class PokemonUtils {
     pokemon.getPersistentData().putBoolean(CobbleUtilsTags.BREEDABLE_TAG, value);
   }
 
+  public enum TypePokemon {
+    NORMAL,
+    LEGENDARY,
+    ULTRABEAST,
+    PARADOX,
+    MYTHICAL,
+  }
+
+  public static TypePokemon getTypePokemon(Pokemon p) {
+    Species species = p.getSpecies();
+    if (p.isLegendary()) return TypePokemon.LEGENDARY;
+    if (p.isUltraBeast()) return TypePokemon.ULTRABEAST;
+    if (species.getLabels().contains("paradox")) return TypePokemon.PARADOX;
+    if (species.getLabels().contains("mythical")) return TypePokemon.MYTHICAL;
+    return TypePokemon.NORMAL;
+  }
 }

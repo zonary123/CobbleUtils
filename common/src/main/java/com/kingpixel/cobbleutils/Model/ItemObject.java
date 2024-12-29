@@ -2,7 +2,7 @@ package com.kingpixel.cobbleutils.Model;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import com.kingpixel.cobbleutils.util.AdventureTranslator;
+import com.kingpixel.cobbleutils.util.ItemUtils;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
@@ -35,29 +35,19 @@ public class ItemObject {
     jsonObject.addProperty("itemId", Registries.ITEM.getId(itemStack.getItem()).toString());
     jsonObject.addProperty("amount", itemStack.getCount());
 
-    if (itemStack.get(DataComponentTypes.ITEM_NAME) != null) {
+    if (itemStack.get(DataComponentTypes.CUSTOM_NAME) != null) {
       jsonObject.addProperty("displayName", itemStack.getName().getString());
     }
     // Save NBT data
     if (itemStack.get(DataComponentTypes.CUSTOM_DATA) != null) {
       NbtComponent nbtComponent = itemStack.get(DataComponentTypes.CUSTOM_DATA);
-      NbtCompound nbtCompound = nbtComponent.copyNbt();
-      if (nbtCompound != null) {
-        jsonObject.addProperty("nbt", NbtHelper.toNbtProviderString(nbtCompound));
+      if (nbtComponent != null) {
+        NbtCompound nbtCompound = nbtComponent.copyNbt();
+        if (nbtCompound != null) {
+          jsonObject.addProperty("nbt", NbtHelper.toNbtProviderString(nbtCompound));
+        }
       }
     }
-
-
-    /*if (itemStack.hasNbt() && itemStack.getNbt().contains("display") && itemStack.getNbt().getCompound("display")
-    .contains("Lore")) {
-
-      var loreJsonArray = new JsonArray();
-      var loreNbtList = itemStack.getNbt().getCompound("display").getList("Lore", 8);
-      for (int i = 0; i < loreNbtList.size(); i++) {
-        loreJsonArray.add(loreNbtList.getString(i));
-      }
-      jsonObject.add("lore", loreJsonArray);
-    }*/
 
     return jsonObject.toString();
   }
@@ -74,21 +64,13 @@ public class ItemObject {
       var amount = jsonObject.get("amount").getAsInt();
       var item = Registries.ITEM.get(Identifier.of(itemId));
       var itemStack = new ItemStack(item, amount);
-
-      if (jsonObject.has("displayName")) {
-        itemStack.set(DataComponentTypes.ITEM_NAME, AdventureTranslator.toNative(jsonObject.get("displayName").getAsString()));
-      }
-      /*if (jsonObject.has("nbt")) {
-        //itemStack.set(DataComponentTypes.CUSTOM_DATA,NbtHelper.fromNbtProviderString(jsonObject.get("nbt").getAsString()));
-      }*/
-      /*if (jsonObject.has("lore")) {
-        var loreJsonArray = jsonObject.getAsJsonArray("lore");
-        var loreNbtList = new NbtList();
-        for (var element : loreJsonArray) {
-          loreNbtList.add(NbtString.of(element.getAsString()));
+      var jsonNbt = jsonObject.get("nbt");
+      if (jsonNbt != null) {
+        var nbt = jsonNbt.getAsString();
+        if (nbt != null && !nbt.isEmpty()) {
+          itemStack = ItemUtils.applyNbt(itemStack, nbt, itemStack.getCount());
         }
-        itemStack.get(DataComponentTypes.LORE"display").put("Lore", loreNbtList);
-      }*/
+      }
       return itemStack;
     } catch (Exception e) {
       e.printStackTrace();
