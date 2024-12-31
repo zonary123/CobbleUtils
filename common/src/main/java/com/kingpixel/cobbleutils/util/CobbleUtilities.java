@@ -18,6 +18,9 @@ import net.minecraft.nbt.NbtHelper;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * @author Carlos Varas Alonso - 10/06/2024 21:09
  */
@@ -57,25 +60,37 @@ public class CobbleUtilities {
    * @param player The player to give the item
    * @param type   The type of item to give
    * @param amount The amount of items to give
+   * @param diff   If the item should be different
    */
-  public static void giveRandomItem(ServerPlayerEntity player, String type, int amount) {
+  public static void giveRandomItem(ServerPlayerEntity player, String type, int amount, boolean diff) {
     ItemChance item = CobbleUtils.poolItems.getRandomItem(type);
+
     if (item == null) {
       player.sendMessage(AdventureTranslator.toNative("Invalid type."));
       return;
     }
 
-    ItemChance.giveReward(player, item, amount);
+    if (diff) {
+      List<ItemChance> items = new ArrayList<>();
+      for (int i = 0; i < amount; i++) {
+        item = CobbleUtils.poolItems.getRandomItem(type);
+        items.add(item);
+        ItemChance.giveReward(player, item, 1);
+      }
+    } else {
+      item = CobbleUtils.poolItems.getRandomItem(type);
+      ItemChance.giveReward(player, item, amount);
 
-    if (CobbleUtils.language.getMessagerandomitem().isEmpty()) return;
-
-    String message = CobbleUtils.language.getMessagerandomitem()
-      .replace("%item%", item.getTitle())
-      .replace("%amount%", String.valueOf(amount))
-      .replace("%type%", type);
+      String message = CobbleUtils.language.getMessagerandomitem()
+        .replace("%item%", item.getTitle())
+        .replace("%amount%", String.valueOf(amount))
+        .replace("%type%", type);
 
 
-    player.sendMessage(AdventureTranslator.toNative(message));
+      PlayerUtils.sendMessage(player, message, CobbleUtils.config.getPrefix());
+    }
+
+
   }
 
   /**

@@ -12,6 +12,7 @@ import com.cobblemon.mod.common.api.pokemon.Natures;
 import com.cobblemon.mod.common.api.pokemon.PokemonProperties;
 import com.cobblemon.mod.common.api.pokemon.PokemonPropertyExtractor;
 import com.cobblemon.mod.common.api.pokemon.egg.EggGroup;
+import com.cobblemon.mod.common.api.pokemon.labels.CobblemonPokemonLabels;
 import com.cobblemon.mod.common.api.pokemon.stats.Stats;
 import com.cobblemon.mod.common.api.storage.NoPokemonStoreException;
 import com.cobblemon.mod.common.entity.pokemon.PokemonEntity;
@@ -32,17 +33,12 @@ import com.kingpixel.cobbleutils.util.AdventureTranslator;
 import com.kingpixel.cobbleutils.util.PlayerUtils;
 import com.kingpixel.cobbleutils.util.PokemonUtils;
 import com.kingpixel.cobbleutils.util.Utils;
-import kotlin.Unit;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
+import net.minecraft.entity.Entity;
 import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.Text;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.world.Heightmap;
-import net.minecraft.world.chunk.Chunk;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -75,6 +71,46 @@ public class EggData {
   private int SpecialAttack;
   private int SpecialDefense;
   private int Speed;
+
+  public static void convertToEgg(PokemonEntity pokemonEntity) {
+    Pokemon pokemon = pokemonEntity.getPokemon();
+
+    if (pokemon.hasLabels(
+      CobblemonPokemonLabels.LEGENDARY,
+      CobblemonPokemonLabels.ULTRA_BEAST,
+      CobblemonPokemonLabels.MYTHICAL,
+      CobblemonPokemonLabels.PARADOX
+    )) return;
+    Pokemon eggSpecie = PokemonUtils.getEvolutionPokemonEgg(pokemon.getSpecies());
+
+    // Form
+    String form = getForm(pokemon);
+
+    Pokemon firstEvolution = PokemonProperties.Companion.parse(eggSpecie.getSpecies().showdownId() + " " + form).create();
+
+    pokemon.setLevel(1);
+    pokemon.getPersistentData().putBoolean("SpawnEgg", true);
+    pokemon.getPersistentData().putString("species", firstEvolution.showdownId());
+    pokemon.getPersistentData().putInt("level", 1);
+    pokemon.getPersistentData().putInt("steps", CobbleUtils.breedconfig.getSteps());
+    pokemon.getPersistentData().putInt("cycles", firstEvolution.getSpecies().getEggCycles());
+    pokemon.getPersistentData().putString("ability", firstEvolution.getAbility().getName());
+    pokemon.getPersistentData().putString("form", form);
+
+    String type_egg;
+    if (CobbleUtils.breedconfig.isAspectEggByType()) {
+      type_egg = pokemon.getPrimaryType().getName().toLowerCase();
+    } else {
+      type_egg = pokemon.getSpecies().showdownId();
+    }
+
+    PokemonProperties.Companion.parse("egg type_egg=" + type_egg).apply(pokemon);
+
+    pokemonEntity.setAiDisabled(true);
+    pokemonEntity.setMovementSpeed(0);
+    ((Entity) pokemonEntity).setInvulnerable(true);
+    pokemonEntity.setNoGravity(true);
+  }
 
   public void EggToPokemon(ServerPlayerEntity player, Pokemon pokemon) {
     if (!pokemon.getSpecies().showdownId().equalsIgnoreCase("egg")) return;
@@ -155,30 +191,6 @@ public class EggData {
     }
   }
 
-  public static void createEgg(@Nullable ServerWorld serverWorld, Chunk chunk) {
-    PokemonEntity egg = PokemonProperties.Companion.parse("egg").createEntity(serverWorld);
-
-    Pokemon pokemonEgg = egg.getPokemon();
-    Pokemon pokemon = CobbleUtils.breedconfig.getPokemonsForDoubleDitto().generateRandomPokemon(CobbleUtils.MOD_ID,
-      "breeding");
-
-    int x = chunk.getPos().getStartX() + Utils.RANDOM.nextInt(16);
-    int z = chunk.getPos().getStartZ() + Utils.RANDOM.nextInt(16);
-    int y = serverWorld.getTopY(Heightmap.Type.MOTION_BLOCKING_NO_LEAVES, x, z);
-
-    Vec3d pos = new Vec3d(x, y, z);
-
-    if (CobbleUtils.config.isDebug()) {
-      CobbleUtils.LOGGER.info("Creating egg in " + pos);
-    }
-
-    pokemonEgg.getPersistentData().putString("species", pokemon.getSpecies().showdownId());
-    pokemonEgg.getPersistentData().putInt("level", pokemon.getLevel());
-    pokemonEgg.getPersistentData().putInt("steps", CobbleUtils.breedconfig.getSteps());
-    pokemonEgg.getPersistentData().putInt("cycles", pokemon.getSpecies().getEggCycles());
-
-    pokemonEgg.sendOut(serverWorld, pos, null, e -> Unit.INSTANCE);
-  }
 
   public static EggData from(Pokemon pokemon) {
     if (pokemon == null)
@@ -763,7 +775,14 @@ public class EggData {
       firstEvolution = PokemonProperties.Companion.parse(lure_species).create();
     }
 
-    Pokemon egg = PokemonProperties.Companion.parse("egg type_egg=" + firstEvolution.showdownId()).create();
+    String form;
+    if (CobbleUtils.breedconfig.isAspectEggByType()) {
+      form = pokemon.getPrimaryType().getName().toLowerCase();
+    } else {
+      form = pokemon.showdownId();
+    }
+
+    Pokemon egg = PokemonProperties.Companion.parse("egg type_egg=" + form).create();
 
     // TODO: Remove the message when the pokemon is healed
     egg.setFaintedTimer(999999999);

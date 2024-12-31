@@ -2,19 +2,15 @@ package com.kingpixel.cobbleutils.features.breeding;
 
 import com.cobblemon.mod.common.api.Priority;
 import com.cobblemon.mod.common.api.events.CobblemonEvents;
-import com.cobblemon.mod.common.api.storage.NoPokemonStoreException;
 import com.cobblemon.mod.common.entity.pokemon.PokemonEntity;
-import com.cobblemon.mod.common.pokemon.Pokemon;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.database.DatabaseClientFactory;
 import com.kingpixel.cobbleutils.features.breeding.events.*;
 import com.kingpixel.cobbleutils.features.breeding.manager.ManagerPlotEggs;
-import com.kingpixel.cobbleutils.util.PlayerUtils;
-import com.kingpixel.cobbleutils.util.RewardsUtils;
-import dev.architectury.event.EventResult;
-import dev.architectury.event.events.common.InteractionEvent;
+import com.kingpixel.cobbleutils.features.breeding.models.EggData;
+import com.kingpixel.cobbleutils.util.Utils;
 import dev.architectury.event.events.common.LifecycleEvent;
 import dev.architectury.event.events.common.PlayerEvent;
 import kotlin.Unit;
@@ -76,6 +72,12 @@ public class Breeding {
 
     // Todo: Add egg generation in the world
 
+    CobblemonEvents.POKEMON_ENTITY_SPAWN.subscribe(Priority.HIGHEST, evt -> {
+      handleEgg(evt.getEntity());
+      return Unit.INSTANCE;
+    });
+
+
     CobblemonEvents.POKEMON_HEALED.subscribe(Priority.HIGHEST, pokemon -> {
       if (pokemon.getPokemon().getSpecies().showdownId().equalsIgnoreCase("egg")) {
         pokemon.cancel();
@@ -108,43 +110,26 @@ public class Breeding {
       }
     });
 
-    PlayerEvent.ATTACK_ENTITY.register((player, level, target, hand, result) -> egg(target, PlayerUtils.castPlayer(player)));
-
-    InteractionEvent.INTERACT_ENTITY.register((player, entity, hand) -> egg(entity, PlayerUtils.castPlayer(player)));
 
     WalkBreeding.register();
     EggThrow.register();
     PastureUI.register();
+    if (CobbleUtils.breedconfig.isSpawnEggWorld()) {
+      EggInteract.register();
+    }
 
     NationalityPokemon.register();
   }
 
-  private static EventResult egg(Entity entity, ServerPlayerEntity player) {
-    try {
-      if (entity == null)
-        return EventResult.pass();
-      if (entity instanceof PokemonEntity pokemonEntity) {
-        Pokemon pokemon = pokemonEntity.getPokemon();
-        if (pokemon.getSpecies().showdownId().equalsIgnoreCase("egg")) {
-          if (pokemon.getPersistentData().getBoolean("EggSpawned")) {
-            pokemon.getPersistentData().remove("EggSpawned");
-            CobbleUtils.LOGGER.info("persistentdata: " + pokemon.getPersistentData());
-            try {
-              RewardsUtils.saveRewardPokemon(player, pokemon);
-            } catch (NoPokemonStoreException e) {
-              throw new RuntimeException(e);
-            }
-            pokemonEntity.remove(Entity.RemovalReason.KILLED);
-          }
+  private static void handleEgg(Entity entity) {
+    if (entity instanceof PokemonEntity pokemonEntity) {
+      if (CobbleUtils.breedconfig.isSpawnEggWorld())
+        if (Utils.RANDOM.nextInt(CobbleUtils.breedconfig.getRaritySpawnEgg()) == 0) {
+          EggData.convertToEgg(pokemonEntity);
         }
-        return EventResult.pass();
-      }
-      return EventResult.pass();
-    } catch (Exception e) {
-      e.printStackTrace();
-      return EventResult.pass();
     }
   }
+
 
   public record UserInfo(String country, String countryCode, String language) {
   }

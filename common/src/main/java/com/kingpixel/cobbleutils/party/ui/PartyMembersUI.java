@@ -4,7 +4,6 @@ import ca.landonjw.gooeylibs2.api.UIManager;
 import ca.landonjw.gooeylibs2.api.button.Button;
 import ca.landonjw.gooeylibs2.api.button.GooeyButton;
 import ca.landonjw.gooeylibs2.api.button.PlaceholderButton;
-import ca.landonjw.gooeylibs2.api.button.linked.LinkType;
 import ca.landonjw.gooeylibs2.api.button.linked.LinkedPageButton;
 import ca.landonjw.gooeylibs2.api.helpers.PaginationHelper;
 import ca.landonjw.gooeylibs2.api.page.LinkedPage;
@@ -12,6 +11,7 @@ import ca.landonjw.gooeylibs2.api.page.Page;
 import ca.landonjw.gooeylibs2.api.template.types.ChestTemplate;
 import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.util.AdventureTranslator;
+import com.kingpixel.cobbleutils.util.UIUtils;
 import com.kingpixel.cobbleutils.util.Utils;
 import net.minecraft.component.DataComponentTypes;
 import net.minecraft.item.ItemStack;
@@ -49,17 +49,11 @@ public class PartyMembersUI {
 
     buttons.removeIf(Objects::isNull);
 
-    LinkedPageButton previus = LinkedPageButton.builder()
-      .display(Utils.parseItemId("minecraft:arrow"))
-      .with(DataComponentTypes.CUSTOM_NAME, AdventureTranslator.toNative("Previous Page"))
-      .linkType(LinkType.Previous)
-      .build();
+    LinkedPageButton previus = UIUtils.getPreviousButton(action -> {
+    });
 
-    LinkedPageButton next = LinkedPageButton.builder()
-      .display(Utils.parseItemId("minecraft:arrow"))
-      .with(DataComponentTypes.CUSTOM_NAME, AdventureTranslator.toNative("Next Page"))
-      .linkType(LinkType.Next)
-      .build();
+    LinkedPageButton next = UIUtils.getNextButton(action -> {
+    });
 
     PlaceholderButton placeholder = new PlaceholderButton();
 

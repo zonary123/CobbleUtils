@@ -307,10 +307,10 @@ public class PokemonUtils {
     if (pokemons.isEmpty()) {
       return message;
     }
-
-    for (int i = 0; i < pokemons.size(); i++) {
+    int size = pokemons.size();
+    for (int i = 0; i < size; i++) {
       Pokemon pokemon = pokemons.get(i);
-      message = replacePlaceholders(message, pokemon, i + 1);
+      message = replacePlaceholders(message, pokemon, size == 1 ? null : i + 1);
     }
 
     return message;

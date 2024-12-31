@@ -22,13 +22,13 @@ public class PlayerUtils {
   // Comando
   public static void sendMessage(ServerPlayerEntity player, String message) {
     if (!message.isEmpty()) {
-      player.sendMessage(AdventureTranslator.toNativeWithOutPrefix(message));
+      player.sendMessage(AdventureTranslator.toNativeWithOutPrefix(message, player));
     }
   }
 
   public static void sendMessage(ServerPlayerEntity player, String message, String prefix) {
     if (!message.isEmpty()) {
-      player.sendMessage(AdventureTranslator.toNative(message, prefix));
+      player.sendMessage(AdventureTranslator.toNative(message, prefix, player));
     }
   }
 

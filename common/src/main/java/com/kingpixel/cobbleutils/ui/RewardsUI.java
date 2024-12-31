@@ -4,7 +4,6 @@ import ca.landonjw.gooeylibs2.api.UIManager;
 import ca.landonjw.gooeylibs2.api.button.Button;
 import ca.landonjw.gooeylibs2.api.button.GooeyButton;
 import ca.landonjw.gooeylibs2.api.button.PlaceholderButton;
-import ca.landonjw.gooeylibs2.api.button.linked.LinkType;
 import ca.landonjw.gooeylibs2.api.button.linked.LinkedPageButton;
 import ca.landonjw.gooeylibs2.api.helpers.PaginationHelper;
 import ca.landonjw.gooeylibs2.api.page.LinkedPage;
@@ -121,17 +120,11 @@ public class RewardsUI {
 
       template.set(47, getAllRewards);
 
-      LinkedPageButton previus = LinkedPageButton.builder()
-        .display(Utils.parseItemId("minecraft:arrow"))
-        .with(DataComponentTypes.CUSTOM_NAME, AdventureTranslator.toNative(CobbleUtils.language.getPrevious()))
-        .linkType(LinkType.Previous)
-        .build();
+      LinkedPageButton previus = UIUtils.getPreviousButton(action -> {
+      });
 
-      LinkedPageButton next = LinkedPageButton.builder()
-        .display(Utils.parseItemId("minecraft:arrow"))
-        .with(DataComponentTypes.CUSTOM_NAME, AdventureTranslator.toNative(CobbleUtils.language.getNext()))
-        .linkType(LinkType.Next)
-        .build();
+      LinkedPageButton next = UIUtils.getNextButton(action -> {
+      });
 
       GooeyButton close = GooeyButton.builder()
         .display(Items.RED_STAINED_GLASS_PANE.getDefaultStack())

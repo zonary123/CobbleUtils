@@ -7,6 +7,7 @@ import com.kingpixel.cobbleutils.party.models.PartyCreateResult;
 import com.kingpixel.cobbleutils.party.models.PartyData;
 import com.kingpixel.cobbleutils.party.models.UserParty;
 import com.kingpixel.cobbleutils.util.AdventureTranslator;
+import com.kingpixel.cobbleutils.util.PlayerUtils;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
@@ -49,21 +50,17 @@ public class PartyManager {
     PartyData party = getParty(player);
     if (party != null && isOwner(player)) {
       party.getInvites().add(invite.getUuid());
-      player.sendMessage(
-        AdventureTranslator.toNative(
-          CobbleUtils.partyLang.getPartyInvite()
-            .replace("%player%", invite.getGameProfile().getName())
-            .replace("%partyname%", party.getName()),
-          CobbleUtils.partyLang.getPrefix()
-        )
+      PlayerUtils.sendMessage(player,
+        CobbleUtils.partyLang.getPartyInviteSend()
+          .replace("%player%", invite.getGameProfile().getName())
+          .replace("%partyname%", party.getName()),
+        CobbleUtils.partyLang.getPrefix()
       );
-      invite.sendMessage(
-        AdventureTranslator.toNative(
-          CobbleUtils.partyLang.getPartyInviteSend()
-            .replace("%player%", player.getGameProfile().getName())
-            .replace("%partyname%", party.getName()),
-          CobbleUtils.partyLang.getPrefix()
-        )
+      PlayerUtils.sendMessage(invite,
+        CobbleUtils.partyLang.getPartyInviteSend()
+          .replace("%player%", player.getGameProfile().getName())
+          .replace("%partyname%", party.getName()),
+        CobbleUtils.partyLang.getPrefix()
       );
     }
   }

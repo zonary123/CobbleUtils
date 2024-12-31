@@ -30,7 +30,7 @@ dependencies {
 
     // Permissions
     api("net.luckperms:api:${property("luckperms_version")}")
-    modImplementation(files("libs/fabric-permissions-api-0.3.2.jar"))
+    modImplementation(files("libs/fabric-permissions-api-0.3.3.jar"))
 
     // Economy
     // Economy Impactor
@@ -46,7 +46,12 @@ dependencies {
 
     //Discord
     api("club.minnced:discord-webhooks:${property("discord_webhooks_version")}")
+
+    // Calculator API
     api("net.objecthunter:exp4j:0.4.8")
+
+    // Polymer
+    modImplementation("eu.pb4:polymer-core:${property("polymer_core_version")}")
 }
 
 

@@ -1,6 +1,5 @@
 package com.kingpixel.cobbleutils.command.admin.rewards;
 
-import com.cobblemon.mod.common.api.storage.NoPokemonStoreException;
 import com.cobblemon.mod.common.command.argument.PokemonPropertiesArgumentType;
 import com.cobblemon.mod.common.pokemon.Pokemon;
 import com.kingpixel.cobbleutils.CobbleUtils;
@@ -45,17 +44,15 @@ public class RewardsPokemon implements Command<ServerCommandSource> {
   public int run(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
     ServerPlayerEntity player = EntityArgumentType.getPlayer(context, "player");
     Pokemon pokemon = PokemonPropertiesArgumentType.Companion.getPokemonProperties(context, "pokemon").create();
-    try {
-      if (RewardsUtils.saveRewardPokemon(player, pokemon)) {
-        if (context.getSource().isExecutedByPlayer()) {
-          context.getSource().getPlayer().sendMessage(Text.literal("Pokemon saved!"));
-        } else {
-          CobbleUtils.LOGGER.info("Pokemon saved!");
-        }
+
+    if (RewardsUtils.saveRewardPokemon(player, pokemon)) {
+      if (context.getSource().isExecutedByPlayer()) {
+        context.getSource().getPlayer().sendMessage(Text.literal("Pokemon saved!"));
+      } else {
+        CobbleUtils.LOGGER.info("Pokemon saved!");
       }
-    } catch (NoPokemonStoreException e) {
-      throw new RuntimeException(e);
     }
+
     return 1;
   }
 }

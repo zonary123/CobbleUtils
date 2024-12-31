@@ -5,6 +5,7 @@ import com.kingpixel.cobbleutils.util.CobbleUtilities;
 import com.kingpixel.cobbleutils.util.LuckPermsUtil;
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.CommandDispatcher;
+import com.mojang.brigadier.arguments.BoolArgumentType;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
@@ -40,19 +41,31 @@ public class RandomItem implements Command<ServerCommandSource> {
                 CommandManager.argument("amount", IntegerArgumentType.integer())
                   .then(
                     CommandManager.argument("player", EntityArgumentType.player())
-                      .executes(new RandomItem()))))));
+                      .executes(new RandomItem())
+                      .then(
+                        CommandManager.argument("random", BoolArgumentType.bool())
+                          .executes(new RandomItem())
+                      )
+                  )
+              )
+          )
+      )
+    );
   }
 
   @Override
   public int run(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
     ServerPlayerEntity player = EntityArgumentType.getPlayer(context, "player");
     String type = StringArgumentType.getString(context, "item");
+    boolean random;
+
+    try {
+      random = BoolArgumentType.getBool(context, "random");
+    } catch (Exception e) {
+      random = false;
+    }
     int amount = IntegerArgumentType.getInteger(context, "amount");
-    if (CobbleUtils.config.isDebug())
-      CobbleUtils.LOGGER.info("RandomItem command");
-
-    CobbleUtilities.giveRandomItem(player, type, amount);
-
+    CobbleUtilities.giveRandomItem(player, type, amount, random);
     return 1;
   }
 

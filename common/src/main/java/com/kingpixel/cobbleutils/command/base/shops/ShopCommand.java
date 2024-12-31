@@ -129,6 +129,7 @@ public class ShopCommand implements Command<ServerCommandSource> {
       return 0;
     }
     ServerPlayerEntity player = context.getSource().getPlayerOrThrow();
+    UIManager.closeUI(player);
     if (CobbleUtils.config.isDebug()) {
       CobbleUtils.LOGGER.info("Opening shop config menu");
     }
@@ -138,6 +139,7 @@ public class ShopCommand implements Command<ServerCommandSource> {
 
   private static int executeOpenShop(CommandContext<ServerCommandSource> context, ShopConfig shopConfig, String mod_id, boolean isForOtherPlayer) throws CommandSyntaxException {
     ServerPlayerEntity player = context.getSource().getPlayerOrThrow();
+    UIManager.closeUI(player);
     String shop = StringArgumentType.getString(context, "shop");
     if (LuckPermsUtil.checkPermission(player, mod_id + ".shop." + shop)) {
       shopConfig.getShopConfigMenu().open(player, shop, shopConfig, mod_id, isForOtherPlayer);
@@ -155,16 +157,22 @@ public class ShopCommand implements Command<ServerCommandSource> {
 
   private static int executeOpenShopForOtherPlayer(CommandContext<ServerCommandSource> context, ShopConfig shopConfig, String mod_id) throws CommandSyntaxException {
     ServerPlayerEntity player = EntityArgumentType.getPlayer(context, "player");
+    UIManager.closeUI(player);
     String shop = StringArgumentType.getString(context, "shop");
     shopConfig.getShopConfigMenu().open(player, shop, shopConfig, mod_id, true);
     return 1;
   }
 
   private static int executeOpenShopWithClose(CommandContext<ServerCommandSource> context, ShopConfig shopConfig, String mod_id) throws CommandSyntaxException {
-    ServerPlayerEntity player = EntityArgumentType.getPlayer(context, "player");
-    String shop = StringArgumentType.getString(context, "shop");
-    boolean close = Boolean.parseBoolean(StringArgumentType.getString(context, "close"));
-    shopConfig.getShopConfigMenu().open(player, shop, shopConfig, mod_id, close);
+    try {
+      ServerPlayerEntity player = EntityArgumentType.getPlayer(context, "player");
+      UIManager.closeUI(player);
+      String shop = StringArgumentType.getString(context, "shop");
+      boolean close = Boolean.parseBoolean(StringArgumentType.getString(context, "close"));
+      shopConfig.getShopConfigMenu().open(player, shop, shopConfig, mod_id, close);
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
     return 1;
   }
 

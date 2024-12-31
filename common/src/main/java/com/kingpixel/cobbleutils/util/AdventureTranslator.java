@@ -25,13 +25,17 @@ package com.kingpixel.cobbleutils.util;
  */
 
 import com.kingpixel.cobbleutils.CobbleUtils;
+import eu.pb4.placeholders.api.PlaceholderContext;
+import eu.pb4.placeholders.api.Placeholders;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
 import net.minecraft.registry.BuiltinRegistries;
 import net.minecraft.registry.RegistryWrapper;
+import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -41,47 +45,82 @@ public class AdventureTranslator {
 
   private static RegistryWrapper.WrapperLookup wrapperLookup;
 
-  public static Text toNativeWithOutPrefix(String displayname) {
-    return toNative(miniMessage.deserialize(replaceNative(displayname)
-      .replace("%prefix%", "")
-      .replace("%partyprefix%", "")));
-  }
-
   private static RegistryWrapper.WrapperLookup getWrapper() {
     if (wrapperLookup == null) wrapperLookup = BuiltinRegistries.createWrapperLookup();
     return wrapperLookup;
   }
 
-  public static Text toNative(String displayname) {
-    return toNative(miniMessage.deserialize(replaceNative(displayname
+  public static Text toNativeWithOutPrefix(String text) {
+    return toNative(miniMessage.deserialize(replaceNative(text)
+      .replace("%prefix%", "")
+      .replace("%partyprefix%", "")), null);
+  }
+
+  public static Text toNativeWithOutPrefix(String text, @Nullable ServerPlayerEntity player) {
+    return toNative(miniMessage.deserialize(replaceNative(text)
+      .replace("%prefix%", "")
+      .replace("%partyprefix%", "")), player);
+  }
+
+  public static Text toNative(String text) {
+    return toNative(miniMessage.deserialize(replaceNative(text
       .replace("%prefix%", CobbleUtils.config.getPrefix())
-      .replace("%partyprefix%", CobbleUtils.partyLang.getPrefix()))));
+      .replace("%partyprefix%", CobbleUtils.partyLang.getPrefix()))), null);
   }
 
-  public static Text toNative(String displayname, String prefix) {
-    return toNative(miniMessage.deserialize(replaceNative(displayname
-      .replace("%prefix%", prefix)
-      .replace("%partyprefix%", CobbleUtils.partyLang.getPrefix()))));
+  public static Text toNative(String text, @Nullable String prefix) {
+    return toNative(miniMessage.deserialize(replaceNative(text
+      .replace("%prefix%", prefix == null ? "" : prefix)
+      .replace("%partyprefix%", CobbleUtils.partyLang.getPrefix()))), null);
   }
 
-  public static Text toNative(Component component) {
-    return Text.Serialization.fromJson(GsonComponentSerializer.gson().serialize(component),
+  public static Text toNative(String text, @Nullable String prefix, @Nullable ServerPlayerEntity player) {
+    return toNative(miniMessage.deserialize(replaceNative(text
+      .replace("%prefix%", prefix == null ? "" : prefix)
+      .replace("%partyprefix%", CobbleUtils.partyLang.getPrefix()))), player);
+  }
+
+  public static Text toNative(Component component, @Nullable ServerPlayerEntity player) {
+    Text text = Text.Serialization.fromJson(GsonComponentSerializer.gson().serialize(component),
       getWrapper());
+    if (player != null) {
+      if (isPlaceholder()) {
+        text = Placeholders.parseText(text, PlaceholderContext.of(player));
+      }
+    }
+    return text;
   }
 
+
+  private static boolean isPlaceholder() {
+    try {
+      Class.forName("eu.pb4.placeholders.api.Placeholders");
+      return true;
+    } catch (ClassNotFoundException e) {
+      return false;
+    }
+  }
 
   public static List<Text> toNativeL(List<String> lore) {
     List<Text> loreString = new ArrayList<>();
     for (String loreLine : lore) {
-      loreString.add(toNative(miniMessage.deserialize(replaceNative(loreLine))));
+      loreString.add(toNative(miniMessage.deserialize(replaceNative(loreLine)), null));
     }
     return loreString;
   }
 
-  private static String replaceNative(String displayname) {
-    if (displayname == null || displayname.isEmpty()) return "";
+  public static List<Text> toNativeL(List<String> lore, @Nullable ServerPlayerEntity player) {
+    List<Text> loreString = new ArrayList<>();
+    for (String loreLine : lore) {
+      loreString.add(toNative(miniMessage.deserialize(replaceNative(loreLine)), player));
+    }
+    return loreString;
+  }
 
-    displayname = displayname
+  private static String replaceNative(String text) {
+    if (text == null || text.isEmpty()) return "";
+
+    text = text
       .replace("&", "§")
       .replace("§0", "<black>")
       .replace("§1", "<dark_blue>")
@@ -106,7 +145,8 @@ public class AdventureTranslator {
       .replace("§o", "<italic>")
       .replace("§r", "<reset>");
 
-    return displayname;
+
+    return text;
   }
 
   public static MutableText toNativeComponent(String messageContent) {

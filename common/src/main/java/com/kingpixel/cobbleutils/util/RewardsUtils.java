@@ -1,7 +1,6 @@
 package com.kingpixel.cobbleutils.util;
 
 import com.cobblemon.mod.common.Cobblemon;
-import com.cobblemon.mod.common.api.storage.NoPokemonStoreException;
 import com.cobblemon.mod.common.api.storage.party.PlayerPartyStore;
 import com.cobblemon.mod.common.pokemon.Pokemon;
 import com.google.gson.JsonObject;
@@ -133,7 +132,7 @@ public class RewardsUtils {
    * @return
    */
   @Deprecated
-  public static boolean saveRewardPokemon(ServerPlayerEntity player, Pokemon pokemon) throws NoPokemonStoreException {
+  public static boolean saveRewardPokemon(ServerPlayerEntity player, Pokemon pokemon) {
     boolean update = false;
     if (pokemon == null)
       return update;

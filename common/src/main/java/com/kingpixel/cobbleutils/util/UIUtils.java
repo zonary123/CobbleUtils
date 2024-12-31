@@ -50,7 +50,8 @@ public class UIUtils {
       return GooeyButton.builder()
         .display(CobbleUtils.language.getItemNoPokemon().getItemStack())
         .with(DataComponentTypes.CUSTOM_NAME, AdventureTranslator.toNative(CobbleUtils.language.getItemNoPokemon().getDisplayname()))
-        .with(DataComponentTypes.LORE, new LoreComponent(AdventureTranslator.toNativeL(CobbleUtils.language.getItemNoPokemon().getLore())))
+        .with(DataComponentTypes.LORE,
+          new LoreComponent(AdventureTranslator.toNativeL(CobbleUtils.language.getItemNoPokemon().getLore())))
         .build();
     }
 

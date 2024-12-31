@@ -34,9 +34,11 @@ public class BreedConfig {
   private boolean shifttoopen;
   private boolean obtainAspect;
   private boolean methodmasuda;
+  private boolean aspectEggByType;
   private boolean ditto;
   private boolean doubleditto;
   private boolean spawnEggWorld;
+  private int raritySpawnEgg;
   private boolean obtainPokeBallFromMother;
   private List<String> eggcommand;
   private String titleselectplot;
@@ -62,7 +64,7 @@ public class BreedConfig {
   private int rowmenuselectplot;
   private int rowmenuplot;
   private int rowmenuselectpokemon;
-  private int percentagespawnegg;
+
   private int steps;
   private int cooldowninstaBreedInSeconds;
   private int cooldowninstaHatchInSeconds;
@@ -113,8 +115,9 @@ public class BreedConfig {
     this.methodmasuda = true;
     this.ditto = true;
     this.doubleditto = true;
-    this.spawnEggWorld = false;
+    this.spawnEggWorld = true;
     this.shifttoopen = true;
+    this.aspectEggByType = true;
     this.obtainPokeBallFromMother = true;
     this.numberIvsDestinyKnot = 5;
     this.tickstocheck = 20;
@@ -134,7 +137,7 @@ public class BreedConfig {
     this.rowmenuselectplot = 3;
     this.rowmenuplot = 3;
     this.rowmenuselectpokemon = 6;
-    this.percentagespawnegg = 5;
+    this.raritySpawnEgg = 2048;
     this.cooldowninstaBreedInSeconds = 60;
     this.cooldowninstaHatchInSeconds = 60;
     this.defaultNumIvsToTransfer = 3;
@@ -265,7 +268,7 @@ public class BreedConfig {
         maleSlots = config.getMaleSlots();
         eggSlots = config.getEggSlots();
         blacklisted = config.getBlacklisted();
-        percentagespawnegg = config.getPercentagespawnegg();
+        raritySpawnEgg = config.getRaritySpawnEgg();
         multiplierShiny = config.getMultiplierShiny();
         eggcommand = config.getEggcommand();
         nameEgg = config.getNameEgg();
@@ -295,6 +298,7 @@ public class BreedConfig {
         plotThereAreEggs = config.getPlotThereAreEggs();
         notbreedable = config.getNotbreedable();
         blacklistForm = config.getBlacklistForm();
+        aspectEggByType = config.isAspectEggByType();
         eggForms = config.getEggForms();
         eggSpecialForms = config.getEggSpecialForms();
         pokemonRareMechanics = config.getPokemonRareMechanics();

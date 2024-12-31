@@ -1,6 +1,8 @@
 package com.kingpixel.cobbleutils.Model;
 
 import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
 import net.minecraft.entity.Entity;
 import net.minecraft.network.packet.s2c.play.ParticleS2CPacket;
 import net.minecraft.particle.ParticleEffect;
@@ -17,6 +19,8 @@ import java.util.List;
  * @author Carlos Varas Alonso - 06/11/2024 22:41
  */
 @Getter
+@Setter
+@ToString
 public class Particle {
   private String particle;
   private int numberParticles;

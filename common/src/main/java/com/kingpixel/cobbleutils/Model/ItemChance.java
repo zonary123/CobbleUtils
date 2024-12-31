@@ -34,6 +34,7 @@ import java.util.Map;
  * Represents an item chance model with methods to handle rewards.
  */
 @Getter
+@Setter
 @ToString
 public class ItemChance {
   private final String item;
@@ -234,6 +235,9 @@ public class ItemChance {
       } else if (item.startsWith("mod:")) {
         itemStack = getModItem(itemChance);
         return RewardsUtils.saveRewardItemStack(player, itemStack);
+      } else if (item.startsWith("polymer:")) {
+        CobbleUtils.LOGGER.info("Polymer not supported yet");
+        return false;
       } else {
         itemStack = Utils.parseItemId(item, amount);
         return RewardsUtils.saveRewardItemStack(player, itemStack);
@@ -604,5 +608,25 @@ public class ItemChance {
         .build());
     }
     return buttons;
+  }
+
+  public ItemStack getIcon() {
+    return getIcon(null);
+  }
+
+  public ItemStack getIcon(String title) {
+    return getIcon(title, null);
+  }
+
+  public ItemStack getIcon(String title, List<String> lore) {
+    if (title == null) title = getTitle();
+    if (lore == null) lore = getLore();
+    ItemStack itemStack;
+    if (getDisplay() == null) {
+      itemStack = getItemStack();
+    } else {
+      itemStack = Utils.parseItemId(getDisplay());
+    }
+    return itemStack;
   }
 }

@@ -15,14 +15,19 @@ import com.kingpixel.cobbleutils.features.shops.Shop;
 import com.kingpixel.cobbleutils.util.AdventureTranslator;
 import com.kingpixel.cobbleutils.util.PlayerUtils;
 import com.kingpixel.cobbleutils.util.UIUtils;
+import com.kingpixel.cobbleutils.util.Utils;
 import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
 import net.minecraft.component.DataComponentTypes;
 import net.minecraft.component.type.LoreComponent;
 import net.minecraft.entity.ItemEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.text.Text;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -33,6 +38,8 @@ import java.util.function.Consumer;
  * @author Carlos Varas Alonso - 21/11/2024 3:15
  */
 @Getter
+@Setter
+@ToString
 public class AdvancedItemChance {
   // Title of the menu rewards
   private String title;
@@ -50,20 +57,18 @@ public class AdvancedItemChance {
   public AdvancedItemChance() {
     this.title = "";
     this.giveAll = false;
-    this.amountRewardsPermission = Map.of(
-      "", 3,
-      "group.vip", 5
-    );
+    this.amountRewardsPermission = new HashMap<>();
+    this.amountRewardsPermission.put("", 1);
+    this.amountRewardsPermission.put("group.vip", 1);
     //this.sound = "minecraft:block.note_block.harp";
     this.newSound = new Sound();
     this.particle = new Particle();
     this.animation = Animations.NONE;
-    this.lootTable = Map.of(
-      "", ItemChance.defaultItemChances(),
-      "group.vip", List.of(
-        new ItemChance()
-      )
-    );
+    this.lootTable = new HashMap<>();
+    lootTable.put("", ItemChance.defaultItemChances());
+    List<ItemChance> itemChances = new ArrayList<>();
+    itemChances.add(new ItemChance());
+    lootTable.put("group.vip", itemChances);
   }
 
   private enum TypeError {
@@ -249,6 +254,7 @@ public class AdvancedItemChance {
     int freeSlots = rectangle.getSlotsFree(template.getRows());
 
     ItemModel info = CobbleUtils.language.getItemAdvancedRewardsInfo();
+
     List<String> infoLore = new ArrayList<>(info.getLore());
     infoLore.replaceAll(s -> s
       .replace("%amount%", String.valueOf(getAmountReward(player)))
@@ -257,7 +263,7 @@ public class AdvancedItemChance {
     if (info.getSlot() >= 0) {
       template.set(info.getSlot(), GooeyButton.builder()
         .display(info.getItemStack())
-        .with(DataComponentTypes.LORE, new LoreComponent(AdventureTranslator.toNativeL(infoLore)))
+        .with(DataComponentTypes.LORE, new LoreComponent(AdventureTranslator.toNativeL(infoLore, player)))
         .build());
     }
 
@@ -276,8 +282,14 @@ public class AdvancedItemChance {
     }
 
 
+    template.fill(GooeyButton.builder()
+      .display(Utils.parseItemId(CobbleUtils.config.getFill()))
+      .with(DataComponentTypes.CUSTOM_NAME, Text.empty())
+      .build());
+
     LinkedPage.Builder linkedPageBuilder = LinkedPage.builder()
       .title(AdventureTranslator.toNative(title == null || title.isEmpty() ? CobbleUtils.language.getTitleLoot() : title));
+
 
     UIManager.openUIForcefully(player, PaginationHelper.createPagesFromPlaceholders(template, buttons,
       linkedPageBuilder));
@@ -302,6 +314,13 @@ public class AdvancedItemChance {
     double percentage = totalWeight > 0 ? (chance / totalWeight) * 100 : 0;
 
     // Prepara el lore para mostrar el porcentaje calculado
+    String name;
+    if (itemChance.getDisplayname() != null) {
+      name = itemChance.getDisplayname();
+    } else {
+      name = itemChance.getTitle();
+    }
+
     List<String> lore = new ArrayList<>(CobbleUtils.language.getLorechance());
     lore.replaceAll(s -> s.replace("%chance%", String.format("%.2f", percentage)));
     if (!havePermission) {
@@ -311,8 +330,8 @@ public class AdvancedItemChance {
 
 
     return GooeyButton.builder()
-      .display(itemChance.getItemStack())
-      .with(DataComponentTypes.CUSTOM_NAME, AdventureTranslator.toNative(itemChance.getTitle()))
+      .display(getDisplay(itemChance))
+      .with(DataComponentTypes.CUSTOM_NAME, AdventureTranslator.toNative(name))
       .with(DataComponentTypes.LORE, new LoreComponent(AdventureTranslator.toNativeL(lore)))
       .build();
   }
@@ -326,9 +345,7 @@ public class AdvancedItemChance {
 
   private List<ItemStack> getListDisplay(List<ItemChance> itemChances) {
     List<ItemStack> itemStacks = new ArrayList<>();
-    itemChances.forEach(itemChance -> {
-      itemStacks.add(getDisplay(itemChance));
-    });
+    itemChances.forEach(itemChance -> itemStacks.add(getDisplay(itemChance)));
     return itemStacks;
   }
 

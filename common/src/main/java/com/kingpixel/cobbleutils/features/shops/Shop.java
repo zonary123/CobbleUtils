@@ -229,9 +229,8 @@ public class Shop {
       String symbol = EconomyUtil.getSymbol(getCurrency());
       List<Product> products = shopType.getProducts(this);
 
-      if (products == null) {
-        return;
-      }
+      if (products == null) return;
+
 
       products.forEach(product -> {
         if (!shopConfig.getShopConfigMenu().isViewItemsWithOptionPermission()) {
@@ -406,6 +405,7 @@ public class Shop {
             if (closeCommand == null || closeCommand.isEmpty()) {
               ShopConfigMenu.open(player, shopConfig, mod_id, byCommand);
             } else {
+              UIManager.closeUI(player);
               PlayerUtils.executeCommand(closeCommand, player);
             }
           });
@@ -424,7 +424,6 @@ public class Shop {
         if (UIUtils.isInside(getNext(), rows)) {
           LinkedPageButton next = LinkedPageButton.builder()
             .display(getNext().getItemStack())
-            .with(DataComponentTypes.CUSTOM_NAME, AdventureTranslator.toNative(getNext().getDisplayname()))
             .onClick(action -> SoundUtil.playSound(getSoundopen(), action.getPlayer()))
             .linkType(LinkType.Next)
             .build();
@@ -443,7 +442,6 @@ public class Shop {
         if (UIUtils.isInside(getPrevious(), rows)) {
           LinkedPageButton previous = LinkedPageButton.builder()
             .display(getPrevious().getItemStack())
-            .with(DataComponentTypes.CUSTOM_NAME, AdventureTranslator.toNative(getPrevious().getDisplayname()))
             .onClick(action -> {
               SoundUtil.playSound(getSoundopen(), action.getPlayer());
             })
@@ -871,8 +869,8 @@ public class Shop {
       return;
     template.set(addModel.getSlot(), GooeyButton.builder()
       .display(addModel.getItemStack(increment))
-      .with(DataComponentTypes.CUSTOM_NAME, AdventureTranslator.toNative(addModel.getDisplayname()))
-      .with(DataComponentTypes.LORE, new LoreComponent(AdventureTranslator.toNativeL(addModel.getLore())))
+      .with(DataComponentTypes.CUSTOM_NAME, AdventureTranslator.toNative(addModel.getDisplayname(), null, player))
+      .with(DataComponentTypes.LORE, new LoreComponent(AdventureTranslator.toNativeL(addModel.getLore(), player)))
       .onClick(action -> {
         SoundUtil.playSound(CobbleUtils.shopLang.getSoundAdd(), player);
         openBuySellMenu(player, shopConfig, product, typeMenu, amount + increment, mod_id, byCommand, shop);
@@ -882,8 +880,8 @@ public class Shop {
 
     template.set(removeModel.getSlot(), GooeyButton.builder()
       .display(removeModel.getItemStack(increment))
-      .with(DataComponentTypes.CUSTOM_NAME, AdventureTranslator.toNative(removeModel.getDisplayname()))
-      .with(DataComponentTypes.LORE, new LoreComponent(AdventureTranslator.toNativeL(removeModel.getLore())))
+      .with(DataComponentTypes.CUSTOM_NAME, AdventureTranslator.toNative(removeModel.getDisplayname(), null, player))
+      .with(DataComponentTypes.LORE, new LoreComponent(AdventureTranslator.toNativeL(removeModel.getLore(), player)))
       .onClick(action -> {
         SoundUtil.playSound(CobbleUtils.shopLang.getSoundRemove(), player);
         openBuySellMenu(player, shopConfig, product, typeMenu, Math.max(amount - increment, 1), mod_id, byCommand, shop);

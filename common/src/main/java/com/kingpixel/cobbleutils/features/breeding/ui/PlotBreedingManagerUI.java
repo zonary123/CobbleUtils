@@ -7,7 +7,6 @@ import ca.landonjw.gooeylibs2.api.page.GooeyPage;
 import ca.landonjw.gooeylibs2.api.template.types.ChestTemplate;
 import com.cobblemon.mod.common.Cobblemon;
 import com.cobblemon.mod.common.api.pokemon.PokemonProperties;
-import com.cobblemon.mod.common.api.storage.NoPokemonStoreException;
 import com.cobblemon.mod.common.item.PokemonItem;
 import com.cobblemon.mod.common.pokemon.Gender;
 import com.cobblemon.mod.common.pokemon.Pokemon;
@@ -107,12 +106,9 @@ public class PlotBreedingManagerUI {
       .onClick(action -> {
         if (!plotBreeding.getEggs().isEmpty()) {
           plotBreeding.getEggs().forEach(pokemon -> {
-            try {
-              RewardsUtils.saveRewardPokemon(action.getPlayer(),
-                Pokemon.Companion.loadFromJSON(DynamicRegistryManager.EMPTY, pokemon));
-            } catch (NoPokemonStoreException e) {
-              e.printStackTrace();
-            }
+
+            RewardsUtils.saveRewardPokemon(action.getPlayer(),
+              Pokemon.Companion.loadFromJSON(DynamicRegistryManager.EMPTY, pokemon));
           });
           plotBreeding.getEggs().clear();
           plots.set(finalI, plotBreeding);
@@ -132,11 +128,8 @@ public class PlotBreedingManagerUI {
         .onClick(action -> {
           if (!plotBreeding.getEggs().isEmpty()) {
             plotBreeding.getEggs().forEach(pokemon -> {
-              try {
-                RewardsUtils.saveRewardPokemon(action.getPlayer(), Pokemon.Companion.loadFromJSON(DynamicRegistryManager.EMPTY, pokemon));
-              } catch (NoPokemonStoreException e) {
-                throw new RuntimeException(e);
-              }
+
+              RewardsUtils.saveRewardPokemon(action.getPlayer(), Pokemon.Companion.loadFromJSON(DynamicRegistryManager.EMPTY, pokemon));
             });
             plotBreeding.getEggs().clear();
             plots.set(finalI, plotBreeding);
