@@ -6,7 +6,6 @@ import com.kingpixel.cobbleutils.util.AdventureTranslator;
 import com.kingpixel.cobbleutils.util.EconomyUtil;
 import com.kingpixel.cobbleutils.util.LuckPermsUtil;
 import com.kingpixel.cobbleutils.util.PlayerUtils;
-import net.minecraft.component.DataComponentTypes;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -37,18 +36,23 @@ public class ShopSell {
   public static void addProduct(Shop shop) {
     Set<Product> productSet = new HashSet<>();
     shop.getProducts().forEach(product -> {
-      String s = product.getProduct();
-      if (!s.startsWith("pokemon:")
-        && !s.startsWith("money:")
-        && !s.startsWith("command:")) {
+      String productName = product.getProduct();
+      boolean isValidType = !(productName.startsWith("pokemon:") ||
+        productName.startsWith("command:") ||
+        productName.startsWith("money:"));
+      boolean hasPositiveSellPrice = product.getSell().compareTo(BigDecimal.ZERO) > 0;
+
+      if (isValidType && hasPositiveSellPrice) {
         productSet.add(product);
       }
     });
+
     if (!productSet.isEmpty()) {
       products.computeIfAbsent(shop.getCurrency(), k -> new ConcurrentHashMap<>())
         .put(shop.getId(), productSet);
     }
   }
+
 
   /**
    * Sells all products from the player's inventory and updates the player's balance.
@@ -57,27 +61,6 @@ public class ShopSell {
    * @param shopConfigMenu
    */
   public static void sellProducts(ServerPlayerEntity player, ShopConfigMenu shopConfigMenu) {
-    if (CobbleUtils.config.isDebug()) {
-      Set<Product> products = new HashSet<>();
-      for (Map<String, Set<Product>> value : ShopSell.products.values()) {
-        for (Set<Product> productSet : value.values()) {
-          productSet.forEach(product -> {
-            String s = product.getProduct();
-            if (!s.startsWith("pokemon:")
-              && !s.startsWith("money:")
-              && !s.startsWith("command:")) {
-              products.add(product);
-            }
-          });
-        }
-      }
-      products.forEach(product -> {
-        CobbleUtils.LOGGER.info("Product: " + product);
-        ItemStack itemStack = product.getItemchance().getItemStack();
-        CobbleUtils.LOGGER.info("ItemStack: " + itemStack);
-        CobbleUtils.LOGGER.info("CustomModelData: " + itemStack.get(DataComponentTypes.CUSTOM_MODEL_DATA));
-      });
-    }
     try {
       PlayerInventory inventory = player.getInventory();
       Map<String, BigDecimal> currencyTotals = new HashMap<>();
@@ -94,6 +77,7 @@ public class ShopSell {
             ItemStack productStack = product.getItemchance().getItemStack();
 
             for (ItemStack inventoryItem : inventory.main) {
+              if (inventoryItem.isEmpty()) continue;
               if (!isMatchingItem(inventoryItem, productStack)) continue;
 
               int amount = inventoryItem.getCount();
@@ -160,17 +144,7 @@ public class ShopSell {
   }
 
   private static boolean isMatchingItem(ItemStack inventoryItem, ItemStack productStack) {
-    boolean areItemsEqual = ItemStack.areItemsAndComponentsEqual(inventoryItem, productStack);
-    boolean areCustomModelDataEqual = inventoryItem.get(DataComponentTypes.CUSTOM_MODEL_DATA) == productStack.get(DataComponentTypes.CUSTOM_MODEL_DATA);
-    if (CobbleUtils.config.isDebug()) {
-      CobbleUtils.LOGGER.info("--------------------");
-      CobbleUtils.LOGGER.info("InventoryItem: " + inventoryItem);
-      CobbleUtils.LOGGER.info("ProductStack: " + productStack);
-      CobbleUtils.LOGGER.info("areItemsEqual: " + areItemsEqual);
-      CobbleUtils.LOGGER.info("areCustomModelDataEqual: " + areCustomModelDataEqual);
-      CobbleUtils.LOGGER.info("--------------------");
-    }
-    return areItemsEqual && areCustomModelDataEqual;
+    return ItemStack.areItemsAndComponentsEqual(inventoryItem, productStack);
   }
 
   private static void distributeEarnings(ServerPlayerEntity player, Map<String, BigDecimal> currencyTotals) {
