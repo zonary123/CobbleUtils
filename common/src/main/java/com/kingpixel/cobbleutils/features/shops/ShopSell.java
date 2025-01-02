@@ -74,32 +74,30 @@ public class ShopSell {
       int decimals = EconomyUtil.getDecimals(currency);
 
       for (Product product : productSet) {
-        if (!LuckPermsUtil.checkPermission(player, product.getPermission())) continue;
+        if (product.getPermission() != null && !product.getPermission().isEmpty() && !LuckPermsUtil.checkPermission(player, product.getPermission()))
+          continue;
 
         BigDecimal sellPrice = product.getSell().setScale(decimals, RoundingMode.HALF_UP);
         if (sellPrice.compareTo(BigDecimal.ZERO) <= 0) continue;
 
-        ItemStack productStack = product.getItemchance().getItemStack();
+        ItemStack productItemStack = product.getItemchance().getItemStack();
 
-        for (ItemStack itemStack : inventory.main) {
-          if (itemStack.isEmpty() || !ItemStack.areEqual(itemStack, productStack)) continue;
+        for (ItemStack inventoryItemStack : inventory.main) {
+          if (inventoryItemStack.isEmpty()) return;
+          boolean areEqual = ItemStack.areItemsAndComponentsEqual(inventoryItemStack, productItemStack);
+          if (CobbleUtils.config.isDebug()) {
+            CobbleUtils.LOGGER.info("ItemStack: " + inventoryItemStack);
+            CobbleUtils.LOGGER.info("ProductStack: " + productItemStack);
+            CobbleUtils.LOGGER.info("AreEqual: " + areEqual);
+          }
+          if (!areEqual) continue;
 
-          int amount = itemStack.getCount();
+          int amount = inventoryItemStack.getCount();
           BigDecimal price = sellPrice.multiply(BigDecimal.valueOf(amount));
           currencyTotal = currencyTotal.add(price);
 
-          // Add transaction
-          /*ShopTransactions.addTransaction(
-            player.getUuid(), // Assuming you have a method to get the player's UUID
-            currency,
-            ShopTransactions.ShopAction.SELL, // Assuming there's an action type for selling
-            product,
-            BigDecimal.valueOf(amount),
-            price
-          );*/
-
           // Remove items from the inventory
-          itemStack.decrement(amount);
+          inventoryItemStack.decrement(amount);
         }
       }
 
@@ -162,7 +160,7 @@ public class ShopSell {
         if (sellPrice.compareTo(BigDecimal.ZERO) <= 0) continue;
 
         ItemStack productStack = product.getItemchance().getItemStack();
-        if (ItemStack.areEqual(mainHandStack, productStack)) {
+        if (ItemStack.areItemsAndComponentsEqual(mainHandStack, productStack)) {
           int amount = mainHandStack.getCount();
           BigDecimal price = sellPrice.multiply(BigDecimal.valueOf(amount));
           EconomyUtil.addMoney(player, currency, price);
