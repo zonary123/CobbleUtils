@@ -1,0 +1,93 @@
+plugins {
+    id "architectury-plugin" version "3.4-SNAPSHOT"
+    id "dev.architectury.loom" version "1.9-SNAPSHOT" apply false
+    id 'com.palantir.git-version' version '3.0.0'
+}
+
+def git = versionDetails()
+def tag = git.lastTag.substring(1)
+if (System.getenv("GITHUB_ACTIONS") == "true") {
+    if (System.getenv("GITHUB_WORKFLOW") == "Release") {
+        version = tag
+    } else if (System.getenv("PULL_REQUEST")) {
+        version = "${tag}${tag.contains("-") ? "." : "-"}.pr.${System.getenv("PULL_REQUEST")}.${System.getenv("GITHUB_RUN_NUMBER")}"
+    } else {
+        version = "${tag}${tag.contains("-") ? "." : "-"}.${System.getenv("GITHUB_RUN_NUMBER")}"
+    }
+} else {
+    version = "${tag}${tag.contains("-") ? "." : "-"}"
+}
+
+architectury {
+    minecraft = rootProject.minecraft_version
+}
+
+subprojects {
+    apply plugin: "dev.architectury.loom"
+    version = "${rootProject.version}"
+
+    loom {
+        silentMojangMappingsLicense()
+    }
+
+    dependencies {
+        minecraft "com.mojang:minecraft:${rootProject.minecraft_version}"
+        // Ref: https://discord.com/channels/792699517631594506/1255221515964911626/1256712441329614942
+        mappings loom.layered {
+            it.mappings("net.fabricmc:yarn:${rootProject.yarn_mappings}:v2")
+            it.mappings("dev.architectury:yarn-mappings-patch-neoforge:$rootProject.yarn_mappings_patch_neoforge_version")
+        }
+    }
+}
+
+allprojects {
+    apply plugin: "java"
+    apply plugin: "architectury-plugin"
+    apply plugin: "maven-publish"
+
+    archivesBaseName = "${rootProject.minecraft_version}/${rootProject.mod_version}/${rootProject.archives_base_name}-${rootProject.minecraft_version}-${project.name}-${rootProject.mod_version}"
+    group = rootProject.maven_group
+
+    repositories {
+        mavenCentral()
+        gradlePluginPortal()
+        maven { url "https://jitpack.io" }
+        maven { url "https://cursemaven.com" }
+        maven { url "https://maven.fabricmc.net/" }
+        maven { url "https://maven.architectury.dev/" }
+        maven { url "https://repo.maven.apache.org/maven2/" }
+        maven { url "https://repo.spongepowered.org/maven/" }
+        maven { url "https://repo.essentialsx.net/releases/" }
+        maven { url "https://maven.neoforged.net/releases/" }
+        maven { url "https://files.minecraftforge.net/maven/" }
+        maven { url "https://thedarkcolour.github.io/KotlinForForge/" }
+        maven { url "https://papermc.io/repo/repository/maven-public/" }
+        maven { url "https://maven.impactdev.net/repository/development/" }
+        maven { url "https://maven.impactdev.net/raepository/development" }
+        maven { url "https://hub.spigotmc.org/nexus/content/repositories/snapshots/" }
+        maven { url "https://repo.extendedclip.com/content/repositories/placeholderapi/" }
+        maven {
+            url "https://maven.nucleoid.xyz/"
+            name = "Nucleoid"
+        }
+        maven {
+            url "https://oss.sonatype.org/content/repositories/snapshots"
+            name = "Sonatype Snapshots"
+        }
+        maven {
+            url "https://s01.oss.sonatype.org/content/repositories/snapshots"
+            name = "Sonatype 01 Snapshots"
+        }
+    }
+
+    tasks.withType(JavaCompile).configureEach {
+        options.encoding = "UTF-8"
+        // Minecraft 1.20.5 now requires Java 21 to run.
+        // ref: https://fabricmc.net/2024/04/19/1205.html
+        options.release = 21
+    }
+
+    java {
+        withSourcesJar()
+    }
+}

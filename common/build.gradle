@@ -1,0 +1,110 @@
+repositories {
+    mavenCentral()
+    // Make sure getting lombok jar from maven central (instead of forge repo or so)
+    // ref: https://discuss.gradle.org/t/how-to-make-gradle-stop-getting-a-not-existing-jar-from-a-third-party-maven-repo/48290/4
+    exclusiveContent {
+        forRepository {
+            mavenCentral()
+        }
+        filter {
+            includeGroup "org.projectlombok"
+        }
+    }
+    exclusiveContent {
+        forRepository {
+            maven {
+                name = 'Modrinth'
+                url = 'https://api.modrinth.com/maven'
+            }
+        }
+        filter {
+            includeGroup 'maven.modrinth'
+        }
+    }
+}
+
+architectury {
+    common("fabric")
+    common("neoforge")
+}
+
+loom {
+    accessWidenerPath = file("src/main/resources/cobbleutils.accesswidener")
+}
+
+dependencies {
+
+    modImplementation("com.cobblemon:mod:${property("cobblemon_version")}")
+    // alL fabric dependencies:
+    modImplementation("net.fabricmc:fabric-loader:${property("fabric_loader_version")}")
+    modImplementation("net.fabricmc.fabric-api:fabric-api:${property("fabric_version")}")
+
+    modImplementation("dev.architectury:architectury:${property("architectury_version")}")
+    modImplementation("ca.landonjw.gooeylibs:fabric-api-repack:${property("gooeylibs_version")}")
+
+
+    // PlaceholderAPI
+    modImplementation("eu.pb4:placeholder-api:${property("placeholder_api_version_fabricandforge")}")
+    modImplementation("me.clip:placeholderapi:${property("placeholder_api_version_spigot")}")
+
+    // Database
+    api("org.mongodb:mongodb-driver-sync:${property("mongodb_version")}")
+
+    // Lombok
+    annotationProcessor("org.projectlombok:lombok:${property("lombok_version")}")
+    implementation("org.projectlombok:lombok:${property("lombok_version")}")
+
+    // Permissions
+    api("net.luckperms:api:${property("luckperms_version")}")
+    modImplementation("me.lucko:fabric-permissions-api:0.3.3")
+
+    // Economy
+    // Economy Impactor
+    implementation("net.impactdev.impactor.api:economy:${property("impactor_version")}")
+    api(files("libs/blanketeconomy-1.4.jar"))
+    api(files("libs/cobbledollars-fabric-2.0.0-BETA1+1.21.1.jar"))
+
+    api("org.spigotmc:spigot-api:${property("spigot_version")}")
+    api("com.github.MilkBowl:VaultAPI:${property("vault_api_version")}")
+
+    // Kyori Adventure
+    api("net.kyori:adventure-text-serializer-gson:${property("kyori_version")}")
+    api("net.kyori:adventure-text-minimessage:${property("kyori_version")}")
+
+    //Discord
+    api("club.minnced:discord-webhooks:${property("discord_webhooks_version")}")
+
+    // Calculator API
+    api("net.objecthunter:exp4j:0.4.8")
+
+    // Polymer
+    modImplementation("eu.pb4:polymer-core:${property("polymer_core_version")}")
+
+    // ! Tests
+    testCompileOnly 'org.projectlombok:lombok:1.18.30'
+    testAnnotationProcessor 'org.projectlombok:lombok:1.18.30'
+
+    // dependent on log4j for dynamic changing
+    implementation 'org.apache.logging.log4j:log4j-api:2.22.1'
+    implementation 'org.apache.logging.log4j:log4j-core:2.22.1'
+
+    // Unit test dependencies
+    testImplementation "org.junit.jupiter:junit-jupiter:5.10.0"
+    testImplementation "org.junit.jupiter:junit-jupiter-params:5.10.0"
+    testImplementation "org.assertj:assertj-core:3.24.2"
+    testImplementation "org.mockito:mockito-core:5.4.0"
+    testImplementation "org.mockito:mockito-junit-jupiter:5.4.0"
+
+    // benchmark dependencies
+    testImplementation "org.openjdk.jmh:jmh-core:1.37"
+    testAnnotationProcessor "org.openjdk.jmh:jmh-generator-annprocess:1.37"
+}
+
+test {
+    useJUnitPlatform()
+    // Since JDK 21
+    // ref: https://stackoverflow.com/questions/77951485/getting-a-java-agent-has-been-loaded-warning-in-intellij-after-upgrading-jdk-17
+    jvmArgs("-XX:+EnableDynamicAgentLoading")
+}
+
+

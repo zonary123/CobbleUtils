@@ -7,6 +7,9 @@
   "authors": [
     "${author}"
   ],
+  "mixins": [
+    "cobbleutils.mixins.json"
+  ],
   "contact": {
   },
   "entrypoints": {
@@ -20,8 +23,7 @@
     "fabricloader": "*",
     "fabric": "*",
     "minecraft": "1.21.1",
-    "cobblemon": "*",
-    "gooeylibs-api": "*",
-    "architectury": "*"
+    "architectury": ">=13.0.8",
+    "cobbleutils": "*"
   }
 }
