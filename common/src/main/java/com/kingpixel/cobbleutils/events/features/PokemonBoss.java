@@ -88,9 +88,8 @@ public class PokemonBoss {
     });
 
     CobblemonEvents.BATTLE_VICTORY.subscribe(Priority.HIGH, (evt) -> {
-      if (!CobbleUtils.config.isBoss()) {
-        return Unit.INSTANCE;
-      }
+      if (!CobbleUtils.config.isBoss()) return Unit.INSTANCE;
+
 
       evt.getLosers().forEach(battleActor -> {
         if (battleActor instanceof PokemonBattleActor pokemonBattleActor) {
@@ -106,6 +105,22 @@ public class PokemonBoss {
       });
       return Unit.INSTANCE;
     });
+  }
+
+  private static Unit handleBossSave(PokemonEntity pokemonEntity) {
+    try {
+      if (!CobbleUtils.config.isBoss()) return Unit.INSTANCE;
+      Pokemon pokemon = pokemonEntity.getPokemon();
+      if (pokemon.getPersistentData().getBoolean(BOSS_TAG)) {
+        if (CobbleUtils.config.isDebug()) {
+          CobbleUtils.LOGGER.info("Saving Boss Pokemon");
+        }
+        pokemon.setLevel(1);
+        pokemonEntity.kill();
+      }
+    } catch (Exception ignored) {
+    }
+    return Unit.INSTANCE;
   }
 
 

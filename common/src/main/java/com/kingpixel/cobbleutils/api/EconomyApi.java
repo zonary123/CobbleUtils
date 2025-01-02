@@ -52,6 +52,7 @@ public class EconomyApi {
    * @param curreny The currency to set
    */
   public static void setMoney(ServerPlayerEntity player, BigDecimal money, @Nonnull String curreny) {
+    EconomyUtil.setMoney(player, curreny, money);
   }
 
   /**
@@ -68,7 +69,7 @@ public class EconomyApi {
   }
 
   /**
-   * Check if the player has enough money
+   * Check if the player has enough money and remove it
    *
    * @param player   The player to check the money
    * @param money    The amount of money

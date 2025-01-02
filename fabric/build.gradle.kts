@@ -1,4 +1,5 @@
 import com.github.jengelman.gradle.plugins.shadow.transformers.ServiceFileTransformer
+import java.io.ByteArrayOutputStream
 
 val shadowCommon: Configuration by configurations.creating
 
@@ -34,7 +35,7 @@ dependencies {
     shadowCommon("org.mongodb:mongodb-driver-sync:${property("mongodb_version")}")
 
     // Economy Vault
-    shadowCommon("com.github.MilkBowl:VaultAPI:1.7")
+    shadowCommon("com.github.MilkBowl:VaultAPI:${property("vault_api_version")}")
 
     // Discord
     shadowCommon("club.minnced:discord-webhooks:${property("discord_webhooks_version")}")
@@ -43,16 +44,19 @@ dependencies {
 }
 
 tasks {
+    val gitCommitHash: String by lazy {
+        val stdout = ByteArrayOutputStream()
+        exec {
+            commandLine = "git rev-parse --short HEAD".split(" ")
+            standardOutput = stdout
+        }
+        stdout.toString().trim()
+    }
+
     base.archivesName.set(
         "${project.property("minecraft_version")}/${project.property("mod_version")}/${
-            project.property
-                ("archives_base_name")
-        }-fabric" +
-                "-${
-                    project.property(
-                        "mod_version"
-                    )
-                }"
+            project.property("archives_base_name")
+        }-fabric-${project.property("mod_version")}-${gitCommitHash}"
     )
     processResources {
         inputs.property("version", project.version)

@@ -115,7 +115,6 @@ public class ShopCommand implements Command<ServerCommandSource> {
             }
             ServerPlayerEntity player = context.getSource().getPlayerOrThrow();
             UUID targetUUID = EntityArgumentType.getPlayer(context, "player").getUuid();
-
             UIManager.openUIForcefully(player, getTransactionPlayer(player, targetUUID, CobbleUtils.shopConfig.getShopConfigMenu()));
             return 1;
           })
@@ -123,23 +122,25 @@ public class ShopCommand implements Command<ServerCommandSource> {
       );
   }
 
-  private static int executeOpenConfigMenu(CommandContext<ServerCommandSource> context, ShopConfig shopConfig, String mod_id) throws CommandSyntaxException {
-    if (!context.getSource().isExecutedByPlayer()) {
-      CobbleUtils.LOGGER.error("This command can only be executed by a player");
-      return 0;
+  private static int executeOpenConfigMenu(CommandContext<ServerCommandSource> context, ShopConfig shopConfig, String mod_id) {
+    try {
+      if (!context.getSource().isExecutedByPlayer()) {
+        CobbleUtils.LOGGER.error("This command can only be executed by a player");
+        return 0;
+      }
+      ServerPlayerEntity player = context.getSource().getPlayerOrThrow();
+      if (CobbleUtils.config.isDebug()) {
+        CobbleUtils.LOGGER.info("Opening shop config menu");
+      }
+      ShopConfigMenu.open(player, shopConfig, mod_id, false);
+    } catch (Exception e) {
+      e.printStackTrace();
     }
-    ServerPlayerEntity player = context.getSource().getPlayerOrThrow();
-    UIManager.closeUI(player);
-    if (CobbleUtils.config.isDebug()) {
-      CobbleUtils.LOGGER.info("Opening shop config menu");
-    }
-    ShopConfigMenu.open(player, shopConfig, mod_id, false);
     return 1;
   }
 
   private static int executeOpenShop(CommandContext<ServerCommandSource> context, ShopConfig shopConfig, String mod_id, boolean isForOtherPlayer) throws CommandSyntaxException {
     ServerPlayerEntity player = context.getSource().getPlayerOrThrow();
-    UIManager.closeUI(player);
     String shop = StringArgumentType.getString(context, "shop");
     if (LuckPermsUtil.checkPermission(player, mod_id + ".shop." + shop)) {
       shopConfig.getShopConfigMenu().open(player, shop, shopConfig, mod_id, isForOtherPlayer);
@@ -157,7 +158,6 @@ public class ShopCommand implements Command<ServerCommandSource> {
 
   private static int executeOpenShopForOtherPlayer(CommandContext<ServerCommandSource> context, ShopConfig shopConfig, String mod_id) throws CommandSyntaxException {
     ServerPlayerEntity player = EntityArgumentType.getPlayer(context, "player");
-    UIManager.closeUI(player);
     String shop = StringArgumentType.getString(context, "shop");
     shopConfig.getShopConfigMenu().open(player, shop, shopConfig, mod_id, true);
     return 1;
@@ -166,7 +166,6 @@ public class ShopCommand implements Command<ServerCommandSource> {
   private static int executeOpenShopWithClose(CommandContext<ServerCommandSource> context, ShopConfig shopConfig, String mod_id) throws CommandSyntaxException {
     try {
       ServerPlayerEntity player = EntityArgumentType.getPlayer(context, "player");
-      UIManager.closeUI(player);
       String shop = StringArgumentType.getString(context, "shop");
       boolean close = Boolean.parseBoolean(StringArgumentType.getString(context, "close"));
       shopConfig.getShopConfigMenu().open(player, shop, shopConfig, mod_id, close);

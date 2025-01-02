@@ -102,7 +102,7 @@ public class CobbleUtils extends ShopExtend {
 
   private static void files() {
     config.init();
-    if (!CobbleUtils.config.isDebug()) {
+    if (!config.isDebug()) {
       config.setBoss(false);
     }
     language.init();
@@ -194,11 +194,13 @@ public class CobbleUtils extends ShopExtend {
 
 
       //Rewards
-      RewardsData rewardsData = rewardsManager.getRewardsData().computeIfAbsent(
-        player.getUuid(),
-        uuid -> new RewardsData(player.getGameProfile().getName(), player.getUuid())
-      );
-      rewardsData.init();
+      if (CobbleUtils.config.isStorageRewards()) {
+        RewardsData rewardsData = rewardsManager.getRewardsData().computeIfAbsent(
+          player.getUuid(),
+          uuid -> new RewardsData(player.getGameProfile().getName(), player.getUuid())
+        );
+        rewardsData.init();
+      }
     });
 
 
@@ -233,29 +235,33 @@ public class CobbleUtils extends ShopExtend {
     }
     scheduledTasks.clear();
 
-    ScheduledFuture<?> alertreward =
-      scheduler.scheduleAtFixedRate(() -> server.getPlayerManager().getPlayerList().forEach(player -> {
-        RewardsData rewardsData = rewardsManager.getRewardsData().get(player.getUuid());
-        if (RewardsUtils.hasRewards(player)) {
-          int amount = rewardsData.getAmount();
-          PlayerUtils.sendMessage(player,
-            language.getMessageHaveRewards()
-              .replace("%amount%", String.valueOf(amount)),
-            CobbleUtils.language.getPrefixStorageRewards());
-        }
-      }), 0, CobbleUtils.config.getAlertreward(), TimeUnit.MINUTES);
+    if (config.isStorageRewards()) {
+      ScheduledFuture<?> alertreward =
+        scheduler.scheduleAtFixedRate(() -> server.getPlayerManager().getPlayerList().forEach(player -> {
+          RewardsData rewardsData = rewardsManager.getRewardsData().get(player.getUuid());
+          if (RewardsUtils.hasRewards(player)) {
+            int amount = rewardsData.getAmount();
+            PlayerUtils.sendMessage(player,
+              language.getMessageHaveRewards()
+                .replace("%amount%", String.valueOf(amount)),
+              CobbleUtils.language.getPrefixStorageRewards());
+          }
+        }), 0, CobbleUtils.config.getAlertreward(), TimeUnit.MINUTES);
+      scheduledTasks.add(alertreward);
+    }
 
-    ScheduledFuture<?> fixSize =
-      scheduler.scheduleAtFixedRate(() -> server.getPlayerManager().getPlayerList().forEach(
-        player -> {
-          Cobblemon.INSTANCE.getStorage().getParty(player).forEach(ScaleEvent::solveScale);
-          Cobblemon.INSTANCE.getStorage().getPC(player).forEach(ScaleEvent::solveScale);
-        }
-      ), 0, 30, TimeUnit.MINUTES);
+    if (config.isRandomsize()) {
+      ScheduledFuture<?> fixSize =
+        scheduler.scheduleAtFixedRate(() -> server.getPlayerManager().getPlayerList().forEach(
+          player -> {
+            Cobblemon.INSTANCE.getStorage().getParty(player).forEach(ScaleEvent::solveScale);
+            Cobblemon.INSTANCE.getStorage().getPC(player).forEach(ScaleEvent::solveScale);
+          }
+        ), 0, 30, TimeUnit.MINUTES);
 
 
-    scheduledTasks.add(alertreward);
-    scheduledTasks.add(fixSize);
+      scheduledTasks.add(fixSize);
+    }
 
     setEconomyType();
   }

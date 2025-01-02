@@ -30,15 +30,16 @@ dependencies {
 
     // Permissions
     api("net.luckperms:api:${property("luckperms_version")}")
-    modImplementation(files("libs/fabric-permissions-api-0.3.3.jar"))
+    modImplementation("me.lucko:fabric-permissions-api:0.3.3")
 
     // Economy
     // Economy Impactor
     implementation("net.impactdev.impactor.api:economy:${property("impactor_version")}")
     api(files("libs/blanketeconomy-1.4.jar"))
     api(files("libs/cobbledollars-fabric-2.0.0-BETA1+1.21.1.jar"))
-    api("org.spigotmc:spigot-api:1.20.1-R0.1-SNAPSHOT")
-    api("com.github.MilkBowl:VaultAPI:1.7")
+
+    api("org.spigotmc:spigot-api:${property("spigot_version")}")
+    api("com.github.MilkBowl:VaultAPI:${property("vault_api_version")}")
 
     // Kyori Adventure
     api("net.kyori:adventure-text-serializer-gson:${property("kyori_version")}")

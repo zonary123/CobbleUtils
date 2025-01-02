@@ -42,7 +42,7 @@ dependencies {
     shadowCommon("org.mongodb:mongodb-driver-sync:${property("mongodb_version")}")
 
     // Economy Vault
-    shadowCommon("com.github.MilkBowl:VaultAPI:1.7")
+    shadowCommon("com.github.MilkBowl:VaultAPI:${property("vault_api_version")}")
 
     // Discord
     shadowCommon("club.minnced:discord-webhooks:${property("discord_webhooks_version")}")

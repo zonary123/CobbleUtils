@@ -41,6 +41,7 @@ public class Rewards implements Command<ServerCommandSource> {
 
   @Override
   public int run(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+    if (!CobbleUtils.config.isStorageRewards()) return 0;
     ServerPlayerEntity player = context.getSource().getPlayerOrThrow();
     ServerPlayerEntity target = null;
     try {

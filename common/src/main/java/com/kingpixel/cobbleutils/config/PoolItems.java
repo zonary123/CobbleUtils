@@ -7,6 +7,7 @@ import com.kingpixel.cobbleutils.util.Utils;
 import lombok.Getter;
 import lombok.ToString;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -21,14 +22,14 @@ public class PoolItems {
 
 
   public PoolItems() {
-    randomitems = Map.of(
-      "default", ItemChance.defaultItemChances(),
-      "pokeballs", List.of(new ItemChance("cobblemon:poke_ball", 100)),
-      "fossil", List.of(new ItemChance("cobblemon:helix_fossil", 100), new ItemChance("cobblemon:dome_fossil", 100))
-    );
+    randomitems = new HashMap<>();
+    randomitems.put("default", ItemChance.defaultItemChances());
+    randomitems.put("pokeballs", List.of(new ItemChance("cobblemon:poke_ball", 100)));
+    randomitems.put("fossil", List.of(new ItemChance("cobblemon:helix_fossil", 100), new ItemChance("cobblemon:dome_fossil", 100)));
   }
 
   public void init() {
+    randomitems.clear();
     CompletableFuture<Boolean> futureRead = Utils.readFileAsync(CobbleUtils.PATH_RANDOM, "items.json",
       el -> {
         Gson gson = Utils.newGson();
@@ -65,7 +66,7 @@ public class PoolItems {
    */
   public ItemChance getRandomItem(String category) {
     List<ItemChance> items = randomitems.get(category);
-    if (items == null || items.isEmpty()) return new ItemChance("minecraft:stone", 100);
+    if (items == null || items.isEmpty()) return new ItemChance("", 100);
 
 
     int totalWeight = items.stream().mapToInt(ItemChance::getChance).sum();

@@ -73,6 +73,7 @@ public class EggData {
   private int Speed;
 
   public static void convertToEgg(PokemonEntity pokemonEntity) {
+    if (!CobbleUtils.breedconfig.isSpawnEggWorld()) return;
     Pokemon pokemon = pokemonEntity.getPokemon();
 
     if (pokemon.hasLabels(

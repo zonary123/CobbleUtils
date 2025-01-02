@@ -555,4 +555,14 @@ public abstract class EconomyUtil {
     };
   }
 
+
+  public static void setMoney(ServerPlayerEntity player, String curreny, BigDecimal money) {
+    switch (economyType) {
+      case IMPACTOR -> getAccount(player.getUuid(), curreny).set(money);
+      case VAULT -> vaultEconomy.depositPlayer(player.getGameProfile().getName(), money.doubleValue());
+      case BLANKECONOMY -> BlanketEconomy.INSTANCE.getAPI().setBalance(player.getUuid(), money, curreny);
+      case COBBLEDOLLARS ->
+        ((CobbleDollarsPlayer) player).cobbleDollars$setCobbleDollars(BigInteger.valueOf(money.longValue()));
+    }
+  }
 }

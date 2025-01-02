@@ -73,7 +73,7 @@ public class Breeding {
     // Todo: Add egg generation in the world
 
     CobblemonEvents.POKEMON_ENTITY_SPAWN.subscribe(Priority.HIGHEST, evt -> {
-      handleEgg(evt.getEntity());
+      if (CobbleUtils.breedconfig.isSpawnEggWorld()) handleEgg(evt.getEntity());
       return Unit.INSTANCE;
     });
 
@@ -114,19 +114,23 @@ public class Breeding {
     WalkBreeding.register();
     EggThrow.register();
     PastureUI.register();
+
     if (CobbleUtils.breedconfig.isSpawnEggWorld()) {
       EggInteract.register();
     }
 
-    NationalityPokemon.register();
+    if (CobbleUtils.breedconfig.isMethodmasuda()) {
+      NationalityPokemon.register();
+    }
   }
 
   private static void handleEgg(Entity entity) {
     if (entity instanceof PokemonEntity pokemonEntity) {
-      if (CobbleUtils.breedconfig.isSpawnEggWorld())
+      if (CobbleUtils.breedconfig.isSpawnEggWorld()) {
         if (Utils.RANDOM.nextInt(CobbleUtils.breedconfig.getRaritySpawnEgg()) == 0) {
           EggData.convertToEgg(pokemonEntity);
         }
+      }
     }
   }
 

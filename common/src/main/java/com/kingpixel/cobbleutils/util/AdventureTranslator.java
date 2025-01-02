@@ -46,8 +46,12 @@ public class AdventureTranslator {
   private static RegistryWrapper.WrapperLookup wrapperLookup;
 
   private static RegistryWrapper.WrapperLookup getWrapper() {
-    if (wrapperLookup == null) wrapperLookup = BuiltinRegistries.createWrapperLookup();
-    return wrapperLookup;
+    try {
+      if (wrapperLookup == null) wrapperLookup = BuiltinRegistries.createWrapperLookup();
+      return wrapperLookup;
+    } catch (Exception e) {
+      return null;
+    }
   }
 
   public static Text toNativeWithOutPrefix(String text) {
@@ -81,8 +85,14 @@ public class AdventureTranslator {
   }
 
   public static Text toNative(Component component, @Nullable ServerPlayerEntity player) {
-    Text text = Text.Serialization.fromJson(GsonComponentSerializer.gson().serialize(component),
-      getWrapper());
+    RegistryWrapper.WrapperLookup wrapper = getWrapper();
+    Text text;
+    if (wrapper != null) {
+      text = Text.Serialization.fromJson(GsonComponentSerializer.gson().serialize(component),
+        wrapper);
+    } else {
+      text = Text.of(GsonComponentSerializer.gson().serialize(component));
+    }
     if (player != null) {
       if (isPlaceholder()) {
         text = Placeholders.parseText(text, PlaceholderContext.of(player));

@@ -83,6 +83,7 @@ public class BreedConfig {
   private List<String> whitelist;
   private List<String> blacklistForm;
 
+  private ItemModel closeItem;
   private ItemModel plotItem;
   private ItemModel plotThereAreEggs;
   private ItemModel maleSelectItem;
@@ -219,7 +220,17 @@ public class BreedConfig {
     );
     pokemonsForDoubleDitto = new FilterPokemons();
     pokemonsForDoubleDitto.setLegendarys(false);
+    closeItem = null;
+  }
 
+  public void write() {
+    Gson gson = Utils.newGson();
+    String data = gson.toJson(this);
+    CompletableFuture<Boolean> futureWrite = Utils.writeFileAsync(CobbleUtils.PATH_BREED, "config.json",
+      data);
+    if (!futureWrite.join()) {
+      CobbleUtils.LOGGER.fatal("Could not write config.json file for " + CobbleUtils.MOD_NAME + ".");
+    }
   }
 
 
@@ -314,6 +325,7 @@ public class BreedConfig {
         defaultNumIvsToTransfer = config.getDefaultNumIvsToTransfer();
         soundCreateEgg = config.getSoundCreateEgg();
         showIvs = config.isShowIvs();
+        closeItem = config.getCloseItem();
         checker(this);
 
         String data = gson.toJson(this);

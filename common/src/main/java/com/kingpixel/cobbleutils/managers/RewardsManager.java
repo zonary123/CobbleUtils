@@ -3,9 +3,9 @@ package com.kingpixel.cobbleutils.managers;
 import com.kingpixel.cobbleutils.Model.RewardsData;
 import lombok.Getter;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @author Carlos Varas Alonso - 28/06/2024 9:47
@@ -16,7 +16,7 @@ public class RewardsManager {
   private Map<UUID, RewardsData> rewardsData;
 
   public RewardsManager() {
-    rewardsData = new HashMap<>();
+    rewardsData = new ConcurrentHashMap<>();
   }
 
   public RewardsManager(Map<UUID, RewardsData> rewardsData) {

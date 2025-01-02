@@ -5,17 +5,51 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.time.DayOfWeek;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 /**
  * Class for logging.
  */
 public class UtilsLogger {
+  private static Map<String, Logger> loggers;
   private Logger logger; // Log for the console.
 
-  public void warn(String s) {
-    logger.warn(s);
+  /**
+   * Get the logger for the mod.
+   *
+   * @param modId The mod id.
+   *
+   * @return The logger for the mod.
+   */
+  private Logger getLogger(String modId) {
+    Logger logger = loggers.get(modId);
+    if (logger == null) {
+      logger = LogManager.getLogger(modId);
+      loggers.put(modId, logger);
+    }
+    return logger;
   }
+
+  /**
+   * Error log method.
+   *
+   * @param message The message to log.
+   */
+  public void warn(String message) {
+    logger.warn(message);
+  }
+
+  /**
+   * Warn log method.
+   *
+   * @param modId   The mod id.
+   * @param message The message to log.
+   */
+  public void warn(String modId, String message) {
+    getLogger(modId).warn(message);
+  }
+
 
   public void info(DayOfWeek dayOfWeek) {
     logger.info(dayOfWeek);
@@ -48,6 +82,10 @@ public class UtilsLogger {
 //		write(Level.INFO, message);
   }
 
+  public void info(String modId, String message) {
+    getLogger(modId).info(message);
+  }
+
   /**
    * Error log method.
    *
@@ -58,6 +96,10 @@ public class UtilsLogger {
 //		write(Level.ERROR, message);
   }
 
+  public void error(String modId, String message) {
+    getLogger(modId).error(message);
+  }
+
   /**
    * Fatal log method.
    *
@@ -66,6 +108,10 @@ public class UtilsLogger {
   public void fatal(String message) {
     logger.fatal(message);
 //		write(Level.FATAL, message);
+  }
+
+  public void fatal(String modId, String message) {
+    getLogger(modId).fatal(message);
   }
 
   /**

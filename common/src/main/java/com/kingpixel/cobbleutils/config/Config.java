@@ -149,7 +149,9 @@ public class Config {
         forms = config.getForms();
         rarity = config.getRarity();
         specifiedSizes = config.getSpecifiedSizes();
-
+        if (!debug) {
+          this.boss = false;
+        }
         String data = gson.toJson(this);
         CompletableFuture<Boolean> futureWrite = Utils.writeFileAsync(CobbleUtils.PATH, "config.json",
           data);

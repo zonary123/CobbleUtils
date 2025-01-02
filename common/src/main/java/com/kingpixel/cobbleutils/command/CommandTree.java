@@ -29,13 +29,10 @@ import java.util.List;
 public class CommandTree {
 
   public static void register(CommandDispatcher<ServerCommandSource> dispatcher, CommandRegistryAccess registry) {
-
-
     PokeShout.register(dispatcher, CommandManager.literal(CobbleUtils.config.getPokeshout()));
     PokeShoutMe.register(dispatcher, CommandManager.literal(CobbleUtils.config.getPokeshout() + "me"));
     PokeShoutAll.register(dispatcher, CommandManager.literal(CobbleUtils.config.getPokeshoutall()));
     PokeShoutAllMe.register(dispatcher, CommandManager.literal(CobbleUtils.config.getPokeshoutall() + "me"));
-    Hatch.register(dispatcher, CommandManager.literal("hatch"));
 
 
     for (String literal : CobbleUtils.config.getCommmandplugin()) {
@@ -95,6 +92,8 @@ public class CommandTree {
         IncenseCommand.register(dispatcher, base);
         // /egginfo <slot>
         EggInfoCommand.register(dispatcher, CommandManager.literal("egginfo"));
+
+        Hatch.register(dispatcher, CommandManager.literal("hatch"));
       }
 
 

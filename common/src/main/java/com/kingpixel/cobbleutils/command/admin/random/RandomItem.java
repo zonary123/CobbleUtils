@@ -38,13 +38,20 @@ public class RandomItem implements Command<ServerCommandSource> {
                   return builder.buildFuture();
                 })
               .then(
-                CommandManager.argument("amount", IntegerArgumentType.integer())
+                CommandManager.argument("amount", IntegerArgumentType.integer(1))
                   .then(
                     CommandManager.argument("player", EntityArgumentType.player())
-                      .executes(new RandomItem())
+                      .executes(context -> {
+                        giveItem(context, false);
+                        return 1;
+                      })
                       .then(
                         CommandManager.argument("random", BoolArgumentType.bool())
-                          .executes(new RandomItem())
+                          .executes(context -> {
+                            boolean random = BoolArgumentType.getBool(context, "random");
+                            giveItem(context, random);
+                            return 1;
+                          })
                       )
                   )
               )
@@ -53,19 +60,16 @@ public class RandomItem implements Command<ServerCommandSource> {
     );
   }
 
+  private static void giveItem(CommandContext<ServerCommandSource> context, boolean random) throws CommandSyntaxException {
+    String type = StringArgumentType.getString(context, "item");
+    int amount = IntegerArgumentType.getInteger(context, "amount");
+    ServerPlayerEntity player = EntityArgumentType.getPlayer(context, "player");
+    CobbleUtilities.giveRandomItem(player, type, amount, random);
+  }
+
+
   @Override
   public int run(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
-    ServerPlayerEntity player = EntityArgumentType.getPlayer(context, "player");
-    String type = StringArgumentType.getString(context, "item");
-    boolean random;
-
-    try {
-      random = BoolArgumentType.getBool(context, "random");
-    } catch (Exception e) {
-      random = false;
-    }
-    int amount = IntegerArgumentType.getInteger(context, "amount");
-    CobbleUtilities.giveRandomItem(player, type, amount, random);
     return 1;
   }
 

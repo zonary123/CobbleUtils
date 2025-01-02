@@ -16,6 +16,7 @@ import com.cobblemon.mod.common.api.pokemon.PokemonProperties;
 import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.Model.ItemChance;
 import com.kingpixel.cobbleutils.Model.ItemModel;
+import com.kingpixel.cobbleutils.api.PermissionApi;
 import com.kingpixel.cobbleutils.config.ShopConfig;
 import com.kingpixel.cobbleutils.features.shops.models.Product;
 import com.kingpixel.cobbleutils.features.shops.models.types.*;
@@ -209,7 +210,7 @@ public class Shop {
   }
 
   public void open(ServerPlayerEntity player, ShopConfig shopConfig, String mod_id, boolean byCommand, Shop shop) {
-    if (!LuckPermsUtil.checkPermission(player, mod_id + ".shop." + this.getId())) {
+    if (!PermissionApi.hasPermission(player.getCommandSource(), List.of(mod_id + ".shop." + this.getId()), 4)) {
       player.sendMessage(
         AdventureTranslator.toNative(
           CobbleUtils.shopLang.getMessageNotHavePermission()
@@ -578,12 +579,13 @@ public class Shop {
   private TypeError getTypeError(Product product, ServerPlayerEntity player) {
     BigDecimal globalDiscount = BigDecimal.valueOf(this.globalDiscount);
     if (product.getBuy().compareTo(BigDecimal.ZERO) <= 0 && product.getSell().compareTo(BigDecimal.ZERO) <= 0) {
+      CobbleUtils.LOGGER.info("Buy and sell price is zero: " + product);
       return TypeError.ZERO;
-    } else if (!LuckPermsUtil.checkPermission(player, product.getPermission())) {
-      return TypeError.PERMISSION;
     } else if (product.getBuy().compareTo(BigDecimal.ZERO) > 0 && product.getSell().compareTo(product.getBuy()) > 0) {
+      CobbleUtils.LOGGER.info("Buy price is higher than sell price: " + product);
       return TypeError.INVALID_PRICE;
     } else if (product.getDiscount() != null && (product.getDiscount() > 100) || globalDiscount.compareTo(BigDecimal.valueOf(100)) > 0) {
+      CobbleUtils.LOGGER.info("Discount is not valid: " + product);
       return TypeError.BAD_DISCOUNT;
     } else {
       if (product.getBuy().compareTo(BigDecimal.ZERO) == 0) return TypeError.NONE;
@@ -597,6 +599,7 @@ public class Shop {
       BigDecimal discountedBuyPrice = product.getBuy().multiply(BigDecimal.ONE.subtract(applicableDiscount.divide(BigDecimal.valueOf(100))));
 
       if (product.getSell().compareTo(discountedBuyPrice) > 0) {
+        CobbleUtils.LOGGER.info("Sell price is higher than buy price with discount: " + product);
         return TypeError.INVALID_PRICE_WITH_DISCOUNT;
       }
     }

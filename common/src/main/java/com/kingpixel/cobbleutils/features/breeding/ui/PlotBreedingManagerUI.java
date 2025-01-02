@@ -17,7 +17,6 @@ import com.kingpixel.cobbleutils.features.breeding.models.PlotBreeding;
 import com.kingpixel.cobbleutils.util.AdventureTranslator;
 import com.kingpixel.cobbleutils.util.PokemonUtils;
 import com.kingpixel.cobbleutils.util.RewardsUtils;
-import com.kingpixel.cobbleutils.util.UIUtils;
 import net.minecraft.component.DataComponentTypes;
 import net.minecraft.component.type.LoreComponent;
 import net.minecraft.registry.DynamicRegistryManager;
@@ -140,10 +139,18 @@ public class PlotBreedingManagerUI {
         .build());
     });
 
+    ItemModel itemClose = CobbleUtils.breedconfig.getCloseItem();
+    if (itemClose == null) {
+      itemClose = CobbleUtils.language.getItemClose();
+      itemClose.setSlot((row * 9) - 5);
+      CobbleUtils.breedconfig.setCloseItem(itemClose);
+      CobbleUtils.breedconfig.write();
+    }
+
     template.set(10, male);
     template.set(13, egg);
     template.set(16, female);
-    template.set((row * 9) - 5, UIUtils.getCloseButton(action -> PlotBreedingUI.open(player)));
+    template.set(itemClose.getSlot(), itemClose.getButton(action -> PlotBreedingUI.open(player)));
 
     String title = "";
     if (!plotBreeding.getEggs().isEmpty()) {
