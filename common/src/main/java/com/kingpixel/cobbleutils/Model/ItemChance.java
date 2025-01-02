@@ -357,7 +357,7 @@ public class ItemChance {
    * @return The ItemStack of the reward.
    */
   private static ItemStack getRewardItemStack(String item, int amount) {
-    if (item == null) return Items.AIR.getDefaultStack();
+    if (item == null || item.isEmpty()) return ItemStack.EMPTY;
 
     String[] parts = item.split("\\|");
     if (parts.length > 1) {

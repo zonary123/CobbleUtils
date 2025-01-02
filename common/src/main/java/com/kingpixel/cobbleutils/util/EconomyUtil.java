@@ -191,13 +191,17 @@ public abstract class EconomyUtil {
    * @return true if the transaction was successful.
    */
   public static boolean addMoney(ServerPlayerEntity player, String currency, BigDecimal amount) {
+    return addMoney(player, currency, amount, true);
+  }
 
+  public static boolean addMoney(ServerPlayerEntity player, String currency, BigDecimal amount, boolean notify) {
     switch (economyType) {
       case IMPACTOR: {
         Account account = getAccount(player.getUuid(), currency);
         EconomyTransaction transaction = account.deposit(amount);
-        if (transaction.successful()) {
-          PlayerUtils.sendMessage(CobbleUtils.server.getPlayerManager().getPlayer(account.owner()),
+        if (transaction.successful() && notify) {
+          PlayerUtils.sendMessage(
+            player,
             CobbleUtils.shopLang.getMessageAddMoney()
               .replace("%price%", formatCurrency(amount, account.currency(), account.owner()))
               .replace("%amount%", formatCurrency(amount, account.currency(), account.owner()))
@@ -224,7 +228,6 @@ public abstract class EconomyUtil {
       default:
         return false;
     }
-
   }
 
   /**
@@ -451,14 +454,9 @@ public abstract class EconomyUtil {
    *
    * @return The currency.
    */
-  public static Currency getCurrency(String currency) {
+  public static Currency getCurrency(@Subst("") String currency) {
     try {
-      if (currency == null || currency.isEmpty()) {
-        return impactorService.currencies().primary();
-      }
-      if (!currency.contains(":")) {
-        currency = "impactor:" + currency;
-      }
+      if (currency == null || currency.isEmpty()) return impactorService.currencies().primary();
       return impactorService.currencies().currency(Key.key(currency)).orElseGet(() -> impactorService.currencies().primary());
     } catch (NoSuchMethodError e) {
       e.printStackTrace();

@@ -5,9 +5,8 @@ import com.kingpixel.cobbleutils.features.shops.models.Product;
 import com.kingpixel.cobbleutils.util.AdventureTranslator;
 import com.kingpixel.cobbleutils.util.EconomyUtil;
 import com.kingpixel.cobbleutils.util.LuckPermsUtil;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import com.kingpixel.cobbleutils.util.PlayerUtils;
+import net.minecraft.component.DataComponentTypes;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -18,22 +17,16 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * @author Carlos Varas Alonso - 25/08/2024 23:32
+ * Handles selling products in the shop.
  */
-@Getter
-@Setter
-@ToString
 public class ShopSell {
-  public static Map<String, Set<Product>> products = new HashMap<>();
+  private static final Map<String, Map<String, Set<Product>>> products = new ConcurrentHashMap<>();
 
-  public ShopSell() {
-  }
-
-  public ShopSell(Map<String, Set<Product>> products) {
-    ShopSell.products.clear();
-    ShopSell.products.putAll(products);
+  private ShopSell() {
+    // Utility class
   }
 
   /**
@@ -42,20 +35,18 @@ public class ShopSell {
    * @param shop The shop whose products are to be added.
    */
   public static void addProduct(Shop shop) {
-    String currency = shop.getCurrency();
-    Set<Product> productSet = products.computeIfAbsent(currency, k -> new HashSet<>());
-
-    for (Product product : shop.getProducts()) {
-      String item = product.getItemchance().getItem();
-      if (item.startsWith("pokemon:")
-        || item.startsWith("command:")
-        || item.startsWith("money:")
-        || product.getSell().compareTo(BigDecimal.ZERO) <= 0)
-        continue;
-
-      ItemStack productStack = product.getItemchance().getItemStack();
-      productSet.removeIf(p -> ItemStack.areEqual(p.getItemchance().getItemStack(), productStack));
-      productSet.add(product);
+    Set<Product> productSet = new HashSet<>();
+    shop.getProducts().forEach(product -> {
+      String s = product.getProduct();
+      if (!s.startsWith("pokemon:")
+        && !s.startsWith("money:")
+        && !s.startsWith("command:")) {
+        productSet.add(product);
+      }
+    });
+    if (!productSet.isEmpty()) {
+      products.computeIfAbsent(shop.getCurrency(), k -> new ConcurrentHashMap<>())
+        .put(shop.getId(), productSet);
     }
   }
 
@@ -66,63 +57,62 @@ public class ShopSell {
    * @param shopConfigMenu
    */
   public static void sellProducts(ServerPlayerEntity player, ShopConfigMenu shopConfigMenu) {
-    PlayerInventory inventory = player.getInventory();
-    Map<String, BigDecimal> currencyTotals = new HashMap<>();
-
-    products.forEach((currency, productSet) -> {
-      BigDecimal currencyTotal = BigDecimal.ZERO;
-      int decimals = EconomyUtil.getDecimals(currency);
-
-      for (Product product : productSet) {
-        if (product.getPermission() != null && !product.getPermission().isEmpty() && !LuckPermsUtil.checkPermission(player, product.getPermission()))
-          continue;
-
-        BigDecimal sellPrice = product.getSell().setScale(decimals, RoundingMode.HALF_UP);
-        if (sellPrice.compareTo(BigDecimal.ZERO) <= 0) continue;
-
-        ItemStack productItemStack = product.getItemchance().getItemStack();
-
-        for (ItemStack inventoryItemStack : inventory.main) {
-          if (inventoryItemStack.isEmpty()) return;
-          boolean areEqual = ItemStack.areItemsAndComponentsEqual(inventoryItemStack, productItemStack);
-          if (CobbleUtils.config.isDebug()) {
-            CobbleUtils.LOGGER.info("ItemStack: " + inventoryItemStack);
-            CobbleUtils.LOGGER.info("ProductStack: " + productItemStack);
-            CobbleUtils.LOGGER.info("AreEqual: " + areEqual);
-          }
-          if (!areEqual) continue;
-
-          int amount = inventoryItemStack.getCount();
-          BigDecimal price = sellPrice.multiply(BigDecimal.valueOf(amount));
-          currencyTotal = currencyTotal.add(price);
-
-          // Remove items from the inventory
-          inventoryItemStack.decrement(amount);
+    if (CobbleUtils.config.isDebug()) {
+      Set<Product> products = new HashSet<>();
+      for (Map<String, Set<Product>> value : ShopSell.products.values()) {
+        for (Set<Product> productSet : value.values()) {
+          productSet.forEach(product -> {
+            String s = product.getProduct();
+            if (!s.startsWith("pokemon:")
+              && !s.startsWith("money:")
+              && !s.startsWith("command:")) {
+              products.add(product);
+            }
+          });
         }
       }
+      products.forEach(product -> {
+        CobbleUtils.LOGGER.info("Product: " + product);
+        ItemStack itemStack = product.getItemchance().getItemStack();
+        CobbleUtils.LOGGER.info("ItemStack: " + itemStack);
+        CobbleUtils.LOGGER.info("CustomModelData: " + itemStack.get(DataComponentTypes.CUSTOM_MODEL_DATA));
+      });
+    }
+    try {
+      PlayerInventory inventory = player.getInventory();
+      Map<String, BigDecimal> currencyTotals = new HashMap<>();
 
-      if (currencyTotal.compareTo(BigDecimal.ZERO) > 0) {
-        currencyTotals.put(currency, currencyTotal.setScale(decimals, RoundingMode.HALF_UP));
-      }
-    });
+      products.forEach((currency, shopMap) -> {
+        BigDecimal currencyTotal = BigDecimal.ZERO;
+        int decimals = EconomyUtil.getDecimals(currency);
 
-    if (!currencyTotals.isEmpty()) {
-      StringBuilder message = new StringBuilder(CobbleUtils.shopLang.getMessageSell());
-      StringBuilder currencyMessage = new StringBuilder();
+        for (Set<Product> productSet : shopMap.values()) {
+          for (Product product : productSet) {
+            if (!isProductSellable(player, product)) continue;
 
-      currencyTotals.forEach((currency, total) -> {
-        currencyMessage.append(String.format("\n &6%s &a%s,", EconomyUtil.formatCurrency(total, currency, player.getUuid()), currency));
-        EconomyUtil.addMoney(player, currency, total);
+            BigDecimal sellPrice = product.getSell().setScale(decimals, RoundingMode.HALF_UP);
+            ItemStack productStack = product.getItemchance().getItemStack();
+
+            for (ItemStack inventoryItem : inventory.main) {
+              if (!isMatchingItem(inventoryItem, productStack)) continue;
+
+              int amount = inventoryItem.getCount();
+              currencyTotal = currencyTotal.add(sellPrice.multiply(BigDecimal.valueOf(amount)));
+              inventoryItem.decrement(amount);
+            }
+          }
+        }
+
+        if (currencyTotal.compareTo(BigDecimal.ZERO) > 0) {
+          currencyTotals.put(currency, currencyTotal.setScale(decimals, RoundingMode.HALF_UP));
+        }
       });
 
-      message = new StringBuilder(message.toString()
-        .replace("%currencys%", currencyMessage.toString().replaceAll(",\n$", ""))
-        .replace("%prefix%", CobbleUtils.shopLang.getPrefix()));
-      player.sendMessage(AdventureTranslator.toNative(message.toString()));
-      ShopTransactions.updateTransaction(player.getUuid(), shopConfigMenu);
+      distributeEarnings(player, currencyTotals);
+    } catch (Exception e) {
+      CobbleUtils.LOGGER.error("Error selling products: " + e);
     }
   }
-
 
   /**
    * Sells the product currently held in the player's main hand.
@@ -135,68 +125,80 @@ public class ShopSell {
     ItemStack mainHandStack = inventory.getMainHandStack();
 
     if (mainHandStack.isEmpty()) {
-      player.sendMessage(
-        AdventureTranslator.toNative(
-          CobbleUtils.shopLang.getMessageSellHandNoItem()
-            .replace("%prefix%", CobbleUtils.shopLang.getPrefix())
-        )
-      );
+      sendPlayerMessage(player, CobbleUtils.shopLang.getMessageSellHandNoItem());
       return;
     }
 
-    boolean sold = false;
-    String currencyUsed = null;
-    BigDecimal totalEarned = BigDecimal.ZERO;
-    Product productSold = null;
-    for (Map.Entry<String, Set<Product>> entry : products.entrySet()) {
-      String currency = entry.getKey();
-      Set<Product> productSet = entry.getValue();
+    for (Map.Entry<String, Map<String, Set<Product>>> currencyEntry : products.entrySet()) {
+      String currency = currencyEntry.getKey();
       int decimals = EconomyUtil.getDecimals(currency);
 
-      for (Product product : productSet) {
-        if (!LuckPermsUtil.checkPermission(player, product.getPermission())) continue;
+      for (Set<Product> productSet : currencyEntry.getValue().values()) {
+        for (Product product : productSet) {
+          if (!isProductSellable(player, product)) continue;
 
-        BigDecimal sellPrice = product.getSell().setScale(decimals, RoundingMode.HALF_UP);
-        if (sellPrice.compareTo(BigDecimal.ZERO) <= 0) continue;
+          ItemStack productStack = product.getItemchance().getItemStack();
+          if (!isMatchingItem(mainHandStack, productStack)) continue;
 
-        ItemStack productStack = product.getItemchance().getItemStack();
-        if (ItemStack.areItemsAndComponentsEqual(mainHandStack, productStack)) {
-          int amount = mainHandStack.getCount();
-          BigDecimal price = sellPrice.multiply(BigDecimal.valueOf(amount));
-          EconomyUtil.addMoney(player, currency, price);
-          mainHandStack.decrement(amount);
-          totalEarned = totalEarned.add(price);
-          currencyUsed = currency;
-          sold = true;
-          productSold = product;
-          break;
+          BigDecimal sellPrice = product.getSell().setScale(decimals, RoundingMode.HALF_UP);
+          BigDecimal totalEarned = sellPrice.multiply(BigDecimal.valueOf(mainHandStack.getCount()));
+
+          EconomyUtil.addMoney(player, currency, totalEarned, false);
+          mainHandStack.decrement(mainHandStack.getCount());
+
+          sendSellHandSuccess(player, currency, totalEarned);
+          return;
         }
       }
-      if (sold) break;
     }
 
-    if (sold) {
-      ShopTransactions.addTransaction(
-        player.getUuid(),
-        currencyUsed,
-        ShopTransactions.ShopAction.SELL,
-        productSold,
-        BigDecimal.valueOf(mainHandStack.getCount()),
-        totalEarned
-      );
-      player.sendMessage(AdventureTranslator.toNative(
-        CobbleUtils.shopLang.getMessageSellHand()
-          .replace("%prefix%", CobbleUtils.shopLang.getPrefix())
-          .replace("%balance%", EconomyUtil.formatCurrency(totalEarned, currencyUsed, player.getUuid()))
-          .replace("%currency%", currencyUsed)));
-      ShopTransactions.updateTransaction(player.getUuid(), shopConfigMenu);
-    } else {
-      player.sendMessage(
-        AdventureTranslator.toNative(
-          CobbleUtils.shopLang.getMessageSellHandNoItemPrice()
-            .replace("%prefix%", CobbleUtils.shopLang.getPrefix())
-        )
-      );
+    sendPlayerMessage(player, CobbleUtils.shopLang.getMessageSellHandNoItemPrice());
+  }
+
+  private static boolean isProductSellable(ServerPlayerEntity player, Product product) {
+    return product.getPermission() == null || LuckPermsUtil.checkPermission(player, product.getPermission());
+  }
+
+  private static boolean isMatchingItem(ItemStack inventoryItem, ItemStack productStack) {
+    boolean areItemsEqual = ItemStack.areItemsAndComponentsEqual(inventoryItem, productStack);
+    boolean areCustomModelDataEqual = inventoryItem.get(DataComponentTypes.CUSTOM_MODEL_DATA) == productStack.get(DataComponentTypes.CUSTOM_MODEL_DATA);
+    if (CobbleUtils.config.isDebug()) {
+      CobbleUtils.LOGGER.info("--------------------");
+      CobbleUtils.LOGGER.info("InventoryItem: " + inventoryItem);
+      CobbleUtils.LOGGER.info("ProductStack: " + productStack);
+      CobbleUtils.LOGGER.info("areItemsEqual: " + areItemsEqual);
+      CobbleUtils.LOGGER.info("areCustomModelDataEqual: " + areCustomModelDataEqual);
+      CobbleUtils.LOGGER.info("--------------------");
     }
+    return areItemsEqual && areCustomModelDataEqual;
+  }
+
+  private static void distributeEarnings(ServerPlayerEntity player, Map<String, BigDecimal> currencyTotals) {
+    if (currencyTotals.isEmpty()) return;
+
+    StringBuilder message = new StringBuilder(CobbleUtils.shopLang.getMessageSell());
+    StringBuilder currencyMessage = new StringBuilder();
+
+    currencyTotals.forEach((currency, total) -> {
+      currencyMessage.append(String.format("\n &6%s &a%s,", EconomyUtil.formatCurrency(total, currency, player.getUuid()), currency));
+      EconomyUtil.addMoney(player, currency, total, false);
+    });
+
+    message = new StringBuilder(message.toString()
+      .replace("%currencys%", currencyMessage.toString().replaceAll(",\n$", ""))
+      .replace("%prefix%", CobbleUtils.shopLang.getPrefix()));
+
+    PlayerUtils.sendMessage(player, message.toString(), CobbleUtils.shopLang.getPrefix());
+  }
+
+  private static void sendPlayerMessage(ServerPlayerEntity player, String message) {
+    player.sendMessage(AdventureTranslator.toNative(message.replace("%prefix%", CobbleUtils.shopLang.getPrefix())));
+  }
+
+  private static void sendSellHandSuccess(ServerPlayerEntity player, String currency, BigDecimal totalEarned) {
+    PlayerUtils.sendMessage(player, CobbleUtils.shopLang.getMessageSellHand()
+      .replace("%prefix%", CobbleUtils.shopLang.getPrefix())
+      .replace("%balance%", EconomyUtil.formatCurrency(totalEarned, currency, player.getUuid()))
+      .replace("%currency%", currency), CobbleUtils.shopLang.getPrefix());
   }
 }
