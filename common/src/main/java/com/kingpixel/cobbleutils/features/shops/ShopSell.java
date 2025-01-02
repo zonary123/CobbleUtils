@@ -46,7 +46,11 @@ public class ShopSell {
     Set<Product> productSet = products.computeIfAbsent(currency, k -> new HashSet<>());
 
     for (Product product : shop.getProducts()) {
-      if (product.getItemchance().getItem().startsWith("pokemon:") || product.getSell().compareTo(BigDecimal.ZERO) <= 0)
+      String item = product.getItemchance().getItem();
+      if (item.startsWith("pokemon:")
+        || item.startsWith("command:")
+        || item.startsWith("money:")
+        || product.getSell().compareTo(BigDecimal.ZERO) <= 0)
         continue;
 
       ItemStack productStack = product.getItemchance().getItemStack();
@@ -85,14 +89,14 @@ public class ShopSell {
           currencyTotal = currencyTotal.add(price);
 
           // Add transaction
-          ShopTransactions.addTransaction(
+          /*ShopTransactions.addTransaction(
             player.getUuid(), // Assuming you have a method to get the player's UUID
             currency,
             ShopTransactions.ShopAction.SELL, // Assuming there's an action type for selling
             product,
             BigDecimal.valueOf(amount),
             price
-          );
+          );*/
 
           // Remove items from the inventory
           itemStack.decrement(amount);

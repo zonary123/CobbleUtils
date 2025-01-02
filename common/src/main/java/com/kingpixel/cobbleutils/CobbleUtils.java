@@ -115,7 +115,7 @@ public class CobbleUtils extends ShopExtend {
     partyLang.init();
     BossConfig.init();
     DatabaseClientFactory.createDatabaseClient(config.getDatabase());
-    shopConfig.init(PATH_SHOP, MOD_ID, PATH_SHOPS);
+    scheduler.schedule(() -> shopConfig.init(PATH_SHOP, MOD_ID, PATH_SHOPS), 15, TimeUnit.SECONDS);
   }
 
   private static void sign() {
