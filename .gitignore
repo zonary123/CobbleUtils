@@ -6,6 +6,7 @@ common/run
 forge/run
 fabric/run
 /run/
+.env
 
 /forge/.architectury-transformer/debug.log
 
