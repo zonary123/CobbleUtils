@@ -147,9 +147,10 @@ public class PlotBreedingManagerUI {
       CobbleUtils.breedconfig.write();
     }
 
-    template.set(10, male);
+
+    template.set(CobbleUtils.breedconfig.getMaleSelectItem().getSlot(), male);
     template.set(13, egg);
-    template.set(16, female);
+    template.set(CobbleUtils.breedconfig.getFemaleSelectItem().getSlot(), female);
     template.set(itemClose.getSlot(), itemClose.getButton(action -> PlotBreedingUI.open(player)));
 
     String title = "";

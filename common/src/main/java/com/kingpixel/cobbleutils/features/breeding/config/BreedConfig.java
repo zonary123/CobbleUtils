@@ -191,8 +191,8 @@ public class BreedConfig {
     this.nameRandomEgg = "Random Egg";
     this.nameAbandonedEgg = "Abandoned Egg";
     this.notCompatible = "%prefix% <#d65549>%pokemon1% and %pokemon2% is not compatible!";
-    this.maleSelectItem = new ItemModel(0, "minecraft:light_blue_wool", "Male", List.of(""), 0);
-    this.femaleSelectItem = new ItemModel(0, "minecraft:pink_wool", "Female", List.of(""), 0);
+    this.maleSelectItem = new ItemModel(10, "minecraft:light_blue_wool", "Male", List.of(""), 0);
+    this.femaleSelectItem = new ItemModel(16, "minecraft:pink_wool", "Female", List.of(""), 0);
     this.incenses = Incense.defaultIncenses();
     this.blacklistForm = List.of("halloween");
 
@@ -302,7 +302,9 @@ public class BreedConfig {
         cooldowninstaBreedInSeconds = config.getCooldowninstaBreedInSeconds();
         cooldowninstaHatchInSeconds = config.getCooldowninstaHatchInSeconds();
         maleSelectItem = config.getMaleSelectItem();
+        if (maleSelectItem.getSlot() == 0) maleSelectItem.setSlot(10);
         femaleSelectItem = config.getFemaleSelectItem();
+        if (femaleSelectItem.getSlot() == 0) femaleSelectItem.setSlot(16);
         shifttoopen = config.isShifttoopen();
         incenses = config.getIncenses();
         emptySlots = config.getEmptySlots();
