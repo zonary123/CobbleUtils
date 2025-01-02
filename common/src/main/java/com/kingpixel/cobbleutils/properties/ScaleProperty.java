@@ -27,7 +27,7 @@ public class ScaleProperty implements CustomPokemonProperty {
   }
 
   @Override public void apply(@NotNull PokemonEntity pokemonEntity) {
-    if (CobbleUtils.breedconfig.isActive()) {
+    if (CobbleUtils.config.isRandomsize()) {
       SizeChanceWithoutItem scalePokemonData = ScalePokemonData.getScalePokemonData(pokemonEntity.getPokemon(), this.value);
       scalePokemonData.apply(pokemonEntity.getPokemon());
     } else {
@@ -40,7 +40,7 @@ public class ScaleProperty implements CustomPokemonProperty {
   }
 
   @Override public void apply(@NotNull Pokemon pokemon) {
-    if (CobbleUtils.breedconfig.isActive()) {
+    if (CobbleUtils.config.isRandomsize()) {
       SizeChanceWithoutItem scalePokemonData = ScalePokemonData.getScalePokemonData(pokemon, this.value);
       scalePokemonData.apply(pokemon);
     } else {
