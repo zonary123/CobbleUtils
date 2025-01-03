@@ -38,7 +38,7 @@ dependencies {
     // alL fabric dependencies:
     modImplementation("net.fabricmc:fabric-loader:${property("fabric_loader_version")}")
     modImplementation("net.fabricmc.fabric-api:fabric-api:${property("fabric_version")}")
-
+    modImplementation("net.neoforged:neoforge:${rootProject.neoforge_version}")
     modImplementation("dev.architectury:architectury:${property("architectury_version")}")
     modImplementation("ca.landonjw.gooeylibs:fabric-api-repack:${property("gooeylibs_version")}")
 

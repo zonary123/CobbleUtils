@@ -1,6 +1,7 @@
 package com.kingpixel.cobbleutils.util;
 
 import com.kingpixel.cobbleutils.CobbleUtils;
+import dev.architectury.injectables.targets.ArchitecturyTarget;
 import me.lucko.fabric.api.permissions.v0.Permissions;
 import net.luckperms.api.LuckPerms;
 import net.luckperms.api.LuckPermsProvider;
@@ -23,7 +24,7 @@ public abstract class LuckPermsUtil {
     LUCKPERMS,
     BUKKIT_PERMISSION_API,
     FABRIC_PERMISSIONS_API,
-    FORGE_PERMISSIONS_API,
+    NEOFORGE_PERMISSIONS_API,
     NONE
   }
 
@@ -35,9 +36,9 @@ public abstract class LuckPermsUtil {
     } else if (haveFabricPermissionsApi()) {
       PERMISSION_TYPE = Permission.FABRIC_PERMISSIONS_API;
       CobbleUtils.LOGGER.info("Fabric permissions detected");
-    } else if (haveForgePermissionApi()) {
-      PERMISSION_TYPE = Permission.FORGE_PERMISSIONS_API;
-      CobbleUtils.LOGGER.info("Forge permissions detected");
+    } else if (ArchitecturyTarget.getCurrentTarget().equals("neoforge")) {
+      PERMISSION_TYPE = Permission.NEOFORGE_PERMISSIONS_API;
+      CobbleUtils.LOGGER.info("NeoForge permissions detected");
     } else if (getLuckPermsApi() != null) {
       PERMISSION_TYPE = Permission.LUCKPERMS;
       CobbleUtils.LOGGER.info("LuckPerms detected");
@@ -73,11 +74,6 @@ public abstract class LuckPermsUtil {
     }
   }
 
-  private static boolean haveForgePermissionApi() {
-    return false;
-
-  }
-
   private static boolean haveFabricPermissionsApi() {
     try {
       return Permissions.class != null;
@@ -93,6 +89,9 @@ public abstract class LuckPermsUtil {
     return switch (PERMISSION_TYPE) {
       case LUCKPERMS -> checkLuckPermsPermission(source, permissions, level);
       case FABRIC_PERMISSIONS_API -> checkFabricPermissions(source, level, permissions);
+      case NEOFORGE_PERMISSIONS_API -> {
+        yield true;
+      }
       case BUKKIT_PERMISSION_API -> {
         for (String permission : permissions) {
           if (permission == null || permission.isEmpty()) yield true;
@@ -146,9 +145,12 @@ public abstract class LuckPermsUtil {
         yield checkLuckPermsPermission(player.getCommandSource(), List.of(permission), 4);
       }
       case FABRIC_PERMISSIONS_API -> Permissions.require(permission, 4).test(player.getCommandSource());
+      case NEOFORGE_PERMISSIONS_API -> {
+        yield true;
+      }
       case BUKKIT_PERMISSION_API ->
         luckPermsApi.getUserManager().getUser(player.getUuid()).getCachedData().getPermissionData().checkPermission(permission).asBoolean();
-      default -> false;
+      default -> player.hasPermissionLevel(4);
     };
   }
 
