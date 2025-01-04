@@ -128,11 +128,6 @@ public class CommandTree {
 
     if (CobbleUtils.config.isShops()) {
       for (String literal : CobbleUtils.config.getCommandshop()) {
-        LiteralArgumentBuilder<ServerCommandSource> shopliteral =
-          CommandManager.literal(literal).requires(source -> LuckPermsUtil.checkPermission(
-            source, 2, List.of(CobbleUtils.MOD_ID + ".admin", CobbleUtils.MOD_ID + ".shop",
-              CobbleUtils.MOD_ID + ".user")
-          ));
         ShopCommand.register(dispatcher, literal, CobbleUtils.shopConfig, CobbleUtils.MOD_ID, false);
         ShopSellCommand.register(dispatcher, CommandManager.literal("sell"));
       }

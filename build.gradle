@@ -5,7 +5,7 @@ plugins {
 }
 
 def git = versionDetails()
-def tag = git.lastTag.substring(1)
+def tag = git.lastTag.substring(0)
 if (System.getenv("GITHUB_ACTIONS") == "true") {
     if (System.getenv("GITHUB_WORKFLOW") == "Release") {
         version = tag
@@ -15,7 +15,7 @@ if (System.getenv("GITHUB_ACTIONS") == "true") {
         version = "${tag}${tag.contains("-") ? "." : "-"}.${System.getenv("GITHUB_RUN_NUMBER")}"
     }
 } else {
-    version = "${tag}${tag.contains("-") ? "." : "-"}"
+    version = "${tag}${tag.contains("-") ? "." : ""}"
 }
 
 architectury {
@@ -32,7 +32,6 @@ subprojects {
 
     dependencies {
         minecraft "com.mojang:minecraft:${rootProject.minecraft_version}"
-        // Ref: https://discord.com/channels/792699517631594506/1255221515964911626/1256712441329614942
         mappings loom.layered {
             it.mappings("net.fabricmc:yarn:${rootProject.yarn_mappings}:v2")
             it.mappings("dev.architectury:yarn-mappings-patch-neoforge:$rootProject.yarn_mappings_patch_neoforge_version")
@@ -45,7 +44,8 @@ allprojects {
     apply plugin: "architectury-plugin"
     apply plugin: "maven-publish"
 
-    archivesBaseName = "${rootProject.minecraft_version}/${rootProject.mod_version}/${rootProject.archives_base_name}-${rootProject.minecraft_version}-${project.name}-${rootProject.mod_version}"
+    archivesBaseName = "${rootProject.minecraft_version}/${rootProject.mod_version}/${tag}/${rootProject.archives_base_name}-${rootProject.minecraft_version}-${project.name}-${rootProject.mod_version}"
+
     group = rootProject.maven_group
 
     repositories {
@@ -90,4 +90,15 @@ allprojects {
     java {
         withSourcesJar()
     }
+
+    // Task to write the version to a file
+    task writeVersionFile {
+        doLast {
+            def versionFile = file("${buildDir}/version.txt")
+            versionFile.text = "Version: ${version}"
+        }
+    }
+
+    // Ensure the version file is written after the build
+    build.finalizedBy(writeVersionFile)
 }

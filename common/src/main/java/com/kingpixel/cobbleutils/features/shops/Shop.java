@@ -579,13 +579,12 @@ public class Shop {
   private TypeError getTypeError(Product product, ServerPlayerEntity player) {
     BigDecimal globalDiscount = BigDecimal.valueOf(this.globalDiscount);
     if (product.getBuy().compareTo(BigDecimal.ZERO) <= 0 && product.getSell().compareTo(BigDecimal.ZERO) <= 0) {
-      CobbleUtils.LOGGER.info("Buy and sell price is zero: " + product);
       return TypeError.ZERO;
+    } else if (!PermissionApi.hasPermission(player.getCommandSource(), product.getPermission(), 4)) {
+      return TypeError.PERMISSION;
     } else if (product.getBuy().compareTo(BigDecimal.ZERO) > 0 && product.getSell().compareTo(product.getBuy()) > 0) {
-      CobbleUtils.LOGGER.info("Buy price is higher than sell price: " + product);
       return TypeError.INVALID_PRICE;
     } else if (product.getDiscount() != null && (product.getDiscount() > 100) || globalDiscount.compareTo(BigDecimal.valueOf(100)) > 0) {
-      CobbleUtils.LOGGER.info("Discount is not valid: " + product);
       return TypeError.BAD_DISCOUNT;
     } else {
       if (product.getBuy().compareTo(BigDecimal.ZERO) == 0) return TypeError.NONE;
@@ -599,7 +598,6 @@ public class Shop {
       BigDecimal discountedBuyPrice = product.getBuy().multiply(BigDecimal.ONE.subtract(applicableDiscount.divide(BigDecimal.valueOf(100))));
 
       if (product.getSell().compareTo(discountedBuyPrice) > 0) {
-        CobbleUtils.LOGGER.info("Sell price is higher than buy price with discount: " + product);
         return TypeError.INVALID_PRICE_WITH_DISCOUNT;
       }
     }

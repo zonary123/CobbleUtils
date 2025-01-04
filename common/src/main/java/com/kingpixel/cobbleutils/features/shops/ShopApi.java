@@ -31,13 +31,15 @@ public class ShopApi {
                               CommandDispatcher<ServerCommandSource> dispatcher,
                               boolean active, String pathShop, String pathShops) {
     if (active) {
-      CobbleUtils.scheduler.schedule(() -> shopConfig.init(pathShop, modid, pathShops), 15, TimeUnit.SECONDS);
-      shopConfig.init(pathShop, modid, pathShops);
+      CobbleUtils.scheduler.schedule(() -> {
+        shopConfig.init(pathShop, modid, pathShops);
+        for (String command : commands) {
+          //LiteralArgumentBuilder<ServerCommandSource> shopliteral = CommandManager.literal(command + "shop");
+          ShopCommand.register(dispatcher, command, shopConfig, modid, true);
+        }
+      }, 15, TimeUnit.SECONDS);
 
-      for (String command : commands) {
-        //LiteralArgumentBuilder<ServerCommandSource> shopliteral = CommandManager.literal(command + "shop");
-        ShopCommand.register(dispatcher, command, shopConfig, modid, true);
-      }
+
     }
   }
 }

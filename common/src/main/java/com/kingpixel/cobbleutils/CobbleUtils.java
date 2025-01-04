@@ -107,12 +107,12 @@ public class CobbleUtils extends ShopExtend {
     }
     language.init();
     shopLang.init();
-    breedconfig.init();
     poolItems.init();
     poolPokemons.init();
     poolMoney.init();
     partyConfig.init();
     partyLang.init();
+    breedconfig.init();
     BossConfig.init();
     DatabaseClientFactory.createDatabaseClient(config.getDatabase());
     scheduler.schedule(() -> shopConfig.init(PATH_SHOP, MOD_ID, PATH_SHOPS), 15, TimeUnit.SECONDS);

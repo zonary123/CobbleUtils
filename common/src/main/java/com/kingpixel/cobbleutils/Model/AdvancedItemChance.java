@@ -297,7 +297,7 @@ public class AdvancedItemChance {
 
   public List<Button> getButtons(ServerPlayerEntity player) {
     List<Button> buttons = new ArrayList<>();
-    double totalWeight = getList(null).stream().mapToDouble(ItemChance::getChance).sum();
+    double totalWeight = getList(player).stream().mapToDouble(ItemChance::getChance).sum();
     lootTable.forEach((key, value) -> {
       value.forEach(itemChance -> {
         boolean hasPermission = PermissionApi.hasPermission(player, key, 2);

@@ -7,6 +7,7 @@ import net.luckperms.api.LuckPerms;
 import net.luckperms.api.LuckPermsProvider;
 import net.luckperms.api.model.user.User;
 import net.luckperms.api.model.user.UserManager;
+import net.luckperms.api.node.Node;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
 import org.bukkit.Bukkit;
@@ -48,23 +49,6 @@ public abstract class LuckPermsUtil {
     }
   }
 
-  private static boolean haveBukkitPermissionApi() {
-    try {
-      RegisteredServiceProvider<LuckPerms> provider = Bukkit.getServicesManager().getRegistration(LuckPerms.class);
-      if (provider != null) {
-        luckPermsApi = provider.getProvider();
-      }
-      if (luckPermsApi == null) {
-        CobbleUtils.LOGGER.error("Error while trying to get LuckPerms provider from Bukkit");
-        return false;
-      }
-      return true;
-    } catch (IllegalStateException | NullPointerException | NoClassDefFoundError e) {
-      CobbleUtils.LOGGER.error("Error while trying to get LuckPerms provider from Bukkit");
-      return false;
-    }
-  }
-
   private static LuckPerms getLuckPermsApi() {
     try {
       return LuckPermsProvider.get();
@@ -82,6 +66,24 @@ public abstract class LuckPermsUtil {
       return false;
     }
   }
+
+  private static boolean haveBukkitPermissionApi() {
+    try {
+      RegisteredServiceProvider<LuckPerms> provider = Bukkit.getServicesManager().getRegistration(LuckPerms.class);
+      if (provider != null) {
+        luckPermsApi = provider.getProvider();
+      }
+      if (luckPermsApi == null) {
+        CobbleUtils.LOGGER.error("Error while trying to get LuckPerms provider from Bukkit");
+        return false;
+      }
+      return true;
+    } catch (IllegalStateException | NullPointerException | NoClassDefFoundError e) {
+      CobbleUtils.LOGGER.error("Error while trying to get LuckPerms provider from Bukkit");
+      return false;
+    }
+  }
+
 
   public static boolean checkPermission(ServerCommandSource source, int level, List<String> permissions) {
     setup();
@@ -116,16 +118,27 @@ public abstract class LuckPermsUtil {
 
   public static boolean checkLuckPermsPermission(ServerCommandSource source, List<String> permissions, int level) {
     LuckPerms luckPermsApi = getLuckPermsApi();
-    if (luckPermsApi == null) return false;
+    if (luckPermsApi == null) {
+      CobbleUtils.LOGGER.error("LuckPerms not found");
+      return false;
+    }
     UserManager userManager = luckPermsApi.getUserManager();
     ServerPlayerEntity player = source.getPlayer();
-    if (player == null) return false;
+    if (player == null) {
+      CobbleUtils.LOGGER.error("Player not found in LuckPerms");
+      return false;
+    }
     User user = userManager.getUser(player.getUuid());
-    if (user == null) return false;
+    if (user == null) {
+      CobbleUtils.LOGGER.error("User not found in LuckPerms");
+      return false;
+    }
 
     for (String permission : permissions) {
       if (permission == null || permission.isEmpty()) return true;
-      return user.getCachedData().getPermissionData().checkPermission(permission).asBoolean();
+      if (user.getCachedData().getPermissionData().checkPermission(permission).asBoolean()) {
+        return true;
+      }
     }
     return source.hasPermissionLevel(level);
   }
@@ -152,6 +165,53 @@ public abstract class LuckPermsUtil {
         luckPermsApi.getUserManager().getUser(player.getUuid()).getCachedData().getPermissionData().checkPermission(permission).asBoolean();
       default -> player.hasPermissionLevel(4);
     };
+  }
+
+  public static void addPermissions(ServerCommandSource source, List<String> permissions) {
+    setup();
+    switch (PERMISSION_TYPE) {
+      case LUCKPERMS -> {
+        LuckPerms luckPermsApi = getLuckPermsApi();
+        if (luckPermsApi == null) {
+          CobbleUtils.LOGGER.error("LuckPerms not found");
+          return;
+        }
+        UserManager userManager = luckPermsApi.getUserManager();
+        ServerPlayerEntity player = source.getPlayer();
+        if (player == null) {
+          CobbleUtils.LOGGER.error("Player not found in LuckPerms");
+          return;
+        }
+        User user = userManager.getUser(player.getUuid());
+        if (user == null) {
+          CobbleUtils.LOGGER.error("User not found in LuckPerms");
+          return;
+        }
+        for (String permission : permissions) {
+          if (permission == null || permission.isEmpty()) return;
+          user.getCachedData().getPermissionData().checkPermission(permission);
+        }
+        userManager.saveUser(user);
+      }
+      case FABRIC_PERMISSIONS_API -> {
+        for (String permission : permissions) {
+          if (permission == null) continue;
+          Permissions.require(permission).test(source);
+        }
+      }
+      case NEOFORGE_PERMISSIONS_API -> {
+        return;
+      }
+      case BUKKIT_PERMISSION_API -> {
+        for (String permission : permissions) {
+          if (permission == null || permission.isEmpty()) return;
+          luckPermsApi.getUserManager().getUser(source.getPlayer().getUuid()).data().add(Node.builder(permission).build());
+        }
+      }
+      default -> {
+        return;
+      }
+    }
   }
 
   public static boolean hasOp(ServerPlayerEntity player) {

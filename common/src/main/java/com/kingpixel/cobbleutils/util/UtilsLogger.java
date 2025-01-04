@@ -5,6 +5,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.time.DayOfWeek;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
@@ -12,7 +13,7 @@ import java.util.concurrent.CompletableFuture;
  * Class for logging.
  */
 public class UtilsLogger {
-  private static Map<String, Logger> loggers;
+  private static Map<String, Logger> loggers = new HashMap<>();
   private Logger logger; // Log for the console.
 
   /**

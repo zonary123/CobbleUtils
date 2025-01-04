@@ -4,8 +4,10 @@ import com.google.gson.Gson;
 import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.Model.*;
 import com.kingpixel.cobbleutils.api.PermissionApi;
+import com.kingpixel.cobbleutils.config.Lang;
 import com.kingpixel.cobbleutils.features.breeding.models.EggData;
 import com.kingpixel.cobbleutils.features.breeding.models.Incense;
+import com.kingpixel.cobbleutils.features.breeding.models.SelectMenu;
 import com.kingpixel.cobbleutils.util.Utils;
 import lombok.Data;
 import lombok.Getter;
@@ -90,6 +92,7 @@ public class BreedConfig {
   private ItemModel femaleSelectItem;
   private ItemModel infoItem;
   private ItemModel emptySlots;
+  private SelectMenu selectMenu;
 
   private List<Integer> maleSlots;
   private List<Integer> eggSlots;
@@ -221,6 +224,27 @@ public class BreedConfig {
     pokemonsForDoubleDitto = new FilterPokemons();
     pokemonsForDoubleDitto.setLegendarys(false);
     closeItem = null;
+    Lang lang = CobbleUtils.language;
+    if (lang != null) {
+      selectMenu = new SelectMenu(
+        titleselectpokemon,
+        CobbleUtils.language.getItemPrevious() == null ?
+          new ItemModel("minecraft:arrow", "Previous", List.of()) : CobbleUtils.language.getItemPrevious(),
+        CobbleUtils.language.getItemClose() == null ?
+          new ItemModel("minecraft:barrier", "Close", List.of()) : CobbleUtils.language.getItemClose(),
+        CobbleUtils.language.getItemNext() == null ?
+          new ItemModel("minecraft:arrow", "Next", List.of()) : CobbleUtils.language.getItemNext()
+
+      );
+    } else {
+      selectMenu = new SelectMenu(
+        titleselectpokemon,
+        new ItemModel("minecraft:arrow", "Previous", List.of()),
+        new ItemModel("minecraft:barrier", "Close", List.of()),
+        new ItemModel("minecraft:arrow", "Next", List.of())
+      );
+    }
+
   }
 
   public void write() {
@@ -328,6 +352,7 @@ public class BreedConfig {
         soundCreateEgg = config.getSoundCreateEgg();
         showIvs = config.isShowIvs();
         closeItem = config.getCloseItem();
+        selectMenu = config.getSelectMenu();
         checker(this);
 
         String data = gson.toJson(this);

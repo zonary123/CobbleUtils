@@ -4,6 +4,8 @@ import ca.landonjw.gooeylibs2.api.UIManager;
 import ca.landonjw.gooeylibs2.api.button.Button;
 import ca.landonjw.gooeylibs2.api.button.GooeyButton;
 import ca.landonjw.gooeylibs2.api.button.PlaceholderButton;
+import ca.landonjw.gooeylibs2.api.button.linked.LinkType;
+import ca.landonjw.gooeylibs2.api.button.linked.LinkedPageButton;
 import ca.landonjw.gooeylibs2.api.helpers.PaginationHelper;
 import ca.landonjw.gooeylibs2.api.page.LinkedPage;
 import ca.landonjw.gooeylibs2.api.template.types.ChestTemplate;
@@ -18,7 +20,6 @@ import com.kingpixel.cobbleutils.features.breeding.models.EggData;
 import com.kingpixel.cobbleutils.features.breeding.models.PlotBreeding;
 import com.kingpixel.cobbleutils.util.AdventureTranslator;
 import com.kingpixel.cobbleutils.util.PokemonUtils;
-import com.kingpixel.cobbleutils.util.UIUtils;
 import com.kingpixel.cobbleutils.util.Utils;
 import net.minecraft.component.DataComponentTypes;
 import net.minecraft.component.type.LoreComponent;
@@ -44,7 +45,7 @@ public class PlotSelectPokemonUI {
 
     LinkedPage page = PaginationHelper.createPagesFromPlaceholders(
       template, buttons, LinkedPage.builder()
-        .title(AdventureTranslator.toNative(CobbleUtils.breedconfig.getTitleselectpokemon()))
+        .title(AdventureTranslator.toNative(CobbleUtils.breedconfig.getSelectMenu().getTitle()))
     );
     UIManager.openUIForcefully(player, page);
   }
@@ -105,13 +106,22 @@ public class PlotSelectPokemonUI {
 
   private static void configureTemplate(ChestTemplate template, List<Button> buttons, int row,
                                         ServerPlayerEntity player, PlotBreeding plotBreeding, int finalI) {
-    template.set(row - 1, 0, UIUtils.getPreviousButton(action -> {
-      // Implement previous page action if needed
+    LinkedPageButton previous = LinkedPageButton.builder()
+      .display(CobbleUtils.breedconfig.getSelectMenu().getPrevious().getItemStack())
+      .linkType(LinkType.Previous)
+      .build();
+    template.set(row - 1, 0, previous);
+
+    template.set(row - 1, 4, CobbleUtils.breedconfig.getSelectMenu().getClose().getButton(action -> {
+      PlotBreedingManagerUI.open(player, plotBreeding, finalI);
     }));
-    template.set(row - 1, 4, UIUtils.getCloseButton(action -> PlotBreedingManagerUI.open(player, plotBreeding, finalI)));
-    template.set(row - 1, 8, UIUtils.getNextButton(action -> {
-      // Implement next page action if needed
-    }));
+
+    LinkedPageButton next = LinkedPageButton.builder()
+      .display(CobbleUtils.breedconfig.getSelectMenu().getNext().getItemStack())
+      .linkType(LinkType.Next)
+      .build();
+    template.set(row - 1, 8, next);
+
     template.fill(GooeyButton.builder().display(Utils.parseItemId(CobbleUtils.config.getFill()))
       .with(DataComponentTypes.CUSTOM_NAME, Text.empty())
       .build());
