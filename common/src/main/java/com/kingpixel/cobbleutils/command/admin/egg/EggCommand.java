@@ -3,6 +3,7 @@ package com.kingpixel.cobbleutils.command.admin.egg;
 import com.cobblemon.mod.common.Cobblemon;
 import com.cobblemon.mod.common.api.pokemon.PokemonProperties;
 import com.cobblemon.mod.common.api.pokemon.PokemonPropertyExtractor;
+import com.cobblemon.mod.common.api.pokemon.stats.Stats;
 import com.cobblemon.mod.common.command.argument.PokemonPropertiesArgumentType;
 import com.cobblemon.mod.common.pokemon.Pokemon;
 import com.cobblemon.mod.common.pokemon.Species;
@@ -13,6 +14,7 @@ import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import net.minecraft.command.argument.EntityArgumentType;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -29,33 +31,15 @@ public class EggCommand implements Command<ServerCommandSource> {
     dispatcher.register(
       base.then(
         CommandManager.literal("egg")
-          .then(
-            CommandManager.argument("pokemon", PokemonPropertiesArgumentType.Companion.properties())
-              .requires(source ->
-                LuckPermsUtil.checkPermission(source, 2, List.of("cobbleutils.egg.create", "cobbleutils.admin")))
-              .executes(context -> {
-                if (!context.getSource().isExecutedByPlayer()) {
-                  return 0;
-                }
-                ServerPlayerEntity player = context.getSource().getPlayerOrThrow();
-                Pokemon pokemon = PokemonPropertiesArgumentType.Companion.getPokemonProperties(context, "pokemon")
-                  .create();
-                handleEgg(player, pokemon);
-                return 1;
-              })
-          )
-      ).then(
-        CommandManager.literal("eggOther")
           .requires(source ->
             LuckPermsUtil.checkPermission(source, 2, List.of("cobbleutils.egg.create", "cobbleutils.admin")))
           .then(
-            CommandManager.argument("player", PokemonPropertiesArgumentType.Companion.properties())
+            CommandManager.argument("player", EntityArgumentType.player())
               .then(
                 CommandManager.argument("pokemon", PokemonPropertiesArgumentType.Companion.properties())
                   .executes(context -> {
-                    ServerPlayerEntity player = context.getSource().getPlayerOrThrow();
-                    Pokemon pokemon = PokemonPropertiesArgumentType.Companion.getPokemonProperties(context, "pokemon")
-                      .create();
+                    ServerPlayerEntity player = EntityArgumentType.getPlayer(context, "player");
+                    Pokemon pokemon = PokemonPropertiesArgumentType.Companion.getPokemonProperties(context, "pokemon").create();
                     handleEgg(player, pokemon);
                     return 1;
                   })
@@ -88,6 +72,12 @@ public class EggCommand implements Command<ServerCommandSource> {
     if (CobbleUtils.config.isDebug()) {
       CobbleUtils.LOGGER.info("Egg create: " + egg.getPersistentData());
     }
+    egg.getPersistentData().putInt("HP", pokemon.getIvs().getOrDefault(Stats.HP));
+    egg.getPersistentData().putInt("Attack", pokemon.getIvs().getOrDefault(Stats.ATTACK));
+    egg.getPersistentData().putInt("Defense", pokemon.getIvs().getOrDefault(Stats.DEFENCE));
+    egg.getPersistentData().putInt("SpecialAttack", pokemon.getIvs().getOrDefault(Stats.SPECIAL_ATTACK));
+    egg.getPersistentData().putInt("SpecialDefense", pokemon.getIvs().getOrDefault(Stats.SPECIAL_DEFENCE));
+    egg.getPersistentData().putInt("Speed", pokemon.getIvs().getOrDefault(Stats.SPEED));
     Cobblemon.INSTANCE.getStorage().getParty(player).add(egg);
   }
 

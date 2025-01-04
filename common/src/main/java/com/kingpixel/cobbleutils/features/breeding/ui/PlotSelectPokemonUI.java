@@ -62,6 +62,7 @@ public class PlotSelectPokemonUI {
   private static void addIfAcceptable(List<Pokemon> pokemons, Pokemon pokemon, ServerPlayerEntity player,
                                       Gender gender, PlotBreeding plotBreeding) {
     if (pokemon.getForm().getEggGroups().contains(EggGroup.UNDISCOVERED)) return;
+    if (CobbleUtils.breedconfig.getBlacklist().contains(pokemon.getSpecies().showdownId())) return;
     if (isAcceptablePokemon(pokemon, gender, plotBreeding, player, false)) {
       pokemons.add(pokemon);
     }
@@ -156,6 +157,10 @@ public class PlotSelectPokemonUI {
     boolean isInWhitelist = CobbleUtils.breedconfig.getWhitelist().contains(pokemon.getSpecies().showdownId());
     boolean isLegendaryOrUltraBeast = pokemon.isLegendary() || pokemon.isUltraBeast();
 
+    if (isInWhitelist && otherGender != null) {
+      return otherGender.showdownId().equals("ditto");
+    }
+
     if (isLegendaryOrUltraBeast && !isInWhitelist) {
       sendMessageIfNeeded(player, notify, CobbleUtils.breedconfig.getBlacklisted(), pokemon);
       return false;
@@ -180,6 +185,8 @@ public class PlotSelectPokemonUI {
                                                boolean notify, ServerPlayerEntity player) {
     boolean isOtherDitto = otherGender.getSpecies().showdownId().equalsIgnoreCase("ditto");
     boolean areCompatible = EggData.isCompatible(otherGender, pokemon);
+
+    if (otherGender.getGender() == Gender.GENDERLESS && !isOtherDitto) return false;
 
     if (!isDittoCompatibility(pokemon, isOtherDitto, areCompatible, notify, player)) return false;
 

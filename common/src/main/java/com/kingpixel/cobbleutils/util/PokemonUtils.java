@@ -4,6 +4,7 @@ import com.cobblemon.mod.common.api.Priority;
 import com.cobblemon.mod.common.api.abilities.*;
 import com.cobblemon.mod.common.api.moves.Move;
 import com.cobblemon.mod.common.api.pokemon.PokemonProperties;
+import com.cobblemon.mod.common.api.pokemon.PokemonSpecies;
 import com.cobblemon.mod.common.api.pokemon.egg.EggGroup;
 import com.cobblemon.mod.common.api.pokemon.stats.Stat;
 import com.cobblemon.mod.common.api.pokemon.stats.Stats;
@@ -19,6 +20,7 @@ import com.kingpixel.cobbleutils.Model.SizeChanceWithoutItem;
 import com.kingpixel.cobbleutils.features.breeding.models.EggData;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
+import net.minecraft.util.Identifier;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -337,6 +339,8 @@ public class PokemonUtils {
   }
 
   public static Pokemon getEvolutionPokemonEgg(Species species) {
+    if (species.showdownId().equals("manaphy"))
+      return PokemonSpecies.INSTANCE.getByIdentifier(Identifier.of("cobblemon:phione")).create(1);
     Species firstEvolution = getFirstPreEvolution(species);
 
     Pokemon specialPokemon = findSpecialPokemon(firstEvolution);

@@ -199,18 +199,12 @@ public class PlotBreeding {
     return true;
   }
 
-  public boolean addMale(Pokemon pokemon) {
-    if (pokemon.isLegendary() || pokemon.isUltraBeast())
-      return false;
+  public void addMale(Pokemon pokemon) {
     setMale(pokemon.saveToJSON(DynamicRegistryManager.EMPTY, new JsonObject()));
-    return true;
   }
 
-  public boolean addFemale(Pokemon pokemon) {
-    if (pokemon.isLegendary() || pokemon.isUltraBeast())
-      return false;
+  public void addFemale(Pokemon pokemon) {
     setFemale(pokemon.saveToJSON(DynamicRegistryManager.EMPTY, new JsonObject()));
-    return true;
   }
 
   public Pokemon obtainMale() {
