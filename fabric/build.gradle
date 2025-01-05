@@ -45,7 +45,7 @@ dependencies {
 
     common(project(path: ":common", configuration: "namedElements")) { transitive false }
     shadowCommon(project(path: ":common", configuration: "transformProductionFabric")) { transitive false }
-    
+
     // Kyori Adventure
     shadowCommon("net.kyori:adventure-text-serializer-gson:${property("kyori_version")}")
     shadowCommon("net.kyori:adventure-text-minimessage:${property("kyori_version")}")

@@ -23,12 +23,10 @@ import kotlin.ranges.IntRange;
 import net.minecraft.component.DataComponentTypes;
 import net.minecraft.component.type.CustomModelDataComponent;
 import net.minecraft.component.type.LoreComponent;
-import net.minecraft.component.type.NbtComponent;
 import net.minecraft.component.type.ProfileComponent;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.nbt.NbtCompound;
-import net.minecraft.nbt.NbtHelper;
 import net.minecraft.registry.Registries;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -288,11 +286,7 @@ public abstract class Utils {
 
   public static ItemStack addThingsItemStack(ItemStack itemStack, ItemModel itemModel) {
     if (itemModel.getNbt() != null && !itemModel.getNbt().isEmpty()) {
-      try {
-        NbtComponent nbtComponent = NbtComponent.of(NbtHelper.fromNbtProviderString(itemModel.getNbt()));
-        itemStack.set(DataComponentTypes.CUSTOM_DATA, nbtComponent);
-      } catch (Exception ignored) {
-      }
+      itemStack = ItemUtils.applyNbt(itemStack, itemModel.getNbt(), itemStack.getCount());
     }
 
     itemStack.set(DataComponentTypes.CUSTOM_NAME, AdventureTranslator.toNativeWithOutPrefix(

@@ -1,13 +1,11 @@
 package com.kingpixel.cobbleutils.util;
 
 import com.kingpixel.cobbleutils.CobbleUtils;
-import dev.architectury.injectables.targets.ArchitecturyTarget;
 import me.lucko.fabric.api.permissions.v0.Permissions;
 import net.luckperms.api.LuckPerms;
 import net.luckperms.api.LuckPermsProvider;
 import net.luckperms.api.model.user.User;
 import net.luckperms.api.model.user.UserManager;
-import net.luckperms.api.node.Node;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
 import org.bukkit.Bukkit;
@@ -31,18 +29,15 @@ public abstract class LuckPermsUtil {
 
   private static void setup() {
     if (PERMISSION_TYPE != null) return;
-    if (haveBukkitPermissionApi()) {
-      PERMISSION_TYPE = Permission.BUKKIT_PERMISSION_API;
-      CobbleUtils.LOGGER.info("Bukkit permissions detected");
-    } else if (haveFabricPermissionsApi()) {
+    if (haveFabricPermissionsApi()) {
       PERMISSION_TYPE = Permission.FABRIC_PERMISSIONS_API;
       CobbleUtils.LOGGER.info("Fabric permissions detected");
-    } else if (ArchitecturyTarget.getCurrentTarget().equals("neoforge")) {
-      PERMISSION_TYPE = Permission.NEOFORGE_PERMISSIONS_API;
-      CobbleUtils.LOGGER.info("NeoForge permissions detected");
     } else if (getLuckPermsApi() != null) {
       PERMISSION_TYPE = Permission.LUCKPERMS;
       CobbleUtils.LOGGER.info("LuckPerms detected");
+    } else if (haveBukkitPermissionApi()) {
+      PERMISSION_TYPE = Permission.BUKKIT_PERMISSION_API;
+      CobbleUtils.LOGGER.info("Bukkit permissions detected");
     } else {
       CobbleUtils.LOGGER.error("No permission system detected");
       PERMISSION_TYPE = Permission.NONE;
@@ -51,8 +46,10 @@ public abstract class LuckPermsUtil {
 
   private static LuckPerms getLuckPermsApi() {
     try {
-      return LuckPermsProvider.get();
-    } catch (IllegalStateException | NullPointerException | NoClassDefFoundError e) {
+      CobbleUtils.LOGGER.info("Trying to get LuckPerms provider");
+      luckPermsApi = LuckPermsProvider.get();
+      return luckPermsApi;
+    } catch (IllegalStateException | NullPointerException | NoClassDefFoundError | NoSuchMethodError e) {
       CobbleUtils.LOGGER.error("Error while trying to get LuckPerms provider");
       return null;
     }
@@ -60,8 +57,9 @@ public abstract class LuckPermsUtil {
 
   private static boolean haveFabricPermissionsApi() {
     try {
+      CobbleUtils.LOGGER.info("Trying to get Permissions class from Fabric");
       return Permissions.class != null;
-    } catch (NoClassDefFoundError e) {
+    } catch (IllegalStateException | NullPointerException | NoClassDefFoundError | NoSuchMethodError e) {
       CobbleUtils.LOGGER.error("Error while trying to get Permissions class from Fabric");
       return false;
     }
@@ -69,6 +67,7 @@ public abstract class LuckPermsUtil {
 
   private static boolean haveBukkitPermissionApi() {
     try {
+      CobbleUtils.LOGGER.info("Trying to get LuckPerms provider from Bukkit");
       RegisteredServiceProvider<LuckPerms> provider = Bukkit.getServicesManager().getRegistration(LuckPerms.class);
       if (provider != null) {
         luckPermsApi = provider.getProvider();
@@ -78,7 +77,7 @@ public abstract class LuckPermsUtil {
         return false;
       }
       return true;
-    } catch (IllegalStateException | NullPointerException | NoClassDefFoundError e) {
+    } catch (IllegalStateException | NullPointerException | NoClassDefFoundError | NoSuchMethodError e) {
       CobbleUtils.LOGGER.error("Error while trying to get LuckPerms provider from Bukkit");
       return false;
     }
@@ -87,21 +86,11 @@ public abstract class LuckPermsUtil {
 
   public static boolean checkPermission(ServerCommandSource source, int level, List<String> permissions) {
     setup();
-    ServerPlayerEntity player = source.getPlayer();
+
     return switch (PERMISSION_TYPE) {
-      case LUCKPERMS -> checkLuckPermsPermission(source, permissions, level);
+      case LUCKPERMS, BUKKIT_PERMISSION_API -> checkLuckPermsPermission(source, permissions, level);
       case FABRIC_PERMISSIONS_API -> checkFabricPermissions(source, level, permissions);
-      case NEOFORGE_PERMISSIONS_API -> {
-        yield true;
-      }
-      case BUKKIT_PERMISSION_API -> {
-        for (String permission : permissions) {
-          if (permission == null || permission.isEmpty()) yield true;
-          if (luckPermsApi.getUserManager().getUser(player.getUuid()).getCachedData().getPermissionData().checkPermission(permission).asBoolean())
-            yield true;
-        }
-        yield false;
-      }
+      case NEOFORGE_PERMISSIONS_API -> false;
       default -> source.hasPermissionLevel(level);
     };
   }
@@ -117,7 +106,7 @@ public abstract class LuckPermsUtil {
 
 
   public static boolean checkLuckPermsPermission(ServerCommandSource source, List<String> permissions, int level) {
-    LuckPerms luckPermsApi = getLuckPermsApi();
+    setup();
     if (luckPermsApi == null) {
       CobbleUtils.LOGGER.error("LuckPerms not found");
       return false;
@@ -136,9 +125,7 @@ public abstract class LuckPermsUtil {
 
     for (String permission : permissions) {
       if (permission == null || permission.isEmpty()) return true;
-      if (user.getCachedData().getPermissionData().checkPermission(permission).asBoolean()) {
-        return true;
-      }
+      if (user.getCachedData().getPermissionData().checkPermission(permission).asBoolean()) return true;
     }
     return source.hasPermissionLevel(level);
   }
@@ -153,65 +140,12 @@ public abstract class LuckPermsUtil {
     setup();
     if (permission == null || permission.isEmpty()) return true;
     return switch (PERMISSION_TYPE) {
-      case LUCKPERMS -> {
-        if (player == null) yield false;
-        yield checkLuckPermsPermission(player.getCommandSource(), List.of(permission), 4);
-      }
+      case LUCKPERMS, BUKKIT_PERMISSION_API ->
+        checkLuckPermsPermission(player.getCommandSource(), List.of(permission), 4);
       case FABRIC_PERMISSIONS_API -> Permissions.require(permission, 4).test(player.getCommandSource());
-      case NEOFORGE_PERMISSIONS_API -> {
-        yield true;
-      }
-      case BUKKIT_PERMISSION_API ->
-        luckPermsApi.getUserManager().getUser(player.getUuid()).getCachedData().getPermissionData().checkPermission(permission).asBoolean();
+      case NEOFORGE_PERMISSIONS_API -> false;
       default -> player.hasPermissionLevel(4);
     };
-  }
-
-  public static void addPermissions(ServerCommandSource source, List<String> permissions) {
-    setup();
-    switch (PERMISSION_TYPE) {
-      case LUCKPERMS -> {
-        LuckPerms luckPermsApi = getLuckPermsApi();
-        if (luckPermsApi == null) {
-          CobbleUtils.LOGGER.error("LuckPerms not found");
-          return;
-        }
-        UserManager userManager = luckPermsApi.getUserManager();
-        ServerPlayerEntity player = source.getPlayer();
-        if (player == null) {
-          CobbleUtils.LOGGER.error("Player not found in LuckPerms");
-          return;
-        }
-        User user = userManager.getUser(player.getUuid());
-        if (user == null) {
-          CobbleUtils.LOGGER.error("User not found in LuckPerms");
-          return;
-        }
-        for (String permission : permissions) {
-          if (permission == null || permission.isEmpty()) return;
-          user.getCachedData().getPermissionData().checkPermission(permission);
-        }
-        userManager.saveUser(user);
-      }
-      case FABRIC_PERMISSIONS_API -> {
-        for (String permission : permissions) {
-          if (permission == null) continue;
-          Permissions.require(permission).test(source);
-        }
-      }
-      case NEOFORGE_PERMISSIONS_API -> {
-        return;
-      }
-      case BUKKIT_PERMISSION_API -> {
-        for (String permission : permissions) {
-          if (permission == null || permission.isEmpty()) return;
-          luckPermsApi.getUserManager().getUser(source.getPlayer().getUuid()).data().add(Node.builder(permission).build());
-        }
-      }
-      default -> {
-        return;
-      }
-    }
   }
 
   public static boolean hasOp(ServerPlayerEntity player) {

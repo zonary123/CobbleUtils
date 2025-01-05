@@ -29,6 +29,7 @@ import java.util.List;
 public class CommandTree {
 
   public static void register(CommandDispatcher<ServerCommandSource> dispatcher, CommandRegistryAccess registry) {
+
     PokeShout.register(dispatcher, CommandManager.literal(CobbleUtils.config.getPokeshout()));
     PokeShoutMe.register(dispatcher, CommandManager.literal(CobbleUtils.config.getPokeshout() + "me"));
     PokeShoutAll.register(dispatcher, CommandManager.literal(CobbleUtils.config.getPokeshoutall()));
