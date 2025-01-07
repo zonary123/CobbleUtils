@@ -43,6 +43,8 @@ public class BreedConfig {
   private int raritySpawnEgg;
   private boolean obtainPokeBallFromMother;
   private List<String> eggcommand;
+  private List<String> abilityAcceleration;
+  private List<String> permittedVehicles;
   private String titleselectplot;
   private String titleplot;
   private String titleemptyplot;
@@ -84,6 +86,7 @@ public class BreedConfig {
   private List<String> blacklist;
   private List<String> whitelist;
   private List<String> blacklistForm;
+  private List<String> blacklistFeatures;
 
   private ItemModel closeItem;
   private ItemModel plotItem;
@@ -110,6 +113,10 @@ public class BreedConfig {
     this.active = true;
     this.showIvs = false;
     this.eggcommand = List.of("daycare", "pokebreed", "breed");
+    this.abilityAcceleration = List.of("magmaarmor",
+      "flamebody",
+      "steamengine");
+    this.permittedVehicles = List.of("minecraft:boat", "minecraft:minecart", "minecraft:horse");
     this.titleselectplot = "<#82d448>Select Plot";
     this.titleplot = "<#82d448>Plot";
     this.titleemptyplot = "<#82d448>Plot";
@@ -244,6 +251,9 @@ public class BreedConfig {
         new ItemModel("minecraft:arrow", "Next", List.of())
       );
     }
+    blacklistFeatures = List.of(
+      "netherite_coating"
+    );
 
   }
 
@@ -280,82 +290,14 @@ public class BreedConfig {
     CompletableFuture<Boolean> futureRead = Utils.readFileAsync(CobbleUtils.PATH_BREED, "config.json",
       el -> {
         Gson gson = Utils.newGson();
-        BreedConfig config = gson.fromJson(el, BreedConfig.class);
-        prefix = config.getPrefix();
-        active = config.isActive();
-        changeuipasture = config.isChangeuipasture();
-        createEgg = config.getCreateEgg();
-        ditto = config.isDitto();
-        doubleditto = config.isDoubleditto();
-        cooldown = config.getCooldown();
-        maxeggperplot = config.getMaxeggperplot();
-        numberIvsDestinyKnot = config.getNumberIvsDestinyKnot();
-        tickstocheck = config.getTickstocheck();
-        notcancreateEgg = config.getNotcancreateEgg();
-        titleemptyplot = config.getTitleemptyplot();
-        notdoubleditto = config.getNotdoubleditto();
-        cooldowns = config.getCooldowns();
-        notditto = config.getNotditto();
-        spawnEggWorld = config.isSpawnEggWorld();
-        blacklist = config.getBlacklist();
-        obtainPokeBallFromMother = config.isObtainPokeBallFromMother();
-        femaleSlots = config.getFemaleSlots();
-        maleSlots = config.getMaleSlots();
-        eggSlots = config.getEggSlots();
-        blacklisted = config.getBlacklisted();
-        raritySpawnEgg = config.getRaritySpawnEgg();
-        multiplierShiny = config.getMultiplierShiny();
-        eggcommand = config.getEggcommand();
-        nameEgg = config.getNameEgg();
-        obtainAspect = config.isObtainAspect();
-        rowmenuplot = config.getRowmenuplot();
-        infoItem = config.getInfoItem();
-        rowmenuselectplot = config.getRowmenuselectplot();
-        rowmenuselectpokemon = config.getRowmenuselectpokemon();
-        methodmasuda = config.isMethodmasuda();
-        titleplot = config.getTitleplot();
-        titleselectplot = config.getTitleselectplot();
-        titleselectpokemon = config.getTitleselectpokemon();
-        multipliermasuda = config.getMultipliermasuda();
-        whitelist = config.getWhitelist();
-        steps = config.getSteps();
-        checkEggToBreedInSeconds = config.getCheckEggToBreedInSeconds();
-        nameAbandonedEgg = config.getNameAbandonedEgg();
-        nameRandomEgg = config.getNameRandomEgg();
-        notCompatible = config.getNotCompatible();
-        cooldowninstaBreedInSeconds = config.getCooldowninstaBreedInSeconds();
-        cooldowninstaHatchInSeconds = config.getCooldowninstaHatchInSeconds();
-        maleSelectItem = config.getMaleSelectItem();
-        if (maleSelectItem.getSlot() == 0) maleSelectItem.setSlot(10);
-        femaleSelectItem = config.getFemaleSelectItem();
-        if (femaleSelectItem.getSlot() == 0) femaleSelectItem.setSlot(16);
-        shifttoopen = config.isShifttoopen();
-        incenses = config.getIncenses();
-        emptySlots = config.getEmptySlots();
-        plotThereAreEggs = config.getPlotThereAreEggs();
-        notbreedable = config.getNotbreedable();
-        blacklistForm = config.getBlacklistForm();
-        aspectEggByType = config.isAspectEggByType();
-        eggForms = config.getEggForms();
-        eggSpecialForms = config.getEggSpecialForms();
-        pokemonRareMechanics = config.getPokemonRareMechanics();
-        maxIvsRandom = config.getMaxIvsRandom();
-        if (maxIvsRandom < 0) maxIvsRandom = 0;
-        if (maxIvsRandom > 31) maxIvsRandom = 31;
-        successItems = config.getSuccessItems();
-        defaultNumberPlots = config.getDefaultNumberPlots();
-        plotItem = config.getPlotItem();
-        plotSlots = config.getPlotSlots();
-        permissionAutoClaim = config.getPermissionAutoClaim();
-        pokemonsForDoubleDitto = config.getPokemonsForDoubleDitto();
-        defaultNumIvsToTransfer = config.getDefaultNumIvsToTransfer();
-        soundCreateEgg = config.getSoundCreateEgg();
-        showIvs = config.isShowIvs();
-        closeItem = config.getCloseItem();
-        selectMenu = config.getSelectMenu();
-        checker(this);
-
-        String data = gson.toJson(this);
+        CobbleUtils.breedconfig = gson.fromJson(el, BreedConfig.class);
+        if (CobbleUtils.breedconfig.maleSelectItem.getSlot() == 0) CobbleUtils.breedconfig.maleSelectItem.setSlot(10);
+        if (CobbleUtils.breedconfig.femaleSelectItem.getSlot() == 0)
+          CobbleUtils.breedconfig.femaleSelectItem.setSlot(16);
+        if (CobbleUtils.breedconfig.maxIvsRandom < 0) CobbleUtils.breedconfig.maxIvsRandom = 0;
+        if (CobbleUtils.breedconfig.maxIvsRandom > 31) CobbleUtils.breedconfig.maxIvsRandom = 31;
+        checker(CobbleUtils.breedconfig);
+        String data = gson.toJson(CobbleUtils.breedconfig);
         CompletableFuture<Boolean> futureWrite = Utils.writeFileAsync(CobbleUtils.PATH_BREED, "config.json",
           data);
         if (!futureWrite.join()) {

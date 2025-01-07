@@ -3,6 +3,7 @@ package com.kingpixel.cobbleutils.features.breeding.events;
 import com.cobblemon.mod.common.Cobblemon;
 import com.cobblemon.mod.common.entity.pokemon.PokemonEntity;
 import com.cobblemon.mod.common.pokemon.Pokemon;
+import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.util.PlayerUtils;
 import dev.architectury.event.EventResult;
 import dev.architectury.event.events.common.InteractionEvent;
@@ -28,14 +29,18 @@ public class EggInteract {
   }
 
   private static void handleEgg(Entity entity, ServerPlayerEntity player) {
+    if (!CobbleUtils.breedconfig.isSpawnEggWorld()) return;
     if (entity instanceof PokemonEntity pokemonEntity) {
       Pokemon pokemon = pokemonEntity.getPokemon();
-      if (pokemon.getSpecies().showdownId().equalsIgnoreCase("egg")) {
-        if (pokemon.getPersistentData().getBoolean("SpawnEgg")) {
-          pokemon.getPersistentData().remove("SpawnEgg");
-          Cobblemon.INSTANCE.getStorage().getParty(player).add(pokemon);
-          pokemonEntity.remove(Entity.RemovalReason.UNLOADED_TO_CHUNK);
+      if (!pokemon.isWild()) return;
+      if (pokemon.getSpecies().showdownId().equals("egg")) {
+        pokemon.getPersistentData().remove("SpawnEgg");
+        if (!pokemon.getPersistentData().contains("steps") || !pokemon.getPersistentData().contains("cycles")) {
+          pokemon.getPersistentData().putDouble("steps", 0);
+          pokemon.getPersistentData().putInt("cycles", 5);
         }
+        Cobblemon.INSTANCE.getStorage().getParty(player).add(pokemon);
+        pokemonEntity.remove(Entity.RemovalReason.UNLOADED_TO_CHUNK);
       }
     }
   }

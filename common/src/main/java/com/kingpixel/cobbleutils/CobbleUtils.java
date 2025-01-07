@@ -1,5 +1,6 @@
 package com.kingpixel.cobbleutils;
 
+import ca.landonjw.gooeylibs2.api.tasks.Task;
 import com.cobblemon.mod.common.Cobblemon;
 import com.cobblemon.mod.common.api.properties.CustomPokemonProperty;
 import com.kingpixel.cobbleutils.Model.RewardsData;
@@ -30,7 +31,6 @@ import net.minecraft.server.MinecraftServer;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.*;
 
 import static com.kingpixel.cobbleutils.util.EconomyUtil.setEconomyType;
 
@@ -69,8 +69,10 @@ public class CobbleUtils extends ShopExtend {
   // Rewards
   public static RewardsManager rewardsManager = new RewardsManager();
   // Tasks
-  public static final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
-  private static final List<ScheduledFuture<?>> scheduledTasks = new CopyOnWriteArrayList<>();
+  private static Task alertReward;
+  private static Task fixSize;
+ /* public static final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+  private static final List<ScheduledFuture<?>> scheduledTasks = new CopyOnWriteArrayList<>();*/
 
 
   public static void init() {
@@ -102,10 +104,10 @@ public class CobbleUtils extends ShopExtend {
 
   private static void files() {
     config.init();
+    language.init();
     if (!config.isDebug()) {
       config.setBoss(false);
     }
-    language.init();
     shopLang.init();
     poolItems.init();
     poolPokemons.init();
@@ -115,7 +117,7 @@ public class CobbleUtils extends ShopExtend {
     breedconfig.init();
     BossConfig.init();
     DatabaseClientFactory.createDatabaseClient(config.getDatabase());
-    scheduler.schedule(() -> shopConfig.init(PATH_SHOP, MOD_ID, PATH_SHOPS), 15, TimeUnit.SECONDS);
+    shopConfig.init(PATH_SHOP, MOD_ID, PATH_SHOPS);
   }
 
   private static void sign() {
@@ -148,7 +150,8 @@ public class CobbleUtils extends ShopExtend {
   }
 
   private static void events() {
-    files();
+    config.init();
+    language.init();
     Utils.removeFiles(PATH_PARTY_DATA);
 
     CommandRegistrationEvent.EVENT.register((dispatcher, registry, selection) -> {
@@ -168,23 +171,8 @@ public class CobbleUtils extends ShopExtend {
     });
 
     LifecycleEvent.SERVER_STOPPING.register(server -> {
-      scheduledTasks.forEach(task -> task.cancel(true));
-      scheduledTasks.clear();
       CreatePartyEvent.CREATE_PARTY_EVENT.clear();
       DeletePartyEvent.DELETE_PARTY_EVENT.clear();
-      scheduler.shutdownNow(); // Apaga los hilos activos
-
-      try {
-        // Espera un tiempo para asegurarse que los hilos se cierren correctamente
-        if (!scheduler.awaitTermination(5, TimeUnit.SECONDS)) {  // Extiende el tiempo a 5 segundos
-          LOGGER.warn("El scheduler no pudo cerrarse a tiempo, forzando la interrupción");
-          scheduler.shutdownNow();
-        }
-      } catch (InterruptedException ex) {
-        LOGGER.error("El apagado del scheduler fue interrumpido" + ex);
-        scheduler.shutdownNow();
-        Thread.currentThread().interrupt();  // Restablecer el estado de interrupción
-      }
     });
 
 
@@ -230,13 +218,31 @@ public class CobbleUtils extends ShopExtend {
   }
 
   private static void tasks() {
-    for (ScheduledFuture<?> task : scheduledTasks) {
+/*    for (ScheduledFuture<?> task : scheduledTasks) {
       task.cancel(true);
     }
-    scheduledTasks.clear();
+    scheduledTasks.clear();*/
 
     if (config.isStorageRewards()) {
-      ScheduledFuture<?> alertreward =
+      int intervalAlertReward = 20 * 60 * CobbleUtils.config.getAlertreward();
+      if (alertReward != null) alertReward.setExpired();
+      alertReward = Task.builder()
+        .infinite()
+        .interval(intervalAlertReward)
+        .execute(task -> {
+          server.getPlayerManager().getPlayerList().forEach(player -> {
+            RewardsData rewardsData = rewardsManager.getRewardsData().get(player.getUuid());
+            if (RewardsUtils.hasRewards(player)) {
+              int amount = rewardsData.getAmount();
+              PlayerUtils.sendMessage(player,
+                language.getMessageHaveRewards()
+                  .replace("%amount%", String.valueOf(amount)),
+                CobbleUtils.language.getPrefixStorageRewards());
+            }
+          });
+        })
+        .build();
+      /*ScheduledFuture<?> alertreward =
         scheduler.scheduleAtFixedRate(() -> server.getPlayerManager().getPlayerList().forEach(player -> {
           RewardsData rewardsData = rewardsManager.getRewardsData().get(player.getUuid());
           if (RewardsUtils.hasRewards(player)) {
@@ -247,11 +253,25 @@ public class CobbleUtils extends ShopExtend {
               CobbleUtils.language.getPrefixStorageRewards());
           }
         }), 0, CobbleUtils.config.getAlertreward(), TimeUnit.MINUTES);
-      scheduledTasks.add(alertreward);
+      scheduledTasks.add(alertreward);*/
     }
 
     if (config.isRandomsize()) {
-      ScheduledFuture<?> fixSize =
+      int intervalRandomSize = 20 * 60 * 30;
+      if (fixSize != null) fixSize.setExpired();
+      fixSize = Task.builder()
+        .infinite()
+        .interval(intervalRandomSize)
+        .execute(task -> {
+          server.getPlayerManager().getPlayerList().forEach(
+            player -> {
+              Cobblemon.INSTANCE.getStorage().getParty(player).forEach(ScaleEvent::solveScale);
+              Cobblemon.INSTANCE.getStorage().getPC(player).forEach(ScaleEvent::solveScale);
+            }
+          );
+        })
+        .build();
+      /*ScheduledFuture<?> fixSize =
         scheduler.scheduleAtFixedRate(() -> server.getPlayerManager().getPlayerList().forEach(
           player -> {
             Cobblemon.INSTANCE.getStorage().getParty(player).forEach(ScaleEvent::solveScale);
@@ -260,7 +280,7 @@ public class CobbleUtils extends ShopExtend {
         ), 0, 30, TimeUnit.MINUTES);
 
 
-      scheduledTasks.add(fixSize);
+      scheduledTasks.add(fixSize);*/
     }
 
     setEconomyType();

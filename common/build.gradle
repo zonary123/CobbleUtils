@@ -48,8 +48,8 @@ dependencies {
     modImplementation("me.clip:placeholderapi:${property("placeholder_api_version_spigot")}")
 
     // Database
-    api("org.mongodb:mongodb-driver-sync:${property("mongodb_version")}")
-
+    implementation("org.mongodb:mongodb-driver-sync:${property("mongodb_version")}")
+    implementation("org.xerial:sqlite-jdbc:${property("sqlite_version")}")
     // Lombok
     annotationProcessor("org.projectlombok:lombok:${property("lombok_version")}")
     implementation("org.projectlombok:lombok:${property("lombok_version")}")
@@ -63,7 +63,6 @@ dependencies {
     implementation("net.impactdev.impactor.api:economy:${property("impactor_version")}")
     api(files("libs/blanketeconomy-1.4.jar"))
     api(files("libs/cobbledollars-fabric-2.0.0-BETA1+1.21.1.jar"))
-
     api("org.spigotmc:spigot-api:${property("spigot_version")}")
     api("com.github.MilkBowl:VaultAPI:${property("vault_api_version")}")
 

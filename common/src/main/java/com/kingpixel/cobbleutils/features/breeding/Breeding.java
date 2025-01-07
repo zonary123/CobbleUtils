@@ -79,8 +79,15 @@ public class Breeding {
 
 
     CobblemonEvents.POKEMON_HEALED.subscribe(Priority.HIGHEST, pokemon -> {
-      if (pokemon.getPokemon().getSpecies().showdownId().equalsIgnoreCase("egg")) {
-        pokemon.cancel();
+      if (pokemon.getPokemon().getSpecies().showdownId().equals("egg")) pokemon.cancel();
+      return Unit.INSTANCE;
+    });
+    CobblemonEvents.POKEMON_GAINED.subscribe(Priority.HIGHEST, evt -> {
+      if (evt.getPokemon().showdownId().equals("egg")) {
+        if (CobbleUtils.config.isDebug()) {
+          CobbleUtils.LOGGER.info("Pokemon egg gained");
+        }
+        evt.getPokemon().setCurrentHealth(0);
       }
       return Unit.INSTANCE;
     });
@@ -114,22 +121,16 @@ public class Breeding {
     WalkBreeding.register();
     EggThrow.register();
     PastureUI.register();
+    EggInteract.register();
+    NationalityPokemon.register();
 
-    if (CobbleUtils.breedconfig.isSpawnEggWorld()) {
-      EggInteract.register();
-    }
-
-    if (CobbleUtils.breedconfig.isMethodmasuda()) {
-      NationalityPokemon.register();
-    }
   }
 
   private static void handleEgg(Entity entity) {
+
     if (entity instanceof PokemonEntity pokemonEntity) {
-      if (CobbleUtils.breedconfig.isSpawnEggWorld()) {
-        if (Utils.RANDOM.nextInt(CobbleUtils.breedconfig.getRaritySpawnEgg()) == 0) {
-          EggData.convertToEgg(pokemonEntity);
-        }
+      if (Utils.RANDOM.nextInt(CobbleUtils.breedconfig.getRaritySpawnEgg()) == 0) {
+        EggData.convertToEgg(pokemonEntity);
       }
     }
   }

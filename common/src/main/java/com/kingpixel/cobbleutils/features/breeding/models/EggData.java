@@ -12,6 +12,9 @@ import com.cobblemon.mod.common.api.pokemon.Natures;
 import com.cobblemon.mod.common.api.pokemon.PokemonProperties;
 import com.cobblemon.mod.common.api.pokemon.PokemonPropertyExtractor;
 import com.cobblemon.mod.common.api.pokemon.egg.EggGroup;
+import com.cobblemon.mod.common.api.pokemon.feature.ChoiceSpeciesFeatureProvider;
+import com.cobblemon.mod.common.api.pokemon.feature.SpeciesFeatureProvider;
+import com.cobblemon.mod.common.api.pokemon.feature.SpeciesFeatures;
 import com.cobblemon.mod.common.api.pokemon.labels.CobblemonPokemonLabels;
 import com.cobblemon.mod.common.api.pokemon.stats.Stats;
 import com.cobblemon.mod.common.api.storage.NoPokemonStoreException;
@@ -58,7 +61,7 @@ import static com.cobblemon.mod.common.CobblemonItems.*;
 public class EggData {
   private String species;
   private int level;
-  private int steps;
+  private double steps;
   private int cycles;
   private String ability;
   private String size;
@@ -73,7 +76,6 @@ public class EggData {
   private int Speed;
 
   public static void convertToEgg(PokemonEntity pokemonEntity) {
-    if (!CobbleUtils.breedconfig.isSpawnEggWorld()) return;
     Pokemon pokemon = pokemonEntity.getPokemon();
 
     if (pokemon.hasLabels(
@@ -93,7 +95,7 @@ public class EggData {
     pokemon.getPersistentData().putBoolean("SpawnEgg", true);
     pokemon.getPersistentData().putString("species", firstEvolution.showdownId());
     pokemon.getPersistentData().putInt("level", 1);
-    pokemon.getPersistentData().putInt("steps", CobbleUtils.breedconfig.getSteps());
+    pokemon.getPersistentData().putDouble("steps", CobbleUtils.breedconfig.getSteps());
     pokemon.getPersistentData().putInt("cycles", firstEvolution.getSpecies().getEggCycles());
     pokemon.getPersistentData().putString("ability", firstEvolution.getAbility().getName());
     pokemon.getPersistentData().putString("form", form);
@@ -114,9 +116,8 @@ public class EggData {
   }
 
   public void EggToPokemon(ServerPlayerEntity player, Pokemon pokemon) {
-    if (!pokemon.getSpecies().showdownId().equalsIgnoreCase("egg")) return;
-
-    PokemonProperties pokemonProperties = PokemonProperties.Companion.parse(species + " " + form);
+    String pokemonId = species == null || species.isEmpty() ? "rattata" : species;
+    PokemonProperties pokemonProperties = PokemonProperties.Companion.parse(pokemonId + " " + form);
 
     pokemonProperties.setForm(form);
 
@@ -135,7 +136,7 @@ public class EggData {
     }
 
     if (abilityTemplate != null) {
-      pokemon.updateAbility(abilityTemplate.create(false, Priority.NORMAL));
+      pokemon.updateAbility(abilityTemplate.create(false, Priority.LOWEST));
     }
 
     pokemon.setLevel(level);
@@ -164,6 +165,9 @@ public class EggData {
 
 
     removePersistent(pokemon);
+    if (CobbleUtils.config.isDebug()) {
+      CobbleUtils.LOGGER.info("Egg to Pokemon: " + pokemon.getSpecies().showdownId());
+    }
     HatchEggEvent.HATCH_EGG_EVENT.emit(player, pokemon);
   }
 
@@ -194,12 +198,11 @@ public class EggData {
 
 
   public static EggData from(Pokemon pokemon) {
-    if (pokemon == null)
-      return null;
+    if (pokemon == null) return null;
     EggData eggData = new EggData();
     eggData.setSpecies(pokemon.getPersistentData().getString("species"));
     eggData.setLevel(pokemon.getPersistentData().getInt("level"));
-    eggData.setSteps(pokemon.getPersistentData().getInt("steps"));
+    eggData.setSteps(pokemon.getPersistentData().getDouble("steps"));
     eggData.setAbility(pokemon.getPersistentData().getString("ability"));
     eggData.setCycles(pokemon.getPersistentData().getInt("cycles"));
     eggData.setSize(pokemon.getPersistentData().getString("size"));
@@ -227,19 +230,19 @@ public class EggData {
     return eggData;
   }
 
-  public void steps(ServerPlayerEntity player, Pokemon pokemon, int stepsremove) {
-    if (!pokemon.getSpecies().showdownId().equalsIgnoreCase("egg")) return;
-    if (stepsremove == 0) return;
+
+  public void steps(ServerPlayerEntity player, Pokemon pokemon, double stepsremove) {
     this.steps -= stepsremove;
 
     if (steps <= 0) {
       this.cycles--;
       this.steps = getMaxStepsPerCycle();
+      pokemon.setNickname(Text.literal("Egg"));
     }
+
     updateSteps(pokemon);
-    if (this.cycles < 0) {
-      EggToPokemon(player, pokemon);
-    }
+
+    if (this.cycles <= 0) EggToPokemon(player, pokemon);
   }
 
   private int getMaxStepsPerCycle() {
@@ -251,14 +254,18 @@ public class EggData {
   }
 
   private void updateSteps(Pokemon pokemon) {
-    pokemon.getPersistentData().putInt("steps", this.steps);
+    pokemon.getPersistentData().putDouble("steps", this.steps);
     pokemon.getPersistentData().putInt("cycles", this.cycles);
-    if (random) {
-      pokemon.setNickname(
-        Text.literal(CobbleUtils.breedconfig.getNameRandomEgg() + " " + this.cycles + "/" + this.steps));
-    } else {
-      pokemon.setNickname(Text.literal(CobbleUtils.breedconfig.getNameEgg()
-        .replace("%pokemon%", species) + " " + this.cycles + "/" + this.steps));
+
+    if (CobbleUtils.config.isDebug()) {
+      String stepsFormat = String.format("%.0f", this.steps);
+      if (random) {
+        pokemon.setNickname(
+          Text.literal(CobbleUtils.breedconfig.getNameRandomEgg() + " " + this.cycles + "/" + stepsFormat));
+      } else {
+        pokemon.setNickname(Text.literal(CobbleUtils.breedconfig.getNameEgg()
+          .replace("%pokemon%", species) + " " + this.cycles + "/" + stepsFormat));
+      }
     }
   }
 
@@ -708,7 +715,7 @@ public class EggData {
   }
 
   private static String getForm(Pokemon pokemon) {
-    String form;
+    StringBuilder form;
 
 
     switch (pokemon.getSpecies().showdownId()) {
@@ -740,30 +747,50 @@ public class EggData {
       .findFirst()
       .ifPresent(eggSpecialForm -> configForm.set(eggSpecialForm.getForm()));
 
-    if (configForm.get() != null) {
 
+    if (configForm.get() != null) {
       if (CobbleUtils.breedconfig.getBlacklistForm().contains(configForm.get())) configForm.set("");
       return configForm.get();
     }
 
+    List<String> aspects = pokemon.getForm().getAspects();
 
-    if (pokemon.getForm().getAspects().isEmpty()) {
-      form = "";
+    if (aspects.isEmpty()) {
+      form = new StringBuilder();
     } else {
-      form = pokemon.getForm().getAspects().get(0);
+      form = new StringBuilder(aspects.get(0));
     }
 
-    form = form.replace("-", "_");
+
+    form = new StringBuilder(form.toString().replace("-", "_"));
 
     int lastUnderscoreIndex = form.lastIndexOf("_");
 
     if (lastUnderscoreIndex != -1) {
-      form = form.substring(0, lastUnderscoreIndex) + "=" + form.substring(lastUnderscoreIndex + 1);
+      form = new StringBuilder(form.substring(0, lastUnderscoreIndex) + "=" + form.substring(lastUnderscoreIndex + 1));
     }
 
-    if (CobbleUtils.breedconfig.getBlacklistForm().contains(form)) form = "";
+    for (SpeciesFeatureProvider<?> speciesFeatureProvider : SpeciesFeatures.INSTANCE.getFeaturesFor(pokemon.getSpecies())) {
+      if (speciesFeatureProvider instanceof ChoiceSpeciesFeatureProvider choice) {
+        var choiceForm = choice.get(pokemon);
+        if (choiceForm != null) {
+          String name = choiceForm.getName();
+          String value = choiceForm.getValue();
+          if (CobbleUtils.breedconfig.getBlacklistFeatures().contains(name)
+            || CobbleUtils.breedconfig.getBlacklistFeatures().contains(value)
+            || CobbleUtils.breedconfig.getBlacklistForm().contains(name)
+            || CobbleUtils.breedconfig.getBlacklistForm().contains(value)) continue;
+          if (CobbleUtils.config.isDebug()) {
+            CobbleUtils.LOGGER.info("Feature -> Name: " + name + " Value: " + value);
+          }
+          form.append(" ").append(name).append("=").append(value);
+        }
+      }
+    }
 
-    return form;
+    if (CobbleUtils.breedconfig.getBlacklistForm().contains(form.toString())) form = new StringBuilder();
+
+    return form.toString();
   }
 
   private static Pokemon applyPersistent(Pokemon pokemon, String lure_species, boolean dittos,
@@ -795,7 +822,7 @@ public class EggData {
     egg.getPersistentData().putString("ability", pokemon.getAbility().getTemplate().getName().toLowerCase().trim());
     egg.getPersistentData().putString("form", getForm(female));
     egg.getPersistentData().putInt("level", 1);
-    egg.getPersistentData().putInt("steps", CobbleUtils.breedconfig.getSteps());
+    egg.getPersistentData().putDouble("steps", CobbleUtils.breedconfig.getSteps());
     egg.getPersistentData().putInt("cycles", pokemon.getSpecies().getEggCycles());
 
     egg.setScaleModifier(ScalePokemonData.getScalePokemonData(pokemon).getRandomPokemonSize().getSize());

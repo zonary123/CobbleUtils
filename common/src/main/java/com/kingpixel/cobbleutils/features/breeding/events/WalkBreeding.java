@@ -13,74 +13,68 @@ import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.vehicle.BoatEntity;
 import net.minecraft.util.math.Vec3d;
 
+import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
 
-/**
- * @author Carlos Varas Alonso - 23/07/2024 21:49
- */
 public class WalkBreeding {
-  private static Map<UUID, Vec3d> lastPosition = new ConcurrentHashMap<>();
-  private static Map<UUID, Integer> ticks = new ConcurrentHashMap<>() {
-  };
+  private static final Map<UUID, Vec3d> lastPosition = new HashMap<>();
+  private static final Map<UUID, Integer> ticks = new HashMap<>();
 
   public static void register() {
-
+    if (true) return;
     TickEvent.PLAYER_POST.register(player -> {
-      if (!player.isInPose(EntityPose.FALL_FLYING)
-        && !player.isInPose(EntityPose.SLEEPING)
-        && (!player.hasVehicle() || getPermitedVehicle(player))
-        && !player.getAbilities().flying) {
-        ticks.compute(player.getUuid(), (uuid, integer) -> integer == null ? 1 : integer + 1);
-        if (ticks.get(player.getUuid()) % CobbleUtils.breedconfig.getTickstocheck() != 0)
-          return;
-        AtomicInteger distanceMoved = new AtomicInteger();
+      if (isPlayerEligible(player)) {
+        UUID playerId = player.getUuid();
+        ticks.compute(playerId, (uuid, integer) -> integer == null ? 1 : integer + 1);
 
-        if (lastPosition.get(player.getUuid()) == null) {
-          lastPosition.put(player.getUuid(), new Vec3d(player.getX(), 0, player.getZ()));
+        if (ticks.get(playerId) % CobbleUtils.breedconfig.getTickstocheck() != 0) return;
+
+        Vec3d currentPosition = new Vec3d(player.getX(), 0, player.getZ());
+        Vec3d lastPos = lastPosition.computeIfAbsent(playerId, k -> currentPosition);
+        double distance = currentPosition.distanceTo(lastPos);
+
+        if (distance >= 25) {
+          lastPosition.put(playerId, currentPosition);
           return;
-        } else {
-          Vec3d currentPosition = new Vec3d(player.getX(), 0, player.getZ());
-          double total = currentPosition.distanceTo(lastPosition.get(player.getUuid()));
-          if (total >= 25) {
-            lastPosition.put(player.getUuid(), currentPosition);
-            return;
-          }
-          distanceMoved.set((int) Math.min(20, total));
-          lastPosition.put(player.getUuid(), currentPosition);
         }
+
+        int distanceMoved = (int) Math.min(20, distance);
+        lastPosition.put(playerId, currentPosition);
+
         PlayerPartyStore playerPartyStore = Cobblemon.INSTANCE.getStorage().getParty(PlayerUtils.castPlayer(player));
         if (playerPartyStore.size() == 0) return;
 
-        boolean duplicate = playerPartyStore.toGappyList().stream().filter(Objects::nonNull).anyMatch(pokemon -> {
-          String name = pokemon.getAbility().getName();
-          return name.equalsIgnoreCase("flamebody") ||
-            name.equalsIgnoreCase("magmaarmor");
-        });
+        boolean hasFlameBodyOrMagmaArmor = false;
+        for (var pokemon : playerPartyStore.toGappyList()) {
+          if (pokemon != null && (pokemon.getAbility().getName().equalsIgnoreCase("flamebody") ||
+            pokemon.getAbility().getName().equalsIgnoreCase("magmaarmor"))) {
+            hasFlameBodyOrMagmaArmor = true;
+            break;
+          }
+        }
 
-        playerPartyStore.forEach(pokemon -> {
-          if (!pokemon.showdownId().equalsIgnoreCase("egg"))
-            return;
+        for (var pokemon : playerPartyStore) {
+          if (!pokemon.showdownId().equalsIgnoreCase("egg")) continue;
           pokemon.setCurrentHealth(0);
           EggData eggData = EggData.from(pokemon);
-          if (eggData == null)
-            return;
-          int distance = distanceMoved.get();
-          if (duplicate) {
-            distance *= 2;
-          }
-          eggData.steps(PlayerUtils.castPlayer(player), pokemon, distance);
-        });
+          if (eggData == null) continue;
 
+          int steps = hasFlameBodyOrMagmaArmor ? distanceMoved * 2 : distanceMoved;
+          eggData.steps(PlayerUtils.castPlayer(player), pokemon, steps);
+        }
       }
     });
-
   }
 
-  private static boolean getPermitedVehicle(PlayerEntity player) {
+  private static boolean isPlayerEligible(PlayerEntity player) {
+    return !player.isInPose(EntityPose.FALL_FLYING)
+      && !player.isInPose(EntityPose.SLEEPING)
+      && (!player.hasVehicle() || isPermittedVehicle(player))
+      && !player.getAbilities().flying;
+  }
+
+  private static boolean isPermittedVehicle(PlayerEntity player) {
     return player.getVehicle() instanceof BoatEntity
       || player.getVehicle() instanceof HorseEntity
       || player.getVehicle() instanceof DonkeyEntity;

@@ -4,8 +4,9 @@
   "package": "com.kingpixel.cobbleutils.mixins",
   "compatibilityLevel": "JAVA_21",
   "mixins": [
+    "WalkBreedingMixin"
   ],
   "injectors": {
-    "defaultRequire": 0
+    "defaultRequire": 1
   }
 }

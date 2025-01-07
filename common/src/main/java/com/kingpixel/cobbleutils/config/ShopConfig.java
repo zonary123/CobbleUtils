@@ -189,6 +189,6 @@ public class ShopConfig {
     List<Shop> shopList = addShopsFromPath(mod_id, pathShops);
     shopList.forEach(ShopConfig::checkShop);
     loadTransactions(shopConfigMenu);
-    ShopConfigMenu.addShops(mod_id, pathShops, shopList);
+    ShopConfigMenu.addShops(mod_id, pathShops, shopList, shopConfigMenu);
   }
 }

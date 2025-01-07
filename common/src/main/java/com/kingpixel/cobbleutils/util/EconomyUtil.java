@@ -457,6 +457,9 @@ public abstract class EconomyUtil {
   public static Currency getCurrency(@Subst("") String currency) {
     try {
       if (currency == null || currency.isEmpty()) return impactorService.currencies().primary();
+      if (!currency.contains("impactor:")) {
+        currency = "impactor:" + currency;
+      }
       return impactorService.currencies().currency(Key.key(currency)).orElseGet(() -> impactorService.currencies().primary());
     } catch (NoSuchMethodError e) {
       e.printStackTrace();

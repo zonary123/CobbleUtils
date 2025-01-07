@@ -52,6 +52,7 @@ dependencies {
 
     // Database
     shadowCommon("org.mongodb:mongodb-driver-sync:${property("mongodb_version")}")
+    //shadowCommon("org.xerial:sqlite-jdbc:${property("sqlite_version")}")
 
     // Economy Vault
     shadowCommon("com.github.MilkBowl:VaultAPI:${property("vault_api_version")}")
@@ -96,6 +97,7 @@ shadowJar {
     exclude("com/google/**/*")
     exclude("org/slf4j/**")
 
+    relocate("org.xerial", "com.kingpixel.cobbleutils.sqlite")
     relocate("com.mongodb", "com.kingpixel.cobbleutils.mongodb")
     relocate("org.bson", "com.kingpixel.cobbleutils.bson")
     relocate("net.kyori", "com.kingpixel.cobbleutils.kyori") {

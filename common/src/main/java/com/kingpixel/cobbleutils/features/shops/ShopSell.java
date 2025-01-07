@@ -22,6 +22,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * Handles selling products in the shop.
  */
 public class ShopSell {
+  // Actual: Currency -> ShopId -> Products Better ? ShopId -> Currency -> products
   private static final Map<String, Map<String, Set<Product>>> products = new ConcurrentHashMap<>();
 
   private ShopSell() {
@@ -33,9 +34,18 @@ public class ShopSell {
    *
    * @param shop The shop whose products are to be added.
    */
-  public static void addProduct(Shop shop) {
+  public static void addProduct(Shop shop, ShopConfigMenu shopConfigMenu) {
+    if (!shop.isActive()) {
+      products.get(shop.getCurrency()).remove(shop.getId());
+      return;
+    }
     Set<Product> productSet = new HashSet<>();
+    BigDecimal highPrice = shopConfigMenu.getPricesHigh().getOrDefault(shop.getId(), BigDecimal.valueOf(9999999));
     shop.getProducts().forEach(product -> {
+      if (product.getSell().compareTo(highPrice) > 0) {
+        CobbleUtils.LOGGER.fatal("Product " + product.getProduct() + " in shop " + shop.getId() + " has a sell price higher than the maximum price.");
+        return;
+      }
       String productName = product.getProduct();
       boolean isValidType = !(productName.startsWith("pokemon:") ||
         productName.startsWith("command:") ||

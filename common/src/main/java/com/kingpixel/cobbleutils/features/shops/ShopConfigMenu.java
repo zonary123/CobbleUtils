@@ -19,12 +19,10 @@ import net.minecraft.text.Text;
 
 import java.io.File;
 import java.io.FileReader;
+import java.math.BigDecimal;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static com.kingpixel.cobbleutils.config.ShopConfig.createDefaultShops;
@@ -47,14 +45,15 @@ public class ShopConfigMenu {
   private short rowsBuySellMenu;
   private short slotViewProduct;
   private int rows;
+  private Map<String, BigDecimal> pricesHigh = new HashMap<>();
   private ItemModel fill;
   private List<Shop.FillItems> fillItems;
   private static Map<ShopMod, List<Shop>> shops = new ConcurrentHashMap<>();
 
-  public static void addShops(String modId, String pathShops, List<Shop> shopList) {
+  public static void addShops(String modId, String pathShops, List<Shop> shopList, ShopConfigMenu shopConfigMenu) {
     ShopMod shopMod = new ShopMod(modId, pathShops);
     shops.put(shopMod, shopList);
-    shopList.forEach(ShopSell::addProduct);
+    shopList.forEach(shop -> ShopSell.addProduct(shop, shopConfigMenu));
   }
 
   public void addProduct(Product product, String modId, String shop) {
@@ -116,12 +115,16 @@ public class ShopConfigMenu {
     this.rows = 6;
     this.soundopen = "cobblemon:pc.on";
     this.soundclose = "cobblemon:pc.off";
+    this.pricesHigh = new HashMap<>();
+    pricesHigh.put("dollars", BigDecimal.valueOf(1000));
+    pricesHigh.put("impactor:dollars", BigDecimal.valueOf(1000));
     this.fill = new ItemModel("minecraft:gray_stained_glass_pane");
     this.fillItems = new ArrayList<>();
     this.fillItems.add(new Shop.FillItems());
   }
 
   public ShopConfigMenu(String title) {
+    super();
     this.logg = "config/cobbleutils/shop/transactions";
     this.title = title;
     this.rows = 6;
@@ -134,6 +137,7 @@ public class ShopConfigMenu {
   }
 
   public ShopConfigMenu(String title, List<Shop> shops) {
+    super();
     this.logg = "config/cobbleutils/shop/transactions";
     this.title = title;
     this.rows = 6;
