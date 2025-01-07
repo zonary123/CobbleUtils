@@ -40,7 +40,10 @@ public class ShopSell {
       return;
     }
     Set<Product> productSet = new HashSet<>();
-    BigDecimal highPrice = shopConfigMenu.getPricesHigh().getOrDefault(shop.getId(), BigDecimal.valueOf(9999999));
+    BigDecimal highPrice = BigDecimal.valueOf(999999999);
+    if (shopConfigMenu.getPricesHigh() != null) {
+      shopConfigMenu.getPricesHigh().getOrDefault(shop.getId(), BigDecimal.valueOf(999999999));
+    }
     shop.getProducts().forEach(product -> {
       if (product.getSell().compareTo(highPrice) > 0) {
         CobbleUtils.LOGGER.fatal("Product " + product.getProduct() + " in shop " + shop.getId() + " has a sell price higher than the maximum price.");

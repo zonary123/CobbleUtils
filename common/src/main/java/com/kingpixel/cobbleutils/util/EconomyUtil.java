@@ -401,8 +401,9 @@ public abstract class EconomyUtil {
    */
   public static String formatCurrency(BigDecimal amount, String currency, UUID player) {
     // Validación del nombre de la moneda
-    if (currency == null || currency.isEmpty()) {
-      currency = "impactor:dollars";
+    if (currency == null) currency = "";
+    if (!currency.contains(":")) {
+      currency = "impactor:" + currency;
     }
 
     // Obtener información de usuario, si existe
@@ -484,7 +485,7 @@ public abstract class EconomyUtil {
           String symbol = getCurrency(currency).symbol().insertion();
           if (symbol == null || symbol.isEmpty())
             symbol = CobbleUtils.language.getImpactorSymbols().getOrDefault(currency,
-              CobbleUtils.language.getDefaultSymbol());
+              "impactor:" + currency);
           yield symbol;
         }
         case VAULT -> CobbleUtils.language.getDefaultSymbol();
@@ -495,7 +496,7 @@ public abstract class EconomyUtil {
       };
     } catch (NoSuchMethodError | Exception e) {
       return CobbleUtils.language.getImpactorSymbols().getOrDefault(currency,
-        CobbleUtils.language.getDefaultSymbol());
+        "impactor:" + currency);
     }
   }
 

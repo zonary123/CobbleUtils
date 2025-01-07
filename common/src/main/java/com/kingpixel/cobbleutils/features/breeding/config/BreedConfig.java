@@ -29,8 +29,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 @ToString
 @Data
 public class BreedConfig {
-  private String prefix;
   private boolean active;
+  private String prefix;
   private boolean showIvs;
   private boolean changeuipasture;
   private boolean shifttoopen;

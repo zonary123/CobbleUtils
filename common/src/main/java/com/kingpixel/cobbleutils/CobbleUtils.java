@@ -82,7 +82,7 @@ public class CobbleUtils extends ShopExtend {
 
   public static void load() {
     checks();
-    files();
+    files(true);
     spawnRates.init();
     sign();
     tasks();
@@ -102,7 +102,7 @@ public class CobbleUtils extends ShopExtend {
   }
 
 
-  private static void files() {
+  private static void files(boolean shop) {
     config.init();
     language.init();
     if (!config.isDebug()) {
@@ -117,7 +117,9 @@ public class CobbleUtils extends ShopExtend {
     breedconfig.init();
     BossConfig.init();
     DatabaseClientFactory.createDatabaseClient(config.getDatabase());
-    shopConfig.init(PATH_SHOP, MOD_ID, PATH_SHOPS);
+    if (shop) {
+      shopConfig.init(PATH_SHOP, MOD_ID, PATH_SHOPS);
+    }
   }
 
   private static void sign() {
@@ -150,8 +152,7 @@ public class CobbleUtils extends ShopExtend {
   }
 
   private static void events() {
-    config.init();
-    language.init();
+    files(false);
     Utils.removeFiles(PATH_PARTY_DATA);
 
     CommandRegistrationEvent.EVENT.register((dispatcher, registry, selection) -> {

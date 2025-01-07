@@ -100,9 +100,9 @@ shadowJar {
     relocate("org.xerial", "com.kingpixel.cobbleutils.sqlite")
     relocate("com.mongodb", "com.kingpixel.cobbleutils.mongodb")
     relocate("org.bson", "com.kingpixel.cobbleutils.bson")
-    relocate("net.kyori", "com.kingpixel.cobbleutils.kyori") {
-        exclude("net/kyori/adventure/key/**/*")
-    }
+    //relocate("net.kyori", "com.kingpixel.cobbleutils.kyori") {
+    // exclude("net/kyori/adventure/key/**/*")
+    //}
 
 
     configurations = [project.configurations.shadowCommon]
