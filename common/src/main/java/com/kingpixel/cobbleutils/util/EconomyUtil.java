@@ -1,7 +1,8 @@
 package com.kingpixel.cobbleutils.util;
 
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import com.kingpixel.cobbleutils.CobbleUtils;
-import com.kingpixel.cobbleutils.features.breeding.Breeding;
 import fr.harmex.cobbledollars.common.CobbleDollars;
 import fr.harmex.cobbledollars.common.utils.CobbleDollarsPlayer;
 import net.impactdev.impactor.api.economy.EconomyService;
@@ -10,6 +11,7 @@ import net.impactdev.impactor.api.economy.currency.Currency;
 import net.impactdev.impactor.api.economy.transactions.EconomyTransaction;
 import net.kyori.adventure.key.InvalidKeyException;
 import net.kyori.adventure.key.Key;
+import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
 import net.milkbowl.vault.economy.Economy;
 import net.minecraft.server.network.ServerPlayerEntity;
 import org.blanketeconomy.api.BlanketEconomy;
@@ -20,10 +22,7 @@ import org.intellij.lang.annotations.Subst;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.RoundingMode;
-import java.text.DecimalFormat;
-import java.text.DecimalFormatSymbols;
-import java.text.NumberFormat;
-import java.util.Locale;
+import java.util.NoSuchElementException;
 import java.util.UUID;
 
 
@@ -304,12 +303,14 @@ public abstract class EconomyUtil {
 
   private static void sendMessage(Account account, BigDecimal amount, String messageNotHaveMoney) {
     try {
-      PlayerUtils.sendMessage(CobbleUtils.server.getPlayerManager().getPlayer(account.owner()),
+      UUID player = account.owner();
+      Currency currency = account.currency();
+      PlayerUtils.sendMessage(CobbleUtils.server.getPlayerManager().getPlayer(player),
         messageNotHaveMoney
-          .replace("%price%", formatCurrency(amount, account.currency(), account.owner()))
-          .replace("%balance%", formatCurrency(account.balance(), account.currency(), account.owner()))
-          .replace("%symbol%", getSymbol(account.currency()))
-          .replace("%currency%", getCurrencyName(account.currency())),
+          .replace("%price%", formatCurrency(amount, currency, player))
+          .replace("%balance%", formatCurrency(account.balance(), currency, player))
+          .replace("%symbol%", getSymbol(currency))
+          .replace("%currency%", getCurrencyName(currency)),
         CobbleUtils.shopLang.getPrefix());
     } catch (NoSuchMethodError | Exception e) {
       e.printStackTrace();
@@ -400,51 +401,34 @@ public abstract class EconomyUtil {
    * @return The formatted balance with the format of Country player.
    */
   public static String formatCurrency(BigDecimal amount, String currency, UUID player) {
-    // Validación del nombre de la moneda
-    if (currency == null) currency = "";
-    if (!currency.contains(":")) {
-      currency = "impactor:" + currency;
-    }
+    try {
+      switch (economyType) {
+        case IMPACTOR -> {
+          if (!currency.contains(":")) currency = "impactor:" + currency;
+          String json = GsonComponentSerializer.gson().serialize(impactorService.currencies().currency(Key.key(currency)).get().format(amount));
+          JsonObject jsonObject = JsonParser.parseString(json).getAsJsonObject();
+          return jsonObject.get("text").getAsString();
+        }
+        case BLANKECONOMY -> {
+          return BlanketEconomy.INSTANCE.getAPI().getCurrencySymbol(currency);
+        }
+        case VAULT -> {
+          return vaultEconomy.format(amount.doubleValue());
+        }
 
-    // Obtener información de usuario, si existe
-    Breeding.UserInfo userinfo = (player != null) ? Breeding.playerCountry.get(player) : null;
-
-    // Definir la localidad predeterminada o la del jugador
-    Locale locale = (userinfo != null && userinfo.language() != null && userinfo.countryCode() != null)
-      ? new Locale(userinfo.language(), userinfo.countryCode())
-      : Locale.getDefault();
-
-    // Crear el formateador de moneda para la localidad
-    NumberFormat currencyFormatter = NumberFormat.getCurrencyInstance(locale);
-
-    // Definir el número de decimales según la moneda
-    int decimals = getDecimals(currency);
-    currencyFormatter.setMinimumFractionDigits(decimals);
-    currencyFormatter.setMaximumFractionDigits(decimals);
-
-    // Configurar el formateador si es instancia de DecimalFormat
-    if (currencyFormatter instanceof DecimalFormat) {
-      DecimalFormat decimalFormat = (DecimalFormat) currencyFormatter;
-      DecimalFormatSymbols symbols = decimalFormat.getDecimalFormatSymbols();
-
-      // Establecer el símbolo de moneda (verifica que no sea nulo)
-      String currencySymbol = getSymbol(currency);
-      symbols.setCurrencySymbol(currencySymbol != null ? currencySymbol : "");
-      decimalFormat.setDecimalFormatSymbols(symbols);
-
-      // Aplicar el patrón de formato si es válido
-      String moneyPattern = CobbleUtils.language.getFormatMoney();
-      if (moneyPattern != null && !moneyPattern.isEmpty()) {
-        try {
-          decimalFormat.applyPattern(moneyPattern);
-        } catch (IllegalArgumentException e) {
-          System.err.println("Error aplicando el patrón de formato: " + e.getMessage());
+        default -> {
+          return CobbleUtils.language.getDefaultSymbol() + amount;
         }
       }
+    } catch (NoSuchElementException e) {
+      e.printStackTrace();
+      CobbleUtils.LOGGER.error("Not found Currency -> " + currency + "| Amount ->" +
+        " " + amount);
+      return CobbleUtils.language.getDefaultSymbol() + amount;
+    } catch (Exception e) {
+      e.printStackTrace();
+      return CobbleUtils.language.getDefaultSymbol() + amount;
     }
-
-    // Formatear y devolver la cantidad
-    return currencyFormatter.format(amount);
   }
 
 
@@ -458,14 +442,14 @@ public abstract class EconomyUtil {
   public static Currency getCurrency(@Subst("") String currency) {
     try {
       if (currency == null || currency.isEmpty()) return impactorService.currencies().primary();
-      if (!currency.contains("impactor:")) {
-        currency = "impactor:" + currency;
-      }
-      return impactorService.currencies().currency(Key.key(currency)).orElseGet(() -> impactorService.currencies().primary());
+      if (!currency.contains(":")) currency = "impactor:" + currency;
+      return impactorService.currencies().currency(Key.key(currency)).get();
     } catch (NoSuchMethodError e) {
+      CobbleUtils.LOGGER.error("Currency -> " + currency + "| Key -> " + Key.key(currency).asString());
       e.printStackTrace();
       return impactorService.currencies().primary();
     } catch (InvalidKeyException e) {
+      e.printStackTrace();
       CobbleUtils.LOGGER.error("Currency -> " + currency + "| Key -> " + Key.key(currency).asString());
       return impactorService.currencies().primary();
     }
@@ -481,13 +465,8 @@ public abstract class EconomyUtil {
   public static String getSymbol(@Subst("") String currency) {
     try {
       return switch (economyType) {
-        case IMPACTOR -> {
-          String symbol = getCurrency(currency).symbol().insertion();
-          if (symbol == null || symbol.isEmpty())
-            symbol = CobbleUtils.language.getImpactorSymbols().getOrDefault(currency,
-              "impactor:" + currency);
-          yield symbol;
-        }
+        case IMPACTOR ->
+          GsonComponentSerializer.gson().serialize(impactorService.currencies().currency(Key.key(currency)).get().symbol());
         case VAULT -> CobbleUtils.language.getDefaultSymbol();
         case BLANKECONOMY ->
           currency.isEmpty() ? CobbleUtils.language.getDefaultSymbol() : BlanketEconomy.INSTANCE.getAPI().getCurrencySymbol(currency);
@@ -495,8 +474,8 @@ public abstract class EconomyUtil {
         default -> CobbleUtils.language.getDefaultSymbol();
       };
     } catch (NoSuchMethodError | Exception e) {
-      return CobbleUtils.language.getImpactorSymbols().getOrDefault(currency,
-        "impactor:" + currency);
+      e.printStackTrace();
+      return "Error getting symbol -> " + currency;
     }
   }
 
@@ -509,10 +488,10 @@ public abstract class EconomyUtil {
    */
   public static String getSymbol(Currency currency) {
     try {
-      String symbol = currency.symbol().insertion();
-      if (symbol == null)
-        symbol = CobbleUtils.language.getImpactorSymbols().getOrDefault(currency, CobbleUtils.language.getDefaultSymbol());
-      return symbol;
+      String json = GsonComponentSerializer.gson().serialize(currency.symbol());
+      JsonObject jsonObject = JsonParser.parseString(json).getAsJsonObject();
+      return jsonObject.get("text").getAsString();
+
     } catch (NoSuchMethodError | Exception | NoClassDefFoundError e) {
       return CobbleUtils.language.getDefaultSymbol();
     }

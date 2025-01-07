@@ -5,6 +5,7 @@ import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.Model.ItemModel;
 import com.kingpixel.cobbleutils.util.Utils;
 import lombok.Getter;
+import lombok.Setter;
 
 import java.util.HashMap;
 import java.util.List;
@@ -12,12 +13,10 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 @Getter
+@Setter
 public class Lang {
   private String prefixShop;
   private String prefixStorageRewards;
-  // Messages
-  private String formatMoney;
-
   private String titlemenushiny;
   private String titlemenushinyoperation;
   private String titlemenurewards;
@@ -85,7 +84,6 @@ public class Lang {
 
   // Economy
   private String defaultSymbol;
-  private Map<String, String> impactorSymbols;
 
   // Display
   private ItemModel itemMoney;
@@ -107,7 +105,6 @@ public class Lang {
   public Lang() {
     prefixShop = "&7[<gradient:#34ff00:#ade37e><bold>Shop&7] &8» &a";
     prefixStorageRewards = "&7[<gradient:#34ff00:#ade37e><bold>Storage&7] &8» &a";
-    formatMoney = "#,##0.00 ¤";
     soundopen = "cobblemon:pc.on";
     soundclose = "cobblemon:pc.off";
     confirm = "&aConfirm";
@@ -242,12 +239,6 @@ public class Lang {
     this.messageCooldown = "%prefix% <gradient:#e33636:#f08181>You need to wait %cooldown% <gradient:#e33636:#f08181>to use this command" +
       ".</gradient>";
     this.defaultSymbol = "&e$";
-    this.impactorSymbols = Map.of(
-      "dollars", "&e$",
-      "impactor:dollars", "&e$",
-      "tokens", "&bT",
-      "impactor:tokens", "&bT"
-    );
     this.itemsEconomy = new HashMap<>();
     itemsEconomy.put("dollars", new ItemModel("minecraft:emerald", "<gradient:#00ff00:#00ff00><bold>Common", List.of(
       "§aCommon")));
@@ -263,91 +254,11 @@ public class Lang {
     CompletableFuture<Boolean> futureRead = Utils.readFileAsync(CobbleUtils.PATH_LANG, CobbleUtils.config.getLang() + ".json",
       el -> {
         Gson gson = Utils.newGson();
-        Lang lang = gson.fromJson(el, Lang.class);
-        prefixShop = lang.getPrefixShop();
-        prefixStorageRewards = lang.getPrefixStorageRewards();
-        confirm = lang.getConfirm();
-        formatMoney = lang.getFormatMoney();
+        CobbleUtils.language = gson.fromJson(el, Lang.class);
 
-        cancel = lang.getCancel();
-        close = lang.getClose();
-        next = lang.getNext();
-        titleconfirm = lang.getTitleconfirm();
-        previous = lang.getPrevious();
-        empty = lang.getEmpty();
-        titlemenushiny = lang.getTitlemenushiny();
-        titlemenushinyoperation = lang.getTitlemenushinyoperation();
-        titlemenurewards = lang.getTitlemenurewards();
-        titleparty = lang.getTitleparty();
-        if (titlemenurewards == null) titlemenurewards = "&eRewards Menu";
-        yes = lang.getYes();
-        no = lang.getNo();
-        unknown = lang.getUnknown();
-        AH = lang.getAH();
-        titlepc = lang.getTitlepc();
-        messageReload = lang.getMessageReload();
-        itemMoney = lang.getItemMoney();
-        symbolshiny = lang.getSymbolshiny();
-        pokemonnameformat = lang.getPokemonnameformat();
-        lorepokemon = lang.getLorepokemon();
-        messageThisPokemonIsShiny = lang.getMessageThisPokemonIsShiny();
-        none = lang.getNone();
-        messageNotHaveRewards = lang.getMessageNotHaveRewards();
-        nocooldown = lang.getNocooldown();
-        movecolor = lang.getMovecolor();
-        messagePermissionRewards = lang.getMessagePermissionRewards();
-
-        // Sound
-        soundopen = lang.getSoundopen();
-        soundclose = lang.getSoundclose();
-        soundConfirm = lang.getSoundConfirm();
-        soundCancel = lang.getSoundCancel();
-
-        // Messages
-        messagerandomitem = lang.getMessagerandomitem();
-        messagearebattle = lang.getMessagearebattle();
-        messagefossiltime = lang.getMessagefossiltime();
-        messagefossilcomplete = lang.getMessagefossilcomplete();
-        messageHaveRewards = lang.getMessageHaveRewards();
-        messageNoPokemon = lang.getMessageNoPokemon();
-        messageReceiveReward = lang.getMessageReceiveReward();
-        messageReceiveMoney = lang.getMessageReceiveMoney();
-        messagePokeShout = lang.getMessagePokeShout();
-
-        coloritem = lang.getColoritem();
-        // Time
-        days = lang.getDays();
-        day = lang.getDay();
-        hours = lang.getHours();
-        hour = lang.getHour();
-        minutes = lang.getMinutes();
-        minute = lang.getMinute();
-        seconds = lang.getSeconds();
-        second = lang.getSecond();
-
-        gender = lang.getGender();
-        forms = lang.getForms();
-        itemPc = lang.getItemPc();
-        lorechance = lang.getLorechance();
-        types = lang.getTypes();
-
-
-        itemCommand = lang.getItemCommand();
-        itemClose = lang.getItemClose();
-        itemNext = lang.getItemNext();
-        itemPrevious = lang.getItemPrevious();
-        itemNoPokemon = lang.getItemNoPokemon();
-        itemConfirm = lang.getItemConfirm();
-        itemCancel = lang.getItemCancel();
-        messageNotHaveMoney = lang.getMessageNotHaveMoney();
-        messageBought = lang.getMessageBought();
-        messageCooldown = lang.getMessageCooldown();
-        defaultSymbol = lang.getDefaultSymbol();
-        impactorSymbols = lang.getImpactorSymbols();
-        titleLoot = lang.getTitleLoot();
-        itemsEconomy = lang.getItemsEconomy();
-        itemAdvancedRewardsInfo = lang.getItemAdvancedRewardsInfo();
-        String data = gson.toJson(this);
+        if (CobbleUtils.language.getTitlemenurewards() == null)
+          CobbleUtils.language.setTitlemenurewards("&eRewards Menu");
+        String data = gson.toJson(CobbleUtils.language);
         CompletableFuture<Boolean> futureWrite = Utils.writeFileAsync(CobbleUtils.PATH_LANG, CobbleUtils.config.getLang() +
             ".json",
           data);

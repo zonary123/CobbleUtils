@@ -175,6 +175,7 @@ public class ShopConfigMenu {
           try (FileReader reader = new FileReader(file)) {
             Shop shop = gson.fromJson(reader, Shop.class);
             shop.setId(file.getName().replace(".json", ""));
+
             if (shop.getShopType() == null) shop.setShopType(new ShopTypePermanent());
 
             shopList.add(shop);

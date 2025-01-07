@@ -130,6 +130,7 @@ public class ShopConfig {
   public static void checkShop(Shop shop) {
     if (shop.getRows() < 1 || shop.getRows() > 6) shop.setRows((short) 6);
     int max_array = (shop.getRows() * 9) - 1;
+    if (!shop.getCurrency().contains(":")) shop.setCurrency("impactor:" + shop.getCurrency());
 
     if (shop.getPrevious() == null) {
       ItemModel previous = CobbleUtils.language.getItemPrevious();
