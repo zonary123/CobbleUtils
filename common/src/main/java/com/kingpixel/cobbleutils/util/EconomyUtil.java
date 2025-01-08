@@ -52,7 +52,7 @@ public abstract class EconomyUtil {
     BigDecimal balance = getBalance(player, currency);
 
     if (balance != null) {
-      return formatCurrency(balance, currency, player.getUuid());
+      return formatCurrency(balance, currency);
     }
 
     // En caso de que el balance sea null, retornas una cadena vacía o algún valor por defecto.
@@ -202,9 +202,9 @@ public abstract class EconomyUtil {
           PlayerUtils.sendMessage(
             player,
             CobbleUtils.shopLang.getMessageAddMoney()
-              .replace("%price%", formatCurrency(amount, account.currency(), account.owner()))
-              .replace("%amount%", formatCurrency(amount, account.currency(), account.owner()))
-              .replace("%balance%", formatCurrency(account.balance(), account.currency(), account.owner()))
+              .replace("%price%", formatCurrency(amount, account.currency()))
+              .replace("%amount%", formatCurrency(amount, account.currency()))
+              .replace("%balance%", formatCurrency(account.balance(), account.currency()))
               .replace("%symbol%", getSymbol(account.currency()))
               .replace("%currency%", getCurrencyName(account.currency())),
             CobbleUtils.shopLang.getPrefix()
@@ -307,8 +307,8 @@ public abstract class EconomyUtil {
       Currency currency = account.currency();
       PlayerUtils.sendMessage(CobbleUtils.server.getPlayerManager().getPlayer(player),
         messageNotHaveMoney
-          .replace("%price%", formatCurrency(amount, currency, player))
-          .replace("%balance%", formatCurrency(account.balance(), currency, player))
+          .replace("%price%", formatCurrency(amount, currency))
+          .replace("%balance%", formatCurrency(account.balance(), currency))
           .replace("%symbol%", getSymbol(currency))
           .replace("%currency%", getCurrencyName(currency)),
         CobbleUtils.shopLang.getPrefix());
@@ -321,8 +321,8 @@ public abstract class EconomyUtil {
     try {
       PlayerUtils.sendMessage(player,
         messageNotHaveMoney
-          .replace("%price%", formatCurrency(amount, "", player.getUuid()))
-          .replace("%balance%", formatCurrency(getBalance(player, ""), "", player.getUuid()))
+          .replace("%price%", formatCurrency(amount, ""))
+          .replace("%balance%", formatCurrency(getBalance(player, ""), ""))
           .replace("%symbol%", getSymbol(""))
           .replace("%currency%", ""),
         CobbleUtils.shopLang.getPrefix());
@@ -342,35 +342,38 @@ public abstract class EconomyUtil {
    * @return true if the account has enough balance.
    */
   public static boolean hasEnough(ServerPlayerEntity player, String currency, BigDecimal amount) {
+    return hasEnough(player, currency, amount, true);
+  }
 
+  public static boolean hasEnough(ServerPlayerEntity player, String currency, BigDecimal amount, boolean notify) {
     switch (economyType) {
       case IMPACTOR:
         return hasEnoughImpactor(getAccount(player.getUuid(), currency), amount);
       case VAULT:
         if (vaultEconomy.has(player.getGameProfile().getName(), amount.doubleValue())) {
           vaultEconomy.withdrawPlayer(player.getGameProfile().getName(), amount.doubleValue());
-          sendMessage(player, amount, CobbleUtils.shopLang.getMessageBought());
+          if (notify) sendMessage(player, amount, CobbleUtils.shopLang.getMessageBought());
           return true;
         }
-        sendMessage(player, amount, CobbleUtils.shopLang.getMessageNotHaveMoney());
+        if (notify) sendMessage(player, amount, CobbleUtils.shopLang.getMessageNotHaveMoney());
         return false;
       case BLANKECONOMY:
         BigDecimal bal = getBalance(player, currency);
         if (bal.compareTo(amount) >= 0) {
           BlanketEconomy.INSTANCE.getAPI().setBalance(player.getUuid(), bal.subtract(amount), currency);
-          sendMessage(player, amount, CobbleUtils.shopLang.getMessageBought());
+          if (notify) sendMessage(player, amount, CobbleUtils.shopLang.getMessageBought());
           return true;
         }
-        sendMessage(player, amount, CobbleUtils.shopLang.getMessageNotHaveMoney());
+        if (notify) sendMessage(player, amount, CobbleUtils.shopLang.getMessageNotHaveMoney());
         return false;
       case COBBLEDOLLARS:
         BigInteger balance = ((CobbleDollarsPlayer) player).cobbleDollars$getCobbleDollars();
         if (balance.compareTo(BigInteger.valueOf(amount.longValue())) >= 0) {
           ((CobbleDollarsPlayer) player).cobbleDollars$setCobbleDollars(balance.subtract(BigInteger.valueOf(amount.longValue())));
-          sendMessage(player, amount, CobbleUtils.shopLang.getMessageBought());
+          if (notify) sendMessage(player, amount, CobbleUtils.shopLang.getMessageBought());
           return true;
         }
-        sendMessage(player, amount, CobbleUtils.shopLang.getMessageNotHaveMoney());
+        if (notify) sendMessage(player, amount, CobbleUtils.shopLang.getMessageNotHaveMoney());
         return false;
       default:
         return false;
@@ -383,12 +386,22 @@ public abstract class EconomyUtil {
    *
    * @param amount   The balance to format.
    * @param currency The currency to format the balance to.
-   * @param player   The player to get the country from.
    *
    * @return The formatted balance with the format of Country player.
    */
+  public static String formatCurrency(BigDecimal amount, Currency currency) {
+    return formatCurrency(amount, getCurrencyName(currency));
+  }
+
+
+  @Deprecated(forRemoval = true, since = "1.1.3 - 07/01/2025")
   public static String formatCurrency(BigDecimal amount, Currency currency, UUID player) {
-    return formatCurrency(amount, getCurrencyName(currency), player);
+    return formatCurrency(amount, currency.key().asString(), player);
+  }
+
+  @Deprecated(forRemoval = true, since = "1.1.3 - 07/01/2025")
+  public static String formatCurrency(BigDecimal amount, String currency, UUID player) {
+    return formatCurrency(amount, currency);
   }
 
   /**
@@ -396,38 +409,47 @@ public abstract class EconomyUtil {
    *
    * @param amount   The balance to format.
    * @param currency The currency to format the balance to.
-   * @param player   The player to get the country from.
    *
    * @return The formatted balance with the format of Country player.
    */
-  public static String formatCurrency(BigDecimal amount, String currency, UUID player) {
-    try {
-      switch (economyType) {
-        case IMPACTOR -> {
-          if (!currency.contains(":")) currency = "impactor:" + currency;
-          String json = GsonComponentSerializer.gson().serialize(impactorService.currencies().currency(Key.key(currency)).get().format(amount));
-          JsonObject jsonObject = JsonParser.parseString(json).getAsJsonObject();
-          return jsonObject.get("text").getAsString();
-        }
-        case BLANKECONOMY -> {
-          return BlanketEconomy.INSTANCE.getAPI().getCurrencySymbol(currency);
-        }
-        case VAULT -> {
-          return vaultEconomy.format(amount.doubleValue());
-        }
-
-        default -> {
+  public static String formatCurrency(BigDecimal amount, String currency) {
+    switch (economyType) {
+      case IMPACTOR -> {
+        if (!currency.contains(":")) currency = "impactor:" + currency;
+        String json = "";
+        try {
+          json =
+            GsonComponentSerializer.gson().serialize(impactorService.currencies().currency(Key.key(currency)).get().format(amount));
+          if (json.contains("text")) {
+            JsonObject jsonObject = JsonParser.parseString(json).getAsJsonObject();
+            return jsonObject.get("text").getAsString();
+          } else {
+            return json.replace("\"", "");
+          }
+        } catch (IllegalStateException e) {
+          return json;
+        } catch (NoSuchElementException e) {
+          e.printStackTrace();
+          CobbleUtils.LOGGER.error("Not found Currency -> " + currency + "| Amount ->" +
+            " " + amount);
+          return CobbleUtils.language.getDefaultSymbol() + amount;
+        } catch (Exception e) {
+          CobbleUtils.LOGGER.error("Error formatting currency -> " + currency + "| Amount ->" +
+            " " + amount);
+          e.printStackTrace();
           return CobbleUtils.language.getDefaultSymbol() + amount;
         }
       }
-    } catch (NoSuchElementException e) {
-      e.printStackTrace();
-      CobbleUtils.LOGGER.error("Not found Currency -> " + currency + "| Amount ->" +
-        " " + amount);
-      return CobbleUtils.language.getDefaultSymbol() + amount;
-    } catch (Exception e) {
-      e.printStackTrace();
-      return CobbleUtils.language.getDefaultSymbol() + amount;
+      case BLANKECONOMY -> {
+        return BlanketEconomy.INSTANCE.getAPI().getCurrencySymbol(currency);
+      }
+      case VAULT -> {
+        return vaultEconomy.format(amount.doubleValue());
+      }
+
+      default -> {
+        return CobbleUtils.language.getDefaultSymbol() + amount;
+      }
     }
   }
 
@@ -464,6 +486,7 @@ public abstract class EconomyUtil {
    */
   public static String getSymbol(@Subst("") String currency) {
     try {
+      if (currency == null || currency.isEmpty()) return CobbleUtils.language.getDefaultSymbol();
       return switch (economyType) {
         case IMPACTOR ->
           GsonComponentSerializer.gson().serialize(impactorService.currencies().currency(Key.key(currency)).get().symbol());
@@ -488,9 +511,8 @@ public abstract class EconomyUtil {
    */
   public static String getSymbol(Currency currency) {
     try {
-      String json = GsonComponentSerializer.gson().serialize(currency.symbol());
-      JsonObject jsonObject = JsonParser.parseString(json).getAsJsonObject();
-      return jsonObject.get("text").getAsString();
+      String key = currency.key().asString();
+      return GsonComponentSerializer.gson().serialize(impactorService.currencies().currency(Key.key(key)).get().symbol());
 
     } catch (NoSuchMethodError | Exception | NoClassDefFoundError e) {
       return CobbleUtils.language.getDefaultSymbol();

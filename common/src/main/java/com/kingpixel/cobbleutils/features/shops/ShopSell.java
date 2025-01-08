@@ -35,10 +35,10 @@ public class ShopSell {
    * @param shop The shop whose products are to be added.
    */
   public static void addProduct(Shop shop, ShopConfigMenu shopConfigMenu) {
-    if (!shop.isActive()) {
-      products.get(shop.getCurrency()).remove(shop.getId());
-      return;
-    }
+    var map = ShopSell.products.get(shop.getCurrency());
+    if (map != null) map.remove(shop.getId());
+    if (!shop.isActive()) return;
+
     Set<Product> productSet = new HashSet<>();
     BigDecimal highPrice = BigDecimal.valueOf(999999999);
     if (shopConfigMenu.getPricesHigh() != null) {
@@ -167,7 +167,7 @@ public class ShopSell {
     StringBuilder currencyMessage = new StringBuilder();
 
     currencyTotals.forEach((currency, total) -> {
-      currencyMessage.append(String.format("\n &6%s &a%s,", EconomyUtil.formatCurrency(total, currency, player.getUuid()), currency));
+      currencyMessage.append(String.format("\n &6%s &a%s,", EconomyUtil.formatCurrency(total, currency), currency));
       EconomyUtil.addMoney(player, currency, total, false);
     });
 
@@ -185,7 +185,7 @@ public class ShopSell {
   private static void sendSellHandSuccess(ServerPlayerEntity player, String currency, BigDecimal totalEarned) {
     PlayerUtils.sendMessage(player, CobbleUtils.shopLang.getMessageSellHand()
       .replace("%prefix%", CobbleUtils.shopLang.getPrefix())
-      .replace("%balance%", EconomyUtil.formatCurrency(totalEarned, currency, player.getUuid()))
+      .replace("%balance%", EconomyUtil.formatCurrency(totalEarned, currency))
       .replace("%currency%", currency), CobbleUtils.shopLang.getPrefix());
   }
 }

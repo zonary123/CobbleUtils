@@ -517,18 +517,17 @@ public class Shop {
     int discount = getDiscount(product);
 
     String priceWithoutDiscount = EconomyUtil.formatCurrency(calculatePrice(product, TypeMenu.BUY, amount, false),
-      currency,
-      player.getUuid());
+      currency);
 
-    String priceDiscount = EconomyUtil.formatCurrency(calculatePrice(product, TypeMenu.BUY, amount, true), currency, player.getUuid());
+    String priceDiscount = EconomyUtil.formatCurrency(calculatePrice(product, TypeMenu.BUY, amount, true), currency);
 
     haveDiscount(product);
 
     lore.replaceAll(s -> s
       .replace("%buy%", haveDiscount(product) ? "&m" + (priceWithoutDiscount != null ? priceWithoutDiscount : "") + "&r &e" + (priceDiscount != null ? priceDiscount : "") :
         (priceWithoutDiscount != null ? priceWithoutDiscount : ""))
-      .replace("%sell%", EconomyUtil.formatCurrency(calculatePrice(product, TypeMenu.SELL, amountValue, false), currencyValue,
-        player.getUuid()))
+      .replace("%sell%", EconomyUtil.formatCurrency(calculatePrice(product, TypeMenu.SELL, amountValue, false), currencyValue
+      ))
       .replace("%currency%", getCurrency() != null ? getCurrency() : "")
       .replace("%symbol%", symbolValue)
       .replace("%amount%", amountValue.toString())
@@ -800,9 +799,9 @@ public class Shop {
             .replace("%amountproduct%", String.valueOf(product.getItemchance().getItemStack().getCount()))
             .replace("%total%", String.valueOf(amount * product.getItemchance().getItemStack().getCount()))
             .replace("%product%", ItemUtils.getTranslatedName(product.getItemchance().getItemStack()))
-            .replace("%price%", EconomyUtil.formatCurrency(totalPrice, currency, player.getUuid()))
-            .replace("%unitprice%", EconomyUtil.formatCurrency(unitPrice, currency, player.getUuid()))
-            .replace("%sell%", EconomyUtil.formatCurrency(totalPrice, currency, player.getUuid()))
+            .replace("%price%", EconomyUtil.formatCurrency(totalPrice, currency))
+            .replace("%unitprice%", EconomyUtil.formatCurrency(unitPrice, currency))
+            .replace("%sell%", EconomyUtil.formatCurrency(totalPrice, currency))
             .replace("%currency%", getCurrency())
             .replace("%symbol%", EconomyUtil.getSymbol(getCurrency()))
             .replace("%balance%", EconomyUtil.getBalance(player, getCurrency(), EconomyUtil.getDecimals(getCurrency())))
@@ -820,9 +819,9 @@ public class Shop {
             .replace("%amountproduct%", String.valueOf(product.getItemchance().getItemStack().getCount()))
             .replace("%total%", String.valueOf(amount * product.getItemchance().getItemStack().getCount()))
             .replace("%product%", ItemUtils.getTranslatedName(product.getItemchance().getItemStack()))
-            .replace("%price%", EconomyUtil.formatCurrency(totalPrice, currency, player.getUuid()))
-            .replace("%unitprice%", EconomyUtil.formatCurrency(unitPrice, currency, player.getUuid()))
-            .replace("%sell%", EconomyUtil.formatCurrency(totalPrice, currency, player.getUuid()))
+            .replace("%price%", EconomyUtil.formatCurrency(totalPrice, currency))
+            .replace("%unitprice%", EconomyUtil.formatCurrency(unitPrice, currency))
+            .replace("%sell%", EconomyUtil.formatCurrency(totalPrice, currency))
             .replace("%currency%", getCurrency())
             .replace("%symbol%", EconomyUtil.getSymbol(getCurrency()))
             .replace("%balance%", EconomyUtil.getBalance(player, getCurrency(), EconomyUtil.getDecimals(getCurrency())))

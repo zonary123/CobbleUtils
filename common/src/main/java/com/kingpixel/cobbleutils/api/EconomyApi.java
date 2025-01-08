@@ -58,15 +58,29 @@ public class EconomyApi {
   /**
    * Format the money of the player
    *
-   * @param player   The player to format the money
    * @param money    The amount of money
    * @param currency The currency to format
    *
    * @return The formatted money
    */
-  public static String formatMoney(ServerPlayerEntity player, BigDecimal money, @Nonnull String currency) {
-    return EconomyUtil.formatCurrency(money, currency, player.getUuid());
+  public static String formatMoney(BigDecimal money, @Nonnull String currency) {
+    return EconomyUtil.formatCurrency(money, currency);
   }
+
+  /**
+   * Check if the player has enough money
+   *
+   * @param player   The player to check the money
+   * @param money    The amount of money
+   * @param currency The currency to check
+   *
+   * @return If the player has enough money
+   */
+  @Deprecated(forRemoval = true, since = "1.1.3 - 07/01/2025 23:58")
+  public static String formatMoney(ServerPlayerEntity player, BigDecimal money, @Nonnull String currency) {
+    return EconomyUtil.formatCurrency(money, currency);
+  }
+
 
   /**
    * Check if the player has enough money and remove it
@@ -77,7 +91,34 @@ public class EconomyApi {
    *
    * @return If the player has enough money
    */
+  @Deprecated(forRemoval = true, since = "1.1.3 - 05/11/2024 23:58")
   public static boolean hasEnoughMoney(ServerPlayerEntity player, BigDecimal money, @Nonnull String currency) {
     return EconomyUtil.hasEnough(player, currency, money);
+  }
+
+  /**
+   * Check if the player has enough money and remove it
+   *
+   * @param player   The player to check the money
+   * @param money    The amount of money
+   * @param currency The currency to check
+   * @param notify   If the player should be notified
+   *
+   * @return If the player has enough money
+   */
+  public static boolean hasEnoughMoney(ServerPlayerEntity player, BigDecimal money,
+                                       @Nonnull String currency, boolean notify) {
+    return EconomyUtil.hasEnough(player, currency, money, notify);
+  }
+
+  /**
+   * Get the symbol of the currency
+   *
+   * @param currency The currency to get the symbol
+   *
+   * @return The symbol of the currency
+   */
+  public static String getSymbol(String currency) {
+    return EconomyUtil.getSymbol(currency);
   }
 }

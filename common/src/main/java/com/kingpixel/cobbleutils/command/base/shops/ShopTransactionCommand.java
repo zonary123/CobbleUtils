@@ -104,7 +104,7 @@ public class ShopTransactionCommand implements Command<ServerCommandSource> {
       .map(ShopTransactions.TransactionSummary::getCurrency)
       .orElse("");
 
-    String formattedNet = EconomyUtil.formatCurrency(net, currency, viewer.getUuid());
+    String formattedNet = EconomyUtil.formatCurrency(net, currency);
     lore.add("&7Net: &b" + formattedNet);
 
     return GooeyButton.builder()
@@ -143,14 +143,13 @@ public class ShopTransactionCommand implements Command<ServerCommandSource> {
   private static GooeyButton createTransactionButton(ServerPlayerEntity player, String product,
                                                      ShopTransactions.TransactionSummary transaction, ShopConfigMenu shop) {
     List<String> lore = List.of(
-      "&7Bought: &b" + EconomyUtil.formatCurrency(transaction.getTotalBoughtPrice(), transaction.getCurrency(),
-        player.getUuid()),
+      "&7Bought: &b" + EconomyUtil.formatCurrency(transaction.getTotalBoughtPrice(), transaction.getCurrency()),
       "&7Amount: &b" + transaction.getTotalBoughtAmount(),
       "",
-      "&7Sold: &b" + EconomyUtil.formatCurrency(transaction.getTotalSoldPrice(), transaction.getCurrency(), player.getUuid()),
+      "&7Sold: &b" + EconomyUtil.formatCurrency(transaction.getTotalSoldPrice(), transaction.getCurrency()),
       "&7Amount: &b" + transaction.getTotalSoldAmount(),
       "",
-      "&7Net: &b" + EconomyUtil.formatCurrency(transaction.getNet(), transaction.getCurrency(), player.getUuid())
+      "&7Net: &b" + EconomyUtil.formatCurrency(transaction.getNet(), transaction.getCurrency())
     );
 
 

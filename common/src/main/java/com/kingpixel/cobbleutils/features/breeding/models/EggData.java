@@ -840,7 +840,7 @@ public class EggData {
   }
 
   public String getInfo() {
-    return "Species: " + species + " Level: " + level + " Steps: " + steps + " Cycles: " + cycles + " Ability: "
-      + ability + " Form:" + form + " Moves:" + moves;
+    return String.format("§aSpecies: §f%s §aLevel: §f%d §aSteps: §f%.2f §aCycles: §f%d §aAbility: §f%s §aForm: §f%s §aMoves: §f%s",
+      species, level, steps, cycles, ability, form, moves);
   }
 }

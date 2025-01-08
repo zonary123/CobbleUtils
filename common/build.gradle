@@ -50,6 +50,7 @@ dependencies {
     // Database
     implementation("org.mongodb:mongodb-driver-sync:${property("mongodb_version")}")
     implementation("org.xerial:sqlite-jdbc:${property("sqlite_version")}")
+    
     // Lombok
     annotationProcessor("org.projectlombok:lombok:${property("lombok_version")}")
     implementation("org.projectlombok:lombok:${property("lombok_version")}")
