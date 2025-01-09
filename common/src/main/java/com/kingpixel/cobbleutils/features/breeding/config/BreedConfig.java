@@ -109,8 +109,8 @@ public class BreedConfig {
 
 
   public BreedConfig() {
-    this.prefix = "&7[<#82d448>Breeding&7] &8»";
     this.active = true;
+    this.prefix = "&7[<#82d448>Breeding&7] &8»";
     this.showIvs = false;
     this.eggcommand = List.of("daycare", "pokebreed", "breed");
     this.abilityAcceleration = List.of("magmaarmor",

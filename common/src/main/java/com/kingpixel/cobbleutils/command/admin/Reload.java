@@ -29,15 +29,6 @@ public class Reload implements Command<ServerCommandSource> {
             )
             .executes(new Reload())));
 
-    for (String literal : CobbleUtils.config.getCommandparty()) {
-      dispatcher.register(
-        CommandManager.literal(literal)
-          .then(
-            CommandManager.literal("reload")
-              .requires(
-                source -> LuckPermsUtil.checkPermission(source, 2, List.of("cobbleutils.reload", "cobbleutils.admin")))
-              .executes(new Reload())));
-    }
 
   }
 

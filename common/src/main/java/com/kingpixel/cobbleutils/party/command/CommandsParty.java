@@ -1,12 +1,16 @@
 package com.kingpixel.cobbleutils.party.command;
 
 import com.kingpixel.cobbleutils.CobbleUtils;
+import com.kingpixel.cobbleutils.command.admin.Reload;
 import com.kingpixel.cobbleutils.party.command.base.*;
+import com.kingpixel.cobbleutils.util.LuckPermsUtil;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import net.minecraft.command.CommandRegistryAccess;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
+
+import java.util.List;
 
 /**
  * @author Carlos Varas Alonso - 10/06/2024 14:08
@@ -26,6 +30,16 @@ public class CommandsParty {
         PartyMenu.register(dispatcher, base);
         PartyChatCommand.register(dispatcher, base);
         PartyKick.register(dispatcher, base);
+        dispatcher.register(
+          CommandManager.literal(literal)
+            .then(
+              CommandManager.literal("reload")
+                .requires(
+                  source -> LuckPermsUtil.checkPermission(source, 2, List.of("cobbleutils.reload", "cobbleutils.admin")))
+                .executes(new Reload())
+            )
+        );
+
       }
     }
 

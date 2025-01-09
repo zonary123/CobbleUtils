@@ -10,7 +10,6 @@ import com.cobblemon.mod.common.api.moves.Move;
 import com.cobblemon.mod.common.api.moves.Moves;
 import com.cobblemon.mod.common.api.pokemon.Natures;
 import com.cobblemon.mod.common.api.pokemon.PokemonProperties;
-import com.cobblemon.mod.common.api.pokemon.PokemonPropertyExtractor;
 import com.cobblemon.mod.common.api.pokemon.egg.EggGroup;
 import com.cobblemon.mod.common.api.pokemon.feature.ChoiceSpeciesFeatureProvider;
 import com.cobblemon.mod.common.api.pokemon.feature.SpeciesFeatureProvider;
@@ -115,19 +114,16 @@ public class EggData {
     pokemonEntity.setNoGravity(true);
   }
 
-  public void EggToPokemon(ServerPlayerEntity player, Pokemon pokemon) {
+  public void EggToPokemon(ServerPlayerEntity player, Pokemon egg) {
     String pokemonId = species == null || species.isEmpty() ? "rattata" : species;
     PokemonProperties pokemonProperties = PokemonProperties.Companion.parse(pokemonId + " " + form);
 
-    pokemonProperties.setForm(form);
+    var party = Cobblemon.INSTANCE.getStorage().getParty(player);
 
-    pokemon.createPokemonProperties(List.of(
-      PokemonPropertyExtractor.GENDER,
-      PokemonPropertyExtractor.FRIENDSHIP
-    )).apply(pokemon);
-
-    pokemonProperties.apply(pokemon);
-
+    Pokemon pokemon = pokemonProperties.create();
+    pokemon.getPersistentData().copyFrom(egg.getPersistentData());
+    pokemon.setShiny(egg.getShiny());
+    party.remove(egg);
     AbilityTemplate abilityTemplate;
     if (ability.isEmpty()) {
       abilityTemplate = PokemonUtils.getRandomAbility(pokemon).getTemplate();
@@ -168,6 +164,7 @@ public class EggData {
     if (CobbleUtils.config.isDebug()) {
       CobbleUtils.LOGGER.info("Egg to Pokemon: " + pokemon.getSpecies().showdownId());
     }
+    party.add(pokemon);
     HatchEggEvent.HATCH_EGG_EVENT.emit(player, pokemon);
   }
 
@@ -237,7 +234,7 @@ public class EggData {
     if (steps <= 0) {
       this.cycles--;
       this.steps = getMaxStepsPerCycle();
-      pokemon.setNickname(Text.literal("Egg"));
+      pokemon.setNickname(Text.literal("Egg " + cycles + "/" + (int) steps));
     }
 
     updateSteps(pokemon);
@@ -256,6 +253,12 @@ public class EggData {
   private void updateSteps(Pokemon pokemon) {
     pokemon.getPersistentData().putDouble("steps", this.steps);
     pokemon.getPersistentData().putInt("cycles", this.cycles);
+    pokemon.setCurrentHealth(0);
+    pokemon.setHealTimer(0);
+
+    if ((int) steps % 16 == 0) {
+      pokemon.setNickname(Text.literal("Egg " + cycles + "/" + (int) steps));
+    }
 
     if (CobbleUtils.config.isDebug()) {
       String stepsFormat = String.format("%.0f", this.steps);

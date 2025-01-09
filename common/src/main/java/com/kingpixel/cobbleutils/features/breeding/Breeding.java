@@ -3,6 +3,7 @@ package com.kingpixel.cobbleutils.features.breeding;
 import com.cobblemon.mod.common.api.Priority;
 import com.cobblemon.mod.common.api.events.CobblemonEvents;
 import com.cobblemon.mod.common.entity.pokemon.PokemonEntity;
+import com.cobblemon.mod.common.pokemon.Pokemon;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.kingpixel.cobbleutils.CobbleUtils;
@@ -77,27 +78,31 @@ public class Breeding {
       return Unit.INSTANCE;
     });
 
-
-    CobblemonEvents.POKEMON_HEALED.subscribe(Priority.HIGHEST, pokemon -> {
-      if (pokemon.getPokemon().getSpecies().showdownId().equals("egg")) pokemon.cancel();
-      return Unit.INSTANCE;
-    });
-    CobblemonEvents.POKEMON_GAINED.subscribe(Priority.HIGHEST, evt -> {
-      if (evt.getPokemon().showdownId().equals("egg")) {
-        if (CobbleUtils.config.isDebug()) {
-          CobbleUtils.LOGGER.info("Pokemon egg gained");
-        }
-        evt.getPokemon().setCurrentHealth(0);
-      }
-      return Unit.INSTANCE;
-    });
-
     PlayerEvent.PLAYER_QUIT.register(player -> {
       // Remove country data
       playerCountry.remove(player.getUuid());
       // Remove data
       DatabaseClientFactory.databaseClient.removeDataIfNecessary(player);
 
+    });
+
+    CobblemonEvents.POKEMON_HEALED.subscribe(Priority.HIGHEST, evt -> {
+      Pokemon pokemon = evt.getPokemon();
+      if (pokemon.showdownId().equals("egg")) {
+        pokemon.setCurrentHealth(0);
+        pokemon.setHealTimer(0);
+        evt.cancel();
+      }
+      return Unit.INSTANCE;
+    });
+
+    CobblemonEvents.POKEMON_GAINED.subscribe(Priority.HIGHEST, evt -> {
+      Pokemon pokemon = evt.getPokemon();
+      if (pokemon.showdownId().equals("egg")) {
+        pokemon.setCurrentHealth(0);
+        pokemon.setHealTimer(0);
+      }
+      return Unit.INSTANCE;
     });
 
 
@@ -118,7 +123,6 @@ public class Breeding {
     });
 
 
-    WalkBreeding.register();
     EggThrow.register();
     PastureUI.register();
     EggInteract.register();

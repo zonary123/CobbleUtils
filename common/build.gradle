@@ -34,7 +34,7 @@ loom {
 
 dependencies {
 
-    modImplementation("com.cobblemon:mod:${property("cobblemon_version")}")
+    modImplementation("com.cobblemon:fabric:${property("cobblemon_version")}")
     // alL fabric dependencies:
     modImplementation("net.fabricmc:fabric-loader:${property("fabric_loader_version")}")
     modImplementation("net.fabricmc.fabric-api:fabric-api:${property("fabric_version")}")
@@ -50,7 +50,7 @@ dependencies {
     // Database
     implementation("org.mongodb:mongodb-driver-sync:${property("mongodb_version")}")
     implementation("org.xerial:sqlite-jdbc:${property("sqlite_version")}")
-    
+
     // Lombok
     annotationProcessor("org.projectlombok:lombok:${property("lombok_version")}")
     implementation("org.projectlombok:lombok:${property("lombok_version")}")
