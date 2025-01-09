@@ -102,11 +102,11 @@ public class BreedConfig {
   private List<Integer> eggSlots;
   private List<Integer> femaleSlots;
 
-  private FilterPokemons pokemonsForDoubleDitto;
-  private List<Incense> incenses;
   private List<EggData.EggForm> eggForms;
   private List<EggData.EggSpecialForm> eggSpecialForms;
   private List<EggData.PokemonRareMecanic> pokemonRareMechanics;
+  private List<Incense> incenses;
+  private FilterPokemons pokemonsForDoubleDitto;
 
 
   public BreedConfig() {
