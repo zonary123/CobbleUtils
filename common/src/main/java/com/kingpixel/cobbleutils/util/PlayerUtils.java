@@ -31,6 +31,7 @@ public class PlayerUtils {
       player.sendMessage(AdventureTranslator.toNative(message, prefix, player));
     }
   }
+  
 
   public static void sendMessage(ServerPlayerEntity player, String message, String prefix, boolean broadcast) {
     if (broadcast) {

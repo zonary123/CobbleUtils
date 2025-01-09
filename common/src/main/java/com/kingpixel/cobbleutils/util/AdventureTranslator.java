@@ -50,6 +50,7 @@ public class AdventureTranslator {
       if (wrapperLookup == null) wrapperLookup = BuiltinRegistries.createWrapperLookup();
       return wrapperLookup;
     } catch (Exception e) {
+      e.printStackTrace();
       return null;
     }
   }

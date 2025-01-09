@@ -45,6 +45,7 @@ public class Hatch implements Command<ServerCommandSource> {
                   "cobbleutils.admin")))
                 .executes(context -> {
                   ServerPlayerEntity player = EntityArgumentType.getPlayer(context, "player");
+                  if (cooldown(player)) return 0;
                   return hatch(context, player);
                 })
             )
@@ -121,10 +122,19 @@ public class Hatch implements Command<ServerCommandSource> {
   }
 
   private static int hatch(CommandContext<ServerCommandSource> context, ServerPlayerEntity player) {
-    if (cooldown(player)) return 0;
     Pokemon egg = PartySlotArgumentType.Companion.getPokemonOf(context, "egg", player);
+    openEgg(player, egg);
+    return 1;
+  }
 
-    if (egg.getSpecies().showdownId().equalsIgnoreCase("egg")) {
+
+  public static void openEgg(ServerPlayerEntity player, Pokemon pokemon) {
+    if (pokemon.showdownId().equals("egg")) {
+      pokemon.getPersistentData().putInt("steps", 0);
+      pokemon.getPersistentData().putInt("cycles", -1);
+      pokemon.setCurrentHealth(0);
+      EggData eggData = EggData.from(pokemon);
+      eggData.steps(player, pokemon, Integer.MAX_VALUE);
       if (LuckPermsUtil.hasOp(player)) {
         cooldowns.put(player.getUuid(), new Date(1).getTime());
       } else {
@@ -132,20 +142,6 @@ public class Hatch implements Command<ServerCommandSource> {
           new Date().getTime()
             + TimeUnit.SECONDS.toMillis(CobbleUtils.breedconfig.getCooldowninstaHatchInSeconds()));
       }
-      openEgg(player, egg);
-    }
-    return 1;
-  }
-
-
-  public static void openEgg(ServerPlayerEntity player, Pokemon pokemon) {
-    if (pokemon.getSpecies().showdownId().equalsIgnoreCase("egg")) {
-      pokemon.getPersistentData().putInt("steps", 0);
-      pokemon.getPersistentData().putInt("cycles", -1);
-      pokemon.setCurrentHealth(0);
-      EggData eggData = EggData.from(pokemon);
-      eggData.steps(player, pokemon, Integer.MAX_VALUE);
-      eggData.EggToPokemon(player, pokemon);
     }
   }
 
