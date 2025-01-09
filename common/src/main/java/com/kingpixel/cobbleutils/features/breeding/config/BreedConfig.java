@@ -40,6 +40,7 @@ public class BreedConfig {
   private boolean ditto;
   private boolean doubleditto;
   private boolean spawnEggWorld;
+  private boolean extraInfo;
   private int raritySpawnEgg;
   private boolean obtainPokeBallFromMother;
   private List<String> eggcommand;
@@ -121,6 +122,7 @@ public class BreedConfig {
     this.titleplot = "<#82d448>Plot";
     this.titleemptyplot = "<#82d448>Plot";
     this.titleselectpokemon = "<#82d448>Select Pokemon";
+    this.extraInfo = true;
     this.obtainAspect = false;
     this.changeuipasture = true;
     this.methodmasuda = true;

@@ -36,12 +36,12 @@ public class FilterPokemons {
   private Set<orderFilter> order;
 
   public enum orderFilter {
-    POKEMON,
-    TYPE,
     LABEL,
+    POKEMON,
     FORM,
     RARITY,
-    LEGENDARY
+    LEGENDARY,
+    TYPE
   }
 
   // Pokemons

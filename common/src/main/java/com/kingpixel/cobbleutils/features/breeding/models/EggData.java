@@ -8,6 +8,7 @@ import com.cobblemon.mod.common.api.abilities.AbilityTemplate;
 import com.cobblemon.mod.common.api.moves.BenchedMove;
 import com.cobblemon.mod.common.api.moves.Move;
 import com.cobblemon.mod.common.api.moves.Moves;
+import com.cobblemon.mod.common.api.pokeball.PokeBalls;
 import com.cobblemon.mod.common.api.pokemon.Natures;
 import com.cobblemon.mod.common.api.pokemon.PokemonProperties;
 import com.cobblemon.mod.common.api.pokemon.egg.EggGroup;
@@ -19,6 +20,7 @@ import com.cobblemon.mod.common.api.pokemon.stats.Stats;
 import com.cobblemon.mod.common.api.storage.NoPokemonStoreException;
 import com.cobblemon.mod.common.entity.pokemon.PokemonEntity;
 import com.cobblemon.mod.common.item.CobblemonItem;
+import com.cobblemon.mod.common.pokeball.PokeBall;
 import com.cobblemon.mod.common.pokemon.Pokemon;
 import com.cobblemon.mod.common.pokemon.abilities.HiddenAbilityType;
 import com.google.gson.JsonArray;
@@ -41,6 +43,7 @@ import lombok.ToString;
 import net.minecraft.entity.Entity;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
+import net.minecraft.util.Identifier;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -66,6 +69,7 @@ public class EggData {
   private String size;
   private String form;
   private String moves;
+  private String ball;
   private boolean random;
   private int HP;
   private int Attack;
@@ -119,11 +123,12 @@ public class EggData {
     PokemonProperties pokemonProperties = PokemonProperties.Companion.parse(pokemonId + " " + form);
 
     var party = Cobblemon.INSTANCE.getStorage().getParty(player);
-
+    var pc = Cobblemon.INSTANCE.getStorage().getPC(player);
     Pokemon pokemon = pokemonProperties.create();
     pokemon.getPersistentData().copyFrom(egg.getPersistentData());
     pokemon.setShiny(egg.getShiny());
     party.remove(egg);
+    pc.remove(egg);
     AbilityTemplate abilityTemplate;
     if (ability.isEmpty()) {
       abilityTemplate = PokemonUtils.getRandomAbility(pokemon).getTemplate();
@@ -137,9 +142,6 @@ public class EggData {
 
     pokemon.setLevel(level);
     pokemon.heal();
-    pokemon.setNickname(null);
-    pokemon.setFaintedTimer(Cobblemon.INSTANCE.getConfig().getDefaultFaintTimer());
-    pokemon.setHealTimer(Cobblemon.INSTANCE.getConfig().getHealTimer());
 
     if (moves != null && !moves.isEmpty()) {
       try {
@@ -178,6 +180,17 @@ public class EggData {
     pokemon.getPersistentData().remove("form");
     pokemon.getPersistentData().remove("random");
     pokemon.getPersistentData().remove("moves");
+    if (!ball.isEmpty()) {
+      try {
+        PokeBall pokeBall = PokeBalls.INSTANCE.getPokeBall(Identifier.of(ball));
+        pokemon.setCaughtBall(pokeBall);
+      } catch (Exception ignored) {
+        if (CobbleUtils.config.isDebug()) {
+          CobbleUtils.LOGGER.error("Error to get PokeBall: " + ball);
+        }
+      }
+    }
+    pokemon.getPersistentData().remove("ball");
     applyPersistentIvs(pokemon, "HP", Stats.HP);
     applyPersistentIvs(pokemon, "Attack", Stats.ATTACK);
     applyPersistentIvs(pokemon, "Defense", Stats.DEFENCE);
@@ -206,6 +219,7 @@ public class EggData {
     eggData.setForm(pokemon.getPersistentData().getString("form"));
     eggData.setRandom(pokemon.getPersistentData().getBoolean("random"));
     eggData.setMoves(pokemon.getPersistentData().getString("moves"));
+    eggData.setBall(pokemon.getPersistentData().getString("ball"));
     if (pokemon.getPersistentData().contains("HP")) {
       eggData.setHP(pokemon.getPersistentData().getInt("HP"));
     }
@@ -257,19 +271,20 @@ public class EggData {
     pokemon.setHealTimer(0);
 
     if ((int) steps % 16 == 0) {
-      pokemon.setNickname(Text.literal("Egg " + cycles + "/" + (int) steps));
-    }
-
-    if (CobbleUtils.config.isDebug()) {
       String stepsFormat = String.format("%.0f", this.steps);
+      String extraInfo = "";
+      if (CobbleUtils.breedconfig.isExtraInfo()) {
+        extraInfo = this.cycles + "/" + stepsFormat;
+      }
       if (random) {
         pokemon.setNickname(
-          Text.literal(CobbleUtils.breedconfig.getNameRandomEgg() + " " + this.cycles + "/" + stepsFormat));
+          Text.literal(CobbleUtils.breedconfig.getNameRandomEgg() + " " + extraInfo));
       } else {
         pokemon.setNickname(Text.literal(CobbleUtils.breedconfig.getNameEgg()
-          .replace("%pokemon%", species) + " " + this.cycles + "/" + stepsFormat));
+          .replace("%pokemon%", species) + " " + extraInfo));
       }
     }
+
   }
 
   public static Pokemon createEgg(
@@ -434,6 +449,8 @@ public class EggData {
       } else {
         egg.setCaughtBall(female.getCaughtBall());
       }
+      Identifier pokeBall = female.getCaughtBall().getName();
+      egg.getPersistentData().putString("ball", pokeBall.getNamespace() + ":" + pokeBall.getPath());
     }
   }
 
@@ -523,8 +540,8 @@ public class EggData {
         egg.setIV(rStats, random);
       } else {
         egg.setIV(rStats, 0);
-        egg.getPersistentData().putInt(getName(rStats), random);
       }
+      egg.getPersistentData().putInt(getName(rStats), random);
     });
   }
 
@@ -539,8 +556,8 @@ public class EggData {
         egg.setIV(stat, selectedParent.getIvs().getOrDefault(stat));
       } else {
         egg.setIV(stat, 0);
-        egg.getPersistentData().putInt(getName(stat), selectedParent.getIvs().getOrDefault(stat));
       }
+      egg.getPersistentData().putInt(getName(stat), selectedParent.getIvs().getOrDefault(stat));
     }
   }
 
@@ -576,48 +593,48 @@ public class EggData {
         egg.setIV(stat, select.getIvs().getOrDefault(stat));
       } else {
         egg.setIV(stat, 0);
-        egg.getPersistentData().putInt("HP", select.getIvs().getOrDefault(stat));
       }
+      egg.getPersistentData().putInt("HP", select.getIvs().getOrDefault(stat));
     } else if (bracelet.equals(POWER_BRACER)) {
       stat = Stats.ATTACK;
       if (CobbleUtils.breedconfig.isShowIvs()) {
         egg.setIV(stat, select.getIvs().getOrDefault(stat));
       } else {
         egg.setIV(stat, 0);
-        egg.getPersistentData().putInt("Attack", select.getIvs().getOrDefault(stat));
       }
+      egg.getPersistentData().putInt("Attack", select.getIvs().getOrDefault(stat));
     } else if (bracelet.equals(POWER_BELT)) {
       stat = Stats.DEFENCE;
       if (CobbleUtils.breedconfig.isShowIvs()) {
         egg.setIV(stat, select.getIvs().getOrDefault(stat));
       } else {
         egg.setIV(stat, 0);
-        egg.getPersistentData().putInt("Defense", select.getIvs().getOrDefault(stat));
       }
+      egg.getPersistentData().putInt("Defense", select.getIvs().getOrDefault(stat));
     } else if (bracelet.equals(POWER_ANKLET)) {
       stat = Stats.SPEED;
       if (CobbleUtils.breedconfig.isShowIvs()) {
         egg.setIV(stat, select.getIvs().getOrDefault(stat));
       } else {
         egg.setIV(stat, 0);
-        egg.getPersistentData().putInt("Speed", select.getIvs().getOrDefault(stat));
       }
+      egg.getPersistentData().putInt("Speed", select.getIvs().getOrDefault(stat));
     } else if (bracelet.equals(POWER_LENS)) {
       stat = Stats.SPECIAL_ATTACK;
       if (CobbleUtils.breedconfig.isShowIvs()) {
         egg.setIV(stat, select.getIvs().getOrDefault(stat));
       } else {
         egg.setIV(stat, 0);
-        egg.getPersistentData().putInt("SpecialAttack", select.getIvs().getOrDefault(stat));
       }
+      egg.getPersistentData().putInt("SpecialAttack", select.getIvs().getOrDefault(stat));
     } else if (bracelet.equals(POWER_BAND)) {
       stat = Stats.SPECIAL_DEFENCE;
       if (CobbleUtils.breedconfig.isShowIvs()) {
         egg.setIV(stat, select.getIvs().getOrDefault(stat));
       } else {
         egg.setIV(stat, 0);
-        egg.getPersistentData().putInt("SpecialDefense", select.getIvs().getOrDefault(stat));
       }
+      egg.getPersistentData().putInt("SpecialDefense", select.getIvs().getOrDefault(stat));
     }
     stats.remove(stat);
   }
@@ -843,7 +860,8 @@ public class EggData {
   }
 
   public String getInfo() {
-    return String.format("§aSpecies: §f%s §aLevel: §f%d §aSteps: §f%.2f §aCycles: §f%d §aAbility: §f%s §aForm: §f%s §aMoves: §f%s",
-      species, level, steps, cycles, ability, form, moves);
+    return String.format("§aSpecies: §f%s §aLevel: §f%d §aSteps: §f%.2f §aCycles: §f%d §aAbility: §f%s §aForm: §f%s §aMoves: §f%s" +
+        " §aHP: §f%d §aAttack: §f%d §aDefense: §f%d §aSpecialAttack: §f%d §aSpecialDefense: §f%d §aSpeed: §f%d",
+      species, level, steps, cycles, ability, form, moves, HP, Attack, Defense, SpecialAttack, SpecialDefense, Speed);
   }
 }
