@@ -21,6 +21,7 @@ import com.cobblemon.mod.common.api.storage.NoPokemonStoreException;
 import com.cobblemon.mod.common.entity.pokemon.PokemonEntity;
 import com.cobblemon.mod.common.item.CobblemonItem;
 import com.cobblemon.mod.common.pokeball.PokeBall;
+import com.cobblemon.mod.common.pokemon.Nature;
 import com.cobblemon.mod.common.pokemon.Pokemon;
 import com.cobblemon.mod.common.pokemon.abilities.HiddenAbilityType;
 import com.google.gson.JsonArray;
@@ -70,6 +71,7 @@ public class EggData {
   private String form;
   private String moves;
   private String ball;
+  private String nature;
   private boolean random;
   private int HP;
   private int Attack;
@@ -124,11 +126,14 @@ public class EggData {
 
     var party = Cobblemon.INSTANCE.getStorage().getParty(player);
     var pc = Cobblemon.INSTANCE.getStorage().getPC(player);
+
     Pokemon pokemon = pokemonProperties.create();
     pokemon.getPersistentData().copyFrom(egg.getPersistentData());
     pokemon.setShiny(egg.getShiny());
+
     party.remove(egg);
     pc.remove(egg);
+
     AbilityTemplate abilityTemplate;
     if (ability.isEmpty()) {
       abilityTemplate = PokemonUtils.getRandomAbility(pokemon).getTemplate();
@@ -139,6 +144,19 @@ public class EggData {
     if (abilityTemplate != null) {
       pokemon.updateAbility(abilityTemplate.create(false, Priority.LOWEST));
     }
+
+    Nature nature;
+    try {
+      nature = Natures.INSTANCE.getNature(this.nature);
+      if (nature == null) {
+        nature = Natures.INSTANCE.getRandomNature();
+        CobbleUtils.LOGGER.error("Error to get Nature: " + this.nature);
+      }
+    } catch (Exception e) {
+      nature = Natures.INSTANCE.getRandomNature();
+      CobbleUtils.LOGGER.error("Error to get Nature: " + nature + " - " + e.getMessage());
+    }
+    pokemon.setNature(nature);
 
     pokemon.setLevel(level);
     pokemon.heal();
@@ -180,6 +198,7 @@ public class EggData {
     pokemon.getPersistentData().remove("form");
     pokemon.getPersistentData().remove("random");
     pokemon.getPersistentData().remove("moves");
+    pokemon.getPersistentData().remove("nature");
     if (!ball.isEmpty()) {
       try {
         PokeBall pokeBall = PokeBalls.INSTANCE.getPokeBall(Identifier.of(ball));
@@ -220,6 +239,7 @@ public class EggData {
     eggData.setRandom(pokemon.getPersistentData().getBoolean("random"));
     eggData.setMoves(pokemon.getPersistentData().getString("moves"));
     eggData.setBall(pokemon.getPersistentData().getString("ball"));
+    eggData.setNature(pokemon.getPersistentData().getString("nature"));
     if (pokemon.getPersistentData().contains("HP")) {
       eggData.setHP(pokemon.getPersistentData().getInt("HP"));
     }
@@ -385,6 +405,7 @@ public class EggData {
 
     Pokemon firstEvolution = PokemonProperties.Companion.parse(eggSpecie.getSpecies().showdownId() + " " + form).create();
 
+
     // IVS
     applyInitialIvs(egg, male, female);
 
@@ -497,6 +518,7 @@ public class EggData {
     } else {
       egg.setNature(Natures.INSTANCE.getRandomNature());
     }
+    egg.getPersistentData().putString("nature", egg.getNature().getName().getPath());
   }
 
 
@@ -735,7 +757,7 @@ public class EggData {
   }
 
   private static String getForm(Pokemon pokemon) {
-    StringBuilder form;
+    AtomicReference<StringBuilder> form = new AtomicReference<>();
 
 
     switch (pokemon.getSpecies().showdownId()) {
@@ -776,19 +798,27 @@ public class EggData {
     List<String> aspects = pokemon.getForm().getAspects();
 
     if (aspects.isEmpty()) {
-      form = new StringBuilder();
+      form.set(new StringBuilder());
     } else {
-      form = new StringBuilder(aspects.get(0));
+      form.set(new StringBuilder(aspects.get(0)));
     }
 
 
-    form = new StringBuilder(form.toString().replace("-", "_"));
+    form.set(new StringBuilder(form.toString().replace("-", "_")));
 
-    int lastUnderscoreIndex = form.lastIndexOf("_");
+    int lastUnderscoreIndex = form.get().lastIndexOf("_");
 
     if (lastUnderscoreIndex != -1) {
-      form = new StringBuilder(form.substring(0, lastUnderscoreIndex) + "=" + form.substring(lastUnderscoreIndex + 1));
+      form.set(new StringBuilder(form.get().substring(0, lastUnderscoreIndex) + "=" + form.get().substring(lastUnderscoreIndex + 1)));
     }
+    
+
+    // Form Regional
+    pokemon.getForm().getLabels().forEach(label -> {
+      if (label.contains("regional")) {
+        form.set(new StringBuilder("region_bias=" + pokemon.getForm().formOnlyShowdownId()));
+      }
+    });
 
     for (SpeciesFeatureProvider<?> speciesFeatureProvider : SpeciesFeatures.INSTANCE.getFeaturesFor(pokemon.getSpecies())) {
       if (speciesFeatureProvider instanceof ChoiceSpeciesFeatureProvider choice) {
@@ -803,12 +833,12 @@ public class EggData {
           if (CobbleUtils.config.isDebug()) {
             CobbleUtils.LOGGER.info("Feature -> Name: " + name + " Value: " + value);
           }
-          form.append(" ").append(name).append("=").append(value);
+          form.get().append(" ").append(name).append("=").append(value);
         }
       }
     }
 
-    if (CobbleUtils.breedconfig.getBlacklistForm().contains(form.toString())) form = new StringBuilder();
+    if (CobbleUtils.breedconfig.getBlacklistForm().contains(form.toString())) form.set(new StringBuilder());
 
     return form.toString();
   }
@@ -860,8 +890,11 @@ public class EggData {
   }
 
   public String getInfo() {
-    return String.format("§aSpecies: §f%s §aLevel: §f%d §aSteps: §f%.2f §aCycles: §f%d §aAbility: §f%s §aForm: §f%s §aMoves: §f%s" +
+    return String.format("§aSpecies: §f%s §aLevel: §f%d §aSteps: §f%.2f §aCycles: §f%d §aNature: §f%s §aAbility: §f%s" +
+        "§aForm: §f%s §aMoves: §f%s" +
+        " " +
         " §aHP: §f%d §aAttack: §f%d §aDefense: §f%d §aSpecialAttack: §f%d §aSpecialDefense: §f%d §aSpeed: §f%d",
-      species, level, steps, cycles, ability, form, moves, HP, Attack, Defense, SpecialAttack, SpecialDefense, Speed);
+      species, level, steps, cycles, nature, ability, form, moves, HP, Attack, Defense, SpecialAttack, SpecialDefense,
+      Speed);
   }
 }

@@ -66,6 +66,7 @@ dependencies {
     api(files("libs/cobbledollars-fabric-2.0.0-BETA1+1.21.1.jar"))
     api("org.spigotmc:spigot-api:${property("spigot_version")}")
     api("com.github.MilkBowl:VaultAPI:${property("vault_api_version")}")
+    modImplementation(files("libs/sdm-economy-common-1.21-1.6.4.jar"))
 
     // Kyori Adventure
     api("net.kyori:adventure-text-serializer-gson:${property("kyori_version")}")

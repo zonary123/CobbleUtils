@@ -14,6 +14,7 @@ import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
 import net.milkbowl.vault.economy.Economy;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.sixik.sdm_economy.api.CurrencyHelper;
 import org.blanketeconomy.api.BlanketEconomy;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.RegisteredServiceProvider;
@@ -44,7 +45,8 @@ public abstract class EconomyUtil {
     IMPACTOR,
     VAULT,
     BLANKECONOMY,
-    COBBLEDOLLARS
+    COBBLEDOLLARS,
+    SDM_ECONOMY
   }
 
   public static String getBalance(ServerPlayerEntity player, String currency, int digits) {
@@ -65,6 +67,7 @@ public abstract class EconomyUtil {
       case VAULT -> 2;
       case BLANKECONOMY -> 2;
       case COBBLEDOLLARS -> 2;
+      case SDM_ECONOMY -> 2;
       default -> 2;
     };
   }
@@ -84,9 +87,22 @@ public abstract class EconomyUtil {
     } else if (isCobbleDollars()) {
       economyType = EconomyType.COBBLEDOLLARS;
       CobbleUtils.LOGGER.info("CobbleDollars found");
+    } else if (isSDMEconomy()) {
+      economyType = EconomyType.SDM_ECONOMY;
+      CobbleUtils.LOGGER.info("SDM Economy found");
     } else {
       economyType = null;
       CobbleUtils.LOGGER.error("No economy api found");
+    }
+  }
+
+  private static boolean isSDMEconomy() {
+    try {
+      CurrencyHelper.getAllCurrencyKeys();
+      return true;
+    } catch (NoClassDefFoundError | Exception e) {
+      CobbleUtils.LOGGER.error("SDM Economy not found");
+      return false;
     }
   }
 
@@ -224,6 +240,10 @@ public abstract class EconomyUtil {
         ((CobbleDollarsPlayer) player).cobbleDollars$addCobbleDollars(BigInteger.valueOf(amount.longValue()));
         return true;
       }
+      case SDM_ECONOMY: {
+        CurrencyHelper.addMoney(player, currency, amount.longValue());
+        return true;
+      }
       default:
         return false;
     }
@@ -263,6 +283,9 @@ public abstract class EconomyUtil {
           return true;
         }
         return false;
+      case SDM_ECONOMY:
+        CurrencyHelper.setMoney(player, currency, getBalance(player, currency).longValue() - amount.longValue());
+        return true;
       default:
         return false;
     }
@@ -375,6 +398,15 @@ public abstract class EconomyUtil {
         }
         if (notify) sendMessage(player, amount, CobbleUtils.shopLang.getMessageNotHaveMoney());
         return false;
+      case SDM_ECONOMY:
+        long balance1 = CurrencyHelper.getMoney(player, currency);
+        if (balance1 >= amount.longValue()) {
+          CurrencyHelper.setMoney(player, currency, balance1 - amount.longValue());
+          if (notify) sendMessage(player, amount, CobbleUtils.shopLang.getMessageBought());
+          return true;
+        }
+        if (notify) sendMessage(player, amount, CobbleUtils.shopLang.getMessageNotHaveMoney());
+        return false;
       default:
         return false;
     }
@@ -446,7 +478,6 @@ public abstract class EconomyUtil {
       case VAULT -> {
         return vaultEconomy.format(amount.doubleValue());
       }
-
       default -> {
         return CobbleUtils.language.getDefaultSymbol() + amount;
       }
@@ -523,6 +554,7 @@ public abstract class EconomyUtil {
     try {
       return switch (economyType) {
         case IMPACTOR -> currency.key().asString();
+
         default -> CobbleUtils.language.getDefaultSymbol();
       };
     } catch (NoSuchMethodError | Exception | NoClassDefFoundError e) {
@@ -554,6 +586,7 @@ public abstract class EconomyUtil {
       }
       case COBBLEDOLLARS ->
         BigDecimal.valueOf(((CobbleDollarsPlayer) player).cobbleDollars$getCobbleDollars().longValue());
+      case SDM_ECONOMY -> BigDecimal.valueOf(CurrencyHelper.getMoney(player, currency));
       default -> BigDecimal.ZERO;
     };
   }
@@ -566,6 +599,7 @@ public abstract class EconomyUtil {
       case BLANKECONOMY -> BlanketEconomy.INSTANCE.getAPI().setBalance(player.getUuid(), money, curreny);
       case COBBLEDOLLARS ->
         ((CobbleDollarsPlayer) player).cobbleDollars$setCobbleDollars(BigInteger.valueOf(money.longValue()));
+      case SDM_ECONOMY -> CurrencyHelper.setMoney(player, curreny, money.longValue());
     }
   }
 }
