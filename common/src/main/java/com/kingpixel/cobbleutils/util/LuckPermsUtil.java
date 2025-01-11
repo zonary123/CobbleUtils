@@ -29,12 +29,16 @@ public abstract class LuckPermsUtil {
 
   private static void setup() {
     if (PERMISSION_TYPE != null) return;
-    if (haveFabricPermissionsApi()) {
-      PERMISSION_TYPE = Permission.FABRIC_PERMISSIONS_API;
-      CobbleUtils.LOGGER.info("Fabric permissions detected");
-    } else if (getLuckPermsApi() != null) {
+
+    if (getLuckPermsApi() != null) {
       PERMISSION_TYPE = Permission.LUCKPERMS;
       CobbleUtils.LOGGER.info("LuckPerms detected");
+    } else if (false) {
+      //PERMISSION_TYPE = Permission.NEOFORGE_PERMISSIONS_API;
+      CobbleUtils.LOGGER.info("NeoForge permissions detected");
+    } else if (haveFabricPermissionsApi()) {
+      PERMISSION_TYPE = Permission.FABRIC_PERMISSIONS_API;
+      CobbleUtils.LOGGER.info("Fabric permissions detected");
     } else if (haveBukkitPermissionApi()) {
       PERMISSION_TYPE = Permission.BUKKIT_PERMISSION_API;
       CobbleUtils.LOGGER.info("Bukkit permissions detected");
@@ -90,7 +94,12 @@ public abstract class LuckPermsUtil {
     return switch (PERMISSION_TYPE) {
       case LUCKPERMS, BUKKIT_PERMISSION_API -> checkLuckPermsPermission(source, permissions, level);
       case FABRIC_PERMISSIONS_API -> checkFabricPermissions(source, level, permissions);
-      case NEOFORGE_PERMISSIONS_API -> false;
+      case NEOFORGE_PERMISSIONS_API -> {
+        boolean hasPermission = false;
+        for (String permission : permissions) {
+        }
+        yield hasPermission || source.hasPermissionLevel(level);
+      }
       default -> source.hasPermissionLevel(level);
     };
   }

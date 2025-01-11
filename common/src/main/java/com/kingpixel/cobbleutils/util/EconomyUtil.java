@@ -473,7 +473,7 @@ public abstract class EconomyUtil {
         }
       }
       case BLANKECONOMY -> {
-        return BlanketEconomy.INSTANCE.getAPI().getCurrencySymbol(currency);
+        return amount + " " + BlanketEconomy.INSTANCE.getAPI().getCurrencySymbol(currency);
       }
       case VAULT -> {
         return vaultEconomy.format(amount.doubleValue());
@@ -517,13 +517,17 @@ public abstract class EconomyUtil {
    */
   public static String getSymbol(@Subst("") String currency) {
     try {
-      if (currency == null || currency.isEmpty()) return CobbleUtils.language.getDefaultSymbol();
+      if (currency == null || currency.isEmpty()) {
+        if (CobbleUtils.config.isDebug()) {
+          CobbleUtils.LOGGER.error("Currency is null or empty");
+        }
+        return CobbleUtils.language.getDefaultSymbol();
+      }
       return switch (economyType) {
         case IMPACTOR ->
           GsonComponentSerializer.gson().serialize(impactorService.currencies().currency(Key.key(currency)).get().symbol());
         case VAULT -> CobbleUtils.language.getDefaultSymbol();
-        case BLANKECONOMY ->
-          currency.isEmpty() ? CobbleUtils.language.getDefaultSymbol() : BlanketEconomy.INSTANCE.getAPI().getCurrencySymbol(currency);
+        case BLANKECONOMY -> BlanketEconomy.INSTANCE.getAPI().getCurrencySymbol(currency);
         case COBBLEDOLLARS -> CobbleUtils.language.getDefaultSymbol();
         default -> CobbleUtils.language.getDefaultSymbol();
       };

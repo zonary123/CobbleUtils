@@ -15,23 +15,22 @@ A mod that helps visually impaired players to play Minecraft.
 
 [[dependencies.cobbleutils]]
 modId = "neoforge"
-mandatory = true
 versionRange = "[${neoforge_version},)"
 ordering = "NONE"
 side = "BOTH"
 
 [[dependencies.cobbleutils]]
 modId = "minecraft"
-mandatory = true
 versionRange = "[1.21.1,)"
 ordering = "NONE"
 side = "BOTH"
 
 [[dependencies.cobbleutils]]
 modId = "cobblemon"
-mandatory = true
+type = "required"
 versionRange = "[1.6,)"
-ordering = "BEFORE"
+ordering = "AFTER"
 side = "BOTH"
+
 [[mixins]]
 config = "cobbleutils.mixins.json"

@@ -10,6 +10,7 @@ import com.kingpixel.cobbleutils.features.shops.models.types.ShopTypeDynamic;
 import com.kingpixel.cobbleutils.features.shops.models.types.ShopTypeDynamicWeekly;
 import com.kingpixel.cobbleutils.features.shops.models.types.ShopTypePermanent;
 import com.kingpixel.cobbleutils.features.shops.models.types.ShopTypeWeekly;
+import com.kingpixel.cobbleutils.util.EconomyUtil;
 import com.kingpixel.cobbleutils.util.Utils;
 import lombok.Getter;
 import lombok.Setter;
@@ -130,7 +131,9 @@ public class ShopConfig {
   public static void checkShop(Shop shop) {
     if (shop.getRows() < 1 || shop.getRows() > 6) shop.setRows((short) 6);
     int max_array = (shop.getRows() * 9) - 1;
-    if (!shop.getCurrency().contains(":")) shop.setCurrency("impactor:" + shop.getCurrency());
+    if (EconomyUtil.economyType == EconomyUtil.EconomyType.IMPACTOR) {
+      if (!shop.getCurrency().contains(":")) shop.setCurrency("impactor:" + shop.getCurrency());
+    }
 
     if (shop.getPrevious() == null) {
       ItemModel previous = CobbleUtils.language.getItemPrevious();

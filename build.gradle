@@ -87,6 +87,7 @@ allprojects {
         options.release = 21
     }
 
+
     java {
         withSourcesJar()
     }
@@ -101,4 +102,14 @@ allprojects {
 
     // Ensure the version file is written after the build
     build.finalizedBy(writeVersionFile)
+
+    task copyJarToActualVersions(type: Copy) {
+        dependsOn build
+        from("${buildDir}/libs")
+        into("${rootProject.projectDir}/actual_versions")
+        include("*.jar")
+    }
+
+    // Ensure the copy task runs after the build
+    build.finalizedBy(copyJarToActualVersions)
 }
