@@ -112,15 +112,22 @@ shadowJar {
     exclude("com/google/**/*")
     exclude("org/slf4j/**")
     exclude("kotlin/**")
+    exclude("org/sqlite/native/Linux-Android/**/*")
+    exclude("org/sqlite/native/Linux-Musl/**/*")
+    exclude("org/sqlite/native/FreeBSD/**/*")
+    exclude("org/sqlite/native/Mac/**/*")
+    exclude("org/sqlite/native/Solaris/**/*")
 
-    //Database
-    relocate("org.xerial", "com.kingpixel.cobbleutils.sqlite")
-    relocate("com.mongodb", "com.kingpixel.cobbleutils.mongodb")
-
-    relocate("org.bson", "com.kingpixel.cobbleutils.bson")
-    relocate("net.kyori", "com.kingpixel.cobbleutils.kyori") {
-        exclude("net/kyori/adventure/key/**/*")
+    // Relocate packages
+    relocate("org.sqlite", "org.sqlite") {
+        exclude("org/sqlite/native/Linux-Android/**/*")
+        exclude("org/sqlite/native/Linux-Musl/**/*")
+        exclude("org/sqlite/native/FreeBSD/**/*")
+        exclude("org/sqlite/native/Mac/**/*")
+        exclude("org/sqlite/native/Solaris/**/*")
     }
+    relocate("com.mongodb", "com.kingpixel.cobbleutils.mongodb")
+    relocate("org.bson", "com.kingpixel.cobbleutils.bson")
 
 
     configurations = [project.configurations.shadowCommon]

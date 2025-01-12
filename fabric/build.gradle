@@ -102,6 +102,7 @@ shadowJar {
     exclude("org/sqlite/native/FreeBSD/**/*")
     exclude("org/sqlite/native/Mac/**/*")
     exclude("org/sqlite/native/Solaris/**/*")
+    exclude("kotlin/**")
     // Relocate packages
     relocate("org.sqlite", "org.sqlite") {
         exclude("org/sqlite/native/Linux-Android/**/*")

@@ -71,43 +71,65 @@ public class Particle {
   }
 
   public void sendParticles(@NotNull ServerPlayerEntity player, @NotNull List<Entity> entities) {
-    entities.forEach(entity -> sendParticles(player, entity));
+    try {
+      if (getParticle() == null || getParticle().isEmpty()) return;
+      entities.forEach(entity -> sendParticles(player, entity));
+    } catch (NoSuchMethodError | Exception e) {
+      e.printStackTrace();
+    }
   }
 
   public void sendParticles(@NotNull ServerPlayerEntity player, @NotNull Entity entity) {
-    player.networkHandler.sendPacket(getParticleS2CPacket(entity, getParticleType()));
+    try {
+      if (getParticle() == null || getParticle().isEmpty()) return;
+      player.networkHandler.sendPacket(getParticleS2CPacket(entity, getParticleType()));
+    } catch (NoSuchMethodError | Exception e) {
+      e.printStackTrace();
+    }
   }
 
   private @NotNull ParticleEffect getParticleType() {
-    if (getParticle() == null || getParticle().isEmpty()) return null;
-
-    String[] split = getParticle().split(":");
-    Identifier identifier = Identifier.of(split[0], split[1]);
-
-    ParticleEffect particleType;
     try {
-      if (Registries.PARTICLE_TYPE.get(identifier) instanceof ParticleEffect) {
-        particleType = (ParticleEffect) Registries.PARTICLE_TYPE.get(identifier);
-      } else {
+      if (getParticle() == null || getParticle().isEmpty()) return null;
+
+      String[] split = getParticle().split(":");
+      Identifier identifier = Identifier.of(split[0], split[1]);
+
+      ParticleEffect particleType;
+      try {
+        if (Registries.PARTICLE_TYPE.get(identifier) instanceof ParticleEffect) {
+          particleType = (ParticleEffect) Registries.PARTICLE_TYPE.get(identifier);
+        } else {
+          particleType = ParticleTypes.LAVA;
+        }
+      } catch (Exception e) {
         particleType = ParticleTypes.LAVA;
       }
-    } catch (Exception e) {
-      particleType = ParticleTypes.LAVA;
+      return particleType;
+    } catch (NoSuchMethodError | Exception e) {
+      e.printStackTrace();
+      return ParticleTypes.LAVA;
     }
-    return particleType;
+
   }
 
   public void sendParticlesNearPlayers(@NotNull Entity entity) {
-    List<ServerPlayerEntity> players = entity.getWorld().getEntitiesByClass(ServerPlayerEntity.class,
-      Box.from(entity.getPos()).expand(radius == null ? 32 : radius), entity1 -> true);
-    if (players != null && !players.isEmpty()) {
-      players.forEach(player -> sendParticles(player, entity));
+    try {
+      if (getParticle() == null || getParticle().isEmpty()) return;
+      List<ServerPlayerEntity> players = entity.getWorld().getEntitiesByClass(ServerPlayerEntity.class,
+        Box.from(entity.getPos()).expand(radius == null ? 32 : radius), entity1 -> true);
+      if (players != null && !players.isEmpty()) {
+        players.forEach(player -> sendParticles(player, entity));
+      }
+    } catch (NoSuchMethodError | Exception e) {
+      e.printStackTrace();
     }
   }
 
   // Privates
   private @NotNull ParticleS2CPacket getParticleS2CPacket(@NotNull Entity entity,
                                                           @NotNull ParticleEffect particleType) {
+
     int offsetX = this.getOffsetX() == null ? 0 : this.getOffsetX();
     int offsetY = this.getOffsetY() == null ? 0 : this.getOffsetY();
     int offsetZ = this.getOffsetZ() == null ? 0 : this.getOffsetZ();
@@ -116,5 +138,6 @@ public class Particle {
     return new ParticleS2CPacket(particleType, true,
       entity.getX(),
       entity.getY(), entity.getZ(), offsetX, offsetY, offsetZ, speed, this.getNumberParticles());
+
   }
 }

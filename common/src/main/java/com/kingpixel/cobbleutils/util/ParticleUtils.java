@@ -22,11 +22,13 @@ public class ParticleUtils {
   // Publics
   @Deprecated
   public static void sendParticles(Particle particle, ServerPlayerEntity player, List<Entity> entities) {
+    if (particle.getParticle() == null || particle.getParticle().isEmpty()) return;
     entities.forEach(entity -> sendParticles(particle, player, entity));
   }
 
   @Deprecated
   public static void sendParticles(Particle particle, ServerPlayerEntity player, Entity entity) {
+    if (particle.getParticle() == null || particle.getParticle().isEmpty()) return;
     ParticleEffect particleType;
     String[] split = particle.getParticle().split(":");
     Identifier identifier = Identifier.of(split[0], split[1]);
@@ -48,6 +50,7 @@ public class ParticleUtils {
 
   @Deprecated
   public static void sendParticlesNearPlayers(Particle particle, Entity entity, int radius) {
+    if (particle.getParticle() == null || particle.getParticle().isEmpty()) return;
     entity.getWorld().getPlayers(TargetPredicate.DEFAULT, entity.getControllingPassenger(),
       Box.from(entity.getPos()).expand(radius)).forEach(player -> sendParticles(particle, PlayerUtils.castPlayer(player),
       entity));

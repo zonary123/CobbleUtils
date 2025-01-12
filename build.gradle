@@ -103,13 +103,36 @@ allprojects {
     // Ensure the version file is written after the build
     build.finalizedBy(writeVersionFile)
 
-    task copyJarToActualVersions(type: Copy) {
-        dependsOn build
-        from("${buildDir}/libs")
-        into("${rootProject.projectDir}/actual_versions")
-        include("*.jar")
-    }
 
-    // Ensure the copy task runs after the build
-    build.finalizedBy(copyJarToActualVersions)
+    boolean isDelete = false
+
+    task cleanAndCopyJarToActualVersions(type: Copy) {
+        dependsOn jar
+        if (!isDelete) {
+            delete fileTree(dir: "${rootProject.projectDir}/actual_versions", include: "**/*")
+            isDelete = true
+        }
+        // Define la variable 'path' correctamente, como la ruta del directorio build
+        def path = buildDir.absolutePath
+
+        // Verifica si el nombre del proyecto es "build", si es así, omite la copia
+        if (!path.contains("CobbleUtils\\build") && !path.contains("common")) {
+            println("Copying jar to actual_versions -> ${rootProject.projectDir}\\actual_versions")
+            println("Jar file -> ${path}\\libs\\${archivesBaseName}-${tag}.jar")
+
+            // Verifica si el archivo .jar existe antes de copiar
+            def jarFile = file("${path}\\libs\\${archivesBaseName}-${tag}.jar")
+            if (jarFile.exists()) {
+                from(jarFile)
+                into("${rootProject.projectDir}\\actual_versions")
+            } else {
+                //throw new GradleException("El archivo .jar no se encuentra en la ruta esperada: ${jarFile}")
+            }
+        } else {
+            println("Skipping cleanAndCopyJarToActualVersions task because the project name is 'build'")
+        }
+    }
+    build.finalizedBy(cleanAndCopyJarToActualVersions)
+
+
 }

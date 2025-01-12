@@ -42,26 +42,38 @@ public class Sound {
   }
 
   public void start(Entity entity) {
-    if (sound == null || sound.isEmpty()) return;
-    if (variousPlayers) {
-      playSoundNearPlayers(entity);
-    } else {
-      if (entity instanceof ServerPlayerEntity player) {
-        playSoundPlayer(player);
+    try {
+      if (sound == null || sound.isEmpty()) return;
+      if (variousPlayers) {
+        playSoundNearPlayers(entity);
+      } else {
+        if (entity instanceof ServerPlayerEntity player) {
+          playSoundPlayer(player);
+        }
       }
+    } catch (NoSuchMethodError | Exception e) {
+      e.printStackTrace();
     }
   }
 
   public void playSoundNearPlayers(Entity entity) {
-    List<ServerPlayerEntity> players = entity.getWorld().getEntitiesByClass(ServerPlayerEntity.class,
-      new Box(entity.getBlockPos()).expand(getRange()), player -> true);
-    SoundEvent sound = SoundUtil.getSound(getSound());
-    if (players != null && !players.isEmpty()) {
-      players.forEach(player -> player.playSoundToPlayer(sound, SoundCategory.PLAYERS, getVolume(), getPitch()));
+    try {
+      List<ServerPlayerEntity> players = entity.getWorld().getEntitiesByClass(ServerPlayerEntity.class,
+        new Box(entity.getBlockPos()).expand(getRange()), player -> true);
+      SoundEvent sound = SoundUtil.getSound(getSound());
+      if (players != null && !players.isEmpty()) {
+        players.forEach(player -> player.playSoundToPlayer(sound, SoundCategory.PLAYERS, getVolume(), getPitch()));
+      }
+    } catch (NoSuchMethodError | Exception e) {
+      e.printStackTrace();
     }
   }
 
   public void playSoundPlayer(ServerPlayerEntity player) {
-    player.playSound(SoundUtil.getSound(sound), getVolume(), getPitch());
+    try {
+      player.playSound(SoundUtil.getSound(sound), getVolume(), getPitch());
+    } catch (NoSuchMethodError | Exception e) {
+      e.printStackTrace();
+    }
   }
 }

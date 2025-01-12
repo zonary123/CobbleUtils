@@ -20,24 +20,34 @@ import java.util.Map;
  */
 public class PlayerUtils {
   // Comando
+  @Deprecated
   public static void sendMessage(ServerPlayerEntity player, String message) {
     if (!message.isEmpty()) {
       player.sendMessage(AdventureTranslator.toNativeWithOutPrefix(message, player));
     }
   }
 
+  @Deprecated
   public static void sendMessage(ServerPlayerEntity player, String message, String prefix) {
     if (!message.isEmpty()) {
       player.sendMessage(AdventureTranslator.toNative(message, prefix, player));
     }
   }
-  
 
+  @Deprecated
   public static void sendMessage(ServerPlayerEntity player, String message, String prefix, boolean broadcast) {
     if (broadcast) {
       broadcast(message, prefix);
     } else {
       sendMessage(player, message, prefix);
+    }
+  }
+
+  public static void sendMessage(ServerPlayerEntity player, String message, String prefix, TypeMessage typeMessage) {
+    switch (typeMessage) {
+      case CHAT -> sendMessage(player, message);
+      case ACTIONBAR -> player.sendMessage(AdventureTranslator.toNative(message, prefix, player), true);
+      case BROADCAST -> broadcast(message, prefix);
     }
   }
 

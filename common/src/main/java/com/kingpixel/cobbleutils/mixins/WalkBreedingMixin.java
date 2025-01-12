@@ -33,8 +33,11 @@ public abstract class WalkBreedingMixin {
 
       double deltaMovement = getDeltaMovement(player, packet,
         party);
+      if (CobbleUtils.config.isDebug()) {
+        CobbleUtils.LOGGER.info("Delta Movement: " + deltaMovement);
+      }
 
-      if (deltaMovement == 0) return;
+      if (deltaMovement == 0 || deltaMovement >= 1) return;
 
 
       for (Pokemon pokemon : party) {
