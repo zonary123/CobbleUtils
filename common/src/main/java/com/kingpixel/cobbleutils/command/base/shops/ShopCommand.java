@@ -46,7 +46,8 @@ public class ShopCommand implements Command<ServerCommandSource> {
 
   private static LiteralArgumentBuilder<ServerCommandSource> getBase(LiteralArgumentBuilder<ServerCommandSource> base, ShopConfig shopConfig, String mod_id) {
     return base
-      .requires(source -> LuckPermsUtil.checkPermission(source, 0, List.of(mod_id + ".admin", mod_id + ".shop", mod_id + ".user")))
+      .requires(source -> LuckPermsUtil.checkPermission(source, 2, List.of(mod_id + ".admin", mod_id + ".shop",
+        mod_id + ".user")))
       .executes(context -> executeOpenConfigMenu(context, shopConfig, mod_id))
       .then(CommandManager.literal("shops")
         .requires(source -> LuckPermsUtil.checkPermission(source, 2, List.of(mod_id + ".admin", mod_id + ".shop.shops")))
@@ -149,6 +150,7 @@ public class ShopCommand implements Command<ServerCommandSource> {
       player.sendMessage(
         AdventureTranslator.toNative(
           CobbleUtils.shopLang.getMessageNotHavePermission()
+            .replace("%permission%", mod_id + ".shop." + shop)
             .replace("%prefix%", CobbleUtils.language.getPrefixShop())
         )
       );

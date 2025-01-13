@@ -23,7 +23,6 @@ import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 
 import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author Carlos Varas Alonso - 28/06/2024 18:53
@@ -439,9 +438,11 @@ public class PokemonUtils {
    * @return The total of the IVs
    */
   public static Integer getIvsTotal(IVs iVs) {
-    AtomicInteger sum = new AtomicInteger();
-    iVs.forEach((ivs) -> sum.addAndGet(ivs.getValue()));
-    return sum.get();
+    Integer sum = 0;
+    for (Map.Entry<? extends Stat, ? extends Integer> iV : iVs) {
+      sum += iV.getValue();
+    }
+    return sum;
   }
 
   /**
@@ -453,9 +454,11 @@ public class PokemonUtils {
    */
   public static Integer getIvsAverage(IVs iVs) {
     if (iVs == null) return 0;
-    AtomicInteger sum = new AtomicInteger();
-    iVs.forEach((ivs) -> sum.addAndGet(ivs.getValue()));
-    return sum.get() / 6;
+    Integer sum = 0;
+    for (Map.Entry<? extends Stat, ? extends Integer> iV : iVs) {
+      sum += iV.getValue();
+    }
+    return sum / 6;
   }
 
   /**
@@ -467,9 +470,11 @@ public class PokemonUtils {
    */
   public static Integer getEvsTotal(EVs eVs) {
     if (eVs == null) return 0;
-    AtomicInteger sum = new AtomicInteger();
-    eVs.forEach((evs) -> sum.addAndGet(evs.getValue()));
-    return sum.get();
+    Integer sum = 0;
+    for (Map.Entry<? extends Stat, ? extends Integer> eV : eVs) {
+      sum += eV.getValue();
+    }
+    return sum;
   }
 
   /**
@@ -480,9 +485,11 @@ public class PokemonUtils {
    * @return The average of the EVs
    */
   public static Integer getEvsAverage(EVs eVs) {
-    AtomicInteger sum = new AtomicInteger();
-    eVs.forEach((evs) -> sum.addAndGet(evs.getValue()));
-    return sum.get() / 6;
+    Integer sum = 0;
+    for (Map.Entry<? extends Stat, ? extends Integer> eV : eVs) {
+      sum += eV.getValue();
+    }
+    return sum / 6;
   }
 
   /**

@@ -69,10 +69,10 @@ public class PoolItems {
     if (items == null || items.isEmpty()) return new ItemChance("", 100);
 
 
-    int totalWeight = items.stream().mapToInt(ItemChance::getChance).sum();
-    int randomValue = Utils.RANDOM.nextInt(totalWeight) + 1;
+    double totalWeight = items.stream().mapToDouble(ItemChance::getChance).sum();
+    double randomValue = Utils.RANDOM.nextDouble(totalWeight) + 1;
 
-    int currentWeight = 0;
+    double currentWeight = 0;
     for (ItemChance itemChance : items) {
       currentWeight += itemChance.getChance();
       if (randomValue <= currentWeight) {

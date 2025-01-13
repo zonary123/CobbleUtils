@@ -38,7 +38,7 @@ import java.util.Map;
 @ToString
 public class ItemChance {
   private final String item;
-  private final int chance;
+  private final double chance;
   private final String display;
   private final String displayname;
   public static Map<String, List<ItemMod>> modItems = new HashMap<>();
@@ -47,6 +47,28 @@ public class ItemChance {
     this("minecraft:dirt", 100);
   }
 
+  public ItemChance(String item, double chance) {
+    this.item = item;
+    this.chance = chance;
+    this.display = null;
+    this.displayname = null;
+  }
+
+  public ItemChance(String item, double chance, String display) {
+    this.item = item;
+    this.chance = chance;
+    this.display = display;
+    this.displayname = null;
+  }
+
+  public ItemChance(String item, double chance, String display, String displayname) {
+    this.item = item;
+    this.chance = chance;
+    this.display = display;
+    this.displayname = displayname;
+  }
+
+  @Deprecated
   public ItemChance(String item, int chance) {
     this.item = item;
     this.chance = chance;
@@ -54,6 +76,7 @@ public class ItemChance {
     this.displayname = null;
   }
 
+  @Deprecated
   public ItemChance(String item, int chance, String display) {
     this.item = item;
     this.chance = chance;
@@ -61,6 +84,7 @@ public class ItemChance {
     this.displayname = null;
   }
 
+  @Deprecated
   public ItemChance(String item, int chance, String display, String displayname) {
     this.item = item;
     this.chance = chance;
@@ -159,19 +183,19 @@ public class ItemChance {
    */
   public static List<ItemChance> defaultItemChances() {
     List<ItemChance> itemChances = new ArrayList<>();
-    itemChances.add(new ItemChance("minecraft:dirt", 999));
-    itemChances.add(new ItemChance("item:1:minecraft:dirt", 1));
-    itemChances.add(new ItemChance("item:1:minecraft:dirt#{CustomModelData:1}", 1));
-    itemChances.add(new ItemChance("pokemon:rattata alola", 1));
-    itemChances.add(new ItemChance("command:lp user %player% permission set a", 1, "minecraft:emerald", "Give " +
+    itemChances.add(new ItemChance("minecraft:dirt", 999.0));
+    itemChances.add(new ItemChance("item:1:minecraft:dirt", 1.0));
+    itemChances.add(new ItemChance("item:1:minecraft:dirt#{CustomModelData:1}", 1.0));
+    itemChances.add(new ItemChance("pokemon:rattata alola", 1.0));
+    itemChances.add(new ItemChance("command:lp user %player% permission set a", 1.0, "minecraft:emerald", "Give " +
       "permission a"));
-    itemChances.add(new ItemChance("command:lp user %player% permission set a|lp user %player% permission set b", 1
+    itemChances.add(new ItemChance("command:lp user %player% permission set a|lp user %player% permission set b", 1.0
       , "minecraft:emerald", "Give permission a and b"));
-    itemChances.add(new ItemChance("money:1", 1));
-    itemChances.add(new ItemChance("money:tokens:1", 1));
-    itemChances.add(new ItemChance("mod:cobblehunt:radar", 1));
+    itemChances.add(new ItemChance("money:1", 1.0));
+    itemChances.add(new ItemChance("money:tokens:1", 1.0));
+    itemChances.add(new ItemChance("mod:cobblehunt:radar", 1.0));
     itemChances.add(new ItemChance("cobblemon:poke_ball|cobblemon:great_ball|cobblemon:ultra_ball|command:lp user " +
-      "%player% permission set a|pokemon:rattata alola", 1));
+      "%player% permission set a|pokemon:rattata alola", 1.0));
     return itemChances;
   }
 
@@ -496,9 +520,9 @@ public class ItemChance {
       throw new IllegalArgumentException("The list of item chances cannot be empty");
     }
 
-    int totalChance = itemChances.stream().mapToInt(ItemChance::getChance).sum();
-    int randomChance = Utils.RANDOM.nextInt(totalChance);
-    int cumulativeChance = 0;
+    double totalChance = itemChances.stream().mapToDouble(ItemChance::getChance).sum();
+    double randomChance = Utils.RANDOM.nextDouble(totalChance);
+    double cumulativeChance = 0;
 
     for (ItemChance itemChance : itemChances) {
       cumulativeChance += itemChance.getChance();
@@ -552,9 +576,9 @@ public class ItemChance {
                                             int numberOfRewards) {
     List<ItemChance> rewards = new ArrayList<>();
     for (int i = 0; i < numberOfRewards; i++) {
-      int totalChance = itemChances.stream().mapToInt(ItemChance::getChance).sum();
-      int randomChance = Utils.RANDOM.nextInt(totalChance);
-      int cumulativeChance = 0;
+      double totalChance = itemChances.stream().mapToDouble(ItemChance::getChance).sum();
+      double randomChance = Utils.RANDOM.nextDouble(totalChance);
+      double cumulativeChance = 0;
 
       for (ItemChance itemChance : itemChances) {
         cumulativeChance += itemChance.getChance();

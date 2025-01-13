@@ -669,7 +669,7 @@ public class EggData {
       return;
     }
 
-    if (isDitto(female)) {
+    if (isDitto(male)) {
       egg.getPersistentData().putString("ability", PokemonUtils.getRandomAbility(firstEvolution).getName());
       return;
     }
@@ -811,7 +811,7 @@ public class EggData {
     if (lastUnderscoreIndex != -1) {
       form.set(new StringBuilder(form.get().substring(0, lastUnderscoreIndex) + "=" + form.get().substring(lastUnderscoreIndex + 1)));
     }
-    
+
 
     // Form Regional
     pokemon.getForm().getLabels().forEach(label -> {

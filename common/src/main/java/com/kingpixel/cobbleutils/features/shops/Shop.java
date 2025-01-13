@@ -214,6 +214,7 @@ public class Shop {
       player.sendMessage(
         AdventureTranslator.toNative(
           CobbleUtils.shopLang.getMessageNotHavePermission()
+            .replace("%permission%", mod_id + ".shop." + this.getId())
             .replace("%prefix%", CobbleUtils.shopLang.getPrefix())
         )
       );

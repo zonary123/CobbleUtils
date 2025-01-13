@@ -5,6 +5,7 @@ import ca.landonjw.gooeylibs2.api.template.types.ChestTemplate;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -26,7 +27,16 @@ public class PanelsConfig {
     this.slots = slots;
   }
 
-  public static void apllyConfig(ChestTemplate template, List<PanelsConfig> panelsConfigs) {
+  public PanelsConfig(ItemModel fill, int rows) {
+    this.fill = fill;
+    this.slots = new ArrayList<>();
+    int size = rows * 9;
+    for (int i = 0; i < size; i++) {
+      this.slots.add(i);
+    }
+  }
+
+  public static void applyConfig(ChestTemplate template, List<PanelsConfig> panelsConfigs) {
     for (PanelsConfig panelsConfig : panelsConfigs) {
       GooeyButton button = GooeyButton.builder()
         .display(panelsConfig.getFill().getItemStack())

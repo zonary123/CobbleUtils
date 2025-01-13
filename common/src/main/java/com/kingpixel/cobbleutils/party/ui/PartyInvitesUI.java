@@ -45,15 +45,17 @@ public class PartyInvitesUI {
 
     buttons.removeIf(Objects::isNull);
 
+    ItemStack itemprevius = Items.ARROW.getDefaultStack();
+    itemprevius.set(DataComponentTypes.CUSTOM_NAME, Text.literal("Previous Page"));
     LinkedPageButton previus = LinkedPageButton.builder()
-      .display(Utils.parseItemId("minecraft:arrow"))
-      .with(DataComponentTypes.CUSTOM_NAME, AdventureTranslator.toNative("Previous Page"))
+      .display(itemprevius)
       .linkType(LinkType.Previous)
       .build();
 
+    ItemStack itemnext = Items.ARROW.getDefaultStack();
+    itemnext.set(DataComponentTypes.CUSTOM_NAME, Text.literal("Next Page"));
     LinkedPageButton next = LinkedPageButton.builder()
-      .display(Utils.parseItemId("minecraft:arrow"))
-      .with(DataComponentTypes.CUSTOM_NAME, AdventureTranslator.toNative("Next Page"))
+      .display(itemnext)
       .linkType(LinkType.Next)
       .build();
 

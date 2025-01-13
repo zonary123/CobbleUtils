@@ -13,6 +13,8 @@ import org.bukkit.plugin.RegisteredServiceProvider;
 
 import java.util.List;
 
+import static dev.architectury.platform.Platform.isNeoForge;
+
 public abstract class LuckPermsUtil {
 
   private static Permission PERMISSION_TYPE;
@@ -23,22 +25,20 @@ public abstract class LuckPermsUtil {
     LUCKPERMS,
     BUKKIT_PERMISSION_API,
     FABRIC_PERMISSIONS_API,
-    NEOFORGE_PERMISSIONS_API,
     NONE
   }
 
   private static void setup() {
     if (PERMISSION_TYPE != null) return;
-
-    if (getLuckPermsApi() != null) {
+    if (isNeoForge()) {
       PERMISSION_TYPE = Permission.LUCKPERMS;
-      CobbleUtils.LOGGER.info("LuckPerms detected");
-    } else if (false) {
-      //PERMISSION_TYPE = Permission.NEOFORGE_PERMISSIONS_API;
-      CobbleUtils.LOGGER.info("NeoForge permissions detected");
+      CobbleUtils.LOGGER.info("Neoforge detected");
     } else if (haveFabricPermissionsApi()) {
       PERMISSION_TYPE = Permission.FABRIC_PERMISSIONS_API;
       CobbleUtils.LOGGER.info("Fabric permissions detected");
+    } else if (getLuckPermsApi() != null) {
+      PERMISSION_TYPE = Permission.LUCKPERMS;
+      CobbleUtils.LOGGER.info("LuckPerms detected");
     } else if (haveBukkitPermissionApi()) {
       PERMISSION_TYPE = Permission.BUKKIT_PERMISSION_API;
       CobbleUtils.LOGGER.info("Bukkit permissions detected");
@@ -94,12 +94,6 @@ public abstract class LuckPermsUtil {
     return switch (PERMISSION_TYPE) {
       case LUCKPERMS, BUKKIT_PERMISSION_API -> checkLuckPermsPermission(source, permissions, level);
       case FABRIC_PERMISSIONS_API -> checkFabricPermissions(source, level, permissions);
-      case NEOFORGE_PERMISSIONS_API -> {
-        boolean hasPermission = false;
-        for (String permission : permissions) {
-        }
-        yield hasPermission || source.hasPermissionLevel(level);
-      }
       default -> source.hasPermissionLevel(level);
     };
   }
@@ -122,10 +116,8 @@ public abstract class LuckPermsUtil {
     }
     UserManager userManager = luckPermsApi.getUserManager();
     ServerPlayerEntity player = source.getPlayer();
-    if (player == null) {
-      CobbleUtils.LOGGER.error("Player not found in LuckPerms");
-      return false;
-    }
+    if (player == null) return source.hasPermissionLevel(level);
+
     User user = userManager.getUser(player.getUuid());
     if (user == null) {
       CobbleUtils.LOGGER.error("User not found in LuckPerms");
@@ -152,7 +144,6 @@ public abstract class LuckPermsUtil {
       case LUCKPERMS, BUKKIT_PERMISSION_API ->
         checkLuckPermsPermission(player.getCommandSource(), List.of(permission), 4);
       case FABRIC_PERMISSIONS_API -> Permissions.require(permission, 4).test(player.getCommandSource());
-      case NEOFORGE_PERMISSIONS_API -> false;
       default -> player.hasPermissionLevel(4);
     };
   }

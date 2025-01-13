@@ -67,16 +67,16 @@ public class PoolMoney {
       return false;
     }
 
-    int totalWeight = moneys.stream().mapToInt(ItemChance::getChance).sum();
-    int randomValue = Utils.RANDOM.nextInt(totalWeight) + 1;
+    double totalWeight = moneys.stream().mapToDouble(ItemChance::getChance).sum();
+    double randomValue = Utils.RANDOM.nextDouble(totalWeight) + 1;
 
-    int currentWeight = 0;
+    double currentWeight = 0;
     for (ItemChance itemChance : moneys) {
       currentWeight += itemChance.getChance();
       if (randomValue <= currentWeight) {
-        try{
+        try {
           return ItemChance.giveReward(player, itemChance);
-        } catch (NoPokemonStoreException e){
+        } catch (NoPokemonStoreException e) {
           e.printStackTrace();
         }
       }

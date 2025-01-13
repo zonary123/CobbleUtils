@@ -97,7 +97,7 @@ public class ShopLang {
       "",
       "&7Balance: &e%balance%",
       "");
-    this.messageNotHavePermission = "%prefix% &7You don't have permission to open the shop";
+    this.messageNotHavePermission = "%prefix% &7You don't have permission to open the shop permission: %permission%";
     this.balance = new ItemModel(47, "cobblemon:relic_coin_sack", "&6Balance", List.of(
       "&7You have: &e%balance% %currency%"
     ), 0);
