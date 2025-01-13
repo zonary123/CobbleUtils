@@ -757,7 +757,7 @@ public class EggData {
   }
 
   private static String getForm(Pokemon pokemon) {
-    AtomicReference<StringBuilder> form = new AtomicReference<>();
+    StringBuilder form = new StringBuilder();
 
 
     switch (pokemon.getSpecies().showdownId()) {
@@ -783,13 +783,6 @@ public class EggData {
       .findFirst()
       .ifPresent(eggForm -> configForm.set(eggForm.getForm()));
 
-    CobbleUtils.breedconfig.getEggSpecialForms().stream()
-      .filter(eggSpecialForm -> eggSpecialForm.getPokemons().stream()
-        .anyMatch(pokemonData -> pokemonData.getPokename().equalsIgnoreCase(pokemon.getSpecies().showdownId())))
-      .findFirst()
-      .ifPresent(eggSpecialForm -> configForm.set(eggSpecialForm.getForm()));
-
-
     if (configForm.get() != null) {
       if (CobbleUtils.breedconfig.getBlacklistForm().contains(configForm.get())) configForm.set("");
       return configForm.get();
@@ -798,27 +791,27 @@ public class EggData {
     List<String> aspects = pokemon.getForm().getAspects();
 
     if (aspects.isEmpty()) {
-      form.set(new StringBuilder());
+      form = new StringBuilder();
     } else {
-      form.set(new StringBuilder(aspects.get(0)));
+      form.append(aspects.getFirst());
     }
 
 
-    form.set(new StringBuilder(form.toString().replace("-", "_")));
+    form = new StringBuilder(form.toString().replace("-", "_"));
 
-    int lastUnderscoreIndex = form.get().lastIndexOf("_");
+    int lastUnderscoreIndex = form.lastIndexOf("_");
 
     if (lastUnderscoreIndex != -1) {
-      form.set(new StringBuilder(form.get().substring(0, lastUnderscoreIndex) + "=" + form.get().substring(lastUnderscoreIndex + 1)));
+      form = new StringBuilder(form.substring(0, lastUnderscoreIndex) + "=" + form.substring(lastUnderscoreIndex + 1));
     }
 
 
     // Form Regional
-    pokemon.getForm().getLabels().forEach(label -> {
+    for (String label : pokemon.getForm().getLabels()) {
       if (label.contains("regional")) {
-        form.set(new StringBuilder("region_bias=" + pokemon.getForm().formOnlyShowdownId()));
+        form.append(" ").append("region_bias=").append(pokemon.getForm().formOnlyShowdownId());
       }
-    });
+    }
 
     for (SpeciesFeatureProvider<?> speciesFeatureProvider : SpeciesFeatures.INSTANCE.getFeaturesFor(pokemon.getSpecies())) {
       if (speciesFeatureProvider instanceof ChoiceSpeciesFeatureProvider choice) {
@@ -833,12 +826,13 @@ public class EggData {
           if (CobbleUtils.config.isDebug()) {
             CobbleUtils.LOGGER.info("Feature -> Name: " + name + " Value: " + value);
           }
-          form.get().append(" ").append(name).append("=").append(value);
+          form.append(" ").append(name).append("=").append(value);
         }
       }
     }
 
-    if (CobbleUtils.breedconfig.getBlacklistForm().contains(form.toString())) form.set(new StringBuilder());
+    if (CobbleUtils.breedconfig.getBlacklistForm().contains(form.toString()))
+      form = new StringBuilder();
 
     return form.toString();
   }

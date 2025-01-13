@@ -2,7 +2,10 @@ package com.kingpixel.cobbleutils.features.breeding.config;
 
 import com.google.gson.Gson;
 import com.kingpixel.cobbleutils.CobbleUtils;
-import com.kingpixel.cobbleutils.Model.*;
+import com.kingpixel.cobbleutils.Model.FilterPokemons;
+import com.kingpixel.cobbleutils.Model.ItemModel;
+import com.kingpixel.cobbleutils.Model.PokemonChance;
+import com.kingpixel.cobbleutils.Model.Sound;
 import com.kingpixel.cobbleutils.api.PermissionApi;
 import com.kingpixel.cobbleutils.config.Lang;
 import com.kingpixel.cobbleutils.features.breeding.models.EggData;
@@ -103,7 +106,6 @@ public class BreedConfig {
   private List<Integer> femaleSlots;
 
   private List<EggData.EggForm> eggForms;
-  private List<EggData.EggSpecialForm> eggSpecialForms;
   private List<EggData.PokemonRareMecanic> pokemonRareMechanics;
   private List<Incense> incenses;
   private FilterPokemons pokemonsForDoubleDitto;
@@ -213,11 +215,6 @@ public class BreedConfig {
         List.of("perrserker", "sirfetchd", "mrrime", "cursola", "runerigus", "obstagoon")),
       new EggData.EggForm("paldean", List.of("clodsire")),
       new EggData.EggForm("hisuian", List.of("overqwil", "sneasler"))
-    );
-
-    this.eggSpecialForms = List.of(
-      new EggData.EggSpecialForm("region_bias=hisui",
-        List.of(new PokemonData("decidueye", "hisuian")))
     );
 
     this.pokemonRareMechanics = List.of(
