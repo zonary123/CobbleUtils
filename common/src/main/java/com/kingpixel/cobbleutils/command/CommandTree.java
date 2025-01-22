@@ -104,7 +104,8 @@ public class CommandTree {
     if (CobbleUtils.config.isStorageRewards()) {
       for (String literal : CobbleUtils.config.getCommandrewards()) {
         LiteralArgumentBuilder<ServerCommandSource> base = CommandManager.literal(literal)
-          .requires(source -> LuckPermsUtil.checkPermission(source, 2, List.of("cobbleutils.user")));
+          .requires(source -> LuckPermsUtil.checkPermission(source, 2, List.of("cobbleutils.user",
+            "cobbleutils.storage_rewards")));
         Rewards.register(dispatcher, base);
         RewardsPokemon.register(dispatcher, base);
         RewardsItemStack.register(dispatcher, base, registry);

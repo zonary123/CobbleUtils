@@ -24,6 +24,7 @@ public abstract class WalkBreedingMixin {
 
   @Inject(method = "onPlayerMove", at = @At("HEAD"))
   public void breeding$onPlayerMove(PlayerMoveC2SPacket packet, CallbackInfo ci) {
+    if (!CobbleUtils.breedconfig.isActive()) return;
     boolean isinpose = !player.isInPose(EntityPose.FALL_FLYING);
     boolean isinvulnerable = !player.isInvulnerable();
     boolean permittedVehicles = permittedVehicles(player);

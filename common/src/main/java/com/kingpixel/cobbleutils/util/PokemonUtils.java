@@ -156,7 +156,7 @@ public class PokemonUtils {
       Pokemon p = PokemonProperties.Companion.parse(pokemon.getSpecies().showdownId()).create();
       String ability = pokemon.getPersistentData().getString("ability");
       if (!ability.isEmpty()) {
-        p.updateAbility(Abilities.INSTANCE.get(ability).create(false, Priority.NORMAL));
+        p.updateAbility(Abilities.INSTANCE.get(ability).create(false, Priority.LOWEST));
       } else {
         p.updateAbility(getRandomAbility(p));
       }
@@ -697,7 +697,7 @@ public class PokemonUtils {
   public static Ability getAH(Pokemon pokemon) {
     for (PotentialAbility ability : pokemon.getForm().getAbilities()) {
       if (ability.getType() instanceof HiddenAbilityType) {
-        return ability.getTemplate().create(false, Priority.NORMAL);
+        return ability.getTemplate().create(false, Priority.LOWEST);
       }
     }
     return getRandomAbility(pokemon);
@@ -731,7 +731,7 @@ public class PokemonUtils {
   public static boolean isAH(Pokemon pokemon, AbilityTemplate ability) {
     for (PotentialAbility potentialAbility : pokemon.getForm().getAbilities()) {
       if (potentialAbility.getType() instanceof HiddenAbilityType) {
-        if (potentialAbility.getTemplate().create(false, Priority.NORMAL).getName().equalsIgnoreCase(ability.getName())) {
+        if (potentialAbility.getTemplate().create(false, Priority.LOWEST).getName().equalsIgnoreCase(ability.getName())) {
           return true;
         }
       }
@@ -750,7 +750,7 @@ public class PokemonUtils {
   public static boolean isAH(Pokemon pokemon, Ability ability) {
     for (PotentialAbility potentialAbility : pokemon.getForm().getAbilities()) {
       if (potentialAbility.getType() instanceof HiddenAbilityType) {
-        if (potentialAbility.getTemplate().create(false, Priority.NORMAL).getName().equalsIgnoreCase(ability.getName())) {
+        if (potentialAbility.getTemplate().create(false, Priority.LOWEST).getName().equalsIgnoreCase(ability.getName())) {
           return true;
         }
       }
@@ -763,15 +763,14 @@ public class PokemonUtils {
     List<Ability> abilityList = new ArrayList<>();
     for (PotentialAbility potentialAbility : abilities) {
       if (!(potentialAbility.getType() instanceof HiddenAbilityType)) {
-        abilityList.add(potentialAbility.getTemplate().create(false, Priority.NORMAL));
+        abilityList.add(potentialAbility.getTemplate().create(false, Priority.LOWEST));
       }
     }
 
     if (abilityList.size() == 1) {
-      return abilityList.get(0);
-    } else {
-      return abilityList.get(Utils.RANDOM.nextInt(abilityList.size()));
+      return abilityList.getFirst();
     }
+    return abilityList.get(Utils.RANDOM.nextInt(abilityList.size()));
   }
 
   public static void isLegalAbility(ServerPlayerEntity player, Pokemon pokemon) {

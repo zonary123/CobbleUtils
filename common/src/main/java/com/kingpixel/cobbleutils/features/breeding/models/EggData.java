@@ -5,8 +5,10 @@ import com.cobblemon.mod.common.api.Priority;
 import com.cobblemon.mod.common.api.abilities.Abilities;
 import com.cobblemon.mod.common.api.abilities.Ability;
 import com.cobblemon.mod.common.api.abilities.AbilityTemplate;
+import com.cobblemon.mod.common.api.abilities.PotentialAbility;
 import com.cobblemon.mod.common.api.moves.BenchedMove;
 import com.cobblemon.mod.common.api.moves.Move;
+import com.cobblemon.mod.common.api.moves.MoveTemplate;
 import com.cobblemon.mod.common.api.moves.Moves;
 import com.cobblemon.mod.common.api.pokeball.PokeBalls;
 import com.cobblemon.mod.common.api.pokemon.Natures;
@@ -34,10 +36,7 @@ import com.kingpixel.cobbleutils.Model.PokemonData;
 import com.kingpixel.cobbleutils.Model.ScalePokemonData;
 import com.kingpixel.cobbleutils.events.ScaleEvent;
 import com.kingpixel.cobbleutils.features.breeding.events.HatchEggEvent;
-import com.kingpixel.cobbleutils.util.AdventureTranslator;
-import com.kingpixel.cobbleutils.util.PlayerUtils;
-import com.kingpixel.cobbleutils.util.PokemonUtils;
-import com.kingpixel.cobbleutils.util.Utils;
+import com.kingpixel.cobbleutils.util.*;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
@@ -121,16 +120,28 @@ public class EggData {
   }
 
   public void EggToPokemon(ServerPlayerEntity player, Pokemon egg) {
+    var party = Cobblemon.INSTANCE.getStorage().getParty(player);
+    var pc = Cobblemon.INSTANCE.getStorage().getPC(player);
+    if (egg.getPersistentData().getBoolean("Hatched")) {
+      PlayerUtils.sendMessage(
+        player,
+        "Please delete this egg is a error",
+        CobbleUtils.breedconfig.getPrefix(),
+        TypeMessage.CHAT
+      );
+      party.remove(egg);
+      pc.remove(egg);
+      return;
+    }
     String pokemonId = species == null || species.isEmpty() ? "rattata" : species;
     PokemonProperties pokemonProperties = PokemonProperties.Companion.parse(pokemonId + " " + form);
 
-    var party = Cobblemon.INSTANCE.getStorage().getParty(player);
-    var pc = Cobblemon.INSTANCE.getStorage().getPC(player);
 
     Pokemon pokemon = pokemonProperties.create();
-    pokemon.getPersistentData().copyFrom(egg.getPersistentData());
-    pokemon.setShiny(egg.getShiny());
 
+    pokemon.getPersistentData().copyFrom(egg.getPersistentData());
+    egg.getPersistentData().putBoolean("Hatched", true);
+    pokemon.setShiny(egg.getShiny());
     party.remove(egg);
     pc.remove(egg);
 
@@ -442,11 +453,11 @@ public class EggData {
 
 
     List<String> names = new ArrayList<>();
-    firstEvolution.getForm().getMoves().getEggMoves().forEach(eggmove -> {
-      if (moves.contains(eggmove.getName())) {
-        names.add(eggmove.getName());
+    for (MoveTemplate eggMove : firstEvolution.getForm().getMoves().getEggMoves()) {
+      if (moves.contains(eggMove.getName())) {
+        names.add(eggMove.getName());
       }
-    });
+    }
 
     if (!names.isEmpty()) {
       JsonArray jsonArray = new JsonArray();
@@ -669,7 +680,7 @@ public class EggData {
       return;
     }
 
-    if (isDitto(male)) {
+    if (isDitto(female)) {
       egg.getPersistentData().putString("ability", PokemonUtils.getRandomAbility(firstEvolution).getName());
       return;
     }
@@ -677,13 +688,13 @@ public class EggData {
     List<Ability> normalAbilities = new ArrayList<>();
     List<Ability> hiddenAbilities = new ArrayList<>();
 
-    firstEvolution.getForm().getAbilities().forEach(ability -> {
+    for (PotentialAbility ability : firstEvolution.getForm().getAbilities()) {
       if (ability.getType() instanceof HiddenAbilityType) {
         hiddenAbilities.add(ability.getTemplate().create(false, Priority.NORMAL));
       } else {
         normalAbilities.add(ability.getTemplate().create(false, Priority.NORMAL));
       }
-    });
+    }
 
     boolean femaleAh = PokemonUtils.isAH(female);
     boolean success = Utils.RANDOM.nextDouble(100) <= CobbleUtils.breedconfig.getSuccessItems().getPercentageTransmitAH();
@@ -698,7 +709,7 @@ public class EggData {
           egg.getPersistentData().putString("ability", femaleAbility.getName());
         } else {
           normalAbilities.remove(femaleAbility);
-          egg.getPersistentData().putString("ability", normalAbilities.get(0).getName());
+          egg.getPersistentData().putString("ability", normalAbilities.get(Utils.RANDOM.nextInt(normalAbilities.size())).getName());
         }
       } else {
         egg.getPersistentData().putString("ability", PokemonUtils.getRandomAbility(firstEvolution).getName());

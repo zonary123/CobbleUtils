@@ -4,18 +4,11 @@
   "id": "${mod_id}",
   "version": "${mod_version}",
   "description": "${mod_description}",
-  "authors": [
-    "${author}"
-  ],
-  "mixins": [
-    "cobbleutils.mixins.json"
-  ],
-  "contact": {
-  },
+  "authors": ["${author}"],
+  "mixins": ["cobbleutils.mixins.json"],
+  "contact": {},
   "entrypoints": {
-    "main": [
-      "com.kingpixel.cobbleutils.fabric.CobbleUtilsFabric"
-    ]
+    "main": ["com.kingpixel.cobbleutils.fabric.CobbleUtilsFabric"]
   },
   "license": "${license}",
   "environment": "*",

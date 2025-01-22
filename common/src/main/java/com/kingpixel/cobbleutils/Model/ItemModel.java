@@ -233,11 +233,10 @@ public class ItemModel {
     } else {
       builder.with(DataComponentTypes.CUSTOM_NAME, AdventureTranslator.toNative(getDisplayname()));
     }
-    if (lore != null) {
-      builder.with(DataComponentTypes.LORE, new LoreComponent(AdventureTranslator.toNativeL(lore)));
-    } else {
-      builder.with(DataComponentTypes.LORE, new LoreComponent(AdventureTranslator.toNativeL(getLore())));
-    }
+    LoreComponent loreComponent = new LoreComponent(AdventureTranslator.toNativeL(lore != null ? lore : getLore()));
+
+    builder.with(DataComponentTypes.LORE, loreComponent);
+
     if (action == null) {
       return builder.build();
     }

@@ -28,6 +28,7 @@ import com.kingpixel.cobbleutils.CobbleUtils;
 import eu.pb4.placeholders.api.PlaceholderContext;
 import eu.pb4.placeholders.api.Placeholders;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
 import net.minecraft.registry.BuiltinRegistries;
@@ -86,17 +87,18 @@ public class AdventureTranslator {
   }
 
   public static Text toNative(Component component, @Nullable ServerPlayerEntity player) {
+    component = component.decoration(TextDecoration.ITALIC, false);
     RegistryWrapper.WrapperLookup wrapper = getWrapper();
-    Text text;
+    MutableText text;
     if (wrapper != null) {
       text = Text.Serialization.fromJson(GsonComponentSerializer.gson().serialize(component),
         wrapper);
     } else {
-      text = Text.of(GsonComponentSerializer.gson().serialize(component));
+      text = Text.literal(GsonComponentSerializer.gson().serialize(component));
     }
-    if (player != null) {
+    if (player != null && text != null) {
       if (isPlaceholder()) {
-        text = Placeholders.parseText(text, PlaceholderContext.of(player));
+        text = Placeholders.parseText(text, PlaceholderContext.of(player)).copy();
       }
     }
     return text;
@@ -131,30 +133,32 @@ public class AdventureTranslator {
   private static String replaceNative(String text) {
     if (text == null || text.isEmpty()) return "";
 
-    text = text
-      .replace("&", "§")
-      .replace("§0", "<black>")
-      .replace("§1", "<dark_blue>")
-      .replace("§2", "<dark_green>")
-      .replace("§3", "<dark_aqua>")
-      .replace("§4", "<dark_red>")
-      .replace("§5", "<dark_purple>")
-      .replace("§6", "<gold>")
-      .replace("§7", "<gray>")
-      .replace("§8", "<dark_gray>")
-      .replace("§9", "<blue>")
-      .replace("§a", "<green>")
-      .replace("§b", "<aqua>")
-      .replace("§c", "<red>")
-      .replace("§d", "<light_purple>")
-      .replace("§e", "<yellow>")
-      .replace("§f", "<white>")
-      .replace("§k", "<obfuscated>")
-      .replace("§l", "<bold>")
-      .replace("§m", "<strikethrough>")
-      .replace("§n", "<underline>")
-      .replace("§o", "<italic>")
-      .replace("§r", "<reset>");
+    if (text.contains("§") || text.contains("&")) {
+      text = text
+        .replace("&", "§")
+        .replace("§0", "<black>")
+        .replace("§1", "<dark_blue>")
+        .replace("§2", "<dark_green>")
+        .replace("§3", "<dark_aqua>")
+        .replace("§4", "<dark_red>")
+        .replace("§5", "<dark_purple>")
+        .replace("§6", "<gold>")
+        .replace("§7", "<gray>")
+        .replace("§8", "<dark_gray>")
+        .replace("§9", "<blue>")
+        .replace("§a", "<green>")
+        .replace("§b", "<aqua>")
+        .replace("§c", "<red>")
+        .replace("§d", "<light_purple>")
+        .replace("§e", "<yellow>")
+        .replace("§f", "<white>")
+        .replace("§k", "<obfuscated>")
+        .replace("§l", "<bold>")
+        .replace("§m", "<strikethrough>")
+        .replace("§n", "<underline>")
+        .replace("§o", "<italic>")
+        .replace("§r", "<reset>");
+    }
 
 
     return text;

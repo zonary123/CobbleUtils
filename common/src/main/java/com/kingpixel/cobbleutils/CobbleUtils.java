@@ -71,8 +71,6 @@ public class CobbleUtils extends ShopExtend {
   // Tasks
   private static Task alertReward;
   private static Task fixSize;
- /* public static final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
-  private static final List<ScheduledFuture<?>> scheduledTasks = new CopyOnWriteArrayList<>();*/
 
 
   public static void init() {
@@ -219,10 +217,6 @@ public class CobbleUtils extends ShopExtend {
   }
 
   private static void tasks() {
-/*    for (ScheduledFuture<?> task : scheduledTasks) {
-      task.cancel(true);
-    }
-    scheduledTasks.clear();*/
 
     if (config.isStorageRewards()) {
       int intervalAlertReward = 20 * 60 * CobbleUtils.config.getAlertreward();
@@ -238,23 +232,12 @@ public class CobbleUtils extends ShopExtend {
               PlayerUtils.sendMessage(player,
                 language.getMessageHaveRewards()
                   .replace("%amount%", String.valueOf(amount)),
-                CobbleUtils.language.getPrefixStorageRewards());
+                CobbleUtils.language.getPrefixStorageRewards(),
+                TypeMessage.CHAT);
             }
           });
         })
         .build();
-      /*ScheduledFuture<?> alertreward =
-        scheduler.scheduleAtFixedRate(() -> server.getPlayerManager().getPlayerList().forEach(player -> {
-          RewardsData rewardsData = rewardsManager.getRewardsData().get(player.getUuid());
-          if (RewardsUtils.hasRewards(player)) {
-            int amount = rewardsData.getAmount();
-            PlayerUtils.sendMessage(player,
-              language.getMessageHaveRewards()
-                .replace("%amount%", String.valueOf(amount)),
-              CobbleUtils.language.getPrefixStorageRewards());
-          }
-        }), 0, CobbleUtils.config.getAlertreward(), TimeUnit.MINUTES);
-      scheduledTasks.add(alertreward);*/
     }
 
     if (config.isRandomsize()) {
@@ -272,16 +255,6 @@ public class CobbleUtils extends ShopExtend {
           );
         })
         .build();
-      /*ScheduledFuture<?> fixSize =
-        scheduler.scheduleAtFixedRate(() -> server.getPlayerManager().getPlayerList().forEach(
-          player -> {
-            Cobblemon.INSTANCE.getStorage().getParty(player).forEach(ScaleEvent::solveScale);
-            Cobblemon.INSTANCE.getStorage().getPC(player).forEach(ScaleEvent::solveScale);
-          }
-        ), 0, 30, TimeUnit.MINUTES);
-
-
-      scheduledTasks.add(fixSize);*/
     }
 
     setEconomyType();

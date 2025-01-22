@@ -4,6 +4,7 @@ import com.cobblemon.mod.common.Cobblemon;
 import com.cobblemon.mod.common.api.storage.NoPokemonStoreException;
 import com.cobblemon.mod.common.pokemon.Pokemon;
 import com.kingpixel.cobbleutils.CobbleUtils;
+import com.kingpixel.cobbleutils.Model.CobbleUtilsTags;
 import com.kingpixel.cobbleutils.Model.SizeChance;
 import com.kingpixel.cobbleutils.util.LuckPermsUtil;
 import com.kingpixel.cobbleutils.util.PlayerUtils;
@@ -92,7 +93,7 @@ public class PokemonSize implements Command<ServerCommandSource> {
       return;
     }
     pokemon.setScaleModifier(scale);
-    pokemon.getPersistentData().putString("size", "custom");
+    pokemon.getPersistentData().putString(CobbleUtilsTags.SIZE_TAG, CobbleUtilsTags.SIZE_CUSTOM_TAG);
   }
 
 }

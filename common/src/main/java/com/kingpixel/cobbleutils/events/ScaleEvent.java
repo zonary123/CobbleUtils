@@ -55,6 +55,7 @@ public class ScaleEvent {
 
   public static void solveScale(Pokemon pokemon) {
     if (!CobbleUtils.config.isRandomsize()) return;
+    if (pokemon.getPersistentData().getString(SIZE_TAG).equals(SIZE_CUSTOM_TAG)) return;
     ScalePokemonData scalePokemonData = ScalePokemonData.getScalePokemonData(pokemon);
     if (scalePokemonData.existSize(pokemon)) {
       SizeChanceWithoutItem size = scalePokemonData.getSize(pokemon);
@@ -74,6 +75,7 @@ public class ScaleEvent {
    * @param pokemon Pokemon
    */
   private static void scalePokemon(Pokemon pokemon) {
+    if (pokemon.getPersistentData().getString(SIZE_TAG).equals(SIZE_CUSTOM_TAG)) return;
     if (CobbleUtils.config.getPokemonsizes().isEmpty()) return;
     if (pokemon.getPersistentData().getBoolean(CobbleUtilsTags.BOSS_TAG)) return;
     ScalePokemonData scalePokemonData = ScalePokemonData.getScalePokemonData(pokemon);
