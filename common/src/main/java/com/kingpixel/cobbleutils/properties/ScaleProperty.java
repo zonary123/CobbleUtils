@@ -4,7 +4,6 @@ import com.cobblemon.mod.common.api.properties.CustomPokemonProperty;
 import com.cobblemon.mod.common.entity.pokemon.PokemonEntity;
 import com.cobblemon.mod.common.pokemon.Pokemon;
 import com.kingpixel.cobbleutils.CobbleUtils;
-import com.kingpixel.cobbleutils.Model.CobbleUtilsTags;
 import com.kingpixel.cobbleutils.Model.ScalePokemonData;
 import com.kingpixel.cobbleutils.Model.SizeChanceWithoutItem;
 import org.jetbrains.annotations.NotNull;
@@ -31,7 +30,6 @@ public class ScaleProperty implements CustomPokemonProperty {
     if (CobbleUtils.config.isRandomsize()) {
       SizeChanceWithoutItem scalePokemonData = ScalePokemonData.getScalePokemonData(pokemonEntity.getPokemon(), this.value);
       scalePokemonData.apply(pokemonEntity.getPokemon());
-      putCustom(pokemonEntity);
     } else {
       pokemonEntity.getPokemon().setScaleModifier(1.0f);
     }
@@ -45,7 +43,6 @@ public class ScaleProperty implements CustomPokemonProperty {
     if (CobbleUtils.config.isRandomsize()) {
       SizeChanceWithoutItem scalePokemonData = ScalePokemonData.getScalePokemonData(pokemon, this.value);
       scalePokemonData.apply(pokemon);
-      putCustom(pokemon);
     } else {
       pokemon.setScaleModifier(1.0f);
     }
@@ -58,14 +55,5 @@ public class ScaleProperty implements CustomPokemonProperty {
 
   @Override public boolean matches(@NotNull PokemonEntity pokemonEntity) {
     return true;
-  }
-
-  private void putCustom(PokemonEntity pokemonEntity) {
-    putCustom(pokemonEntity.getPokemon());
-  }
-
-  private void putCustom(Pokemon pokemon) {
-    if (pokemon == null) return;
-    pokemon.getPersistentData().putString(CobbleUtilsTags.SIZE_TAG, "custom");
   }
 }

@@ -237,7 +237,8 @@ public class FilterPokemons {
    * @return the pokemon
    */
   private Pokemon getPokemon(Pokemon pokemon) {
-    Pokemon copy = pokemon.clone(true);
+    Pokemon copy = new Pokemon().copyFrom(pokemon);
+    copy.setUuid(UUID.randomUUID());
     copy.createPokemonProperties(List.of(
       PokemonPropertyExtractor.NATURE,
       PokemonPropertyExtractor.IVS,

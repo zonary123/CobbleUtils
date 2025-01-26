@@ -134,7 +134,15 @@ public class EggData {
       return;
     }
     String pokemonId = species == null || species.isEmpty() ? "rattata" : species;
-    PokemonProperties pokemonProperties = PokemonProperties.Companion.parse(pokemonId + " " + form);
+    AbilityTemplate abilityTemplate;
+    if (ability.isEmpty()) {
+      abilityTemplate =
+        PokemonUtils.getRandomAbility(PokemonProperties.Companion.parse(pokemonId + " " + form).create()).getTemplate();
+    } else {
+      abilityTemplate = Abilities.INSTANCE.get(this.ability);
+    }
+
+    PokemonProperties pokemonProperties = PokemonProperties.Companion.parse(pokemonId + " " + form + " ability=" + abilityTemplate.getName());
 
 
     Pokemon pokemon = pokemonProperties.create();
@@ -145,16 +153,6 @@ public class EggData {
     party.remove(egg);
     pc.remove(egg);
 
-    AbilityTemplate abilityTemplate;
-    if (ability.isEmpty()) {
-      abilityTemplate = PokemonUtils.getRandomAbility(pokemon).getTemplate();
-    } else {
-      abilityTemplate = Abilities.INSTANCE.get(this.ability);
-    }
-
-    if (abilityTemplate != null) {
-      pokemon.updateAbility(abilityTemplate.create(false, Priority.LOWEST));
-    }
 
     Nature nature;
     try {

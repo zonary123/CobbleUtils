@@ -8,6 +8,7 @@ import com.kingpixel.cobbleutils.Model.CobbleUtilsTags;
 import com.kingpixel.cobbleutils.Model.SizeChance;
 import com.kingpixel.cobbleutils.util.LuckPermsUtil;
 import com.kingpixel.cobbleutils.util.PlayerUtils;
+import com.kingpixel.cobbleutils.util.TypeMessage;
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.FloatArgumentType;
@@ -29,8 +30,6 @@ public class PokemonSize implements Command<ServerCommandSource> {
 
   public static void register(CommandDispatcher<ServerCommandSource> dispatcher,
                               LiteralArgumentBuilder<ServerCommandSource> base) {
-    float minsize = 0.01f;
-    float maxsize = 25f;
     dispatcher.register(
       base
 
@@ -38,7 +37,7 @@ public class PokemonSize implements Command<ServerCommandSource> {
           CommandManager.literal("scale")
             .requires(source ->
               LuckPermsUtil.checkPermission(source, 2, List.of("cobbleutils.admin", "cobbleutils.pokemon.size")))
-            .then(CommandManager.argument("scale", FloatArgumentType.floatArg(minsize, maxsize))
+            .then(CommandManager.argument("scale", FloatArgumentType.floatArg())
               .suggests((context, builder) -> {
                 for (SizeChance size : CobbleUtils.config.getPokemonsizes()) {
                   builder.suggest(String.valueOf(size.getSize()));
@@ -89,7 +88,7 @@ public class PokemonSize implements Command<ServerCommandSource> {
   private static void scale(ServerPlayerEntity player, int slot, float scale) throws NoPokemonStoreException {
     Pokemon pokemon = Cobblemon.INSTANCE.getStorage().getParty(player).get(--slot);
     if (pokemon == null) {
-      PlayerUtils.sendMessage(player, CobbleUtils.language.getMessageNoPokemon());
+      PlayerUtils.sendMessage(player, CobbleUtils.language.getMessageNoPokemon(), CobbleUtils.config.getPrefix(), TypeMessage.CHAT);
       return;
     }
     pokemon.setScaleModifier(scale);

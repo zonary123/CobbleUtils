@@ -176,8 +176,8 @@ public class CobbleUtilities {
    * @return If the command was executed successfully
    */
   public static boolean executeCommand(String command) {
-    CommandDispatcher<ServerCommandSource> disparador = CobbleUtils.server.getCommandManager().getDispatcher();
     try {
+      CommandDispatcher<ServerCommandSource> disparador = CobbleUtils.server.getCommandManager().getDispatcher();
       ServerCommandSource serverSource = CobbleUtils.server.getCommandSource();
       ParseResults<ServerCommandSource> parse = disparador.parse(command, serverSource);
       disparador.execute(parse);

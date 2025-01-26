@@ -243,12 +243,8 @@ public class ItemChance {
         return RewardsUtils.saveRewardPokemon(player, pokemon);
       } else if (item.startsWith("command:")) {
         String[] commandParts = item.split("#");
-        if (commandParts.length > 1) {
-          for (String commandPart : commandParts) {
-            RewardsUtils.saveRewardCommand(player, commandPart.replace("command:", ""));
-          }
-        } else {
-          RewardsUtils.saveRewardCommand(player, item.replace("command:", ""));
+        for (String commandPart : commandParts) {
+          RewardsUtils.saveRewardCommand(player, commandPart.replace("command:", ""));
         }
         return true;
       } else if (item.startsWith("money:")) {
@@ -606,9 +602,12 @@ public class ItemChance {
    */
   public static void getAllRewards(List<ItemChance> itemChances, ServerPlayerEntity player) {
     for (ItemChance itemChance : itemChances) {
+      if (CobbleUtils.config.isDebug()) {
+        CobbleUtils.LOGGER.info("ItemChance: " + itemChance);
+      }
       try {
         giveReward(player, itemChance);
-      } catch (NoPokemonStoreException e) {
+      } catch (Exception e) {
         e.printStackTrace();
       }
     }
