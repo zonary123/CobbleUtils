@@ -47,6 +47,8 @@ public class PokerusEvents {
       });
 
       CobblemonEvents.POKEMON_SENT_POST.subscribe(Priority.NORMAL, (evt) -> {
+        if (!CobbleUtils.config.getPokerus().isActive())
+          return Unit.INSTANCE;
         Pokemon pokemon = evt.getPokemon();
         if (pokemon.getPersistentData().getLong(POKERUS_TAG) < new Date().getTime()) {
           pokemon.getPersistentData().remove(POKERUS_TAG);
@@ -57,6 +59,8 @@ public class PokerusEvents {
       });
 
       CobblemonEvents.BATTLE_FAINTED.subscribe(Priority.NORMAL, (evt) -> {
+        if (!CobbleUtils.config.getPokerus().isActive())
+          return Unit.INSTANCE;
         List<Pokemon> pokemons = new ArrayList<>();
         Pokemon pokemonkilled = evt.getKilled().getEffectedPokemon();
         for (ActiveBattlePokemon activeBattlePokemon : evt.getBattle().getActivePokemon()) {

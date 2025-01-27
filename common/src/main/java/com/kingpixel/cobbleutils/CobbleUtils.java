@@ -105,6 +105,7 @@ public class CobbleUtils extends ShopExtend {
     language.init();
     if (!config.isDebug()) {
       config.setBoss(false);
+      config.setStorageRewards(false);
     }
     shopLang.init();
     poolItems.init();

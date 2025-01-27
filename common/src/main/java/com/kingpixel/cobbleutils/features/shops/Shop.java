@@ -495,7 +495,6 @@ public class Shop {
 
   private List<String> getLoreProduct(BigDecimal buy, BigDecimal sell, Product product, ServerPlayerEntity player,
                                       String symbol, TypeError typeError, BigDecimal amount) {
-    String symbolValue = (symbol != null) ? symbol : "";
     String currencyValue = (currency != null) ? currency : "";
     BigDecimal amountValue = (amount != null) ? amount : BigDecimal.ZERO;
 
@@ -530,7 +529,7 @@ public class Shop {
       .replace("%sell%", EconomyUtil.formatCurrency(calculatePrice(product, TypeMenu.SELL, amountValue, false), currencyValue
       ))
       .replace("%currency%", getCurrency() != null ? getCurrency() : "")
-      .replace("%symbol%", symbolValue)
+      .replace("%symbol%", EconomyUtil.getSymbol(getCurrency()))
       .replace("%amount%", amountValue.toString())
       .replace("%amountproduct%", String.valueOf(product.getItemchance().getItemStack().getCount()))
       .replace("%total%", String.valueOf(amountValue.compareTo(BigDecimal.ZERO) == 0 ? 1 : amountValue.multiply(BigDecimal.valueOf(product.getItemchance().getItemStack().getCount()))))

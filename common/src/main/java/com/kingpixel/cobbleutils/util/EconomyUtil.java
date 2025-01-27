@@ -524,8 +524,23 @@ public abstract class EconomyUtil {
         return CobbleUtils.language.getDefaultSymbol();
       }
       return switch (economyType) {
-        case IMPACTOR ->
-          GsonComponentSerializer.gson().serialize(impactorService.currencies().currency(Key.key(currency)).get().symbol());
+        case IMPACTOR -> {
+          var optionalCurrency = impactorService.currencies().currency(Key.key(currency));
+          if (optionalCurrency.isEmpty()) {
+            CobbleUtils.LOGGER.error("Currency not found -> " + currency);
+            yield CobbleUtils.language.getDefaultSymbol();
+          }
+          var c = optionalCurrency.get();
+          if (c == null) {
+            CobbleUtils.LOGGER.error("Currency is null -> " + currency);
+            yield CobbleUtils.language.getDefaultSymbol();
+          }
+          String symbol = GsonComponentSerializer.gson().serialize(c.symbol());
+          if (CobbleUtils.config.isDebug()) {
+            CobbleUtils.LOGGER.info("Symbol -> " + symbol);
+          }
+          yield symbol;
+        }
         case VAULT -> CobbleUtils.language.getDefaultSymbol();
         case BLANKECONOMY -> BlanketEconomy.INSTANCE.getAPI().getCurrencySymbol(currency);
         case COBBLEDOLLARS -> CobbleUtils.language.getDefaultSymbol();

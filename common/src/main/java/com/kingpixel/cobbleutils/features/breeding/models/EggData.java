@@ -27,6 +27,7 @@ import com.cobblemon.mod.common.pokemon.Nature;
 import com.cobblemon.mod.common.pokemon.Pokemon;
 import com.cobblemon.mod.common.pokemon.abilities.HiddenAbilityType;
 import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.kingpixel.cobbleutils.CobbleUtils;
@@ -177,12 +178,14 @@ public class EggData {
 
         // Obtener el JsonArray bajo la clave "moves"
         JsonArray jsonArray = jsonObject.getAsJsonArray("moves");
-        jsonArray.forEach(element -> {
-          Move move = Moves.INSTANCE.getByName(element.getAsString()).create();
+        for (JsonElement element : jsonArray) {
+          MoveTemplate moveTemplate = Moves.INSTANCE.getByName(element.getAsString());
+          if (moveTemplate == null) continue;
+          Move move = moveTemplate.create();
           JsonObject moveJson = move.saveToJSON(new JsonObject());
           BenchedMove benchedMove = BenchedMove.Companion.loadFromJSON(moveJson);
           pokemon.getBenchedMoves().add(benchedMove);
-        });
+        }
       } catch (Exception e) {
         CobbleUtils.LOGGER.error("Error to process JSON ARRAY: " + e.getMessage());
       }

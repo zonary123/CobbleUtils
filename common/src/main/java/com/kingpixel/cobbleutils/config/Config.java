@@ -151,6 +151,7 @@ public class Config {
         specifiedSizes = config.getSpecifiedSizes();
         if (!debug) {
           this.boss = false;
+          this.storageRewards = false;
         }
         String data = gson.toJson(this);
         CompletableFuture<Boolean> futureWrite = Utils.writeFileAsync(CobbleUtils.PATH, "config.json",
