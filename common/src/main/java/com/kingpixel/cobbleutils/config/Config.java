@@ -4,7 +4,6 @@ import com.cobblemon.mod.common.pokemon.Pokemon;
 import com.google.gson.Gson;
 import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.Model.*;
-import com.kingpixel.cobbleutils.Model.options.Pokerus;
 import com.kingpixel.cobbleutils.util.Utils;
 import lombok.Data;
 import lombok.Getter;
@@ -37,7 +36,6 @@ public class Config {
   private boolean storageRewards;
   private boolean solveSizeRandom;
   private boolean activeshinytoken;
-  private Pokerus pokerus;
   private String pokeshout;
   private String pokeshoutall;
   private int cooldownpokeshout;
@@ -79,7 +77,6 @@ public class Config {
     pokeshout = "pokeshoutplus";
     pokeshoutall = "pokeshoutplusall";
     cooldownpokeshout = 60;
-    pokerus = new Pokerus();
 
     defaultsize = "Normal";
     pokemonsizes = List.of(
@@ -130,7 +127,6 @@ public class Config {
         defaultsize = config.getDefaultsize();
         pokeshout = config.getPokeshout();
         pokeshoutall = config.getPokeshoutall();
-        pokerus = config.getPokerus();
         party = config.isParty();
         storageRewards = config.isStorageRewards();
         commandparty = config.getCommandparty();
@@ -144,7 +140,6 @@ public class Config {
         blacklist = config.getBlacklist();
         legends = config.getLegends();
         ultraBeasts = config.getUltraBeasts();
-
         activeshinytoken = config.isActiveshinytoken();
         forms = config.getForms();
         rarity = config.getRarity();

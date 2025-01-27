@@ -69,12 +69,7 @@ public class CommandTree {
 
       // /cobbleutils pokerename <slot> <name>
       PokeRename.register(dispatcher, base);
-
-      // /cobbleutils pokerus <slot> <player>
-      if (CobbleUtils.config.getPokerus().isActive()) {
-        PokerusCommand.register(dispatcher, base);
-      }
-
+      
 
       if (CobbleUtils.config.isBoss()) {
         // /cobbleutils boss <rarity> <coords>

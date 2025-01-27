@@ -21,7 +21,10 @@ import com.kingpixel.cobbleutils.party.config.PartyLang;
 import com.kingpixel.cobbleutils.party.event.CreatePartyEvent;
 import com.kingpixel.cobbleutils.party.event.DeletePartyEvent;
 import com.kingpixel.cobbleutils.party.util.PartyPlaceholder;
-import com.kingpixel.cobbleutils.properties.*;
+import com.kingpixel.cobbleutils.properties.BreedablePropertyType;
+import com.kingpixel.cobbleutils.properties.MinIvsPropertyType;
+import com.kingpixel.cobbleutils.properties.ScalePropertyType;
+import com.kingpixel.cobbleutils.properties.SizePropertyType;
 import com.kingpixel.cobbleutils.util.*;
 import dev.architectury.event.events.common.CommandRegistrationEvent;
 import dev.architectury.event.events.common.InteractionEvent;
@@ -130,7 +133,6 @@ public class CobbleUtils extends ShopExtend {
     LOGGER.info("§e| §6Shop: " + isActive(CobbleUtils.config.isShops()));
     LOGGER.info("§e| §6Party: " + isActive(CobbleUtils.config.isParty()));
     LOGGER.info("§e| §6Storage Rewards: " + isActive(CobbleUtils.config.isStorageRewards()));
-    LOGGER.info("§e| §6Pokerus: " + isActive(CobbleUtils.config.getPokerus().isActive()));
     LOGGER.info("§e| §6Breeding: " + isActive(CobbleUtils.breedconfig.isActive()));
     LOGGER.info("§e| §6Bosses: " + isActive(CobbleUtils.config.isBoss()));
     LOGGER.info("§e| §6Supported economies: Impactor, BlanketEconomy, CobbleDollars and Vault");
@@ -166,8 +168,6 @@ public class CobbleUtils extends ShopExtend {
       CustomPokemonProperty.Companion.register(ScalePropertyType.getInstance());
       if (CobbleUtils.breedconfig.isActive())
         CustomPokemonProperty.Companion.register(BreedablePropertyType.getInstance());
-      if (CobbleUtils.config.getPokerus().isActive())
-        CustomPokemonProperty.Companion.register(PokerusPropertyType.getInstance());
     });
 
     LifecycleEvent.SERVER_STOPPING.register(server -> {

@@ -11,9 +11,6 @@ public class FeaturesRegister {
     if (CobbleUtils.config.isBoss()) {
       PokemonBoss.register();
     }
-    if (CobbleUtils.config.getPokerus().isActive()) {
-      PokerusEvents.register();
-    }
     if (CobbleUtils.config.isRandomsize()) {
       ScaleEvent.register();
     }
