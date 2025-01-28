@@ -11,7 +11,6 @@ import net.minecraft.server.network.ServerPlayerEntity;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * @author Carlos Varas Alonso - 24/07/2024 21:03
@@ -34,7 +33,7 @@ public class DatabaseClientFactory {
 
   // Daycare
   public static void CheckDaycarePlots(ServerPlayerEntity player) {
-    AtomicBoolean update = new AtomicBoolean(false);
+    boolean update = false;
     List<PlotBreeding> plots = databaseClient.getPlots(player);
     int size = CobbleUtils.breedconfig.getPlotSlots().size();
     List<PlotBreeding> removedPlots = new ArrayList<>();
@@ -44,29 +43,29 @@ public class DatabaseClientFactory {
       for (int i = 0; i < size; i++) {
         plots.add(new PlotBreeding());
       }
-      update.set(true);
+      update = true;
     }
     if (plots.size() < size) {
       for (int i = plots.size(); i < size; i++) {
         plots.add(new PlotBreeding());
       }
-      update.set(true);
+      update = true;
     }
 
     if (plots.size() > size) {
       removedPlots = new ArrayList<>(plots.subList(size, plots.size()));
       plots = plots.subList(0, size);
-      update.set(true);
+      update = true;
     }
 
 
-    plots.forEach(plotBreeding -> {
-      if (plotBreeding.checking(player)) {
-        update.set(true);
+    for (PlotBreeding plot : plots) {
+      if (plot.checking(player)) {
+        update = true;
       }
-    });
+    }
 
-    if (update.get()) {
+    if (update) {
       databaseClient.savePlots(player, plots);
     }
 

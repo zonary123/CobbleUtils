@@ -14,7 +14,6 @@ pluginManagement {
         maven { url "https://thedarkcolour.github.io/KotlinForForge/" }
         maven { url "https://papermc.io/repo/repository/maven-public/" }
         maven { url "https://maven.impactdev.net/repository/development/" }
-        maven { url "https://maven.impactdev.net/raepository/development" }
         maven { url "https://hub.spigotmc.org/nexus/content/repositories/snapshots/" }
         maven { url "https://repo.extendedclip.com/content/repositories/placeholderapi/" }
         maven {

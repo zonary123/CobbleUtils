@@ -53,7 +53,6 @@ dependencies {
     // Database
     shadowCommon("org.mongodb:mongodb-driver-sync:${property("mongodb_version")}")
     shadowCommon("org.xerial:sqlite-jdbc:${property("sqlite_version")}")
-    shadowCommon("mysql:mysql-connector-java:${property("mysql_version")}")
 
     // Economy Vault
     shadowCommon("com.github.MilkBowl:VaultAPI:${property("vault_api_version")}")
@@ -112,7 +111,6 @@ shadowJar {
         exclude("org/sqlite/native/Mac/**/*")
         exclude("org/sqlite/native/Solaris/**/*")
     }
-    relocate("com.mysql", "net.impactdev.impactor.relocations.com.mysql")
     relocate("com.mongodb", "com.kingpixel.cobbleutils.mongodb")
     relocate("org.bson", "com.kingpixel.cobbleutils.bson")
 

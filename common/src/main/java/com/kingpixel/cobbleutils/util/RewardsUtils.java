@@ -13,7 +13,6 @@ import net.minecraft.server.network.ServerPlayerEntity;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Utility class for managing player rewards.
@@ -244,7 +243,7 @@ public class RewardsUtils {
    * @param player ServerPlayerEntity to claim rewards
    */
   public static void claimRewards(ServerPlayerEntity player) {
-    AtomicBoolean update = new AtomicBoolean(false);
+    boolean update = false;
     RewardsData rewardsData = CobbleUtils.rewardsManager.getRewardsData().get(player.getUuid());
     if (rewardsData == null) {
       rewardsData = CobbleUtils.rewardsManager.getRewardsData().computeIfAbsent(
@@ -262,59 +261,54 @@ public class RewardsUtils {
     if (!rewardsData.getPokemons().isEmpty()) {
       PlayerPartyStore finalPlayerPartyStore = playerPartyStore;
       List<JsonObject> pokemonsToRemove = new ArrayList<>();
-      rewardsData.getPokemons().forEach(pokemon -> {
-        try {
-          Pokemon pokemon1 = Pokemon.Companion.loadFromJSON(DynamicRegistryManager.EMPTY, pokemon);
-          if (finalPlayerPartyStore.add(pokemon1)) {
-            pokemonsToRemove.add(pokemon);
-            update.set(true);
-          }
-        } catch (Exception e) {
-          CobbleUtils.LOGGER.info(e.getMessage());
-          e.printStackTrace();
+      for (JsonObject pokemon : rewardsData.getPokemons()) {
+        Pokemon pokemon1 = Pokemon.Companion.loadFromJSON(DynamicRegistryManager.EMPTY, pokemon);
+        if (finalPlayerPartyStore.add(pokemon1)) {
+          pokemonsToRemove.add(pokemon);
+          update = true;
         }
-      });
-      rewardsData.getPokemons().removeAll(pokemonsToRemove);
-    }
+        rewardsData.getPokemons().removeAll(pokemonsToRemove);
+      }
 
-    if (!rewardsData.getItems().isEmpty()) {
-      List<ItemObject> itemsToRemove = new ArrayList<>();
-      rewardsData.getItems().forEach(item -> {
-        ItemStack itemStack = CobbleUtilities.getItem(item.getItem());
-        try {
-          if (player.getInventory().getEmptySlot() == -1)
-            return;
-          boolean success = player.getInventory().insertStack(itemStack);
-          if (success) {
-            update.set(true);
-            itemsToRemove.add(item);
+      if (!rewardsData.getItems().isEmpty()) {
+        List<ItemObject> itemsToRemove = new ArrayList<>();
+        for (ItemObject item : rewardsData.getItems()) {
+          ItemStack itemStack = CobbleUtilities.getItem(item.getItem());
+          try {
+            if (player.getInventory().getEmptySlot() == -1)
+              return;
+            boolean success = player.getInventory().insertStack(itemStack);
+            if (success) {
+              update = true;
+              itemsToRemove.add(item);
+            }
+          } catch (Exception e) {
+            CobbleUtils.LOGGER.info(e.getMessage());
+            e.printStackTrace();
           }
-        } catch (Exception e) {
-          CobbleUtils.LOGGER.info(e.getMessage());
-          e.printStackTrace();
+          rewardsData.getItems().removeAll(itemsToRemove);
         }
-      });
-      rewardsData.getItems().removeAll(itemsToRemove);
-    }
+      }
 
-    if (!rewardsData.getCommands().isEmpty()) {
-      List<String> commandsToRemove = new ArrayList<>();
-      rewardsData.getCommands().forEach(command -> {
-        try {
-          if (CobbleUtilities.executeCommand(command)) {
-            update.set(true);
-            commandsToRemove.add(command);
+      if (!rewardsData.getCommands().isEmpty()) {
+        List<String> commandsToRemove = new ArrayList<>();
+        for (String command : rewardsData.getCommands()) {
+          try {
+            if (CobbleUtilities.executeCommand(command)) {
+              update = true;
+              commandsToRemove.add(command);
+            }
+          } catch (Exception e) {
+            CobbleUtils.LOGGER.info(e.getMessage());
+            e.printStackTrace();
           }
-        } catch (Exception e) {
-          CobbleUtils.LOGGER.info(e.getMessage());
-          e.printStackTrace();
         }
-      });
-      rewardsData.getCommands().removeAll(commandsToRemove);
-    }
+        rewardsData.getCommands().removeAll(commandsToRemove);
+      }
 
-    if (update.get()) {
-      rewardsData.writeInfo();
+      if (update) {
+        rewardsData.writeInfo();
+      }
     }
   }
 

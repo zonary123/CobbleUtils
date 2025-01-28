@@ -21,7 +21,6 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 
 @Getter
 @Setter
@@ -109,15 +108,16 @@ public class PlotBreeding {
   }
 
   private long applyCooldown(ServerPlayerEntity player) {
-    AtomicInteger cooldown = new AtomicInteger(CobbleUtils.breedconfig.getCooldown());
-    CobbleUtils.breedconfig.getCooldowns().forEach((permission, time) -> {
+    int cooldown = CobbleUtils.breedconfig.getCooldown();
+    for (String permission : CobbleUtils.breedconfig.getCooldowns().keySet()) {
       if (player != null && LuckPermsUtil.checkPermission(player, permission)) {
-        if (time < cooldown.get()) {
-          cooldown.set(time);
+        int time = CobbleUtils.breedconfig.getCooldowns().get(permission);
+        if (time < cooldown) {
+          cooldown = time;
         }
       }
-    });
-    return TimeUnit.MINUTES.toMillis(cooldown.get()); // Devuelve solo el tiempo de cooldown en milisegundos
+    }
+    return TimeUnit.MINUTES.toMillis(cooldown); // Devuelve solo el tiempo de cooldown en milisegundos
   }
 
   private Pokemon getPokemonMale() {

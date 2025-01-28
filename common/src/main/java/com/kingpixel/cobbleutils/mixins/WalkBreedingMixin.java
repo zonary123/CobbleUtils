@@ -27,12 +27,12 @@ public abstract class WalkBreedingMixin {
     if (!CobbleUtils.breedconfig.isActive()) return;
     boolean isinpose = !player.isInPose(EntityPose.FALL_FLYING);
     boolean isinvulnerable = !player.isInvulnerable();
-    boolean permittedVehicles = permittedVehicles(player);
+    boolean permittedVehicles = cobbleUtils$permittedVehicles(player);
     if (isinpose && isinvulnerable && permittedVehicles) { // No elytra or flight
 
       var party = Cobblemon.INSTANCE.getStorage().getParty(player);
 
-      double deltaMovement = getDeltaMovement(player, packet,
+      double deltaMovement = cobbleUtils$getDeltaMovement(player, packet,
         party);
 
       if (deltaMovement == 0 || deltaMovement >= 1) return;
@@ -47,14 +47,14 @@ public abstract class WalkBreedingMixin {
     }
   }
 
-  @Unique private boolean permittedVehicles(ServerPlayerEntity player) {
+  @Unique private boolean cobbleUtils$permittedVehicles(ServerPlayerEntity player) {
     String id = player.getVehicle() == null ? "" : player.getVehicle().getSavedEntityId();
     if (id == null) id = "";
     return CobbleUtils.breedconfig.getPermittedVehicles().contains(id) || id.isEmpty();
   }
 
   @Unique
-  private double getDeltaMovement(ServerPlayerEntity player, PlayerMoveC2SPacket packet, PlayerPartyStore party) {
+  private double cobbleUtils$getDeltaMovement(ServerPlayerEntity player, PlayerMoveC2SPacket packet, PlayerPartyStore party) {
     double oldX = player.getX();
     double oldZ = player.getZ();
     double newX = MathHelper.clamp(packet.getX(oldX), -3.0E7D, 3.0E7D);
@@ -69,11 +69,11 @@ public abstract class WalkBreedingMixin {
 
 
     var deltaMovement = Math.min(20, Math.sqrt(Math.pow(deltaX, 2) + Math.pow(deltaZ, 2)));
-    return hasStepAcceleratingPokemon(party) ? deltaMovement : deltaMovement / 2;
+    return cobbleUtils$hasStepAcceleratingPokemon(party) ? deltaMovement : deltaMovement / 2;
   }
 
   @Unique
-  private boolean hasStepAcceleratingPokemon(PlayerPartyStore party) {
+  private boolean cobbleUtils$hasStepAcceleratingPokemon(PlayerPartyStore party) {
     for (Pokemon pokemon : party) {
       if (CobbleUtils.breedconfig.getAbilityAcceleration().contains(pokemon.getAbility().getName()))
         return true;

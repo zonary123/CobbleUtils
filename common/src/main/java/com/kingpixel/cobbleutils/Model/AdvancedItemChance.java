@@ -30,8 +30,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
 /**
@@ -76,22 +74,23 @@ public class AdvancedItemChance {
   }
 
   public boolean checker(ServerPlayerEntity player) {
-    AtomicBoolean error = new AtomicBoolean(false);
-    AtomicReference<TypeError> typeError = new AtomicReference<>(TypeError.NONE);
+    boolean error = false;
+    TypeError typeError = TypeError.NONE;
 
-    amountRewardsPermission.forEach((key, value) -> {
+    for (Map.Entry<String, Integer> entry : amountRewardsPermission.entrySet()) {
+      int value = entry.getValue();
       if (value < 1) {
-        error.set(true);
-        typeError.set(TypeError.AMOUNTREWARD);
+        error = true;
+        typeError = TypeError.AMOUNTREWARD;
+        break;
       }
-    });
-
+    }
     if (lootTable == null || lootTable.isEmpty()) {
-      error.set(true);
-      typeError.set(TypeError.LOOTTABLE);
+      error = true;
+      typeError = TypeError.LOOTTABLE;
     }
 
-    switch (typeError.get()) {
+    switch (typeError) {
       case AMOUNTREWARD:
         PlayerUtils.sendMessage(player,
           "%prefix% &cplease notify the administrator of the error in the configuration in the amountReward",
@@ -106,12 +105,12 @@ public class AdvancedItemChance {
         break;
     }
 
-    if (error.get()) {
+    if (error) {
       PlayerUtils.sendMessage(player,
         "%prefix% please notify the administrator of the error in the configuration",
         "[ERROR]");
     }
-    return error.get();
+    return error;
   }
 
   private int getAmountReward(ServerPlayerEntity player) {

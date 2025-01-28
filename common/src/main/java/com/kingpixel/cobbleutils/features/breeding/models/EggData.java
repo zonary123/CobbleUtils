@@ -50,8 +50,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
 
 import static com.cobblemon.mod.common.CobblemonItems.*;
 
@@ -549,24 +547,24 @@ public class EggData {
     List<Pokemon> bracelets = new ArrayList<>();
     List<Stats> cloneStats = new ArrayList<>(stats);
 
-    AtomicInteger numIvsToTransfer = new AtomicInteger(CobbleUtils.breedconfig.getDefaultNumIvsToTransfer());
+    int numIvsToTransfer = CobbleUtils.breedconfig.getDefaultNumIvsToTransfer();
 
-    pokemons.forEach(pokemon -> {
+    for (Pokemon pokemon : pokemons) {
       if (pokemon.heldItem().getItem() instanceof CobblemonItem item) {
         if (isPowerItem(item)) {
           bracelets.add(pokemon);
         } else if (item.equals(DESTINY_KNOT)) {
-          numIvsToTransfer.set(CobbleUtils.breedconfig.getNumberIvsDestinyKnot());
+          numIvsToTransfer = CobbleUtils.breedconfig.getNumberIvsDestinyKnot();
         }
       }
-    });
+    }
 
 
-    bracelets.forEach(pBracelet -> {
-      applyIvsPower(pBracelet, egg, (CobblemonItem) pBracelet.heldItem().getItem(), cloneStats);
-      numIvsToTransfer.decrementAndGet();
-    });
-    applyIvs(male, female, egg, numIvsToTransfer.get(), cloneStats);
+    for (Pokemon bracelet : bracelets) {
+      applyIvsPower(bracelet, egg, (CobblemonItem) bracelet.heldItem().getItem(), cloneStats);
+      numIvsToTransfer--;
+    }
+    applyIvs(male, female, egg, numIvsToTransfer, cloneStats);
 
     cloneStats.forEach(rStats -> {
       int random = Utils.RANDOM.nextInt(CobbleUtils.breedconfig.getMaxIvsRandom() + 1);
@@ -726,13 +724,12 @@ public class EggData {
 
   private static String getExcepcionalSpecie(Pokemon pokemon) {
     if (CobbleUtils.breedconfig.getIncenses().isEmpty()) return null;
-    AtomicReference<String> s = new AtomicReference<>();
-    CobbleUtils.breedconfig.getIncenses().forEach(incense -> {
-      if (s.get() == null) {
-        s.set(incense.getChild(pokemon));
-      }
-    });
-    return s.get();
+    String s = null;
+    for (Incense incense : CobbleUtils.breedconfig.getIncenses()) {
+        s = incense.getChild(pokemon);
+        if (s != null) break;
+    }
+    return s;
   }
 
   @Getter
@@ -788,16 +785,19 @@ public class EggData {
     }
 
 
-    AtomicReference<String> configForm = new AtomicReference<>();
+    String configForm = "";
 
-    CobbleUtils.breedconfig.getEggForms().stream()
-      .filter(eggForm -> eggForm.getPokemons().contains(pokemon.getSpecies().showdownId()))
-      .findFirst()
-      .ifPresent(eggForm -> configForm.set(eggForm.getForm()));
+    for (EggForm eggForm : CobbleUtils.breedconfig.getEggForms()) {
+      if (eggForm.getPokemons().contains(pokemon.getSpecies().showdownId())) {
+        configForm = eggForm.getForm();
+        break;
+      }
+    }
 
-    if (configForm.get() != null) {
-      if (CobbleUtils.breedconfig.getBlacklistForm().contains(configForm.get())) configForm.set("");
-      return configForm.get();
+
+    if (configForm != null) {
+      if (CobbleUtils.breedconfig.getBlacklistForm().contains(configForm)) configForm = "";
+      return configForm;
     }
 
     List<String> aspects = pokemon.getForm().getAspects();

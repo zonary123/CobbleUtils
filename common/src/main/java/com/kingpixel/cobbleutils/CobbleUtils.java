@@ -240,6 +240,7 @@ public class CobbleUtils extends ShopExtend {
         })
         .build();
     }
+    ;
 
     if (config.isRandomsize()) {
       int intervalRandomSize = 20 * 60 * 30;

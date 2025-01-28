@@ -22,7 +22,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 
 
 /**
@@ -319,15 +318,15 @@ public class BreedConfig {
   }
 
   public Date getCooldown(ServerPlayerEntity player) {
-    AtomicInteger cooldown = new AtomicInteger(CobbleUtils.breedconfig.getCooldown());
-    CobbleUtils.breedconfig.getCooldowns().forEach((permission, time) -> {
-      if (player != null && PermissionApi.hasPermission(player, permission, 2)) {
-        if (time < cooldown.get()) {
-          cooldown.set(time);
+    if (player == null) return new Date(System.currentTimeMillis());
+    int cooldown = CobbleUtils.breedconfig.getCooldown();
+    for (String permission : CobbleUtils.breedconfig.getCooldowns().keySet()) {
+      if (PermissionApi.hasPermission(player, permission, 2)) {
+        if (CobbleUtils.breedconfig.getCooldowns().get(permission) < cooldown) {
+          cooldown = CobbleUtils.breedconfig.getCooldowns().get(permission);
         }
       }
-    });
-    return new Date(System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(cooldown.get()));
+    }    return new Date(System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(cooldown));
   }
 
   private void checker(BreedConfig breedConfig) {

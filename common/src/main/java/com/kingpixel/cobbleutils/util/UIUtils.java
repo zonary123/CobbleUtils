@@ -28,9 +28,9 @@ import net.minecraft.text.Text;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
 /**
@@ -235,19 +235,16 @@ public class UIUtils {
    * @return The button with the pokemon data
    */
   public static GooeyButton createButtonCommand(String command, Consumer<ButtonAction> action) {
-    AtomicReference<GooeyButton> button = new AtomicReference<>();
-    CobbleUtils.config.getItemsCommands().forEach((c, i) -> {
-      if (command.startsWith(c) && button.get() == null) {
-        button.set(GooeyButton.builder()
-          .display(i.getItemStack())
-          .with(DataComponentTypes.CUSTOM_NAME, AdventureTranslator.toNative(i.getDisplayname()))
-          .with(DataComponentTypes.LORE, new LoreComponent(AdventureTranslator.toNativeL(i.getLore())))
+    for (Map.Entry<String, ItemModel> entry : CobbleUtils.config.getItemsCommands().entrySet()) {
+      if (command.startsWith(entry.getKey())) {
+        return GooeyButton.builder()
+          .display(entry.getValue().getItemStack())
+          .with(DataComponentTypes.CUSTOM_NAME, AdventureTranslator.toNative(entry.getValue().getDisplayname()))
+          .with(DataComponentTypes.LORE, new LoreComponent(AdventureTranslator.toNativeL(entry.getValue().getLore())))
           .onClick(action)
-          .build());
+          .build();
       }
-    });
-    if (button.get() != null)
-      return button.get();
+    }
     return GooeyButton.builder()
       .display(CobbleUtils.language.getItemCommand().getItemStack())
       .with(DataComponentTypes.CUSTOM_NAME, AdventureTranslator.toNative(command))

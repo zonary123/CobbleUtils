@@ -11,7 +11,6 @@ import net.minecraft.server.network.ServerPlayerEntity;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * @author Carlos Varas Alonso - 07/08/2024 9:41
@@ -45,17 +44,17 @@ public class JSONClient implements DatabaseClient {
   }
 
   private List<PlotBreeding> readPlots(ServerPlayerEntity player) {
-    AtomicReference<List<PlotBreeding>> plots = new AtomicReference<>(new ArrayList<>());
     CompletableFuture<Boolean> future = Utils.readFileAsync(CobbleUtils.PATH_BREED_DATA, player.getUuid() + ".json",
       call -> {
+        List<PlotBreeding> plots;
         Gson gson = Utils.newWithoutSpacingGson();
         TypeToken<List<PlotBreeding>> typeToken = new TypeToken<>() {
         };
-        plots.set(gson.fromJson(call, typeToken.getType()));
-        if (plots.get() == null || plots.get().isEmpty()) {
-          plots.set(ManagerPlotEggs.createPlots());
+        plots = gson.fromJson(call, typeToken.getType());
+        if (plots == null || plots.isEmpty()) {
+          plots = ManagerPlotEggs.createPlots();
         }
-        savePlots(player, plots.get());
+        savePlots(player, plots);
       }).exceptionally(throwable -> {
       throwable.printStackTrace();
       return false;
@@ -63,7 +62,7 @@ public class JSONClient implements DatabaseClient {
     if (future.join()) {
       return eggs.get(player.getUuid());
     }
-    return plots.get();
+    return new ArrayList<>();
   }
 
   @Override public void savePlots(ServerPlayerEntity player, List<PlotBreeding> plots) {

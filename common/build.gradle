@@ -1,28 +1,3 @@
-repositories {
-    mavenCentral()
-    // Make sure getting lombok jar from maven central (instead of forge repo or so)
-    // ref: https://discuss.gradle.org/t/how-to-make-gradle-stop-getting-a-not-existing-jar-from-a-third-party-maven-repo/48290/4
-    exclusiveContent {
-        forRepository {
-            mavenCentral()
-        }
-        filter {
-            includeGroup "org.projectlombok"
-        }
-    }
-    exclusiveContent {
-        forRepository {
-            maven {
-                name = 'Modrinth'
-                url = 'https://api.modrinth.com/maven'
-            }
-        }
-        filter {
-            includeGroup 'maven.modrinth'
-        }
-    }
-}
-
 architectury {
     common("fabric")
     common("neoforge")
