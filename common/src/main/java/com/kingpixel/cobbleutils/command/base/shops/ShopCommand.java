@@ -75,6 +75,7 @@ public class ShopCommand implements Command<ServerCommandSource> {
             )
           )
           .then(CommandManager.literal("addProduct")
+            .requires(source -> LuckPermsUtil.checkPermission(source, 2, List.of(mod_id + ".admin", mod_id + ".shop.addproduct")))
             .executes(context -> executeAddProduct(context, shopConfig, mod_id))
           )
         )
