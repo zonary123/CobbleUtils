@@ -1,11 +1,10 @@
 package com.kingpixel.cobbleutils.features.breeding.config;
 
+import com.cobblemon.mod.common.api.pokemon.feature.SpeciesFeature;
+import com.cobblemon.mod.common.pokemon.Pokemon;
 import com.google.gson.Gson;
 import com.kingpixel.cobbleutils.CobbleUtils;
-import com.kingpixel.cobbleutils.Model.FilterPokemons;
-import com.kingpixel.cobbleutils.Model.ItemModel;
-import com.kingpixel.cobbleutils.Model.PokemonChance;
-import com.kingpixel.cobbleutils.Model.Sound;
+import com.kingpixel.cobbleutils.Model.*;
 import com.kingpixel.cobbleutils.api.PermissionApi;
 import com.kingpixel.cobbleutils.config.Lang;
 import com.kingpixel.cobbleutils.features.breeding.models.EggData;
@@ -16,6 +15,7 @@ import lombok.Data;
 import lombok.Getter;
 import lombok.ToString;
 import net.minecraft.server.network.ServerPlayerEntity;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Date;
 import java.util.List;
@@ -86,9 +86,10 @@ public class BreedConfig {
   private String blacklisted;
 
   private List<Integer> plotSlots;
-  private List<String> blacklist;
   private List<String> whitelist;
+  private List<String> blacklist;
   private List<String> blacklistForm;
+  private List<String> blacklistLabels;
   private List<String> blacklistFeatures;
 
   private ItemModel closeItem;
@@ -249,6 +250,13 @@ public class BreedConfig {
         new ItemModel("minecraft:arrow", "Next", List.of())
       );
     }
+
+    blacklistLabels = List.of(
+      "legendary",
+      "mythical",
+      "ultra_beast",
+      "gmax"
+    );
     blacklistFeatures = List.of(
       "netherite_coating"
     );
@@ -263,6 +271,31 @@ public class BreedConfig {
     if (!futureWrite.join()) {
       CobbleUtils.LOGGER.fatal("Could not write config.json file for " + CobbleUtils.MOD_NAME + ".");
     }
+  }
+
+  public boolean canCreateEgg(@NotNull Pokemon pokemon) {
+    if (pokemon.getPersistentData().getBoolean(CobbleUtilsTags.BREEDABLE_BUILDER_TAG))
+      return pokemon.getPersistentData().getBoolean(CobbleUtilsTags.BREEDABLE_TAG);
+
+    for (String s : getWhitelist()) {
+      if (pokemon.showdownId().equals(s)) return true;
+    }
+    if (pokemon.isLegendary() && !pokemonsForDoubleDitto.isLegendarys()) return false;
+    for (String s : getBlacklist()) {
+      if (pokemon.showdownId().equals(s)) return false;
+    }
+    for (String s : getBlacklistForm()) {
+      if (pokemon.getForm().formOnlyShowdownId().equals(s)) return false;
+    }
+    for (String blacklistLabel : getBlacklistLabels()) {
+      if (pokemon.getForm().getLabels().contains(blacklistLabel)) return false;
+    }
+    for (String blacklistFeature : blacklistFeatures) {
+      for (SpeciesFeature feature : pokemon.getFeatures()) {
+        if (feature.getName().equals(blacklistFeature)) return false;
+      }
+    }
+    return true;
   }
 
 
@@ -292,6 +325,9 @@ public class BreedConfig {
         if (CobbleUtils.breedconfig.maleSelectItem.getSlot() == 0) CobbleUtils.breedconfig.maleSelectItem.setSlot(10);
         if (CobbleUtils.breedconfig.femaleSelectItem.getSlot() == 0)
           CobbleUtils.breedconfig.femaleSelectItem.setSlot(16);
+        if (CobbleUtils.breedconfig.blacklistLabels == null) CobbleUtils.breedconfig.blacklistLabels = List.of(
+          "legendary"
+        );
         if (CobbleUtils.breedconfig.maxIvsRandom < 0) CobbleUtils.breedconfig.maxIvsRandom = 0;
         if (CobbleUtils.breedconfig.maxIvsRandom > 31) CobbleUtils.breedconfig.maxIvsRandom = 31;
         checker(CobbleUtils.breedconfig);
@@ -326,7 +362,8 @@ public class BreedConfig {
           cooldown = CobbleUtils.breedconfig.getCooldowns().get(permission);
         }
       }
-    }    return new Date(System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(cooldown));
+    }
+    return new Date(System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(cooldown));
   }
 
   private void checker(BreedConfig breedConfig) {

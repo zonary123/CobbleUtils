@@ -12,7 +12,7 @@ import org.jetbrains.annotations.NotNull;
  * @author Carlos Varas Alonso - 04/08/2024 19:40
  */
 public class ScaleProperty implements CustomPokemonProperty {
-  public Float value;
+  private Float value;
 
   public ScaleProperty(String value) {
     if (CobbleUtils.config.isRandomsize()) {

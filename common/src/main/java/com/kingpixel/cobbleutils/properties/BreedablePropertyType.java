@@ -31,7 +31,8 @@ public class BreedablePropertyType implements CustomPokemonPropertyType<Breedabl
   }
 
   @Nullable @Override public BreedableProperty fromString(String s) {
-    return new BreedableProperty(Boolean.parseBoolean(s));
+    boolean value = s == null || Boolean.parseBoolean(s);
+    return new BreedableProperty(value);
   }
 
   @NotNull @Override public Collection<String> examples() {

@@ -17,4 +17,5 @@ public class CobbleUtilsTags {
   public static final String BOSS_TAG = "boss";
   public static final String BOSS_RARITY_TAG = "bossrarity";
 
+  public static final String BREEDABLE_BUILDER_TAG = "breedable_builder";
 }

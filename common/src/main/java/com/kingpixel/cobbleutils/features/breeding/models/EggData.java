@@ -726,8 +726,8 @@ public class EggData {
     if (CobbleUtils.breedconfig.getIncenses().isEmpty()) return null;
     String s = null;
     for (Incense incense : CobbleUtils.breedconfig.getIncenses()) {
-        s = incense.getChild(pokemon);
-        if (s != null) break;
+      s = incense.getChild(pokemon);
+      if (s != null) break;
     }
     return s;
   }
@@ -785,10 +785,10 @@ public class EggData {
     }
 
 
-    String configForm = "";
+    String configForm = null;
 
     for (EggForm eggForm : CobbleUtils.breedconfig.getEggForms()) {
-      if (eggForm.getPokemons().contains(pokemon.getSpecies().showdownId())) {
+      if (eggForm.getPokemons().contains(pokemon.showdownId())) {
         configForm = eggForm.getForm();
         break;
       }
@@ -845,6 +845,10 @@ public class EggData {
 
     if (CobbleUtils.breedconfig.getBlacklistForm().contains(form.toString()))
       form = new StringBuilder();
+
+    if (CobbleUtils.config.isDebug()) {
+      CobbleUtils.LOGGER.info("Form: " + form);
+    }
 
     return form.toString();
   }

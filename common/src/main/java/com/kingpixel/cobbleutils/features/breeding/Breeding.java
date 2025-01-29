@@ -1,5 +1,6 @@
 package com.kingpixel.cobbleutils.features.breeding;
 
+import com.cobblemon.mod.common.Cobblemon;
 import com.cobblemon.mod.common.api.Priority;
 import com.cobblemon.mod.common.api.events.CobblemonEvents;
 import com.cobblemon.mod.common.entity.pokemon.PokemonEntity;
@@ -7,6 +8,7 @@ import com.cobblemon.mod.common.pokemon.Pokemon;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.kingpixel.cobbleutils.CobbleUtils;
+import com.kingpixel.cobbleutils.Model.CobbleUtilsTags;
 import com.kingpixel.cobbleutils.database.DatabaseClientFactory;
 import com.kingpixel.cobbleutils.features.breeding.events.*;
 import com.kingpixel.cobbleutils.features.breeding.manager.ManagerPlotEggs;
@@ -67,8 +69,18 @@ public class Breeding {
 
   private static void events() {
     PlayerEvent.PLAYER_JOIN.register(player -> {
+      if (player == null) return;
       DatabaseClientFactory.databaseClient.getPlots(player);
       countryPlayer(player);
+      var party = Cobblemon.INSTANCE.getStorage().getParty(player);
+      var pc = Cobblemon.INSTANCE.getStorage().getPC(player);
+      for (Pokemon pokemon : party) {
+        pokemon.getPersistentData().putBoolean(CobbleUtilsTags.BREEDABLE_TAG, CobbleUtils.breedconfig.canCreateEgg(pokemon));
+      }
+      for (Pokemon pokemon : pc) {
+        pokemon.getPersistentData().putBoolean(CobbleUtilsTags.BREEDABLE_TAG, CobbleUtils.breedconfig.canCreateEgg(pokemon));
+      }
+
     });
 
     // Todo: Add egg generation in the world

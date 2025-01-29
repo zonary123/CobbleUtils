@@ -19,6 +19,7 @@ import org.blanketeconomy.api.BlanketEconomy;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.intellij.lang.annotations.Subst;
+import tech.sethi.pebbleseconomy.PebblesEconomyInitializer;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -32,11 +33,14 @@ import java.util.UUID;
  */
 public abstract class EconomyUtil {
 
-  // The impactor service
-  public static EconomyService impactorService;
-
   // The economy type
   public static EconomyType economyType;
+
+  private static com.kingpixel.cobbleutils.util.economys.Economy instance;
+
+  // The impactor service
+  private static EconomyService impactorService;
+  private static PebblesEconomyInitializer pebblesEconomy;
 
   private static Economy vaultEconomy;
 
@@ -46,16 +50,18 @@ public abstract class EconomyUtil {
     VAULT,
     BLANKECONOMY,
     COBBLEDOLLARS,
-    SDM_ECONOMY
+    SDM_ECONOMY,
+    PEBBLE_ECONOMY
   }
 
   public static String getBalance(ServerPlayerEntity player, String currency, int digits) {
     // Supongamos que obtienes el balance como un BigDecimal desde algún método
     BigDecimal balance = getBalance(player, currency);
-
+    
     if (balance != null) {
       return formatCurrency(balance, currency);
     }
+
 
     // En caso de que el balance sea null, retornas una cadena vacía o algún valor por defecto.
     return "0.00";
@@ -64,10 +70,6 @@ public abstract class EconomyUtil {
   public static int getDecimals(String currency) {
     return switch (economyType) {
       case IMPACTOR -> getCurrency(currency).decimals();
-      case VAULT -> 2;
-      case BLANKECONOMY -> 2;
-      case COBBLEDOLLARS -> 2;
-      case SDM_ECONOMY -> 2;
       default -> 2;
     };
   }
@@ -90,9 +92,22 @@ public abstract class EconomyUtil {
     } else if (isSDMEconomy()) {
       economyType = EconomyType.SDM_ECONOMY;
       CobbleUtils.LOGGER.info("SDM Economy found");
+    } else if (isPebbleEconomy()) {
+      economyType = EconomyType.PEBBLE_ECONOMY;
+      CobbleUtils.LOGGER.info("Pebble Economy found");
     } else {
       economyType = null;
       CobbleUtils.LOGGER.error("No economy api found");
+    }
+  }
+
+  private static boolean isPebbleEconomy() {
+    try {
+      pebblesEconomy = PebblesEconomyInitializer.INSTANCE;
+      return true;
+    } catch (IllegalStateException | NullPointerException | NoClassDefFoundError e) {
+      CobbleUtils.LOGGER.error("Pebble Economy not found");
+      return false;
     }
   }
 
@@ -159,7 +174,7 @@ public abstract class EconomyUtil {
     try {
       EconomyService service = EconomyService.instance();
       return service != null;
-    } catch (IllegalStateException | NullPointerException | NoClassDefFoundError e) {
+    } catch (IllegalStateException | NullPointerException | NoClassDefFoundError | IncompatibleClassChangeError e) {
       CobbleUtils.LOGGER.error("Impactor not found");
       return false;
     }
@@ -244,6 +259,10 @@ public abstract class EconomyUtil {
         CurrencyHelper.addMoney(player, currency, amount.longValue());
         return true;
       }
+      case PEBBLE_ECONOMY: {
+        pebblesEconomy.getEconomy().deposit(player.getUuid(), amount.doubleValue());
+        return true;
+      }
       default:
         return false;
     }
@@ -285,6 +304,9 @@ public abstract class EconomyUtil {
         return false;
       case SDM_ECONOMY:
         CurrencyHelper.setMoney(player, currency, getBalance(player, currency).longValue() - amount.longValue());
+        return true;
+      case PEBBLE_ECONOMY:
+        pebblesEconomy.getEconomy().withdraw(player.getUuid(), amount.doubleValue());
         return true;
       default:
         return false;
@@ -402,6 +424,14 @@ public abstract class EconomyUtil {
         long balance1 = CurrencyHelper.getMoney(player, currency);
         if (balance1 >= amount.longValue()) {
           CurrencyHelper.setMoney(player, currency, balance1 - amount.longValue());
+          if (notify) sendMessage(player, amount, CobbleUtils.shopLang.getMessageBought());
+          return true;
+        }
+        if (notify) sendMessage(player, amount, CobbleUtils.shopLang.getMessageNotHaveMoney());
+        return false;
+      case PEBBLE_ECONOMY:
+        if (pebblesEconomy.getEconomy().getBalance(player.getUuid()) >= amount.doubleValue()) {
+          pebblesEconomy.getEconomy().withdraw(player.getUuid(), amount.doubleValue());
           if (notify) sendMessage(player, amount, CobbleUtils.shopLang.getMessageBought());
           return true;
         }
@@ -544,6 +574,7 @@ public abstract class EconomyUtil {
         case VAULT -> CobbleUtils.language.getDefaultSymbol();
         case BLANKECONOMY -> BlanketEconomy.INSTANCE.getAPI().getCurrencySymbol(currency);
         case COBBLEDOLLARS -> CobbleUtils.language.getDefaultSymbol();
+        case SDM_ECONOMY -> CobbleUtils.language.getDefaultSymbol();
         default -> CobbleUtils.language.getDefaultSymbol();
       };
     } catch (NoSuchMethodError | Exception e) {
@@ -573,7 +604,6 @@ public abstract class EconomyUtil {
     try {
       return switch (economyType) {
         case IMPACTOR -> currency.key().asString();
-
         default -> CobbleUtils.language.getDefaultSymbol();
       };
     } catch (NoSuchMethodError | Exception | NoClassDefFoundError e) {
@@ -606,6 +636,7 @@ public abstract class EconomyUtil {
       case COBBLEDOLLARS ->
         BigDecimal.valueOf(((CobbleDollarsPlayer) player).cobbleDollars$getCobbleDollars().longValue());
       case SDM_ECONOMY -> BigDecimal.valueOf(CurrencyHelper.getMoney(player, currency));
+      case PEBBLE_ECONOMY -> BigDecimal.valueOf(pebblesEconomy.getEconomy().getBalance(player.getUuid()));
       default -> BigDecimal.ZERO;
     };
   }
@@ -618,6 +649,7 @@ public abstract class EconomyUtil {
       case BLANKECONOMY -> BlanketEconomy.INSTANCE.getAPI().setBalance(player.getUuid(), money, curreny);
       case COBBLEDOLLARS ->
         ((CobbleDollarsPlayer) player).cobbleDollars$setCobbleDollars(BigInteger.valueOf(money.longValue()));
+      case PEBBLE_ECONOMY -> pebblesEconomy.getEconomy().setBalance(player.getUuid(), money.doubleValue());
       case SDM_ECONOMY -> CurrencyHelper.setMoney(player, curreny, money.longValue());
     }
   }

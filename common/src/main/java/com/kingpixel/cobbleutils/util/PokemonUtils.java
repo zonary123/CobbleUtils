@@ -809,6 +809,9 @@ public class PokemonUtils {
   }
 
   public static void setBreedable(Pokemon pokemon, Boolean value) {
+    if (CobbleUtils.config.isDebug()) {
+      CobbleUtils.LOGGER.info("Set breedable: " + value + " Pokemon: " + pokemon.showdownId());
+    }
     pokemon.getPersistentData().putBoolean(CobbleUtilsTags.BREEDABLE_TAG, value);
   }
 
