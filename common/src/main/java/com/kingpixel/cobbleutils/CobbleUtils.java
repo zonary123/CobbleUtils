@@ -106,6 +106,7 @@ public class CobbleUtils extends ShopExtend {
   private static void files(boolean shop) {
     config.init();
     language.init();
+    if (config.isApiMode()) return;
     if (!config.isDebug()) {
       config.setBoss(false);
       config.setStorageRewards(false);
@@ -154,6 +155,7 @@ public class CobbleUtils extends ShopExtend {
 
   private static void events() {
     files(false);
+    if (config.isApiMode()) return;
     Utils.removeFiles(PATH_PARTY_DATA);
 
     CommandRegistrationEvent.EVENT.register((dispatcher, registry, selection) -> {

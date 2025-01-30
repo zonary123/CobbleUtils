@@ -23,6 +23,7 @@ import java.util.concurrent.CompletableFuture;
 @ToString
 public class Config {
   private boolean debug;
+  private boolean ApiMode;
   private String prefix;
   private String lang;
 
@@ -65,6 +66,7 @@ public class Config {
     commandrewards = List.of("storagerewards", "storage");
     commmandplugin = List.of("cobbleutils", "pokeutils");
     commandshop = List.of("shop", "cushop");
+    ApiMode = false;
     boss = false;
     bosschance = 16512;
     shops = true;

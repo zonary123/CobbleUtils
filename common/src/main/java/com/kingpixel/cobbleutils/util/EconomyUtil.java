@@ -39,7 +39,7 @@ public abstract class EconomyUtil {
   private static com.kingpixel.cobbleutils.util.economys.Economy instance;
 
   // The impactor service
-  private static EconomyService impactorService;
+  public static EconomyService impactorService;
   private static PebblesEconomyInitializer pebblesEconomy;
 
   private static Economy vaultEconomy;
@@ -57,7 +57,7 @@ public abstract class EconomyUtil {
   public static String getBalance(ServerPlayerEntity player, String currency, int digits) {
     // Supongamos que obtienes el balance como un BigDecimal desde algún método
     BigDecimal balance = getBalance(player, currency);
-    
+
     if (balance != null) {
       return formatCurrency(balance, currency);
     }
