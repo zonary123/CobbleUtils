@@ -18,6 +18,7 @@ public class EconomyApi {
    * @param curreny The currency to add
    */
   public static void addMoney(ServerPlayerEntity player, BigDecimal money, @Nonnull String curreny) {
+    EconomyUtil.setEconomyType();
     EconomyUtil.addMoney(player, curreny, money);
   }
 
@@ -29,6 +30,7 @@ public class EconomyApi {
    * @param curreny The currency to remove
    */
   public static void removeMoney(ServerPlayerEntity player, BigDecimal money, @Nonnull String curreny) {
+    EconomyUtil.setEconomyType();
     EconomyUtil.removeMoney(player, curreny, money);
   }
 
@@ -41,6 +43,7 @@ public class EconomyApi {
    * @return The amount of money
    */
   public static BigDecimal getMoney(ServerPlayerEntity player, @Nonnull String curreny) {
+    EconomyUtil.setEconomyType();
     return EconomyUtil.getBalance(player, curreny);
   }
 
@@ -52,6 +55,7 @@ public class EconomyApi {
    * @param curreny The currency to set
    */
   public static void setMoney(ServerPlayerEntity player, BigDecimal money, @Nonnull String curreny) {
+    EconomyUtil.setEconomyType();
     EconomyUtil.setMoney(player, curreny, money);
   }
 
@@ -64,6 +68,7 @@ public class EconomyApi {
    * @return The formatted money
    */
   public static String formatMoney(BigDecimal money, @Nonnull String currency) {
+    EconomyUtil.setEconomyType();
     return EconomyUtil.formatCurrency(money, currency);
   }
 
@@ -78,6 +83,7 @@ public class EconomyApi {
    */
   @Deprecated(forRemoval = true, since = "1.1.3 - 07/01/2025 23:58")
   public static String formatMoney(ServerPlayerEntity player, BigDecimal money, @Nonnull String currency) {
+    EconomyUtil.setEconomyType();
     return EconomyUtil.formatCurrency(money, currency);
   }
 
@@ -93,6 +99,7 @@ public class EconomyApi {
    */
   @Deprecated(forRemoval = true, since = "1.1.3 - 05/11/2024 23:58")
   public static boolean hasEnoughMoney(ServerPlayerEntity player, BigDecimal money, @Nonnull String currency) {
+    EconomyUtil.setEconomyType();
     return EconomyUtil.hasEnough(player, currency, money);
   }
 
@@ -108,6 +115,7 @@ public class EconomyApi {
    */
   public static boolean hasEnoughMoney(ServerPlayerEntity player, BigDecimal money,
                                        @Nonnull String currency, boolean notify) {
+    EconomyUtil.setEconomyType();
     return EconomyUtil.hasEnough(player, currency, money, notify);
   }
 
@@ -119,6 +127,7 @@ public class EconomyApi {
    * @return The symbol of the currency
    */
   public static String getSymbol(String currency) {
+    EconomyUtil.setEconomyType();
     return EconomyUtil.getSymbol(currency);
   }
 }

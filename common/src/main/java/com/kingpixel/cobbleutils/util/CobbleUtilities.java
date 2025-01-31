@@ -3,10 +3,7 @@ package com.kingpixel.cobbleutils.util;
 import ca.landonjw.gooeylibs2.api.button.GooeyButton;
 import com.cobblemon.mod.common.Cobblemon;
 import com.cobblemon.mod.common.api.battles.model.PokemonBattle;
-import com.cobblemon.mod.common.api.storage.NoPokemonStoreException;
-import com.cobblemon.mod.common.pokemon.Pokemon;
 import com.kingpixel.cobbleutils.CobbleUtils;
-import com.kingpixel.cobbleutils.Model.ItemChance;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.ParseResults;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
@@ -49,57 +46,6 @@ public class CobbleUtilities {
     boolean pvp = battle.isPvP();
     boolean pvw = battle.isPvW();
     return pvn || pvp || pvw;
-  }
-
-  /**
-   * Give a random item to a player
-   *
-   * @param player The player to give the item
-   * @param type   The type of item to give
-   * @param amount The amount of items to give
-   * @param random If the item should be different
-   */
-  public static void giveRandomItem(ServerPlayerEntity player, String type, int amount, boolean random) {
-    try {
-      ItemChance item;
-
-      if (random) {
-        for (int i = 0; i < amount; i++) {
-          ItemChance.giveReward(player, CobbleUtils.poolItems.getRandomItem(type), 1);
-        }
-      } else {
-        item = CobbleUtils.poolItems.getRandomItem(type);
-        ItemChance.giveReward(player, item, amount);
-
-        String message = CobbleUtils.language.getMessagerandomitem()
-          .replace("%item%", item.getTitle())
-          .replace("%amount%", String.valueOf(amount))
-          .replace("%type%", type);
-
-
-        PlayerUtils.sendMessage(player, message, CobbleUtils.config.getPrefix());
-      }
-    } catch (Exception e) {
-      e.printStackTrace();
-    }
-  }
-
-  /**
-   * Give a random pokemon to a player
-   *
-   * @param player The player to give the pokemon
-   * @param type   The type of pokemon to give
-   *
-   * @throws NoPokemonStoreException If the pokemon store is empty
-   */
-  public static void giveRandomPokemon(ServerPlayerEntity player, String type) throws NoPokemonStoreException {
-    String pokemonName = CobbleUtils.poolPokemons.getRandomPokemon(type);
-    if (pokemonName == null) {
-      player.sendMessage(AdventureTranslator.toNative("Invalid type."));
-      return;
-    }
-    Pokemon pokemon = Utils.createPokemonParse(pokemonName);
-    Cobblemon.INSTANCE.getStorage().getParty(player).add(pokemon);
   }
 
   /**
@@ -154,18 +100,6 @@ public class CobbleUtilities {
 
   public static GooeyButton fillItem() {
     return GooeyButton.builder().display(Utils.parseItemId(CobbleUtils.config.getFill())).build();
-  }
-
-  /**
-   * Give a random amount of money to a player
-   *
-   * @param player The player to give the money
-   * @param type   The type of money to give
-   *
-   * @return If the money was given successfully
-   */
-  public static boolean giveRandomMoney(ServerPlayerEntity player, String type) {
-    return CobbleUtils.poolMoney.getRandomMoney(player, type);
   }
 
   /**

@@ -12,26 +12,36 @@ import kotlin.Unit;
 public class EggThrow {
   public static void register() {
     CobblemonEvents.POKEMON_SENT_PRE.subscribe(Priority.HIGHEST, (evt) -> {
-      if (evt.getPokemon().getSpecies().showdownId().equalsIgnoreCase("egg")) {
-        evt.getPokemon().setCurrentHealth(0);
+      try {
+        if (evt.getPokemon().getSpecies().showdownId().equalsIgnoreCase("egg")) {
+          evt.getPokemon().setCurrentHealth(0);
+        }
+        return Unit.INSTANCE;
+      } catch (Exception e) {
+        e.printStackTrace();
+        return Unit.INSTANCE;
       }
-      return Unit.INSTANCE;
     });
     CobblemonEvents.BATTLE_STARTED_PRE.subscribe(Priority.NORMAL, (evt) -> {
-      if (!evt.getBattle().isPvW()) return Unit.INSTANCE;
-      evt.getBattle().getActors().forEach(actor -> {
-        if (actor instanceof PokemonBattleActor battleActor) {
-          if (battleActor.getPokemon().getOriginalPokemon().showdownId().equalsIgnoreCase("egg")) {
-            evt.cancel();
+      try {
+        if (!evt.getBattle().isPvW()) return Unit.INSTANCE;
+        evt.getBattle().getActors().forEach(actor -> {
+          if (actor instanceof PokemonBattleActor battleActor) {
+            if (battleActor.getPokemon().getOriginalPokemon().showdownId().equalsIgnoreCase("egg")) {
+              evt.cancel();
+            }
           }
-        }
-      });
-      evt.getBattle().getPlayers().forEach(player -> Cobblemon.INSTANCE.getStorage().getParty(player).forEach(pokemon -> {
-        if (pokemon.showdownId().equalsIgnoreCase("egg")) {
-          pokemon.setCurrentHealth(0);
-        }
-      }));
-      return Unit.INSTANCE;
+        });
+        evt.getBattle().getPlayers().forEach(player -> Cobblemon.INSTANCE.getStorage().getParty(player).forEach(pokemon -> {
+          if (pokemon.showdownId().equalsIgnoreCase("egg")) {
+            pokemon.setCurrentHealth(0);
+          }
+        }));
+        return Unit.INSTANCE;
+      } catch (Exception e) {
+        e.printStackTrace();
+        return Unit.INSTANCE;
+      }
     });
   }
 }

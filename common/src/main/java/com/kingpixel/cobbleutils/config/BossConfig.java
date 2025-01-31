@@ -222,7 +222,7 @@ public class BossConfig {
       } else {
         pokemon.setScaleModifier(Utils.RANDOM.nextFloat(this.getMinsize(), this.getMaxsize()));
       }
-      
+
       if (isGlowing()) {
         pokemonEntity.setGlowing(true);
 

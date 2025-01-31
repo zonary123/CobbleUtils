@@ -146,6 +146,7 @@ public class Config {
         forms = config.getForms();
         rarity = config.getRarity();
         specifiedSizes = config.getSpecifiedSizes();
+        ApiMode = config.isApiMode();
         if (!debug) {
           this.boss = false;
           this.storageRewards = false;

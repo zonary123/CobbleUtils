@@ -51,7 +51,7 @@ public class SpawnRates {
     // Checks for highest value for each key and adds the key with the highest
     // weight.
 
-    
+
     // Holds all of the buckets as a key, with another hashmap that will hold the
     // Pokemon
     // and their weights for that bucket as the value.
@@ -132,11 +132,13 @@ public class SpawnRates {
    * @return rarity of given pokemon as a float.
    */
   public float getRarity(Pokemon pokemon) {
+    if (rarity.isEmpty()) init();
     return rarity.get(pokemon.getDisplayName().getString()) == null ? -1
       : rarity.get(pokemon.getDisplayName().getString());
   }
 
   public float getRarity(Species species) {
+    if (rarity.isEmpty()) init();
     Pokemon p = new Pokemon();
     p.setSpecies(species);
     return getRarity(p);

@@ -6,9 +6,6 @@ import com.kingpixel.cobbleutils.command.admin.boss.SpawnBoss;
 import com.kingpixel.cobbleutils.command.admin.egg.EggCommand;
 import com.kingpixel.cobbleutils.command.admin.egg.Hatch;
 import com.kingpixel.cobbleutils.command.admin.egg.IncenseCommand;
-import com.kingpixel.cobbleutils.command.admin.random.RandomItem;
-import com.kingpixel.cobbleutils.command.admin.random.RandomMoney;
-import com.kingpixel.cobbleutils.command.admin.random.RandomPokemon;
 import com.kingpixel.cobbleutils.command.admin.rewards.*;
 import com.kingpixel.cobbleutils.command.base.*;
 import com.kingpixel.cobbleutils.command.base.shops.ShopCommand;
@@ -47,18 +44,6 @@ public class CommandTree {
       // /cobbleutils scale <scale> <slot> and /cobbleutils scale <scale> <slot> <player>
       PokemonSize.register(dispatcher, base);
 
-      // /cobbleutils endbattle and /cobbleutils endbattle <player>
-      EndBattle.register(dispatcher, base);
-
-      // /cobbleutils giveitem <type> <amount> <player>
-      RandomItem.register(dispatcher, base);
-
-      // /cobbleutils givepoke <type> <player>
-      RandomPokemon.register(dispatcher, base);
-
-      // /cobbleutils givemoney <amount> <player>
-      RandomMoney.register(dispatcher, base);
-
       // /cobbleutils reload
       Reload.register(dispatcher, base);
 
@@ -69,7 +54,7 @@ public class CommandTree {
 
       // /cobbleutils pokerename <slot> <name>
       PokeRename.register(dispatcher, base);
-      
+
 
       if (CobbleUtils.config.isBoss()) {
         // /cobbleutils boss <rarity> <coords>

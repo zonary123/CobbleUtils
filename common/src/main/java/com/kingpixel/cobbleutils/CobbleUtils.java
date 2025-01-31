@@ -2,7 +2,6 @@ package com.kingpixel.cobbleutils;
 
 import ca.landonjw.gooeylibs2.api.tasks.Task;
 import com.cobblemon.mod.common.Cobblemon;
-import com.cobblemon.mod.common.api.properties.CustomPokemonProperty;
 import com.kingpixel.cobbleutils.Model.RewardsData;
 import com.kingpixel.cobbleutils.command.CommandTree;
 import com.kingpixel.cobbleutils.config.*;
@@ -21,10 +20,6 @@ import com.kingpixel.cobbleutils.party.config.PartyLang;
 import com.kingpixel.cobbleutils.party.event.CreatePartyEvent;
 import com.kingpixel.cobbleutils.party.event.DeletePartyEvent;
 import com.kingpixel.cobbleutils.party.util.PartyPlaceholder;
-import com.kingpixel.cobbleutils.properties.BreedablePropertyType;
-import com.kingpixel.cobbleutils.properties.MinIvsPropertyType;
-import com.kingpixel.cobbleutils.properties.ScalePropertyType;
-import com.kingpixel.cobbleutils.properties.SizePropertyType;
 import com.kingpixel.cobbleutils.util.*;
 import dev.architectury.event.events.common.CommandRegistrationEvent;
 import dev.architectury.event.events.common.InteractionEvent;
@@ -57,9 +52,6 @@ public class CobbleUtils extends ShopExtend {
   public static Config config = new Config();
   public static BreedConfig breedconfig = new BreedConfig();
   public static ShopConfig shopConfig = new ShopConfig();
-  public static PoolMoney poolMoney = new PoolMoney();
-  public static PoolItems poolItems = new PoolItems();
-  public static PoolPokemons poolPokemons = new PoolPokemons();
   public static SpawnRates spawnRates = new SpawnRates();
   // Lang
   public static Lang language = new Lang();
@@ -106,18 +98,17 @@ public class CobbleUtils extends ShopExtend {
   private static void files(boolean shop) {
     config.init();
     language.init();
-    if (config.isApiMode()) return;
     if (!config.isDebug()) {
       config.setBoss(false);
       config.setStorageRewards(false);
     }
     shopLang.init();
-    poolItems.init();
-    poolPokemons.init();
-    poolMoney.init();
     partyConfig.init();
     partyLang.init();
     breedconfig.init();
+    spawnRates.init();
+    setEconomyType();
+    if (config.isApiMode()) return;
     BossConfig.init();
     DatabaseClientFactory.createDatabaseClient(config.getDatabase());
     if (shop) {
@@ -155,6 +146,7 @@ public class CobbleUtils extends ShopExtend {
 
   private static void events() {
     files(false);
+    LifecycleEvent.SERVER_LEVEL_LOAD.register(level -> server = level.getServer());
     if (config.isApiMode()) return;
     Utils.removeFiles(PATH_PARTY_DATA);
 
@@ -165,11 +157,11 @@ public class CobbleUtils extends ShopExtend {
 
     LifecycleEvent.SERVER_STARTED.register(server -> {
       load();
-      CustomPokemonProperty.Companion.register(MinIvsPropertyType.getInstance());
-      CustomPokemonProperty.Companion.register(SizePropertyType.getInstance());
-      CustomPokemonProperty.Companion.register(ScalePropertyType.getInstance());
-      if (CobbleUtils.breedconfig.isActive())
-        CustomPokemonProperty.Companion.register(BreedablePropertyType.getInstance());
+      //CustomPokemonProperty.Companion.register(MinIvsPropertyType.getInstance());
+      //CustomPokemonProperty.Companion.register(SizePropertyType.getInstance());
+      //CustomPokemonProperty.Companion.register(ScalePropertyType.getInstance());
+      //if (CobbleUtils.breedconfig.isActive())
+      //  CustomPokemonProperty.Companion.register(BreedablePropertyType.getInstance());
     });
 
     LifecycleEvent.SERVER_STOPPING.register(server -> {
@@ -177,8 +169,6 @@ public class CobbleUtils extends ShopExtend {
       DeletePartyEvent.DELETE_PARTY_EVENT.clear();
     });
 
-
-    LifecycleEvent.SERVER_LEVEL_LOAD.register(level -> server = level.getServer());
 
     PlayerEvent.PLAYER_JOIN.register(player -> {
 

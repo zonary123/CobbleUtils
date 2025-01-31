@@ -55,6 +55,7 @@ public abstract class EconomyUtil {
   }
 
   public static String getBalance(ServerPlayerEntity player, String currency, int digits) {
+    setEconomyType();
     // Supongamos que obtienes el balance como un BigDecimal desde algún método
     BigDecimal balance = getBalance(player, currency);
 
@@ -68,6 +69,7 @@ public abstract class EconomyUtil {
   }
 
   public static int getDecimals(String currency) {
+    setEconomyType();
     return switch (economyType) {
       case IMPACTOR -> getCurrency(currency).decimals();
       default -> 2;
@@ -191,6 +193,7 @@ public abstract class EconomyUtil {
    * @return The account.
    */
   public static Account getAccount(UUID uuid, String currency) {
+    setEconomyType();
     if (!impactorService.hasAccount(uuid).join()) {
       return impactorService.account(uuid).join();
     }
@@ -205,6 +208,7 @@ public abstract class EconomyUtil {
    * @return The account.
    */
   public static Account getAccount(UUID uuid) {
+    setEconomyType();
     if (!impactorService.hasAccount(uuid).join()) {
       return impactorService.account(uuid).join();
     }
@@ -221,10 +225,12 @@ public abstract class EconomyUtil {
    * @return true if the transaction was successful.
    */
   public static boolean addMoney(ServerPlayerEntity player, String currency, BigDecimal amount) {
+    setEconomyType();
     return addMoney(player, currency, amount, true);
   }
 
   public static boolean addMoney(ServerPlayerEntity player, String currency, BigDecimal amount, boolean notify) {
+    setEconomyType();
     switch (economyType) {
       case IMPACTOR: {
         Account account = getAccount(player.getUuid(), currency);
@@ -278,7 +284,7 @@ public abstract class EconomyUtil {
    * @return true if the transaction was successful.
    */
   public static boolean removeMoney(ServerPlayerEntity player, String currency, BigDecimal amount) {
-
+    setEconomyType();
     switch (economyType) {
       case IMPACTOR:
         Account account;
@@ -322,6 +328,7 @@ public abstract class EconomyUtil {
    * @return true if the transaction was successful.
    */
   public static boolean removeMoney(Account account, BigDecimal amount) {
+    setEconomyType();
     EconomyTransaction transaction = account.withdraw(amount);
     return transaction.successful();
   }
@@ -336,6 +343,7 @@ public abstract class EconomyUtil {
    * @return true if the account has enough balance.
    */
   public static boolean hasEnoughImpactor(Account account, BigDecimal amount) {
+    setEconomyType();
     if (account.balance().compareTo(amount) >= 0) {
       removeMoney(account, amount);
       sendMessage(account, amount, CobbleUtils.shopLang.getMessageBought());
@@ -387,10 +395,12 @@ public abstract class EconomyUtil {
    * @return true if the account has enough balance.
    */
   public static boolean hasEnough(ServerPlayerEntity player, String currency, BigDecimal amount) {
+    setEconomyType();
     return hasEnough(player, currency, amount, true);
   }
 
   public static boolean hasEnough(ServerPlayerEntity player, String currency, BigDecimal amount, boolean notify) {
+    setEconomyType();
     switch (economyType) {
       case IMPACTOR:
         return hasEnoughImpactor(getAccount(player.getUuid(), currency), amount);
@@ -475,6 +485,7 @@ public abstract class EconomyUtil {
    * @return The formatted balance with the format of Country player.
    */
   public static String formatCurrency(BigDecimal amount, String currency) {
+    setEconomyType();
     switch (economyType) {
       case IMPACTOR -> {
         if (!currency.contains(":")) currency = "impactor:" + currency;
@@ -601,6 +612,7 @@ public abstract class EconomyUtil {
   }
 
   public static String getCurrencyName(Currency currency) {
+    setEconomyType();
     try {
       return switch (economyType) {
         case IMPACTOR -> currency.key().asString();
@@ -621,6 +633,7 @@ public abstract class EconomyUtil {
    * @return The balance of the account.
    */
   public static BigDecimal getBalance(ServerPlayerEntity player, @Subst("") String currency) {
+    setEconomyType();
     return switch (economyType) {
       case IMPACTOR -> getAccount(player.getUuid(), currency).balance();
       case VAULT -> {
@@ -643,6 +656,7 @@ public abstract class EconomyUtil {
 
 
   public static void setMoney(ServerPlayerEntity player, String curreny, BigDecimal money) {
+    setEconomyType();
     switch (economyType) {
       case IMPACTOR -> getAccount(player.getUuid(), curreny).set(money);
       case VAULT -> vaultEconomy.depositPlayer(player.getGameProfile().getName(), money.doubleValue());

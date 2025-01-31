@@ -532,8 +532,7 @@ public class EggData {
   }
 
 
-  private static final List<Stats> stats =
-    new ArrayList<>(Arrays.stream(Stats.values()).filter(stats1 -> stats1 != Stats.EVASION && stats1 != Stats.ACCURACY).toList());
+  private static List<Stats> stats = new ArrayList<>();
 
   /**
    * Apply the initial IVs to the egg
@@ -543,6 +542,11 @@ public class EggData {
    * @param female The female pokemon
    */
   private static void applyInitialIvs(Pokemon egg, Pokemon male, Pokemon female) {
+    if (stats.isEmpty()) {
+      stats = new ArrayList<>(Arrays.stream(Stats.values()).toList());
+      stats.remove(Stats.EVASION);
+      stats.remove(Stats.ACCURACY);
+    }
     List<Pokemon> pokemons = List.of(male, female);
     List<Pokemon> bracelets = new ArrayList<>();
     List<Stats> cloneStats = new ArrayList<>(stats);

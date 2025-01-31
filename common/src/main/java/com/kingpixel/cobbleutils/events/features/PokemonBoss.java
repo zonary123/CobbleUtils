@@ -88,22 +88,25 @@ public class PokemonBoss {
     });
 
     CobblemonEvents.BATTLE_VICTORY.subscribe(Priority.HIGH, (evt) -> {
-      if (!CobbleUtils.config.isBoss()) return Unit.INSTANCE;
-
-
-      evt.getLosers().forEach(battleActor -> {
-        if (battleActor instanceof PokemonBattleActor pokemonBattleActor) {
-          Pokemon pokemon = pokemonBattleActor.getPokemon().getOriginalPokemon();
-          if (!pokemon.isPlayerOwned() && pokemon.getPersistentData().getBoolean(BOSS_TAG)) {
-            evt.getWinners().forEach(winner -> {
-              if (winner instanceof PlayerBattleActor playerBattleActor) {
-                BossConfig.GiveRewards(playerBattleActor.getEntity(), pokemon);
-              }
-            });
+      try {
+        if (!CobbleUtils.config.isBoss()) return Unit.INSTANCE;
+        evt.getLosers().forEach(battleActor -> {
+          if (battleActor instanceof PokemonBattleActor pokemonBattleActor) {
+            Pokemon pokemon = pokemonBattleActor.getPokemon().getOriginalPokemon();
+            if (!pokemon.isPlayerOwned() && pokemon.getPersistentData().getBoolean(BOSS_TAG)) {
+              evt.getWinners().forEach(winner -> {
+                if (winner instanceof PlayerBattleActor playerBattleActor) {
+                  BossConfig.GiveRewards(playerBattleActor.getEntity(), pokemon);
+                }
+              });
+            }
           }
-        }
-      });
-      return Unit.INSTANCE;
+        });
+        return Unit.INSTANCE;
+      } catch (Exception e) {
+        e.printStackTrace();
+        return Unit.INSTANCE;
+      }
     });
   }
 
