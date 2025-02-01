@@ -196,6 +196,10 @@ public class PlayerUtils {
    * @return The ServerPlayerEntity.
    */
   public static ServerPlayerEntity castPlayer(PlayerEntity player) {
-    return CobbleUtils.server.getPlayerManager().getPlayer(player.getUuid());
+    try {
+      return player instanceof ServerPlayerEntity ? (ServerPlayerEntity) player : null;
+    } catch (ClassCastException e) {
+      return CobbleUtils.server.getPlayerManager().getPlayer(player.getUuid());
+    }
   }
 }

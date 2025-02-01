@@ -83,7 +83,6 @@ public abstract class EconomyUtil {
       CobbleUtils.LOGGER.info("Vault economy found");
     } else if (isImpactorPresent()) {
       economyType = EconomyType.IMPACTOR;
-      impactorService = EconomyService.instance();
       CobbleUtils.LOGGER.info("Impactor economy found");
     } else if (isBlankEconomyPresent()) {
       economyType = EconomyType.BLANKECONOMY;
@@ -174,8 +173,8 @@ public abstract class EconomyUtil {
    */
   public static boolean isImpactorPresent() {
     try {
-      EconomyService service = EconomyService.instance();
-      return service != null;
+      impactorService = EconomyService.instance();
+      return impactorService != null;
     } catch (IllegalStateException | NullPointerException | NoClassDefFoundError | IncompatibleClassChangeError e) {
       CobbleUtils.LOGGER.error("Impactor not found");
       return false;
@@ -290,6 +289,7 @@ public abstract class EconomyUtil {
         Account account;
         if (currency == null || currency.isEmpty()) {
           account = getAccount(player.getUuid());
+          CobbleUtils.LOGGER.error("Currency is null or empty");
         } else {
           account = getAccount(player.getUuid(), currency);
         }
@@ -486,13 +486,23 @@ public abstract class EconomyUtil {
    */
   public static String formatCurrency(BigDecimal amount, String currency) {
     setEconomyType();
+    String finalCurrency = currency;
     switch (economyType) {
       case IMPACTOR -> {
+        if (currency == null || currency.isEmpty()) {
+          CobbleUtils.LOGGER.error("Currency is null or empty");
+          return CobbleUtils.language.getDefaultSymbol() + amount;
+        }
         if (!currency.contains(":")) currency = "impactor:" + currency;
         String json = "";
         try {
           json =
-            GsonComponentSerializer.gson().serialize(impactorService.currencies().currency(Key.key(currency)).get().format(amount));
+            GsonComponentSerializer.gson()
+              .serialize(impactorService.currencies().currency(Key.key(currency))
+                .orElseGet(() -> {
+                  CobbleUtils.LOGGER.error("Not found Currency -> " + finalCurrency + "| Amount -> " + amount);
+                  return impactorService.currencies().primary();
+                }).format(amount));
           if (json.contains("text")) {
             JsonObject jsonObject = JsonParser.parseString(json).getAsJsonObject();
             return jsonObject.get("text").getAsString();
@@ -537,7 +547,12 @@ public abstract class EconomyUtil {
     try {
       if (currency == null || currency.isEmpty()) return impactorService.currencies().primary();
       if (!currency.contains(":")) currency = "impactor:" + currency;
-      return impactorService.currencies().currency(Key.key(currency)).get();
+      String finalCurrency = currency;
+      return impactorService.currencies().currency(Key.key(currency)).orElseGet(() -> {
+          CobbleUtils.LOGGER.error("Currency not found -> " + finalCurrency);
+          return impactorService.currencies().primary();
+        }
+      );
     } catch (NoSuchMethodError e) {
       CobbleUtils.LOGGER.error("Currency -> " + currency + "| Key -> " + Key.key(currency).asString());
       e.printStackTrace();
@@ -545,6 +560,9 @@ public abstract class EconomyUtil {
     } catch (InvalidKeyException e) {
       e.printStackTrace();
       CobbleUtils.LOGGER.error("Currency -> " + currency + "| Key -> " + Key.key(currency).asString());
+      return impactorService.currencies().primary();
+    } catch (Exception e) {
+      e.printStackTrace();
       return impactorService.currencies().primary();
     }
   }
@@ -566,16 +584,14 @@ public abstract class EconomyUtil {
       }
       return switch (economyType) {
         case IMPACTOR -> {
-          var optionalCurrency = impactorService.currencies().currency(Key.key(currency));
-          if (optionalCurrency.isEmpty()) {
+          if (currency == null || currency.isEmpty()) {
+            CobbleUtils.LOGGER.error("Currency is null or empty");
+            yield CobbleUtils.language.getDefaultSymbol();
+          }
+          var c = impactorService.currencies().currency(Key.key(currency)).orElseGet(() -> {
             CobbleUtils.LOGGER.error("Currency not found -> " + currency);
-            yield CobbleUtils.language.getDefaultSymbol();
-          }
-          var c = optionalCurrency.get();
-          if (c == null) {
-            CobbleUtils.LOGGER.error("Currency is null -> " + currency);
-            yield CobbleUtils.language.getDefaultSymbol();
-          }
+            return impactorService.currencies().primary();
+          });
           String symbol = GsonComponentSerializer.gson().serialize(c.symbol());
           if (CobbleUtils.config.isDebug()) {
             CobbleUtils.LOGGER.info("Symbol -> " + symbol);
@@ -604,8 +620,13 @@ public abstract class EconomyUtil {
   public static String getSymbol(Currency currency) {
     try {
       String key = currency.key().asString();
-      return GsonComponentSerializer.gson().serialize(impactorService.currencies().currency(Key.key(key)).get().symbol());
-
+      return GsonComponentSerializer.gson()
+        .serialize(impactorService.currencies().currency(Key.key(key))
+          .orElseGet(() -> {
+            CobbleUtils.LOGGER.error("Currency not found -> " + key);
+            return impactorService.currencies().primary();
+          })
+          .symbol());
     } catch (NoSuchMethodError | Exception | NoClassDefFoundError e) {
       return CobbleUtils.language.getDefaultSymbol();
     }
