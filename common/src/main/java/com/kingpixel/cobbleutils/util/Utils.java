@@ -2,10 +2,8 @@ package com.kingpixel.cobbleutils.util;
 
 import com.cobblemon.mod.common.api.moves.Move;
 import com.cobblemon.mod.common.api.moves.adapters.MoveTemplateAdapter;
-import com.cobblemon.mod.common.api.pokemon.PokemonProperties;
 import com.cobblemon.mod.common.api.types.ElementalType;
 import com.cobblemon.mod.common.api.types.adapters.ElementalTypeAdapter;
-import com.cobblemon.mod.common.pokemon.Pokemon;
 import com.cobblemon.mod.common.util.adapters.IntRangeAdapter;
 import com.cobblemon.mod.common.util.adapters.NbtCompoundAdapter;
 import com.google.gson.Gson;
@@ -133,6 +131,7 @@ public abstract class Utils {
     } catch (IOException | SecurityException e) {
       CobbleUtils.LOGGER.fatal("Unable to write file asynchronously, attempting sync write.");
       future.complete(future.complete(false));
+      e.printStackTrace();
     }
 
     return future;
@@ -143,7 +142,7 @@ public abstract class Utils {
       writer.write(data);
       return true;
     } catch (IOException e) {
-      CobbleUtils.LOGGER.fatal("Unable to write to file for " + CobbleUtils.MOD_ID + ". " + e);
+      e.printStackTrace();
       return false;
     }
   }
@@ -181,9 +180,11 @@ public abstract class Utils {
       CobbleUtils.LOGGER.error("Malformed JSON in file " + file.getAbsolutePath() + " - " + e.getMessage());
       future.complete(false);
       executor.shutdown();
+      e.printStackTrace();
     } catch (Exception e) {
       future.complete(readFileSync(file, callback));
       executor.shutdown();
+      e.printStackTrace();
     }
 
     return future;
@@ -198,10 +199,10 @@ public abstract class Utils {
       callback.accept(data.toString());
       return true;
     } catch (JsonSyntaxException e) {
-      CobbleUtils.LOGGER.error("Malformed JSON in file " + file.getAbsolutePath() + " - " + e.getMessage());
+      e.printStackTrace();
       return false;
     } catch (IOException e) {
-      CobbleUtils.LOGGER.fatal("Unable to read file " + file.getAbsolutePath() + " - " + e.getMessage());
+      e.printStackTrace();
       return false;
     }
   }
@@ -219,6 +220,7 @@ public abstract class Utils {
       try (FileWriter writer = new FileWriter(file)) {
         writer.write(content);
       } catch (IOException e) {
+        e.printStackTrace();
         throw new RuntimeException("Error al escribir el archivo: " + file.getPath(), e);
       }
     });
@@ -269,14 +271,6 @@ public abstract class Utils {
     } else {
       CobbleUtils.LOGGER.info("Directory " + directoryPath + " does not exist or is not a directory.");
     }
-  }
-
-  public static UUID getUUID(String playername) {
-    return CobbleUtils.server.getPlayerManager().getPlayer(playername).getUuid();
-  }
-
-  public static Pokemon createPokemonParse(String pokemonName) {
-    return PokemonProperties.Companion.parse(pokemonName).create();
   }
 
   public static ItemStack parseItemModel(ItemModel itemModel, int amount) {

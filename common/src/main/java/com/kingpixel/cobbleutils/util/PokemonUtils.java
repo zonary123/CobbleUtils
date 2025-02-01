@@ -644,8 +644,6 @@ public class PokemonUtils {
     double rarity = getRarity(pokemon);
     if (rarity == -1) return CobbleUtils.language.getUnknown();
 
-    pokemon.getForm().getEvYield().put(Stats.HP, 0);
-
     Map<String, Double> rarityMap = CobbleUtils.config.getRarity();
 
     String rarityResult = "Unknown";

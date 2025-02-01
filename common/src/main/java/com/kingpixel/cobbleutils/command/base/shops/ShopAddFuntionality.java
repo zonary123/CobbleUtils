@@ -11,7 +11,6 @@ import ca.landonjw.gooeylibs2.api.template.types.ChestTemplate;
 import com.cobblemon.mod.common.api.pokemon.PokemonProperties;
 import com.cobblemon.mod.common.item.PokemonItem;
 import com.kingpixel.cobbleutils.CobbleUtils;
-import com.kingpixel.cobbleutils.Model.FilterPokemons;
 import com.kingpixel.cobbleutils.Model.ItemChance;
 import com.kingpixel.cobbleutils.config.ShopConfig;
 import com.kingpixel.cobbleutils.features.shops.models.Product;
@@ -242,7 +241,7 @@ public class ShopAddFuntionality {
 
   private static List<Button> getPokemonButtons(ServerPlayerEntity player, ShopConfig shopConfig, String modId, String shop, Product product) {
     List<Button> buttons = new ArrayList<>();
-    new FilterPokemons().getAllowedPokemons().forEach(pokemon -> {
+/*    new FilterPokemons().getAllowedPokemons().forEach(pokemon -> {
       List<String> aspects = new ArrayList<>();
       if (pokemon.getAspects() != null) {
         aspects = pokemon.getAspects().stream().toList();
@@ -262,7 +261,7 @@ public class ShopAddFuntionality {
         })
         .build();
       buttons.add(button);
-    });
+    });*/
     return buttons;
   }
 

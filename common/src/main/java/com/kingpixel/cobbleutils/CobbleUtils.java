@@ -2,6 +2,7 @@ package com.kingpixel.cobbleutils;
 
 import ca.landonjw.gooeylibs2.api.tasks.Task;
 import com.cobblemon.mod.common.Cobblemon;
+import com.cobblemon.mod.common.api.properties.CustomPokemonProperty;
 import com.kingpixel.cobbleutils.command.CommandTree;
 import com.kingpixel.cobbleutils.config.*;
 import com.kingpixel.cobbleutils.database.DatabaseClientFactory;
@@ -18,6 +19,10 @@ import com.kingpixel.cobbleutils.party.config.PartyLang;
 import com.kingpixel.cobbleutils.party.event.CreatePartyEvent;
 import com.kingpixel.cobbleutils.party.event.DeletePartyEvent;
 import com.kingpixel.cobbleutils.party.util.PartyPlaceholder;
+import com.kingpixel.cobbleutils.properties.BreedablePropertyType;
+import com.kingpixel.cobbleutils.properties.MinIvsPropertyType;
+import com.kingpixel.cobbleutils.properties.ScalePropertyType;
+import com.kingpixel.cobbleutils.properties.SizePropertyType;
 import com.kingpixel.cobbleutils.util.ShopExtend;
 import com.kingpixel.cobbleutils.util.SpawnRates;
 import com.kingpixel.cobbleutils.util.Utils;
@@ -63,7 +68,6 @@ public class CobbleUtils extends ShopExtend {
   public static PartyManager partyManager = new PartyManager();
   public static List<String> modsInUse = new ArrayList<>();
   // Tasks
-  private static Task alertReward;
   private static Task fixSize;
 
 
@@ -151,11 +155,11 @@ public class CobbleUtils extends ShopExtend {
     LifecycleEvent.SERVER_STARTED.register(server -> {
       load();
       spawnRates.init();
-      //CustomPokemonProperty.Companion.register(MinIvsPropertyType.getInstance());
-      //CustomPokemonProperty.Companion.register(SizePropertyType.getInstance());
-      //CustomPokemonProperty.Companion.register(ScalePropertyType.getInstance());
-      //if (CobbleUtils.breedconfig.isActive())
-      //  CustomPokemonProperty.Companion.register(BreedablePropertyType.getInstance());
+      CustomPokemonProperty.Companion.register(MinIvsPropertyType.getInstance());
+      CustomPokemonProperty.Companion.register(SizePropertyType.getInstance());
+      CustomPokemonProperty.Companion.register(ScalePropertyType.getInstance());
+      if (CobbleUtils.breedconfig.isActive())
+        CustomPokemonProperty.Companion.register(BreedablePropertyType.getInstance());
     });
 
     LifecycleEvent.SERVER_STOPPING.register(server -> {
