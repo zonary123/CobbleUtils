@@ -589,8 +589,6 @@ public class UIUtils {
   public static LinkedPageButton getNextButton(Consumer<ButtonAction> action) {
     ItemModel itemModel = CobbleUtils.language.getItemNext();
     ItemStack itemStack = itemModel.getItemStack();
-    itemStack.set(DataComponentTypes.CUSTOM_NAME,
-      AdventureTranslator.toNative(itemModel.getDisplayname()));
     return LinkedPageButton.builder()
       .display(itemStack)
       .linkType(LinkType.Next)

@@ -10,7 +10,6 @@ import com.google.gson.JsonParser;
 import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.api.PermissionApi;
 import com.kingpixel.cobbleutils.util.LuckPermsUtil;
-import com.kingpixel.cobbleutils.util.RewardsUtils;
 import lombok.Getter;
 import lombok.Setter;
 import net.minecraft.registry.DynamicRegistryManager;
@@ -185,7 +184,7 @@ public class PlotBreeding {
           cooldown = currentTime + playerCooldownMillis;
 
           if (PermissionApi.hasPermission(player, "cobbleutils.breeding.autoclaim", 4)) {
-            RewardsUtils.saveRewardPokemon(player, pokemon);
+            Cobblemon.INSTANCE.getStorage().getParty(player).add(pokemon);
           } else {
             eggs.add(pokemon.saveToJSON(DynamicRegistryManager.EMPTY, new JsonObject()));
           }

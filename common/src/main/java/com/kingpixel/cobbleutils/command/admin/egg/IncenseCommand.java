@@ -1,7 +1,6 @@
 package com.kingpixel.cobbleutils.command.admin.egg;
 
 import com.kingpixel.cobbleutils.CobbleUtils;
-import com.kingpixel.cobbleutils.util.RewardsUtils;
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
@@ -25,7 +24,7 @@ public class IncenseCommand implements Command<ServerCommandSource> {
     dispatcher.register(
       base.then(
         CommandManager.literal("incense")
-          
+
           .then(
             CommandManager.argument("item", StringArgumentType.greedyString())
               .suggests((context, builder) -> {
@@ -80,7 +79,9 @@ public class IncenseCommand implements Command<ServerCommandSource> {
     if (itemStack == null) return 0;
     ItemStack stack = itemStack.copy();
     stack.setCount(amount);
-    RewardsUtils.saveRewardItemStack(player, itemStack);
+    if (!player.getInventory().insertStack(itemStack)) {
+      player.dropItem(itemStack, false);
+    }
     return 1;
   }
 

@@ -2,7 +2,6 @@ package com.kingpixel.cobbleutils.command.admin;
 
 import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.util.LuckPermsUtil;
-import com.kingpixel.cobbleutils.util.RewardsUtils;
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
@@ -50,7 +49,7 @@ public class ShinyToken implements Command<ServerCommandSource> {
     nbtCompound.putBoolean("shinytoken", true);
     itemStack.set(DataComponentTypes.CUSTOM_DATA, NbtComponent.of(nbtCompound));
     if (!player.getInventory().insertStack(itemStack)) {
-      RewardsUtils.saveRewardItemStack(player, itemStack);
+      player.dropItem(itemStack, false);
     }
     return 1;
   }

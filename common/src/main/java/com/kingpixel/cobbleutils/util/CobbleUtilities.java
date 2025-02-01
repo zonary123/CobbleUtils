@@ -11,6 +11,7 @@ import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NbtHelper;
 import net.minecraft.server.command.ServerCommandSource;
+import net.minecraft.server.network.ServerPlayerEntity;
 
 /**
  * @author Carlos Varas Alonso - 10/06/2024 21:09
@@ -76,6 +77,10 @@ public class CobbleUtilities {
 
   public static GooeyButton fillItem() {
     return GooeyButton.builder().display(Utils.parseItemId(CobbleUtils.config.getFill())).build();
+  }
+
+  public static boolean executeCommand(ServerPlayerEntity player, String command) {
+    return executeCommand(command.replace("%player%", player.getGameProfile().getName()));
   }
 
   /**

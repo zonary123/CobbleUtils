@@ -6,7 +6,6 @@ import com.kingpixel.cobbleutils.command.admin.boss.SpawnBoss;
 import com.kingpixel.cobbleutils.command.admin.egg.EggCommand;
 import com.kingpixel.cobbleutils.command.admin.egg.Hatch;
 import com.kingpixel.cobbleutils.command.admin.egg.IncenseCommand;
-import com.kingpixel.cobbleutils.command.admin.rewards.*;
 import com.kingpixel.cobbleutils.command.base.*;
 import com.kingpixel.cobbleutils.command.base.shops.ShopCommand;
 import com.kingpixel.cobbleutils.command.base.shops.ShopSellCommand;
@@ -79,24 +78,7 @@ public class CommandTree {
 
 
     }
-
-    // Rewards
-    if (CobbleUtils.config.isStorageRewards()) {
-      for (String literal : CobbleUtils.config.getCommandrewards()) {
-        LiteralArgumentBuilder<ServerCommandSource> base = CommandManager.literal(literal)
-          .requires(source -> LuckPermsUtil.checkPermission(source, 2, List.of("cobbleutils.user",
-            "cobbleutils.storage_rewards")));
-        Rewards.register(dispatcher, base);
-        RewardsPokemon.register(dispatcher, base);
-        RewardsItemStack.register(dispatcher, base, registry);
-        RewardsCommand.register(dispatcher, base);
-        RewardsClaim.register(dispatcher, base);
-        RewardsRemove.register(dispatcher, base);
-        RewardsReload.register(dispatcher, base);
-      }
-    }
-
-
+    
     if (CobbleUtils.breedconfig.isActive()) {
       for (String literal : CobbleUtils.breedconfig.getEggcommand()) {
         LiteralArgumentBuilder<ServerCommandSource> base = CommandManager.literal(literal)

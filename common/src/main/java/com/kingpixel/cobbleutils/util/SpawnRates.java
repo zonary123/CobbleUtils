@@ -113,9 +113,9 @@ public class SpawnRates {
 
         // Calculates the weight and compares to previous ones to find the highest.
         if (buckets.get(bucket).containsKey(poke)) {
-          BigDecimal rarityInBucket = new BigDecimal(buckets.get(bucket).get(poke) / totalWeights.get(bucket));
+          BigDecimal rarityInBucket = BigDecimal.valueOf(buckets.get(bucket).get(poke) / totalWeights.get(bucket));
 
-          BigDecimal totalWeight = rarityInBucket.multiply(new BigDecimal(bucket.getWeight()));
+          BigDecimal totalWeight = rarityInBucket.multiply(BigDecimal.valueOf(bucket.getWeight()));
 
           if (totalWeight.compareTo(highestWeight) > 0) {
             highestWeight = totalWeight;
@@ -139,8 +139,7 @@ public class SpawnRates {
 
   public float getRarity(Species species) {
     if (rarity.isEmpty()) init();
-    Pokemon p = new Pokemon();
-    p.setSpecies(species);
+    Pokemon p = species.create(1);
     return getRarity(p);
   }
 }

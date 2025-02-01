@@ -2,7 +2,6 @@ package com.kingpixel.cobbleutils;
 
 import ca.landonjw.gooeylibs2.api.tasks.Task;
 import com.cobblemon.mod.common.Cobblemon;
-import com.kingpixel.cobbleutils.Model.RewardsData;
 import com.kingpixel.cobbleutils.command.CommandTree;
 import com.kingpixel.cobbleutils.config.*;
 import com.kingpixel.cobbleutils.database.DatabaseClientFactory;
@@ -13,14 +12,16 @@ import com.kingpixel.cobbleutils.features.Features;
 import com.kingpixel.cobbleutils.features.breeding.config.BreedConfig;
 import com.kingpixel.cobbleutils.features.shops.ShopTransactions;
 import com.kingpixel.cobbleutils.managers.PartyManager;
-import com.kingpixel.cobbleutils.managers.RewardsManager;
 import com.kingpixel.cobbleutils.party.command.CommandsParty;
 import com.kingpixel.cobbleutils.party.config.PartyConfig;
 import com.kingpixel.cobbleutils.party.config.PartyLang;
 import com.kingpixel.cobbleutils.party.event.CreatePartyEvent;
 import com.kingpixel.cobbleutils.party.event.DeletePartyEvent;
 import com.kingpixel.cobbleutils.party.util.PartyPlaceholder;
-import com.kingpixel.cobbleutils.util.*;
+import com.kingpixel.cobbleutils.util.ShopExtend;
+import com.kingpixel.cobbleutils.util.SpawnRates;
+import com.kingpixel.cobbleutils.util.Utils;
+import com.kingpixel.cobbleutils.util.UtilsLogger;
 import dev.architectury.event.events.common.CommandRegistrationEvent;
 import dev.architectury.event.events.common.InteractionEvent;
 import dev.architectury.event.events.common.LifecycleEvent;
@@ -61,8 +62,6 @@ public class CobbleUtils extends ShopExtend {
   public static PartyLang partyLang = new PartyLang();
   public static PartyManager partyManager = new PartyManager();
   public static List<String> modsInUse = new ArrayList<>();
-  // Rewards
-  public static RewardsManager rewardsManager = new RewardsManager();
   // Tasks
   private static Task alertReward;
   private static Task fixSize;
@@ -76,7 +75,6 @@ public class CobbleUtils extends ShopExtend {
   public static void load() {
     checks();
     files(true);
-    spawnRates.init();
     sign();
     tasks();
     Features.register();
@@ -106,7 +104,6 @@ public class CobbleUtils extends ShopExtend {
     partyConfig.init();
     partyLang.init();
     breedconfig.init();
-    spawnRates.init();
     setEconomyType();
     if (config.isApiMode()) return;
     BossConfig.init();
@@ -153,6 +150,7 @@ public class CobbleUtils extends ShopExtend {
 
     LifecycleEvent.SERVER_STARTED.register(server -> {
       load();
+      spawnRates.init();
       //CustomPokemonProperty.Companion.register(MinIvsPropertyType.getInstance());
       //CustomPokemonProperty.Companion.register(SizePropertyType.getInstance());
       //CustomPokemonProperty.Companion.register(ScalePropertyType.getInstance());
@@ -168,15 +166,6 @@ public class CobbleUtils extends ShopExtend {
 
     PlayerEvent.PLAYER_JOIN.register(player -> {
 
-
-      //Rewards
-      if (CobbleUtils.config.isStorageRewards()) {
-        RewardsData rewardsData = rewardsManager.getRewardsData().computeIfAbsent(
-          player.getUuid(),
-          uuid -> new RewardsData(player.getGameProfile().getName(), player.getUuid())
-        );
-        rewardsData.init();
-      }
     });
 
 
@@ -188,10 +177,6 @@ public class CobbleUtils extends ShopExtend {
       // Remove shop transactions data
       if (config.isShops()) {
         ShopTransactions.transactions.remove(player.getUuid());
-      }
-      // Remove unnecesary data from rewards
-      if (config.isStorageRewards()) {
-        rewardsManager.getRewardsData().remove(player.getUuid());
       }
     });
 
@@ -207,28 +192,6 @@ public class CobbleUtils extends ShopExtend {
 
   private static void tasks() {
 
-    if (config.isStorageRewards()) {
-      int intervalAlertReward = 20 * 60 * CobbleUtils.config.getAlertreward();
-      if (alertReward != null) alertReward.setExpired();
-      alertReward = Task.builder()
-        .infinite()
-        .interval(intervalAlertReward)
-        .execute(task -> {
-          server.getPlayerManager().getPlayerList().forEach(player -> {
-            RewardsData rewardsData = rewardsManager.getRewardsData().get(player.getUuid());
-            if (RewardsUtils.hasRewards(player)) {
-              int amount = rewardsData.getAmount();
-              PlayerUtils.sendMessage(player,
-                language.getMessageHaveRewards()
-                  .replace("%amount%", String.valueOf(amount)),
-                CobbleUtils.language.getPrefixStorageRewards(),
-                TypeMessage.CHAT);
-            }
-          });
-        })
-        .build();
-    }
-    ;
 
     if (config.isRandomsize()) {
       int intervalRandomSize = 20 * 60 * 30;

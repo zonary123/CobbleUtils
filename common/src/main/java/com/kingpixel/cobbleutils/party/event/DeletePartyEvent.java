@@ -9,7 +9,7 @@ import java.util.List;
  * @author Carlos Varas Alonso - 28/06/2024 8:44
  */
 public class DeletePartyEvent {
-  private List<DeletePartyListener> partyDeleteListeners = new ArrayList<>();
+  private final List<DeletePartyListener> partyDeleteListeners = new ArrayList<>();
   public static final DeletePartyEvent DELETE_PARTY_EVENT = new DeletePartyEvent();
 
   public void register(DeletePartyListener listener) {

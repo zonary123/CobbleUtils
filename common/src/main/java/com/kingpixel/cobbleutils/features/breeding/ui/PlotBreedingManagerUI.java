@@ -16,7 +16,6 @@ import com.kingpixel.cobbleutils.database.DatabaseClientFactory;
 import com.kingpixel.cobbleutils.features.breeding.models.PlotBreeding;
 import com.kingpixel.cobbleutils.util.AdventureTranslator;
 import com.kingpixel.cobbleutils.util.PokemonUtils;
-import com.kingpixel.cobbleutils.util.RewardsUtils;
 import net.minecraft.component.DataComponentTypes;
 import net.minecraft.component.type.LoreComponent;
 import net.minecraft.registry.DynamicRegistryManager;
@@ -105,9 +104,10 @@ public class PlotBreedingManagerUI {
       .onClick(action -> {
         if (!plotBreeding.getEggs().isEmpty()) {
           plotBreeding.getEggs().forEach(pokemon -> {
-
-            RewardsUtils.saveRewardPokemon(action.getPlayer(),
-              Pokemon.Companion.loadFromJSON(DynamicRegistryManager.EMPTY, pokemon));
+            Pokemon p = Pokemon.Companion.loadFromJSON(DynamicRegistryManager.EMPTY, pokemon);
+            if (p != null) {
+              Cobblemon.INSTANCE.getStorage().getParty(player).add(p);
+            }
           });
           plotBreeding.getEggs().clear();
           plots.set(finalI, plotBreeding);
@@ -127,8 +127,10 @@ public class PlotBreedingManagerUI {
         .onClick(action -> {
           if (!plotBreeding.getEggs().isEmpty()) {
             plotBreeding.getEggs().forEach(pokemon -> {
-
-              RewardsUtils.saveRewardPokemon(action.getPlayer(), Pokemon.Companion.loadFromJSON(DynamicRegistryManager.EMPTY, pokemon));
+              Pokemon p = Pokemon.Companion.loadFromJSON(DynamicRegistryManager.EMPTY, pokemon);
+              if (p != null) {
+                Cobblemon.INSTANCE.getStorage().getParty(player).add(p);
+              }
             });
             plotBreeding.getEggs().clear();
             plots.set(finalI, plotBreeding);

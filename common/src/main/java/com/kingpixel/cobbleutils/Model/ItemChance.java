@@ -9,6 +9,7 @@ import ca.landonjw.gooeylibs2.api.button.linked.LinkedPageButton;
 import ca.landonjw.gooeylibs2.api.helpers.PaginationHelper;
 import ca.landonjw.gooeylibs2.api.page.LinkedPage;
 import ca.landonjw.gooeylibs2.api.template.types.ChestTemplate;
+import com.cobblemon.mod.common.Cobblemon;
 import com.cobblemon.mod.common.api.pokemon.PokemonProperties;
 import com.cobblemon.mod.common.api.storage.NoPokemonStoreException;
 import com.cobblemon.mod.common.item.PokemonItem;
@@ -240,27 +241,36 @@ public class ItemChance {
 
       if (item.startsWith("pokemon:")) {
         Pokemon pokemon = getRewardPokemon(item);
-        return RewardsUtils.saveRewardPokemon(player, pokemon);
+        return Cobblemon.INSTANCE.getStorage().getParty(player).add(pokemon);
       } else if (item.startsWith("command:")) {
         String[] commandParts = item.split("#");
         for (String commandPart : commandParts) {
-          RewardsUtils.saveRewardCommand(player, commandPart.replace("command:", ""));
+          CobbleUtilities.executeCommand(player, commandPart.replace("command:", ""));
         }
         return true;
       } else if (item.startsWith("money:")) {
         return handleMoneyReward(player, item);
       } else if (item.startsWith("item:")) {
         itemStack = parseItemStack(item, parseAmount(item.split(":")[1]) * amount);
-        return RewardsUtils.saveRewardItemStack(player, itemStack);
+        if (!player.getInventory().insertStack(itemStack)) {
+          player.dropItem(itemStack, false);
+        }
+        return true;
       } else if (item.startsWith("mod:")) {
         itemStack = getModItem(itemChance);
-        return RewardsUtils.saveRewardItemStack(player, itemStack);
+        if (!player.getInventory().insertStack(itemStack)) {
+          player.dropItem(itemStack, false);
+        }
+        return true;
       } else if (item.startsWith("polymer:")) {
         CobbleUtils.LOGGER.info("Polymer not supported yet");
         return false;
       } else {
         itemStack = Utils.parseItemId(item, amount);
-        return RewardsUtils.saveRewardItemStack(player, itemStack);
+        if (!player.getInventory().insertStack(itemStack)) {
+          player.dropItem(itemStack, false);
+        }
+        return true;
       }
     } catch (Exception e) {
       CobbleUtils.LOGGER.error("Error giving reward: " + e.getMessage());
