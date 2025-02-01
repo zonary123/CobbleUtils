@@ -20,35 +20,44 @@ public class ScaleEvent {
 
   public static void register() {
     CobblemonEvents.FOSSIL_REVIVED.subscribe(Priority.NORMAL, (evt) -> {
-      if (!CobbleUtils.config.isRandomsize()) return Unit.INSTANCE;
-      scalePokemon(evt.getPokemon());
-      return Unit.INSTANCE;
+      try {
+        if (!CobbleUtils.config.isRandomsize()) return Unit.INSTANCE;
+        scalePokemon(evt.getPokemon());
+        return Unit.INSTANCE;
+      } catch (Exception e) {
+        e.printStackTrace();
+        return Unit.INSTANCE;
+      }
     });
     CobblemonEvents.STARTER_CHOSEN.subscribe(Priority.NORMAL, (evt) -> {
-      if (!CobbleUtils.config.isRandomsize()) return Unit.INSTANCE;
-      scalePokemon(evt.getPokemon());
-      return Unit.INSTANCE;
+      try {
+        if (!CobbleUtils.config.isRandomsize()) return Unit.INSTANCE;
+        scalePokemon(evt.getPokemon());
+        return Unit.INSTANCE;
+      } catch (Exception e) {
+        e.printStackTrace();
+        return Unit.INSTANCE;
+      }
     });
 
     CobblemonEvents.POKEMON_ENTITY_SPAWN.subscribe(Priority.NORMAL, (evt) -> {
-      if (!CobbleUtils.config.isRandomsize()) return Unit.INSTANCE;
-      PokemonEntity pokemonEntity = evt.getEntity();
-      if (pokemonEntity.isPersistent()) return Unit.INSTANCE;
-      if (pokemonEntity.isAiDisabled()) return Unit.INSTANCE;
-      Pokemon pokemon = pokemonEntity.getPokemon();
-      if (pokemon.getPersistentData().getString(SIZE_TAG).equalsIgnoreCase(SIZE_CUSTOM_TAG)) return Unit.INSTANCE;
-      if (pokemon.isPlayerOwned()) {
-        solveScale(pokemonEntity.getPokemon());
+      try {
+        if (!CobbleUtils.config.isRandomsize()) return Unit.INSTANCE;
+        PokemonEntity pokemonEntity = evt.getEntity();
+        if (pokemonEntity.isPersistent()) return Unit.INSTANCE;
+        if (pokemonEntity.isAiDisabled()) return Unit.INSTANCE;
+        Pokemon pokemon = pokemonEntity.getPokemon();
+        if (pokemon.getPersistentData().getString(SIZE_TAG).equalsIgnoreCase(SIZE_CUSTOM_TAG)) return Unit.INSTANCE;
+        if (pokemon.isPlayerOwned()) {
+          solveScale(pokemonEntity.getPokemon());
+          return Unit.INSTANCE;
+        }
+        scalePokemon(pokemonEntity.getPokemon());
+        return Unit.INSTANCE;
+      } catch (Exception e) {
+        e.printStackTrace();
         return Unit.INSTANCE;
       }
-      scalePokemon(pokemonEntity.getPokemon());
-      return Unit.INSTANCE;
-    });
-
-    CobblemonEvents.POKEMON_SENT_POST.subscribe(Priority.NORMAL, (evt) -> {
-      if (!CobbleUtils.config.isRandomsize()) return Unit.INSTANCE;
-      solveScale(evt.getPokemon());
-      return Unit.INSTANCE;
     });
 
   }

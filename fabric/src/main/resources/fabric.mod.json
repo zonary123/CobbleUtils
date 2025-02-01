@@ -4,11 +4,17 @@
   "id": "${mod_id}",
   "version": "${mod_version}",
   "description": "${mod_description}",
-  "authors": ["${author}"],
-  "mixins": ["cobbleutils.mixins.json"],
+  "authors": [
+    "${author}"
+  ],
+  "mixins": [
+    "cobbleutils.mixins.json"
+  ],
   "contact": {},
   "entrypoints": {
-    "main": ["com.kingpixel.cobbleutils.fabric.CobbleUtilsFabric"]
+    "main": [
+      "com.kingpixel.cobbleutils.fabric.CobbleUtilsFabric"
+    ]
   },
   "license": "${license}",
   "environment": "*",
@@ -16,6 +22,7 @@
     "fabricloader": "*",
     "fabric": "*",
     "minecraft": "1.21.1",
+    "cobblemon": "*",
     "architectury": ">=13.0.8",
     "cobbleutils": "*"
   }

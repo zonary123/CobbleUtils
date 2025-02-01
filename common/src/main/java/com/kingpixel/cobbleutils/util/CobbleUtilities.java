@@ -1,8 +1,6 @@
 package com.kingpixel.cobbleutils.util;
 
 import ca.landonjw.gooeylibs2.api.button.GooeyButton;
-import com.cobblemon.mod.common.Cobblemon;
-import com.cobblemon.mod.common.api.battles.model.PokemonBattle;
 import com.kingpixel.cobbleutils.CobbleUtils;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.ParseResults;
@@ -13,7 +11,6 @@ import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NbtHelper;
 import net.minecraft.server.command.ServerCommandSource;
-import net.minecraft.server.network.ServerPlayerEntity;
 
 /**
  * @author Carlos Varas Alonso - 10/06/2024 21:09
@@ -26,27 +23,6 @@ public class CobbleUtilities {
     return item.getName(itemStack).getString();
   }
 
-  /**
-   * Check if a player is in a battle
-   *
-   * @param player The player to check
-   *
-   * @return If the player is in a battle
-   */
-  public static boolean isBattle(ServerPlayerEntity player) {
-    PokemonBattle battle;
-    try {
-      battle = Cobblemon.INSTANCE.getBattleRegistry().getBattleByParticipatingPlayer(player);
-    } catch (Exception e) {
-      player.sendMessage(AdventureTranslator.toNative(CobbleUtils.language.getMessagearebattle()));
-      return false;
-    }
-    assert battle != null;
-    boolean pvn = battle.isPvN();
-    boolean pvp = battle.isPvP();
-    boolean pvw = battle.isPvW();
-    return pvn || pvp || pvw;
-  }
 
   /**
    * Convert seconds to time

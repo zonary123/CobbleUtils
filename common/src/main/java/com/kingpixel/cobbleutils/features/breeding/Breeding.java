@@ -1,5 +1,6 @@
 package com.kingpixel.cobbleutils.features.breeding;
 
+import ca.landonjw.gooeylibs2.api.tasks.Task;
 import com.cobblemon.mod.common.Cobblemon;
 import com.cobblemon.mod.common.api.Priority;
 import com.cobblemon.mod.common.api.events.CobblemonEvents;
@@ -10,11 +11,13 @@ import com.google.gson.JsonParser;
 import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.Model.CobbleUtilsTags;
 import com.kingpixel.cobbleutils.database.DatabaseClientFactory;
-import com.kingpixel.cobbleutils.features.breeding.events.*;
+import com.kingpixel.cobbleutils.features.breeding.events.EggInteract;
+import com.kingpixel.cobbleutils.features.breeding.events.EggThrow;
+import com.kingpixel.cobbleutils.features.breeding.events.NationalityPokemon;
+import com.kingpixel.cobbleutils.features.breeding.events.PastureUI;
 import com.kingpixel.cobbleutils.features.breeding.manager.ManagerPlotEggs;
 import com.kingpixel.cobbleutils.features.breeding.models.EggData;
 import com.kingpixel.cobbleutils.util.Utils;
-import dev.architectury.event.events.common.LifecycleEvent;
 import dev.architectury.event.events.common.PlayerEvent;
 import kotlin.Unit;
 import net.minecraft.entity.Entity;
@@ -24,10 +27,10 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @author Carlos Varas Alonso - 23/07/2024 9:24
@@ -37,8 +40,7 @@ public class Breeding {
   public static Map<UUID, UserInfo> playerCountry = new ConcurrentHashMap<>();
   private static final String API_URL_IP = "http://ip-api.com/json/";
   private static boolean active = false;
-  private static final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
-  private static final List<ScheduledFuture<?>> scheduledTasks = new CopyOnWriteArrayList<>();
+  private static Task checkegg;
 
   public static void register() {
     if (!active) {
@@ -46,25 +48,18 @@ public class Breeding {
       active = true;
     }
 
-    for (ScheduledFuture<?> task : scheduledTasks) {
-      task.cancel(true);
-    }
-    scheduledTasks.clear();
-
+    if (checkegg != null) checkegg.setExpired();
 
     // Crear una nueva tarea
-    ScheduledFuture<?> checkegg = scheduler.scheduleAtFixedRate(() -> {
-      try {
-        // Checking eggs
+    checkegg = Task.builder()
+      .execute(() -> {
         CobbleUtils.server.getPlayerManager().getPlayerList().forEach(player -> {
           DatabaseClientFactory.databaseClient.checkDaycarePlots(player);
         });
-      } catch (Exception e) {
-        e.printStackTrace();
-      }
-    }, 0, CobbleUtils.breedconfig.getCheckEggToBreedInSeconds(), TimeUnit.SECONDS);
-
-    scheduledTasks.add(checkegg);
+      })
+      .infinite()
+      .interval(20L * CobbleUtils.breedconfig.getCheckEggToBreedInSeconds())
+      .build();
   }
 
   private static void events() {
@@ -116,24 +111,6 @@ public class Breeding {
       }
       return Unit.INSTANCE;
     });
-
-
-    LifecycleEvent.SERVER_STOPPING.register(instance -> {
-      for (ScheduledFuture<?> task : scheduledTasks) {
-        task.cancel(true);
-      }
-      scheduledTasks.clear();
-      HatchEggEvent.HATCH_EGG_EVENT.clear();
-      scheduler.shutdown();
-      try {
-        if (!scheduler.awaitTermination(1, TimeUnit.SECONDS)) {
-          scheduler.shutdownNow();
-        }
-      } catch (InterruptedException ex) {
-        scheduler.shutdownNow(); // Interrupción forzada
-      }
-    });
-
 
     EggThrow.register();
     PastureUI.register();

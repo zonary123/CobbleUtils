@@ -4,7 +4,7 @@ architectury {
 }
 
 loom {
-    accessWidenerPath = file("src/main/resources/cobbleutils.accesswidener")
+    accessWidenerPath = file("src/main/resources/minecraft_access.accesswidener")
 }
 
 dependencies {

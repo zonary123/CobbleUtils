@@ -56,18 +56,13 @@ public class BreedCommand implements Command<ServerCommandSource> {
 
   private static int executeDefault(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
     ServerPlayerEntity player = context.getSource().getPlayerOrThrow();
-    if (isPlayerInBattle(player)) {
-      return 0;
-    }
     PlotBreedingUI.open(player);
     return 1;
   }
 
   private static int executeForOtherPlayer(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
     ServerPlayerEntity player = EntityArgumentType.getPlayer(context, "player");
-    if (isPlayerInBattle(player)) {
-      return 0;
-    }
+
     PlotBreedingUI.open(player);
     return 1;
   }
@@ -84,9 +79,7 @@ public class BreedCommand implements Command<ServerCommandSource> {
   }
 
   private static int processBreeding(CommandContext<ServerCommandSource> context, ServerPlayerEntity executor, ServerPlayerEntity targetPlayer) {
-    if (isPlayerInBattle(targetPlayer) || isCooldownActive(targetPlayer)) {
-      return 0;
-    }
+    if (isCooldownActive(targetPlayer)) return 0;
 
     Pokemon male = PartySlotArgumentType.Companion.getPokemon(context, "male");
     Pokemon female = PartySlotArgumentType.Companion.getPokemon(context, "female");
@@ -106,10 +99,6 @@ public class BreedCommand implements Command<ServerCommandSource> {
     }
 
     return 0;
-  }
-
-  private static boolean isPlayerInBattle(ServerPlayerEntity player) {
-    return Cobblemon.INSTANCE.getBattleRegistry().getBattleByParticipatingPlayer(player) != null;
   }
 
   private static boolean isCooldownActive(ServerPlayerEntity player) {

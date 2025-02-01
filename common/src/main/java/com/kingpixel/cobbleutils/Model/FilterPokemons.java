@@ -13,6 +13,7 @@ import com.kingpixel.cobbleutils.util.PokemonUtils;
 import com.kingpixel.cobbleutils.util.Utils;
 import lombok.Data;
 import lombok.Getter;
+import net.minecraft.registry.DynamicRegistryManager;
 
 import java.util.*;
 
@@ -237,8 +238,7 @@ public class FilterPokemons {
    * @return the pokemon
    */
   private Pokemon getPokemon(Pokemon pokemon) {
-    Pokemon copy = new Pokemon().copyFrom(pokemon);
-    copy.setUuid(UUID.randomUUID());
+    Pokemon copy = pokemon.clone(true, DynamicRegistryManager.EMPTY);
     copy.createPokemonProperties(List.of(
       PokemonPropertyExtractor.NATURE,
       PokemonPropertyExtractor.IVS,

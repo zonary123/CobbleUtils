@@ -118,7 +118,7 @@ public class Hatch implements Command<ServerCommandSource> {
       return true;
     }
 
-    return Cobblemon.INSTANCE.getBattleRegistry().getBattleByParticipatingPlayer(player) != null;
+    return false;
   }
 
   private static int hatch(CommandContext<ServerCommandSource> context, ServerPlayerEntity player) {

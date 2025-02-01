@@ -8,9 +8,6 @@ import com.kingpixel.cobbleutils.events.ScaleEvent;
  */
 public class FeaturesRegister {
   public static void register() {
-    if (CobbleUtils.config.isBoss()) {
-      PokemonBoss.register();
-    }
     if (CobbleUtils.config.isRandomsize()) {
       ScaleEvent.register();
     }

@@ -119,14 +119,10 @@ public class CobbleUtils extends ShopExtend {
   private static void sign() {
     info(MOD_NAME, "1.1.3", "CobbleUtils");
     LOGGER.info("§e| §6Pokemons size: " + isActive(CobbleUtils.config.isRandomsize()));
-    LOGGER.info("§e| §6Random item: §aImplemented");
-    LOGGER.info("§e| §6Random money: §aImplemented");
-    LOGGER.info("§e| §6Random pokemon: §aImplemented");
     LOGGER.info("§e| §6Shop: " + isActive(CobbleUtils.config.isShops()));
     LOGGER.info("§e| §6Party: " + isActive(CobbleUtils.config.isParty()));
     LOGGER.info("§e| §6Storage Rewards: " + isActive(CobbleUtils.config.isStorageRewards()));
     LOGGER.info("§e| §6Breeding: " + isActive(CobbleUtils.breedconfig.isActive()));
-    LOGGER.info("§e| §6Bosses: " + isActive(CobbleUtils.config.isBoss()));
     LOGGER.info("§e| §6Supported economies: Impactor, BlanketEconomy, CobbleDollars, PebbleEconomy and Vault");
     LOGGER.info("§e+-------------------------------+");
   }

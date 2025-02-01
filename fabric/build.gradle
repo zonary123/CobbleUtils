@@ -16,12 +16,6 @@ architectury {
 
 loom {
     accessWidenerPath = project(":common").loom.accessWidenerPath
-
-    // Loom sets the log4j config while in development (in prod the log4j config might be dictated by the launcher or just the game itself).
-    // This loom gradle config specifies that loom uses our customized log4j config file.
-    // ref: https://fabricmc.net/wiki/documentation:fabric_loom
-    // (although we're using the architectury fork of fabric loom, this config remains unchanged)
-    log4jConfigs.from(file("../common/src/main/resources/log4j.xml"))
 }
 
 configurations {
@@ -44,7 +38,7 @@ dependencies {
     modImplementation("com.cobblemon:fabric:${property("cobblemon_version")}")
 
     common(project(path: ":common", configuration: "namedElements")) { transitive false }
-    shadowCommon(project(path: ":common", configuration: "transformProductionFabric")) { transitive false }
+    shadowCommon(project(path: ":common", configuration: "transformProductionFabric"))
 
     // Kyori Adventure
     shadowCommon("net.kyori:adventure-text-serializer-gson:${property("kyori_version")}")
@@ -103,6 +97,7 @@ shadowJar {
     exclude("org/sqlite/native/Mac/**/*")
     exclude("org/sqlite/native/Solaris/**/*")
     exclude("kotlin/**")
+    exclude("junit/**
     // Relocate packages
     relocate("org.sqlite", "org.sqlite") {
         exclude("org/sqlite/native/Linux-Android/**/*")
