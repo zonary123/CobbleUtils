@@ -106,7 +106,7 @@ public abstract class EconomyUtil {
     try {
       pebblesEconomy = PebblesEconomyInitializer.INSTANCE;
       return true;
-    } catch (IllegalStateException | NullPointerException | NoClassDefFoundError e) {
+    } catch (NoClassDefFoundError | Exception e) {
       CobbleUtils.LOGGER.error("Pebble Economy not found");
       return false;
     }
@@ -137,7 +137,7 @@ public abstract class EconomyUtil {
           return true;
         }
       }
-    } catch (IllegalStateException | NullPointerException | NoClassDefFoundError e) {
+    } catch (NoClassDefFoundError | Exception e) {
       CobbleUtils.LOGGER.error("Vault not found");
       return false;
     }
@@ -146,9 +146,9 @@ public abstract class EconomyUtil {
 
   private static boolean isCobbleDollars() {
     try {
-      CobbleDollars.INSTANCE.getConfig();
+      CobbleDollars.INSTANCE.getImplementation();
       return true;
-    } catch (IllegalStateException | NullPointerException | NoClassDefFoundError e) {
+    } catch (NoClassDefFoundError | Exception e) {
       CobbleUtils.LOGGER.error("CobbleDollars not found");
       return false;
     }
@@ -159,7 +159,7 @@ public abstract class EconomyUtil {
       BlanketEconomy.INSTANCE.initialize(CobbleUtils.server);
       BlanketEconomy.INSTANCE.getAPI();
       return true;
-    } catch (IllegalStateException | NullPointerException | NoClassDefFoundError e) {
+    } catch (NoClassDefFoundError | Exception e) {
       CobbleUtils.LOGGER.error("BlanketEconomy not found");
       return false;
     }
@@ -554,12 +554,13 @@ public abstract class EconomyUtil {
         }
       );
     } catch (NoSuchMethodError e) {
-      CobbleUtils.LOGGER.error("Currency -> " + currency + "| Key -> " + Key.key(currency).asString());
+
+      CobbleUtils.LOGGER.error("Currency -> " + currency + "| getCurrency");
       e.printStackTrace();
       return impactorService.currencies().primary();
     } catch (InvalidKeyException e) {
       e.printStackTrace();
-      CobbleUtils.LOGGER.error("Currency -> " + currency + "| Key -> " + Key.key(currency).asString());
+      CobbleUtils.LOGGER.error("Currency -> " + currency + "| getCurrency");
       return impactorService.currencies().primary();
     } catch (Exception e) {
       e.printStackTrace();

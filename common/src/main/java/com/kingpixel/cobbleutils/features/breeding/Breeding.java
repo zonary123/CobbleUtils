@@ -40,7 +40,8 @@ public class Breeding {
   public static Map<UUID, UserInfo> playerCountry = new ConcurrentHashMap<>();
   private static final String API_URL_IP = "http://ip-api.com/json/";
   private static boolean active = false;
-  private static Task checkegg;
+  private static Task checkeggTask;
+  private static Task breedableTask;
 
   public static void register() {
     if (!active) {
@@ -48,10 +49,10 @@ public class Breeding {
       active = true;
     }
 
-    if (checkegg != null) checkegg.setExpired();
+    if (checkeggTask != null) checkeggTask.setExpired();
 
     // Crear una nueva tarea
-    checkegg = Task.builder()
+    checkeggTask = Task.builder()
       .execute(() -> {
         CobbleUtils.server.getPlayerManager().getPlayerList().forEach(player -> {
           DatabaseClientFactory.databaseClient.checkDaycarePlots(player);
@@ -60,6 +61,25 @@ public class Breeding {
       .infinite()
       .interval(20L * CobbleUtils.breedconfig.getCheckEggToBreedInSeconds())
       .build();
+
+    if (breedableTask != null) breedableTask.setExpired();
+
+    breedableTask = Task.builder()
+      .execute(() -> CobbleUtils.server.getPlayerManager().getPlayerList().forEach(Breeding::modifyBreedable))
+      .infinite()
+      .interval(20L * 60)
+      .build();
+  }
+
+  private static void modifyBreedable(ServerPlayerEntity player) {
+    var party = Cobblemon.INSTANCE.getStorage().getParty(player);
+    var pc = Cobblemon.INSTANCE.getStorage().getPC(player);
+    for (Pokemon pokemon : party) {
+      pokemon.getPersistentData().putBoolean(CobbleUtilsTags.BREEDABLE_TAG, CobbleUtils.breedconfig.canCreateEgg(pokemon));
+    }
+    for (Pokemon pokemon : pc) {
+      pokemon.getPersistentData().putBoolean(CobbleUtilsTags.BREEDABLE_TAG, CobbleUtils.breedconfig.canCreateEgg(pokemon));
+    }
   }
 
   private static void events() {
@@ -67,15 +87,7 @@ public class Breeding {
       if (player == null) return;
       DatabaseClientFactory.databaseClient.getPlots(player);
       countryPlayer(player);
-      var party = Cobblemon.INSTANCE.getStorage().getParty(player);
-      var pc = Cobblemon.INSTANCE.getStorage().getPC(player);
-      for (Pokemon pokemon : party) {
-        pokemon.getPersistentData().putBoolean(CobbleUtilsTags.BREEDABLE_TAG, CobbleUtils.breedconfig.canCreateEgg(pokemon));
-      }
-      for (Pokemon pokemon : pc) {
-        pokemon.getPersistentData().putBoolean(CobbleUtilsTags.BREEDABLE_TAG, CobbleUtils.breedconfig.canCreateEgg(pokemon));
-      }
-
+      modifyBreedable(player);
     });
 
     // Todo: Add egg generation in the world

@@ -36,7 +36,10 @@ dependencies {
     modImplementation("dev.architectury:architectury-fabric:${project.architectury_version}")
 
     modImplementation("com.cobblemon:fabric:${property("cobblemon_version")}")
-
+    modImplementation("net.fabricmc:fabric-language-kotlin:${property("fabric-kotlin")}")
+    modImplementation("org.jetbrains.kotlin:kotlin-reflect:${property("kotlin")}")
+    modImplementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:${property("kotlin")}")
+    modImplementation("org.jetbrains.kotlin:kotlin-gradle-plugin:${property("kotlin")}")
     common(project(path: ":common", configuration: "namedElements")) { transitive false }
     shadowCommon(project(path: ":common", configuration: "transformProductionFabric"))
 
@@ -44,8 +47,9 @@ dependencies {
     shadowCommon("net.kyori:adventure-text-serializer-gson:${property("kyori_version")}")
     shadowCommon("net.kyori:adventure-text-minimessage:${property("kyori_version")}")
 
+
     // Database
-    shadowCommon("org.mongodb:mongodb-driver-sync:${property("mongodb_version")}")
+    shadowCommon("org.mongodb:mongodb-driver-sync:${property("mongodb_version")}") { transitive = true }
     shadowCommon("org.xerial:sqlite-jdbc:${property("sqlite_version")}")
 
     // Economy Vault
@@ -99,7 +103,7 @@ shadowJar {
     exclude("kotlin/**")
     exclude("junit/**")
     // Relocate packages
-    relocate("org.sqlite", "org.sqlite") {
+    relocate("org.sqlite", "com.kingpixel.cobbleutils.org.sqlite") {
         exclude("org/sqlite/native/Linux-Android/**/*")
         exclude("org/sqlite/native/Linux-Musl/**/*")
         exclude("org/sqlite/native/FreeBSD/**/*")

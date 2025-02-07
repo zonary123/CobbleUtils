@@ -32,10 +32,7 @@ public class Config {
   private int bosschance;
   private boolean party;
   private boolean shops;
-  private boolean randomsize;
   private int alertreward;
-  private boolean storageRewards;
-  private boolean solveSizeRandom;
   private boolean activeshinytoken;
   private String pokeshout;
   private String pokeshoutall;
@@ -70,10 +67,7 @@ public class Config {
     boss = false;
     bosschance = 16512;
     shops = true;
-    randomsize = true;
-    solveSizeRandom = true;
     party = true;
-    storageRewards = true;
     activeshinytoken = true;
     alertreward = 15;
     pokeshout = "pokeshoutplus";
@@ -122,15 +116,13 @@ public class Config {
         bosschance = config.getBosschance();
         commandshop = config.getCommandshop();
         shinytoken = config.getShinytoken();
-        randomsize = config.isRandomsize();
+
         database = config.getDatabase();
         pokemonsizes = config.getPokemonsizes();
-        solveSizeRandom = config.isSolveSizeRandom();
         defaultsize = config.getDefaultsize();
         pokeshout = config.getPokeshout();
         pokeshoutall = config.getPokeshoutall();
         party = config.isParty();
-        storageRewards = config.isStorageRewards();
         commandparty = config.getCommandparty();
         commandrewards = config.getCommandrewards();
         commmandplugin = config.getCommmandplugin();
@@ -149,7 +141,6 @@ public class Config {
         ApiMode = config.isApiMode();
         if (!debug) {
           this.boss = false;
-          this.storageRewards = false;
         }
         String data = gson.toJson(this);
         CompletableFuture<Boolean> futureWrite = Utils.writeFileAsync(CobbleUtils.PATH, "config.json",

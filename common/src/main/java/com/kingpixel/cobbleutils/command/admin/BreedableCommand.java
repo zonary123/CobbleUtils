@@ -53,6 +53,8 @@ public class BreedableCommand implements Command<ServerCommandSource> {
                           .getString(context, CobbleUtilsTags.BREEDABLE_TAG).equalsIgnoreCase("true");
                         pokemon.getPersistentData().putBoolean(CobbleUtilsTags.BREEDABLE_TAG,
                           breedable);
+                        pokemon.getPersistentData().putBoolean(CobbleUtilsTags.BREEDABLE_BUILDER_TAG,
+                          breedable);
                         AdventureTranslator.toNative(
                           PokemonUtils.replace(
                             "Set breedable to %breedable% to %pokemon%"
@@ -75,6 +77,8 @@ public class BreedableCommand implements Command<ServerCommandSource> {
                             boolean breedable = StringArgumentType.getString(context, "breedable")
                               .equalsIgnoreCase("true");
                             pokemon.getPersistentData().putBoolean(CobbleUtilsTags.BREEDABLE_TAG,
+                              breedable);
+                            pokemon.getPersistentData().putBoolean(CobbleUtilsTags.BREEDABLE_BUILDER_TAG,
                               breedable);
                             player.sendMessage(
                               AdventureTranslator.toNative(

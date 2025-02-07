@@ -35,7 +35,6 @@ import com.kingpixel.cobbleutils.Model.CobbleUtilsTags;
 import com.kingpixel.cobbleutils.Model.PokemonChance;
 import com.kingpixel.cobbleutils.Model.PokemonData;
 import com.kingpixel.cobbleutils.Model.ScalePokemonData;
-import com.kingpixel.cobbleutils.events.ScaleEvent;
 import com.kingpixel.cobbleutils.features.breeding.events.HatchEggEvent;
 import com.kingpixel.cobbleutils.util.*;
 import lombok.Getter;
@@ -147,6 +146,7 @@ public class EggData {
     Pokemon pokemon = pokemonProperties.create();
 
     pokemon.getPersistentData().copyFrom(egg.getPersistentData());
+    CobbleUtils.breedconfig.canCreateEgg(pokemon);
     egg.getPersistentData().putBoolean("Hatched", true);
     pokemon.setShiny(egg.getShiny());
     party.remove(egg);
@@ -381,8 +381,6 @@ public class EggData {
 
     mechanicsLogic(male, female, usePokemonToEgg, egg);
 
-
-    ScaleEvent.solveScale(egg);
 
     PlayerUtils.sendMessage(player, PokemonUtils.replace(CobbleUtils.breedconfig.getCreateEgg()
         .replace("%egg%", egg.getPersistentData().getString("species")),

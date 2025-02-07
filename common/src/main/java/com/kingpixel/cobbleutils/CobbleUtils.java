@@ -1,14 +1,10 @@
 package com.kingpixel.cobbleutils;
 
-import ca.landonjw.gooeylibs2.api.tasks.Task;
-import com.cobblemon.mod.common.Cobblemon;
 import com.cobblemon.mod.common.api.properties.CustomPokemonProperty;
 import com.kingpixel.cobbleutils.command.CommandTree;
 import com.kingpixel.cobbleutils.config.*;
 import com.kingpixel.cobbleutils.database.DatabaseClientFactory;
 import com.kingpixel.cobbleutils.events.ItemRightClickEvents;
-import com.kingpixel.cobbleutils.events.ScaleEvent;
-import com.kingpixel.cobbleutils.events.features.FeaturesRegister;
 import com.kingpixel.cobbleutils.features.Features;
 import com.kingpixel.cobbleutils.features.breeding.config.BreedConfig;
 import com.kingpixel.cobbleutils.features.shops.ShopTransactions;
@@ -21,8 +17,6 @@ import com.kingpixel.cobbleutils.party.event.DeletePartyEvent;
 import com.kingpixel.cobbleutils.party.util.PartyPlaceholder;
 import com.kingpixel.cobbleutils.properties.BreedablePropertyType;
 import com.kingpixel.cobbleutils.properties.MinIvsPropertyType;
-import com.kingpixel.cobbleutils.properties.ScalePropertyType;
-import com.kingpixel.cobbleutils.properties.SizePropertyType;
 import com.kingpixel.cobbleutils.util.ShopExtend;
 import com.kingpixel.cobbleutils.util.SpawnRates;
 import com.kingpixel.cobbleutils.util.Utils;
@@ -67,8 +61,6 @@ public class CobbleUtils extends ShopExtend {
   public static PartyLang partyLang = new PartyLang();
   public static PartyManager partyManager = new PartyManager();
   public static List<String> modsInUse = new ArrayList<>();
-  // Tasks
-  private static Task fixSize;
 
 
   public static void init() {
@@ -102,7 +94,6 @@ public class CobbleUtils extends ShopExtend {
     language.init();
     if (!config.isDebug()) {
       config.setBoss(false);
-      config.setStorageRewards(false);
     }
     shopLang.init();
     partyConfig.init();
@@ -119,10 +110,8 @@ public class CobbleUtils extends ShopExtend {
 
   private static void sign() {
     info(MOD_NAME, "1.1.3", "CobbleUtils");
-    LOGGER.info("§e| §6Pokemons size: " + isActive(CobbleUtils.config.isRandomsize()));
     LOGGER.info("§e| §6Shop: " + isActive(CobbleUtils.config.isShops()));
     LOGGER.info("§e| §6Party: " + isActive(CobbleUtils.config.isParty()));
-    LOGGER.info("§e| §6Storage Rewards: " + isActive(CobbleUtils.config.isStorageRewards()));
     LOGGER.info("§e| §6Breeding: " + isActive(CobbleUtils.breedconfig.isActive()));
     LOGGER.info("§e| §6Supported economies: Impactor, BlanketEconomy, CobbleDollars, PebbleEconomy and Vault");
     LOGGER.info("§e+-------------------------------+");
@@ -156,8 +145,6 @@ public class CobbleUtils extends ShopExtend {
       load();
       spawnRates.init();
       CustomPokemonProperty.Companion.register(MinIvsPropertyType.getInstance());
-      CustomPokemonProperty.Companion.register(SizePropertyType.getInstance());
-      CustomPokemonProperty.Companion.register(ScalePropertyType.getInstance());
       if (CobbleUtils.breedconfig.isActive())
         CustomPokemonProperty.Companion.register(BreedablePropertyType.getInstance());
     });
@@ -187,32 +174,11 @@ public class CobbleUtils extends ShopExtend {
 
     InteractionEvent.RIGHT_CLICK_ITEM.register(ItemRightClickEvents::register);
 
-
-    // ? Add the event for fishing a pokemon
-    FeaturesRegister.register();
-
     PartyPlaceholder.register();
   }
 
   private static void tasks() {
 
-
-    if (config.isRandomsize()) {
-      int intervalRandomSize = 20 * 60 * 30;
-      if (fixSize != null) fixSize.setExpired();
-      fixSize = Task.builder()
-        .infinite()
-        .interval(intervalRandomSize)
-        .execute(task -> {
-          server.getPlayerManager().getPlayerList().forEach(
-            player -> {
-              Cobblemon.INSTANCE.getStorage().getParty(player).forEach(ScaleEvent::solveScale);
-              Cobblemon.INSTANCE.getStorage().getPC(player).forEach(ScaleEvent::solveScale);
-            }
-          );
-        })
-        .build();
-    }
 
     setEconomyType();
   }
