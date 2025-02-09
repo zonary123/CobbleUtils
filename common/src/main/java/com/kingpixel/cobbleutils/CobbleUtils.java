@@ -99,7 +99,6 @@ public class CobbleUtils extends ShopExtend {
     partyConfig.init();
     partyLang.init();
     breedconfig.init();
-    setEconomyType();
     if (config.isApiMode()) return;
     BossConfig.init();
     DatabaseClientFactory.createDatabaseClient(config.getDatabase());
@@ -132,22 +131,26 @@ public class CobbleUtils extends ShopExtend {
 
   private static void events() {
     files(false);
+    
     LifecycleEvent.SERVER_LEVEL_LOAD.register(level -> server = level.getServer());
-    if (config.isApiMode()) return;
-    Utils.removeFiles(PATH_PARTY_DATA);
 
-    CommandRegistrationEvent.EVENT.register((dispatcher, registry, selection) -> {
-      CommandTree.register(dispatcher, registry);
-      CommandsParty.register(dispatcher, registry);
-    });
+    Utils.removeFiles(PATH_PARTY_DATA);
 
     LifecycleEvent.SERVER_STARTED.register(server -> {
       load();
+      if (config.isApiMode()) return;
       spawnRates.init();
       CustomPokemonProperty.Companion.register(MinIvsPropertyType.getInstance());
       if (CobbleUtils.breedconfig.isActive())
         CustomPokemonProperty.Companion.register(BreedablePropertyType.getInstance());
     });
+
+    if (config.isApiMode()) return;
+    CommandRegistrationEvent.EVENT.register((dispatcher, registry, selection) -> {
+      CommandTree.register(dispatcher, registry);
+      CommandsParty.register(dispatcher, registry);
+    });
+
 
     LifecycleEvent.SERVER_STOPPING.register(server -> {
       CreatePartyEvent.CREATE_PARTY_EVENT.clear();

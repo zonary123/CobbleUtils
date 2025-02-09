@@ -16,24 +16,22 @@ import java.util.List;
  * @author Carlos Varas Alonso - 04/08/2024 19:40
  */
 public class MinIvsProperty implements CustomPokemonProperty {
-  private String value = "0";
+  private String value;
 
-  public MinIvsProperty(String s) {
-    if (s != null) {
-      this.value = s;
-    }
+  public MinIvsProperty(String value) {
+    this.value = value;
   }
 
-  @Override public void apply(@NotNull PokemonEntity pokemonEntity) {
-    applyMinIvs(pokemonEntity.getPokemon());
-  }
-
-  @NotNull @Override public String asString() {
+  @Override public @NotNull String asString() {
     return "min_ivs";
   }
 
   @Override public void apply(@NotNull Pokemon pokemon) {
     applyMinIvs(pokemon);
+  }
+
+  @Override public void apply(@NotNull PokemonEntity pokemonEntity) {
+    applyMinIvs(pokemonEntity.getPokemon());
   }
 
   @Override public boolean matches(@NotNull Pokemon pokemon) {
@@ -44,24 +42,22 @@ public class MinIvsProperty implements CustomPokemonProperty {
     return true;
   }
 
-  private static List<Stats> stats;
+  private static final List<Stats> stats = new ArrayList<>(Arrays.stream(Stats.values()).filter(stats1 -> stats1 != Stats.EVASION && stats1 != Stats.ACCURACY).toList());
 
   private void applyMinIvs(Pokemon pokemon) {
-    if (stats == null) {
-      stats = new ArrayList<>(Arrays.stream(Stats.values()).toList());
-      stats.remove(Stats.EVASION);
-      stats.remove(Stats.ACCURACY);
-    }
+    if (this.value == null || this.value.isEmpty()) return;
     try {
       int min = 0;
-      int amount_of_stats = 6;
+      int amount_of_stats = 0;
 
 
       min = Integer.parseInt(this.value.split("_")[0]);
       amount_of_stats = Integer.parseInt(this.value.split("_")[1]);
-
-
       min = Math.max(0, Math.min(min, 31));
+
+      if (CobbleUtils.config.isDebug()) {
+        CobbleUtils.LOGGER.info("Min -> " + min + " Amount of stats -> " + amount_of_stats);
+      }
       List<Stats> statsCopy = new ArrayList<>(stats);
       for (int i = 0; i < amount_of_stats; i++) {
 
@@ -76,5 +72,4 @@ public class MinIvsProperty implements CustomPokemonProperty {
     } catch (Exception ignored) {
     }
   }
-
 }

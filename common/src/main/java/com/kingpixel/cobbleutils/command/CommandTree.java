@@ -26,10 +26,14 @@ public class CommandTree {
 
   public static void register(CommandDispatcher<ServerCommandSource> dispatcher, CommandRegistryAccess registry) {
 
-    PokeShout.register(dispatcher, CommandManager.literal(CobbleUtils.config.getPokeshout()));
-    PokeShoutMe.register(dispatcher, CommandManager.literal(CobbleUtils.config.getPokeshout() + "me"));
-    PokeShoutAll.register(dispatcher, CommandManager.literal(CobbleUtils.config.getPokeshoutall()));
-    PokeShoutAllMe.register(dispatcher, CommandManager.literal(CobbleUtils.config.getPokeshoutall() + "me"));
+    if (!CobbleUtils.config.getPokeshout().isEmpty()) {
+      PokeShout.register(dispatcher, CommandManager.literal(CobbleUtils.config.getPokeshout()));
+      PokeShoutMe.register(dispatcher, CommandManager.literal(CobbleUtils.config.getPokeshout() + "me"));
+    }
+    if (!CobbleUtils.config.getPokeshoutall().isEmpty()) {
+      PokeShoutAll.register(dispatcher, CommandManager.literal(CobbleUtils.config.getPokeshoutall()));
+      PokeShoutAllMe.register(dispatcher, CommandManager.literal(CobbleUtils.config.getPokeshoutall() + "me"));
+    }
 
 
     for (String literal : CobbleUtils.config.getCommmandplugin()) {
@@ -78,7 +82,7 @@ public class CommandTree {
 
 
     }
-    
+
     if (CobbleUtils.breedconfig.isActive()) {
       for (String literal : CobbleUtils.breedconfig.getEggcommand()) {
         LiteralArgumentBuilder<ServerCommandSource> base = CommandManager.literal(literal)

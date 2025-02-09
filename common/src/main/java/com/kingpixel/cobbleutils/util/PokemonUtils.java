@@ -15,14 +15,15 @@ import com.cobblemon.mod.common.pokemon.abilities.HiddenAbilityType;
 import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.Model.CobbleUtilsTags;
 import com.kingpixel.cobbleutils.Model.PokemonChance;
-import com.kingpixel.cobbleutils.Model.ScalePokemonData;
-import com.kingpixel.cobbleutils.Model.SizeChanceWithoutItem;
 import com.kingpixel.cobbleutils.features.breeding.models.EggData;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 
 /**
  * @author Carlos Varas Alonso - 28/06/2024 18:53
@@ -677,12 +678,9 @@ public class PokemonUtils {
    * @return The size of the pokemon
    */
   public static String getSizeName(Pokemon pokemon) {
-    float scaleModifier = pokemon.getScaleModifier();
-    ScalePokemonData scalePokemonData = ScalePokemonData.getScalePokemonData(pokemon);
-    return scalePokemonData.getSizes().stream()
-      .min(Comparator.comparingDouble(size -> Math.abs(size.getSize() - scaleModifier)))
-      .map(SizeChanceWithoutItem::getId)
-      .orElse("Normal");
+    String size = pokemon.getPersistentData().getString("size");
+    if (size.isEmpty()) return CobbleUtils.language.getUnknown();
+    return size;
   }
 
   /**

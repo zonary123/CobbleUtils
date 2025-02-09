@@ -34,7 +34,6 @@ import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.Model.CobbleUtilsTags;
 import com.kingpixel.cobbleutils.Model.PokemonChance;
 import com.kingpixel.cobbleutils.Model.PokemonData;
-import com.kingpixel.cobbleutils.Model.ScalePokemonData;
 import com.kingpixel.cobbleutils.features.breeding.events.HatchEggEvent;
 import com.kingpixel.cobbleutils.util.*;
 import lombok.Getter;
@@ -244,7 +243,6 @@ public class EggData {
     eggData.setSteps(pokemon.getPersistentData().getDouble("steps"));
     eggData.setAbility(pokemon.getPersistentData().getString("ability"));
     eggData.setCycles(pokemon.getPersistentData().getInt("cycles"));
-    eggData.setSize(pokemon.getPersistentData().getString("size"));
     eggData.setForm(pokemon.getPersistentData().getString("form"));
     eggData.setRandom(pokemon.getPersistentData().getBoolean("random"));
     eggData.setMoves(pokemon.getPersistentData().getString("moves"));
@@ -886,8 +884,6 @@ public class EggData {
     egg.getPersistentData().putInt("level", 1);
     egg.getPersistentData().putDouble("steps", CobbleUtils.breedconfig.getSteps());
     egg.getPersistentData().putInt("cycles", pokemon.getSpecies().getEggCycles());
-
-    egg.setScaleModifier(ScalePokemonData.getScalePokemonData(pokemon).getRandomPokemonSize().getSize());
     if (dittos) {
       egg.setNickname(Text.literal(CobbleUtils.breedconfig.getNameAbandonedEgg()));
       egg.getPersistentData().putBoolean("random", true);
