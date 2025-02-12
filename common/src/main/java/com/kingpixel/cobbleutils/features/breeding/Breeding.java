@@ -74,11 +74,18 @@ public class Breeding {
   private static void modifyBreedable(ServerPlayerEntity player) {
     var party = Cobblemon.INSTANCE.getStorage().getParty(player);
     var pc = Cobblemon.INSTANCE.getStorage().getPC(player);
+    var userInfo = countryPlayer(player);
     for (Pokemon pokemon : party) {
       pokemon.getPersistentData().putBoolean(CobbleUtilsTags.BREEDABLE_TAG, CobbleUtils.breedconfig.canCreateEgg(pokemon));
+      if (userInfo == null) continue;
+      if (pokemon.getPersistentData().contains(CobbleUtilsTags.COUNTRY_TAG)) continue;
+      pokemon.getPersistentData().putString(CobbleUtilsTags.COUNTRY_TAG, userInfo.country());
     }
     for (Pokemon pokemon : pc) {
       pokemon.getPersistentData().putBoolean(CobbleUtilsTags.BREEDABLE_TAG, CobbleUtils.breedconfig.canCreateEgg(pokemon));
+      if (userInfo == null) continue;
+      if (pokemon.getPersistentData().contains(CobbleUtilsTags.COUNTRY_TAG)) continue;
+      pokemon.getPersistentData().putString(CobbleUtilsTags.COUNTRY_TAG, userInfo.country());
     }
   }
 
@@ -144,8 +151,9 @@ public class Breeding {
   public record UserInfo(String country, String countryCode, String language) {
   }
 
-  private static void countryPlayer(ServerPlayerEntity player) {
-    if (playerCountry.get(player.getUuid()) != null) return; // Verifica si ya se obtuvo la información del jugador
+  public static UserInfo countryPlayer(ServerPlayerEntity player) {
+    UserInfo userInfo = playerCountry.get(player.getUuid());
+    if (userInfo != null) return userInfo;
 
     CompletableFuture.runAsync(() -> {
       try {
@@ -172,8 +180,8 @@ public class Breeding {
             };
 
             // Crea y almacena la información del usuario
-            UserInfo userInfo = new UserInfo(country, countryCode, language);
-            playerCountry.put(player.getUuid(), userInfo);
+            UserInfo uI = new UserInfo(country, countryCode, language);
+            playerCountry.put(player.getUuid(), uI);
           }
         } finally {
           conn.disconnect(); // Desconectar la conexión HTTP
@@ -184,5 +192,6 @@ public class Breeding {
         e.printStackTrace();
       }
     });
+    return playerCountry.get(player.getUuid());
   }
 }

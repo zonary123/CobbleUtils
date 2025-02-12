@@ -34,6 +34,7 @@ import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.Model.CobbleUtilsTags;
 import com.kingpixel.cobbleutils.Model.PokemonChance;
 import com.kingpixel.cobbleutils.Model.PokemonData;
+import com.kingpixel.cobbleutils.features.breeding.Breeding;
 import com.kingpixel.cobbleutils.features.breeding.events.HatchEggEvent;
 import com.kingpixel.cobbleutils.util.*;
 import lombok.Getter;
@@ -145,6 +146,7 @@ public class EggData {
     Pokemon pokemon = pokemonProperties.create();
 
     pokemon.getPersistentData().copyFrom(egg.getPersistentData());
+    pokemon.getPersistentData().putString(CobbleUtilsTags.COUNTRY_TAG, Breeding.countryPlayer(player).country());
     CobbleUtils.breedconfig.canCreateEgg(pokemon);
     egg.getPersistentData().putBoolean("Hatched", true);
     pokemon.setShiny(egg.getShiny());

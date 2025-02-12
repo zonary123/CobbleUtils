@@ -40,7 +40,7 @@ public abstract class WalkBreedingMixin {
 
       for (Pokemon pokemon : party) {
         if (pokemon == null) continue;
-        if (pokemon.getSpecies().showdownId().equals("egg")) {
+        if (pokemon.showdownId().equals("egg")) {
           cobbleUtils$updateEggSteps(pokemon, deltaMovement);
         }
       }
