@@ -247,6 +247,9 @@ public abstract class Utils {
   }
 
   public static ItemStack parseItemId(String id, int amount) {
+    if (CobbleUtils.config.isDebug()) {
+      CobbleUtils.LOGGER.info("Parsing item id: " + id);
+    }
     ItemStack itemStack = new ItemStack(Registries.ITEM.get(Identifier.of(id)), amount);
     return itemStack;
   }
@@ -274,7 +277,14 @@ public abstract class Utils {
   }
 
   public static ItemStack parseItemModel(ItemModel itemModel, int amount) {
-    ItemStack itemStack = parseItemId(itemModel.getItem(), amount);
+    String item = itemModel.getItem();
+    if (item.startsWith("item:")) {
+      item = item.replace("item:", "");
+      String[] split = item.split(":");
+      item = split[1] + ":" + split[2];
+      amount = Integer.parseInt(split[0]);
+    }
+    ItemStack itemStack = parseItemId(item, amount);
     return addThingsItemStack(itemStack, itemModel);
   }
 
