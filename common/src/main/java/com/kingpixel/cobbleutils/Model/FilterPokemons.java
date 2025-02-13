@@ -41,7 +41,6 @@ public class FilterPokemons {
     POKEMON,
     FORM,
     RARITY,
-    LEGENDARY,
     TYPE
   }
 
@@ -366,6 +365,7 @@ public class FilterPokemons {
   private boolean isAllowed(Pokemon pokemon) {
     if (notEvolution && isFirstEvolution(pokemon)) return false;
     if (alsoImplemented && !pokemon.getSpecies().getImplemented()) return false;
+    if (!legendarys && pokemon.isLegendary()) return false;
     if (order == null || order.isEmpty()) return true;
     // Precalcular tipos
     ElementalType primaryType = pokemon.getPrimaryType();
@@ -414,12 +414,6 @@ public class FilterPokemons {
             return false;
           }
           allowed |= whitelistRarity.contains("*") || whitelistRarity.contains(rarity);
-          break;
-        case LEGENDARY:
-          if (!legendarys && pokemon.isLegendary()) {
-            return false;
-          }
-          allowed = true;
           break;
       }
     }
