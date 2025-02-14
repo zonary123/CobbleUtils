@@ -72,7 +72,8 @@ public class ItemUtils {
           var updatedNbt =
             ComponentChanges.CODEC.parse(getNbt(), StringNbtReader.parse(nbt)).result().orElse(null);
           if (updatedNbt != null) {
-            itemStack.applyChanges(updatedNbt);
+            itemStack.applyUnvalidatedChanges(updatedNbt);
+            //itemStack.applyChanges(updatedNbt);
           }
           itemStack.setCount(amount);
         }

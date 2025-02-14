@@ -5,8 +5,10 @@ import com.cobblemon.mod.common.api.storage.party.PlayerPartyStore;
 import com.cobblemon.mod.common.pokemon.Pokemon;
 import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.features.breeding.models.EggData;
+import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityPose;
 import net.minecraft.network.packet.c2s.play.PlayerMoveC2SPacket;
+import net.minecraft.network.packet.c2s.play.TeleportConfirmC2SPacket;
 import net.minecraft.server.network.ServerPlayNetworkHandler;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.util.math.MathHelper;
@@ -21,30 +23,61 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public abstract class WalkBreedingMixin {
 
   @Shadow public ServerPlayerEntity player;
+  @Unique private Entity entity;
+  @Unique private double oldX;
+  @Unique private double oldZ;
+  @Unique private boolean tp;
+  @Unique private long tick;
+
+  @Inject(method = "onTeleportConfirm", at = @At("HEAD"))
+  public void breeding$handlePendingTeleport(TeleportConfirmC2SPacket packet, CallbackInfo ci) {
+    tp = true;
+    if (CobbleUtils.config.isDebug()) {
+      CobbleUtils.LOGGER.info("Teleport confirm packet received");
+    }
+  }
 
   @Inject(method = "onPlayerMove", at = @At("HEAD"))
   public void breeding$onPlayerMove(PlayerMoveC2SPacket packet, CallbackInfo ci) {
     if (!CobbleUtils.breedconfig.isActive() || CobbleUtils.config.isApiMode()) return;
-    boolean isinpose = !player.isInPose(EntityPose.FALL_FLYING);
-    boolean isinvulnerable = !player.isInvulnerable();
-    boolean permittedVehicles = cobbleUtils$permittedVehicles(player);
-    if (isinpose && isinvulnerable && permittedVehicles) { // No elytra or flight
+    tick++;
 
-      var party = Cobblemon.INSTANCE.getStorage().getParty(player);
+    if (tick % CobbleUtils.breedconfig.getTicksToWalking() == 0) {
+      boolean isinpose = !player.isInPose(EntityPose.FALL_FLYING);
+      boolean isinvulnerable = !player.isInvulnerable();
+      boolean permittedVehicles = cobbleUtils$permittedVehicles(player);
+      if (isinpose && isinvulnerable && permittedVehicles) { // No elytra or flight
+        var party = Cobblemon.INSTANCE.getStorage().getParty(player);
 
-      double deltaMovement = cobbleUtils$getDeltaMovement(player, packet,
-        party);
+        entity = player;
+        if (player.getVehicle() != null) entity = player.getVehicle();
+        if (entity == null) {
+          CobbleUtils.LOGGER.error("Entity is null");
+          return;
+        }
+        double deltaMovement = cobbleUtils$getDeltaMovement(packet, party, entity);
+        oldX = entity.getX();
+        oldZ = entity.getZ();
+        if (deltaMovement <= 0 || tp) {
+          if (CobbleUtils.config.isDebug()) {
+            CobbleUtils.LOGGER.info("Delta movement -> " + deltaMovement + " | Teleport -> " + tp);
+          }
+          tp = false;
+          return;
+        }
 
-      if (deltaMovement == 0 || deltaMovement >= 1) return;
 
-
-      for (Pokemon pokemon : party) {
-        if (pokemon == null) continue;
-        if (pokemon.showdownId().equals("egg")) {
-          cobbleUtils$updateEggSteps(pokemon, deltaMovement);
+        for (Pokemon pokemon : party) {
+          if (pokemon == null) continue;
+          if (pokemon.showdownId().equals("egg")) {
+            cobbleUtils$updateEggSteps(pokemon, deltaMovement);
+          }
         }
       }
+
+      tick = 0;
     }
+
   }
 
   @Unique private boolean cobbleUtils$permittedVehicles(ServerPlayerEntity player) {
@@ -54,11 +87,12 @@ public abstract class WalkBreedingMixin {
   }
 
   @Unique
-  private double cobbleUtils$getDeltaMovement(ServerPlayerEntity player, PlayerMoveC2SPacket packet, PlayerPartyStore party) {
-    double oldX = player.getX();
-    double oldZ = player.getZ();
-    double newX = MathHelper.clamp(packet.getX(oldX), -3.0E7D, 3.0E7D);
-    double newZ = MathHelper.clamp(packet.getZ(oldZ), -3.0E7D, 3.0E7D);
+  private double cobbleUtils$getDeltaMovement(PlayerMoveC2SPacket packet, PlayerPartyStore party, Entity entity) {
+    double valueX = entity instanceof ServerPlayerEntity ? packet.getX(entity.getX()) : entity.getX();
+    double valueZ = entity instanceof ServerPlayerEntity ? packet.getZ(entity.getZ()) : entity.getZ();
+    double newX = MathHelper.clamp(valueX, -3.0E7D, 3.0E7D);
+    double newZ = MathHelper.clamp(valueZ, -3.0E7D, 3.0E7D);
+
 
     if (Double.isNaN(newX) || Double.isNaN(newZ)) return 0;
 
@@ -69,6 +103,10 @@ public abstract class WalkBreedingMixin {
 
 
     var deltaMovement = Math.min(20, Math.sqrt(Math.pow(deltaX, 2) + Math.pow(deltaZ, 2)));
+    if (!(entity instanceof ServerPlayerEntity)) {
+      double reduce = CobbleUtils.breedconfig.getReduceEggStepsVehicle();
+      deltaMovement = deltaMovement / reduce;
+    }
     return cobbleUtils$hasStepAcceleratingPokemon(party) ? deltaMovement : deltaMovement / 2;
   }
 

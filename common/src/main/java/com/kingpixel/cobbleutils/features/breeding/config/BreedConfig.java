@@ -43,10 +43,12 @@ public class BreedConfig {
   private boolean doubleditto;
   private boolean spawnEggWorld;
   private boolean extraInfo;
+  private long ticksToWalking;
   private int raritySpawnEgg;
   private boolean obtainPokeBallFromMother;
   private List<String> eggcommand;
   private List<String> abilityAcceleration;
+  private double reduceEggStepsVehicle;
   private List<String> permittedVehicles;
   private String titleselectplot;
   private String titleplot;
@@ -119,6 +121,8 @@ public class BreedConfig {
     this.abilityAcceleration = List.of("magmaarmor",
       "flamebody",
       "steamengine");
+
+    this.reduceEggStepsVehicle = 2f;
     this.permittedVehicles = List.of("minecraft:boat", "minecraft:minecart", "minecraft:horse");
     this.titleselectplot = "<#82d448>Select Plot";
     this.titleplot = "<#82d448>Plot";
@@ -145,6 +149,7 @@ public class BreedConfig {
       "group.legendary", 10,
       "group.master", 5
     );
+    this.ticksToWalking = 20;
     this.defaultNumberPlots = 1;
     this.maxeggperplot = 3;
     this.steps = 128;
@@ -328,6 +333,7 @@ public class BreedConfig {
         if (CobbleUtils.breedconfig.blacklistLabels == null) CobbleUtils.breedconfig.blacklistLabels = List.of(
           "legendary"
         );
+        if (CobbleUtils.breedconfig.reduceEggStepsVehicle < 1) CobbleUtils.breedconfig.reduceEggStepsVehicle = 2f;
         if (CobbleUtils.breedconfig.maxIvsRandom < 0) CobbleUtils.breedconfig.maxIvsRandom = 0;
         if (CobbleUtils.breedconfig.maxIvsRandom > 31) CobbleUtils.breedconfig.maxIvsRandom = 31;
         checker(CobbleUtils.breedconfig);

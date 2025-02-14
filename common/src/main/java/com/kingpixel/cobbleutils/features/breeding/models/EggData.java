@@ -6,6 +6,7 @@ import com.cobblemon.mod.common.api.abilities.Abilities;
 import com.cobblemon.mod.common.api.abilities.Ability;
 import com.cobblemon.mod.common.api.abilities.AbilityTemplate;
 import com.cobblemon.mod.common.api.abilities.PotentialAbility;
+import com.cobblemon.mod.common.api.events.CobblemonEvents;
 import com.cobblemon.mod.common.api.moves.BenchedMove;
 import com.cobblemon.mod.common.api.moves.Move;
 import com.cobblemon.mod.common.api.moves.MoveTemplate;
@@ -146,7 +147,10 @@ public class EggData {
     Pokemon pokemon = pokemonProperties.create();
 
     pokemon.getPersistentData().copyFrom(egg.getPersistentData());
-    pokemon.getPersistentData().putString(CobbleUtilsTags.COUNTRY_TAG, Breeding.countryPlayer(player).country());
+    Breeding.UserInfo userInfo = Breeding.countryPlayer(player);
+    if (userInfo != null) {
+      pokemon.getPersistentData().putString(CobbleUtilsTags.COUNTRY_TAG, userInfo.country());
+    }
     CobbleUtils.breedconfig.canCreateEgg(pokemon);
     egg.getPersistentData().putBoolean("Hatched", true);
     pokemon.setShiny(egg.getShiny());
@@ -197,6 +201,8 @@ public class EggData {
     }
     party.add(pokemon);
     HatchEggEvent.HATCH_EGG_EVENT.emit(player, pokemon);
+    var hatchEggEvent = new com.cobblemon.mod.common.api.events.pokemon.HatchEggEvent.Post(pokemonProperties, player);
+    CobblemonEvents.HATCH_EGG_POST.emit(hatchEggEvent);
   }
 
   private void removePersistent(Pokemon pokemon) {
@@ -300,12 +306,11 @@ public class EggData {
     pokemon.setCurrentHealth(0);
     pokemon.setHealTimer(0);
 
-    if ((int) steps % 16 == 0) {
-      String stepsFormat = String.format("%.0f", this.steps);
-      String extraInfo = "";
-      if (CobbleUtils.breedconfig.isExtraInfo()) {
-        extraInfo = this.cycles + "/" + stepsFormat;
-      }
+
+    String stepsFormat = String.format("%.0f", this.steps);
+    String extraInfo;
+    if (CobbleUtils.breedconfig.isExtraInfo()) {
+      extraInfo = this.cycles + "/" + stepsFormat;
       if (random) {
         pokemon.setNickname(
           Text.literal(CobbleUtils.breedconfig.getNameRandomEgg() + " " + extraInfo));

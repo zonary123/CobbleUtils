@@ -9,7 +9,7 @@ import com.kingpixel.cobbleutils.util.LuckPermsUtil;
 import com.kingpixel.cobbleutils.util.PokemonUtils;
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.CommandDispatcher;
-import com.mojang.brigadier.arguments.StringArgumentType;
+import com.mojang.brigadier.arguments.BoolArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
@@ -35,22 +35,15 @@ public class BreedableCommand implements Command<ServerCommandSource> {
             .then(
               CommandManager.argument("slot", PartySlotArgumentType.Companion.partySlot())
                 .then(
-                  CommandManager.argument("breedable", StringArgumentType.greedyString())
-                    .suggests((context, builder) -> {
-                      builder.suggest("true");
-                      builder.suggest("false");
-                      return builder.buildFuture();
-                    })
+                  CommandManager.argument("breedable", BoolArgumentType.bool())
                     .executes(context -> {
                       if (!context.getSource().isExecutedByPlayer()) {
                         CobbleUtils.LOGGER.info("You must be a player to use this command");
                         return 0;
                       }
-
                       Pokemon pokemon = PartySlotArgumentType.Companion.getPokemon(context, "slot");
                       if (pokemon != null) {
-                        boolean breedable = StringArgumentType
-                          .getString(context, CobbleUtilsTags.BREEDABLE_TAG).equalsIgnoreCase("true");
+                        boolean breedable = BoolArgumentType.getBool(context, "breedable");
                         pokemon.getPersistentData().putBoolean(CobbleUtilsTags.BREEDABLE_TAG,
                           breedable);
                         pokemon.getPersistentData().putBoolean(CobbleUtilsTags.BREEDABLE_BUILDER_TAG,
@@ -74,8 +67,7 @@ public class BreedableCommand implements Command<ServerCommandSource> {
                           Pokemon pokemon = PartySlotArgumentType.Companion.getPokemonOf(context,
                             "slot", player);
                           if (pokemon != null) {
-                            boolean breedable = StringArgumentType.getString(context, "breedable")
-                              .equalsIgnoreCase("true");
+                            boolean breedable = BoolArgumentType.getBool(context, "breedable");
                             pokemon.getPersistentData().putBoolean(CobbleUtilsTags.BREEDABLE_TAG,
                               breedable);
                             pokemon.getPersistentData().putBoolean(CobbleUtilsTags.BREEDABLE_BUILDER_TAG,
@@ -90,7 +82,12 @@ public class BreedableCommand implements Command<ServerCommandSource> {
                             CobbleUtils.LOGGER.info("Pokemon not found");
                           }
                           return 1;
-                        }))))));
+                        })
+                    )
+                )
+            )
+        )
+    );
 
   }
 
