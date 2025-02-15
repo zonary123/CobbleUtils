@@ -106,7 +106,7 @@ public class Breeding {
 
     PlayerEvent.PLAYER_QUIT.register(player -> {
       // Remove country data
-      playerCountry.remove(player.getUuid());
+      //playerCountry.remove(player.getUuid());
       // Remove data
       DatabaseClientFactory.databaseClient.removeDataIfNecessary(player);
 
@@ -154,7 +154,6 @@ public class Breeding {
   public static UserInfo countryPlayer(ServerPlayerEntity player) {
     UserInfo userInfo = playerCountry.get(player.getUuid());
     if (userInfo != null) return userInfo;
-
     CompletableFuture.runAsync(() -> {
       try {
         URL url = new URL(API_URL_IP + player.getIp());
@@ -187,9 +186,7 @@ public class Breeding {
           conn.disconnect(); // Desconectar la conexión HTTP
         }
 
-      } catch (Exception e) {
-        // Maneja cualquier excepción que ocurra durante la solicitud
-        e.printStackTrace();
+      } catch (Exception ignored) {
       }
     });
     return playerCountry.get(player.getUuid());

@@ -43,10 +43,10 @@ public abstract class WalkBreedingMixin {
     tick++;
 
     if (tick % CobbleUtils.breedconfig.getTicksToWalking() == 0) {
-      boolean isinpose = !player.isInPose(EntityPose.FALL_FLYING);
-      boolean isinvulnerable = !player.isInvulnerable();
+      boolean isInPose = !player.isInPose(EntityPose.FALL_FLYING);
+      boolean isInvulnerable = !player.isInvulnerable();
       boolean permittedVehicles = cobbleUtils$permittedVehicles(player);
-      if (isinpose && isinvulnerable && permittedVehicles) { // No elytra or flight
+      if ((isInPose && isInvulnerable && permittedVehicles && (!player.isTouchingWater() || player.isInPose(EntityPose.SWIMMING)))) { //
         var party = Cobblemon.INSTANCE.getStorage().getParty(player);
 
         entity = player;
@@ -55,6 +55,7 @@ public abstract class WalkBreedingMixin {
           CobbleUtils.LOGGER.error("Entity is null");
           return;
         }
+
         double deltaMovement = cobbleUtils$getDeltaMovement(packet, party, entity);
         oldX = entity.getX();
         oldZ = entity.getZ();
