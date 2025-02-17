@@ -247,9 +247,6 @@ public abstract class Utils {
   }
 
   public static ItemStack parseItemId(String id, int amount) {
-    if (CobbleUtils.config.isDebug()) {
-      CobbleUtils.LOGGER.info("Parsing item id: " + id);
-    }
     ItemStack itemStack = new ItemStack(Registries.ITEM.get(Identifier.of(id)), amount);
     return itemStack;
   }

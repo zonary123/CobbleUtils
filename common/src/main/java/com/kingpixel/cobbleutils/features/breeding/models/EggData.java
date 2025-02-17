@@ -1,11 +1,8 @@
 package com.kingpixel.cobbleutils.features.breeding.models;
 
 import com.cobblemon.mod.common.Cobblemon;
-import com.cobblemon.mod.common.api.Priority;
 import com.cobblemon.mod.common.api.abilities.Abilities;
-import com.cobblemon.mod.common.api.abilities.Ability;
 import com.cobblemon.mod.common.api.abilities.AbilityTemplate;
-import com.cobblemon.mod.common.api.abilities.PotentialAbility;
 import com.cobblemon.mod.common.api.events.CobblemonEvents;
 import com.cobblemon.mod.common.api.moves.BenchedMove;
 import com.cobblemon.mod.common.api.moves.Move;
@@ -26,7 +23,6 @@ import com.cobblemon.mod.common.item.CobblemonItem;
 import com.cobblemon.mod.common.pokeball.PokeBall;
 import com.cobblemon.mod.common.pokemon.Nature;
 import com.cobblemon.mod.common.pokemon.Pokemon;
-import com.cobblemon.mod.common.pokemon.abilities.HiddenAbilityType;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -63,6 +59,7 @@ public class EggData {
   private String species;
   private int level;
   private double steps;
+  private String formatSteps;
   private int cycles;
   private String ability;
   private String size;
@@ -281,15 +278,16 @@ public class EggData {
   public void steps(ServerPlayerEntity player, Pokemon pokemon, double stepsremove) {
     this.steps -= stepsremove;
 
-    if (steps <= 0) {
+    formatSteps = String.format("%.0f", this.steps);
+    if (steps < 0) {
       this.cycles--;
       this.steps = getMaxStepsPerCycle();
-      pokemon.setNickname(Text.literal("Egg " + cycles + "/" + (int) steps));
+      pokemon.setNickname(Text.literal("Egg " + cycles + "/" + formatSteps));
     }
 
     updateSteps(pokemon);
 
-    if (this.cycles <= 0) EggToPokemon(player, pokemon);
+    if (this.cycles < 0) EggToPokemon(player, pokemon);
   }
 
   private int getMaxStepsPerCycle() {
@@ -307,10 +305,9 @@ public class EggData {
     pokemon.setHealTimer(0);
 
 
-    String stepsFormat = String.format("%.0f", this.steps);
     String extraInfo;
     if (CobbleUtils.breedconfig.isExtraInfo()) {
-      extraInfo = this.cycles + "/" + stepsFormat;
+      extraInfo = this.cycles + "/" + formatSteps;
       if (random) {
         pokemon.setNickname(
           Text.literal(CobbleUtils.breedconfig.getNameRandomEgg() + " " + extraInfo));
@@ -447,8 +444,40 @@ public class EggData {
     return s;
   }
 
+  private static void mirrorHerb(Pokemon target, Pokemon source) {
+    List<Move> targetMoves = target.getMoveSet().getMoves();
+    int size = targetMoves.size();
+    if (size < 4) {
+      List<String> sourceMoves = source.getMoveSet().getMoves().stream().map(Move::getName).toList();
+      List<String> eggMoves = target.getForm().getMoves().getEggMoves().stream().map(MoveTemplate::getName).toList();
+      for (String move : sourceMoves) {
+        if (size >= 4) break;
+        if (eggMoves.contains(move)) {
+          MoveTemplate moveTemplate = Moves.INSTANCE.getByName(move);
+          if (moveTemplate == null) continue;
+          if (target.getMoveSet().add(moveTemplate.create())) {
+            target.removeHeldItem();
+            size++;
+          }
+        }
+      }
+    }
+  }
+
   private static void applyEggMoves(Pokemon male, Pokemon female, Pokemon firstEvolution, Pokemon egg) {
     if (Utils.RANDOM.nextDouble(100) >= CobbleUtils.breedconfig.getSuccessItems().getPercentageEggMoves()) return; //
+
+    boolean hasMaleMirrorHerb = male.heldItem().getItem() == MIRROR_HERB;
+    boolean hasFemaleMirrorHerb = female.heldItem().getItem() == MIRROR_HERB;
+
+    if (hasMaleMirrorHerb) {
+      mirrorHerb(male, female);
+    }
+
+    if (hasFemaleMirrorHerb) {
+      mirrorHerb(female, male);
+    }
+
     // default 0%
     List<String> moves = new ArrayList<>(getMoves(male));
     moves.addAll(getMoves(female));
@@ -679,7 +708,19 @@ public class EggData {
   }
 
   private static void applyAbility(Pokemon male, Pokemon female, Pokemon firstEvolution, Pokemon egg) {
-    // Double ditto
+    // New Code
+    boolean hasAh = PokemonUtils.isAH(male) || PokemonUtils.isAH(female);
+    boolean getAh = Utils.RANDOM.nextDouble(100) <= CobbleUtils.breedconfig.getSuccessItems().getPercentageTransmitAH();
+    boolean notDitto = isDitto(male) || isDitto(female);
+
+    if (getAh && hasAh && !notDitto) {
+      egg.getPersistentData().putString("ability", PokemonUtils.getAH(firstEvolution).getName());
+    } else {
+      egg.getPersistentData().putString("ability", PokemonUtils.getRandomAbility(firstEvolution).getName());
+    }
+
+    // Old Code
+    /*
     if (isDitto(male) && isDitto(female)) {
       Ability randomAbility = PokemonUtils.getRandomAbility(firstEvolution);
       egg.getPersistentData().putString("ability", randomAbility.getName());
@@ -721,6 +762,7 @@ public class EggData {
         egg.getPersistentData().putString("ability", PokemonUtils.getRandomAbility(firstEvolution).getName());
       }
     }
+    */
   }
 
   private static Pokemon pokemonToEgg(Pokemon usePokemon, boolean dittos, Pokemon female) {

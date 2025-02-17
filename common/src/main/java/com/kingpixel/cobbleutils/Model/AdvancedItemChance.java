@@ -10,12 +10,10 @@ import ca.landonjw.gooeylibs2.api.helpers.PaginationHelper;
 import ca.landonjw.gooeylibs2.api.page.LinkedPage;
 import ca.landonjw.gooeylibs2.api.template.types.ChestTemplate;
 import com.kingpixel.cobbleutils.CobbleUtils;
+import com.kingpixel.cobbleutils.Model.Animations.CircleEntityAnimation;
 import com.kingpixel.cobbleutils.api.PermissionApi;
 import com.kingpixel.cobbleutils.features.shops.Shop;
-import com.kingpixel.cobbleutils.util.AdventureTranslator;
-import com.kingpixel.cobbleutils.util.PlayerUtils;
-import com.kingpixel.cobbleutils.util.UIUtils;
-import com.kingpixel.cobbleutils.util.Utils;
+import com.kingpixel.cobbleutils.util.*;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
@@ -23,6 +21,7 @@ import net.minecraft.component.DataComponentTypes;
 import net.minecraft.component.type.LoreComponent;
 import net.minecraft.entity.ItemEntity;
 import net.minecraft.item.ItemStack;
+import net.minecraft.network.packet.s2c.play.EntityAnimationS2CPacket;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
 
@@ -74,43 +73,51 @@ public class AdvancedItemChance {
   }
 
   public boolean checker(ServerPlayerEntity player) {
-    boolean error = false;
     TypeError typeError = TypeError.NONE;
 
     for (Map.Entry<String, Integer> entry : amountRewardsPermission.entrySet()) {
       int value = entry.getValue();
       if (value < 1) {
-        error = true;
         typeError = TypeError.AMOUNTREWARD;
         break;
       }
     }
-    if (lootTable == null || lootTable.isEmpty()) {
-      error = true;
-      typeError = TypeError.LOOTTABLE;
+
+    String extraInfo = "";
+
+    for (Map.Entry<String, List<ItemChance>> entry : lootTable.entrySet()) {
+      if (entry.getValue().isEmpty()) {
+        typeError = TypeError.LOOTTABLE;
+        extraInfo = entry.getKey();
+        break;
+      }
     }
 
-    switch (typeError) {
-      case AMOUNTREWARD:
+
+    if (lootTable == null || lootTable.isEmpty()) {
+      typeError = TypeError.LOOTTABLE;
+      extraInfo = "Error lootTable is null or empty";
+    }
+
+    return switch (typeError) {
+      case AMOUNTREWARD -> {
         PlayerUtils.sendMessage(player,
           "%prefix% &cplease notify the administrator of the error in the configuration in the amountReward",
-          "&7[&cERROR&7]");
-        break;
-      case LOOTTABLE:
+          "&7[&cERROR&7]",
+          TypeMessage.CHAT);
+        yield true;
+      }
+      case LOOTTABLE -> {
         PlayerUtils.sendMessage(player,
-          "%prefix% &cplease notify the administrator of the error in the configuration in the lootTable",
-          "&7[&cERROR&7]");
-        break;
-      default:
-        break;
-    }
+          "%prefix% &cplease notify the administrator of the error in the configuration in the lootTable -> %extra%"
+            .replace("%extra%", extraInfo),
+          "&7[&cERROR&7]",
+          TypeMessage.CHAT);
+        yield true;
+      }
+      default -> false;
+    };
 
-    if (error) {
-      PlayerUtils.sendMessage(player,
-        "%prefix% please notify the administrator of the error in the configuration",
-        "[ERROR]");
-    }
-    return error;
   }
 
   private int getAmountReward(ServerPlayerEntity player) {
@@ -145,29 +152,42 @@ public class AdvancedItemChance {
     }
 
 
-    if (CobbleUtils.config.isDebug() && animation != null) {
-      List<ItemStack> showRewards = getListDisplay(rewards);
-      switch (animation) {
-        case CSGO:
-          csgoAnimation(player, showRewards);
-          break;
-        case VISUALITEMS:
-          visualItemsAnimation(player, showRewards);
-          break;
-        case TOTEM:
-          totemAnimation(player, showRewards);
-          break;
-        default:
-          break;
-      }
+    List<ItemStack> showRewards = getListDisplay(rewards);
+    switch (animation) {
+      case CSGO:
+        csgoAnimation(player, showRewards);
+        break;
+      case VISUALITEMS:
+        visualItemsAnimation(player, showRewards);
+        break;
+      case TOTEM:
+        totemAnimation(player, showRewards);
+        break;
+      case CIRCLE:
+        for (int i = 0; i < showRewards.size(); i++) {
+          ItemStack showReward = showRewards.get(i);
+          double angle = Math.toRadians((360.0 / showRewards.size()) * i); // Calcula el ángulo para la separación
+          double radius = 2.0; // Radio de separación
+          double offsetX = radius * Math.cos(angle);
+          double offsetZ = radius * Math.sin(angle);
+          var entity = new CircleEntityAnimation(player.getServerWorld(), player.getX() + offsetX, player.getY() + 1,
+            player.getZ() + offsetZ, showReward, player);
+          player.networkHandler.sendPacket(new EntityAnimationS2CPacket(entity, 1));
+          player.getServerWorld().spawnEntity(entity);
+        }
+        break;
+      default:
+        break;
     }
+
   }
 
   private enum Animations {
     NONE, // No animation
     VISUALITEMS, // Show the won items in front of the user
     CSGO, // Show the items in a CSGO style
-    TOTEM // Show the items in a totem style
+    TOTEM, // Show the items in a totem style
+    CIRCLE // Show the items in a circle style
   }
 
   // Animations methods
@@ -219,6 +239,7 @@ public class AdvancedItemChance {
     template.set(49, itemClose.getButton(action -> {
       UIManager.closeUI(action.getPlayer());
     }));
+
     templateConsumer.accept(template);
     applyTemplate(player, template);
   }
@@ -227,8 +248,10 @@ public class AdvancedItemChance {
                        Consumer<ButtonAction> close) {
     ChestTemplate template = ChestTemplate.builder(6)
       .build();
+
     ItemModel itemClose = CobbleUtils.language.getItemClose();
     template.set(49, itemClose.getButton(close));
+
     templateConsumer.accept(template);
     applyTemplate(player, template);
   }
@@ -266,7 +289,11 @@ public class AdvancedItemChance {
         .build());
     }
 
-    if (getList(null).size() > freeSlots) {
+    if (CobbleUtils.config.isDebug()) {
+      CobbleUtils.LOGGER.info("Free slots: " + freeSlots);
+    }
+
+    if (buttons.size() > freeSlots) {
       ItemModel itemNext = CobbleUtils.language.getItemNext();
       template.set(53, LinkedPageButton.builder()
         .display(itemNext.getItemStack())
