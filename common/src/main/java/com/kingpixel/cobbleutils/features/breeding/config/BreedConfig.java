@@ -123,7 +123,7 @@ public class BreedConfig {
       "steamengine");
 
     this.reduceEggStepsVehicle = 2f;
-    this.permittedVehicles = List.of("minecraft:boat", "minecraft:minecart", "minecraft:horse");
+    this.permittedVehicles = List.of("minecraft:boat", "minecraft:horse", "cobblmeon:pokemon");
     this.titleselectplot = "<#82d448>Select Plot";
     this.titleplot = "<#82d448>Plot";
     this.titleemptyplot = "<#82d448>Plot";

@@ -13,7 +13,9 @@ import com.kingpixel.cobbleutils.Model.WebHookData;
 import com.kingpixel.cobbleutils.util.PokemonUtils;
 import lombok.Getter;
 import lombok.Setter;
+import net.minecraft.registry.entry.RegistryEntry;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.world.biome.Biome;
 
 import java.util.List;
 
@@ -84,8 +86,21 @@ public class WebHookStruct {
         .replace("%type1%", getType(pokemonEntity.getPokemon().getPrimaryType()))
         .replace("%type2%", getType(pokemonEntity.getPokemon().getSecondaryType()));
 
-      String biome = pokemonEntity.getWorld().getBiome(pokemonEntity.getBlockPos()).getIdAsString();
-      String world = pokemonEntity.getWorld().getRegistryKey().getValue().getNamespace();
+      String biome = "";
+      try {
+        RegistryEntry<Biome> biomeRegistry = pokemonEntity.getWorld().getBiome(pokemonEntity.getBlockPos());
+        biome = "<lang:biome." + biomeRegistry.getIdAsString()
+          .replace(":", ".") + ">";
+      } catch (Exception ignored) {
+        biome = "Unknown";
+      }
+
+      String world = "";
+      try {
+        world = pokemonEntity.getEntityWorld().getRegistryKey().getValue() + "";
+      } catch (Exception ignored) {
+        world = "Unknown";
+      }
       description = description
         .replace("%x%", Math.round(pokemonEntity.getX()) + "")
         .replace("%y%", Math.round(pokemonEntity.getY()) + "")

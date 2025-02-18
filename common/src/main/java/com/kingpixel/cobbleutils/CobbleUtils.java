@@ -2,7 +2,10 @@ package com.kingpixel.cobbleutils;
 
 import com.cobblemon.mod.common.api.properties.CustomPokemonProperty;
 import com.kingpixel.cobbleutils.command.CommandTree;
-import com.kingpixel.cobbleutils.config.*;
+import com.kingpixel.cobbleutils.config.Config;
+import com.kingpixel.cobbleutils.config.Lang;
+import com.kingpixel.cobbleutils.config.ShopConfig;
+import com.kingpixel.cobbleutils.config.ShopLang;
 import com.kingpixel.cobbleutils.database.DatabaseClientFactory;
 import com.kingpixel.cobbleutils.events.ItemRightClickEvents;
 import com.kingpixel.cobbleutils.features.Features;
@@ -36,16 +39,13 @@ public class CobbleUtils extends ShopExtend {
   public static final String MOD_ID = "cobbleutils";
   public static final String PATH = "/config/cobbleutils";
   public static final String PATH_LANG = PATH + "/lang/";
-  public static final String PATH_RANDOM = PATH + "/random/";
   public static final String PATH_PARTY = PATH + "/party/";
   public static final String PATH_PARTY_LANG = PATH_PARTY + "lang/";
   public static final String PATH_PARTY_DATA = PATH_PARTY + "data/";
-  public static final String PATH_REWARDS_DATA = PATH + "/rewards/";
   public static final String PATH_BREED = PATH + "/breed/";
   public static final String PATH_BREED_DATA = PATH_BREED + "data/";
   public static final String PATH_SHOP = CobbleUtils.PATH + "/shop/";
   public static final String PATH_SHOPS = PATH_SHOP + "shops/";
-  public static final String PATH_BOSS = PATH + "/boss/";
   public static final UtilsLogger LOGGER = new UtilsLogger();
   public static final String MOD_NAME = "CobbleUtils";
   public static MinecraftServer server;
@@ -69,38 +69,21 @@ public class CobbleUtils extends ShopExtend {
   }
 
   public static void load() {
-    checks();
     files(true);
     sign();
     tasks();
     Features.register();
   }
 
-  private static void checks() {
-    Utils.createDirectoryIfNeeded(PATH);
-    Utils.createDirectoryIfNeeded(PATH_LANG);
-    Utils.createDirectoryIfNeeded(PATH_RANDOM);
-    Utils.createDirectoryIfNeeded(PATH_PARTY);
-    Utils.createDirectoryIfNeeded(PATH_PARTY_LANG);
-    Utils.createDirectoryIfNeeded(PATH_PARTY_DATA);
-    Utils.createDirectoryIfNeeded(PATH_REWARDS_DATA);
-    Utils.createDirectoryIfNeeded(PATH_BREED);
-    Utils.createDirectoryIfNeeded(PATH_BREED_DATA);
-  }
-
 
   private static void files(boolean shop) {
     config.init();
     language.init();
-    if (!config.isDebug()) {
-      config.setBoss(false);
-    }
     shopLang.init();
     partyConfig.init();
     partyLang.init();
     breedconfig.init();
     if (config.isApiMode()) return;
-    BossConfig.init();
     DatabaseClientFactory.createDatabaseClient(config.getDatabase());
     if (shop) {
       shopConfig.init(PATH_SHOP, MOD_ID, PATH_SHOPS);
@@ -131,7 +114,7 @@ public class CobbleUtils extends ShopExtend {
 
   private static void events() {
     files(false);
-    
+
     LifecycleEvent.SERVER_LEVEL_LOAD.register(level -> server = level.getServer());
 
     Utils.removeFiles(PATH_PARTY_DATA);

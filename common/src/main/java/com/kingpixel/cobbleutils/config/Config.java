@@ -26,13 +26,9 @@ public class Config {
   private boolean ApiMode;
   private String prefix;
   private String lang;
-
   private DataBaseConfig database;
-  private boolean boss;
-  private int bosschance;
   private boolean party;
   private boolean shops;
-  private int alertreward;
   private boolean activeshinytoken;
   private String pokeshout;
   private String pokeshoutall;
@@ -64,12 +60,9 @@ public class Config {
     commmandplugin = List.of("cobbleutils", "pokeutils");
     commandshop = List.of("shop", "cushop");
     ApiMode = false;
-    boss = false;
-    bosschance = 16512;
     shops = true;
     party = true;
     activeshinytoken = true;
-    alertreward = 15;
     pokeshout = "pokeshoutplus";
     pokeshoutall = "pokeshoutplusall";
     cooldownpokeshout = 60;
@@ -96,7 +89,6 @@ public class Config {
     rarity.put("rare", 0.3);
     rarity.put("epic", 0.1);
     database = new DataBaseConfig();
-
     specifiedSizes = new ArrayList<>();
     specifiedSizes.add(new ScalePokemonData("ditto", "normal", SizeChanceWithoutItem.transform(pokemonsizes)));
     specifiedSizes.add(new ScalePokemonData("zorua", "hisui", SizeChanceWithoutItem.transform(pokemonsizes)));
@@ -112,8 +104,6 @@ public class Config {
         lang = config.getLang();
         shops = config.isShops();
         fill = config.getFill();
-        boss = config.isBoss();
-        bosschance = config.getBosschance();
         commandshop = config.getCommandshop();
         shinytoken = config.getShinytoken();
 
@@ -126,10 +116,8 @@ public class Config {
         commandparty = config.getCommandparty();
         commandrewards = config.getCommandrewards();
         commmandplugin = config.getCommmandplugin();
-        alertreward = config.getAlertreward();
         itemsCommands = config.getItemsCommands();
         cooldownpokeshout = config.getCooldownpokeshout();
-
         shinytokenBlacklist = config.getShinytokenBlacklist();
         blacklist = config.getBlacklist();
         legends = config.getLegends();
@@ -139,9 +127,6 @@ public class Config {
         rarity = config.getRarity();
         specifiedSizes = config.getSpecifiedSizes();
         ApiMode = config.isApiMode();
-        if (!debug) {
-          this.boss = false;
-        }
         String data = gson.toJson(this);
         CompletableFuture<Boolean> futureWrite = Utils.writeFileAsync(CobbleUtils.PATH, "config.json",
           data);

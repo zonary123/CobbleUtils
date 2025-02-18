@@ -21,7 +21,6 @@ import net.minecraft.component.DataComponentTypes;
 import net.minecraft.component.type.LoreComponent;
 import net.minecraft.entity.ItemEntity;
 import net.minecraft.item.ItemStack;
-import net.minecraft.network.packet.s2c.play.EntityAnimationS2CPacket;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
 
@@ -60,7 +59,7 @@ public class AdvancedItemChance {
     //this.sound = "minecraft:block.note_block.harp";
     this.newSound = new Sound();
     this.particle = new Particle();
-    this.animation = Animations.NONE;
+    this.animation = Animations.CIRCLE;
     this.lootTable = new HashMap<>();
     lootTable.put("", ItemChance.defaultItemChances());
     List<ItemChance> itemChances = new ArrayList<>();
@@ -151,7 +150,6 @@ public class AdvancedItemChance {
       particle.sendParticles(player, player);
     }
 
-
     List<ItemStack> showRewards = getListDisplay(rewards);
     switch (animation) {
       case CSGO:
@@ -164,6 +162,7 @@ public class AdvancedItemChance {
         totemAnimation(player, showRewards);
         break;
       case CIRCLE:
+        // TODO: Change this for Packets to player
         for (int i = 0; i < showRewards.size(); i++) {
           ItemStack showReward = showRewards.get(i);
           double angle = Math.toRadians((360.0 / showRewards.size()) * i); // Calcula el ángulo para la separación
@@ -172,7 +171,6 @@ public class AdvancedItemChance {
           double offsetZ = radius * Math.sin(angle);
           var entity = new CircleEntityAnimation(player.getServerWorld(), player.getX() + offsetX, player.getY() + 1,
             player.getZ() + offsetZ, showReward, player);
-          player.networkHandler.sendPacket(new EntityAnimationS2CPacket(entity, 1));
           player.getServerWorld().spawnEntity(entity);
         }
         break;

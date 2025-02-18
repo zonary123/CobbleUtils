@@ -2,7 +2,6 @@ package com.kingpixel.cobbleutils.command;
 
 import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.command.admin.*;
-import com.kingpixel.cobbleutils.command.admin.boss.SpawnBoss;
 import com.kingpixel.cobbleutils.command.admin.egg.EggCommand;
 import com.kingpixel.cobbleutils.command.admin.egg.Hatch;
 import com.kingpixel.cobbleutils.command.admin.egg.IncenseCommand;
@@ -57,13 +56,6 @@ public class CommandTree {
 
       // /cobbleutils pokerename <slot> <name>
       PokeRename.register(dispatcher, base);
-
-
-      if (CobbleUtils.config.isBoss()) {
-        // /cobbleutils boss <rarity> <coords>
-        SpawnBoss.register(dispatcher, base);
-      }
-
 
       if (CobbleUtils.breedconfig.isActive()) {
         // /cobbleutils breedable <slot> <breedable>
