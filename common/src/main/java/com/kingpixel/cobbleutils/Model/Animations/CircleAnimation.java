@@ -56,7 +56,6 @@ public class CircleAnimation {
         super.tick();
 
         if (this.player == null || this.player.isRemoved() || !this.isAlive()) {
-          CobbleUtils.LOGGER.info("Kill");
           this.kill();
           return;
         }
@@ -70,7 +69,6 @@ public class CircleAnimation {
         }
 
         if (this.ticks >= 160) {
-          CobbleUtils.LOGGER.info("Kill");
           this.kill();
         }
         this.ticks++;
