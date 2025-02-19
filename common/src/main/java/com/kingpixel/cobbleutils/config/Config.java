@@ -27,14 +27,12 @@ public class Config {
   private String prefix;
   private String lang;
   private DataBaseConfig database;
-  private boolean party;
   private boolean shops;
   private boolean activeshinytoken;
   private String pokeshout;
   private String pokeshoutall;
   private int cooldownpokeshout;
   private String fill;
-  private List<String> commandparty;
   private List<String> commandrewards;
   private List<String> commmandplugin;
   private List<String> commandshop;
@@ -55,18 +53,15 @@ public class Config {
     prefix = "§7[§6CobbleUtils§7] ";
     lang = "en";
     fill = "minecraft:gray_stained_glass_pane";
-    commandparty = List.of("party", "cuparty");
     commandrewards = List.of("storagerewards", "storage");
     commmandplugin = List.of("cobbleutils", "pokeutils");
     commandshop = List.of("shop", "cushop");
     ApiMode = false;
     shops = true;
-    party = true;
     activeshinytoken = true;
     pokeshout = "pokeshoutplus";
     pokeshoutall = "pokeshoutplusall";
     cooldownpokeshout = 60;
-
     defaultsize = "Normal";
     pokemonsizes = List.of(
       new SizeChance("Tiny", 0.5f, 5),
@@ -112,8 +107,6 @@ public class Config {
         defaultsize = config.getDefaultsize();
         pokeshout = config.getPokeshout();
         pokeshoutall = config.getPokeshoutall();
-        party = config.isParty();
-        commandparty = config.getCommandparty();
         commandrewards = config.getCommandrewards();
         commmandplugin = config.getCommmandplugin();
         itemsCommands = config.getItemsCommands();

@@ -89,8 +89,7 @@ public class WebHookStruct {
       String biome = "";
       try {
         RegistryEntry<Biome> biomeRegistry = pokemonEntity.getWorld().getBiome(pokemonEntity.getBlockPos());
-        biome = "<lang:biome." + biomeRegistry.getIdAsString()
-          .replace(":", ".") + ">";
+        biome = biomeRegistry.getIdAsString();
       } catch (Exception ignored) {
         biome = "Unknown";
       }

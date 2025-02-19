@@ -70,20 +70,17 @@ public class AdventureTranslator {
 
   public static Text toNative(String text) {
     return toNative(miniMessage.deserialize(replaceNative(text
-      .replace("%prefix%", CobbleUtils.config.getPrefix())
-      .replace("%partyprefix%", CobbleUtils.partyLang.getPrefix()))), null);
+      .replace("%prefix%", CobbleUtils.config.getPrefix()))), null);
   }
 
   public static Text toNative(String text, @Nullable String prefix) {
     return toNative(miniMessage.deserialize(replaceNative(text
-      .replace("%prefix%", prefix == null ? "" : prefix)
-      .replace("%partyprefix%", CobbleUtils.partyLang.getPrefix()))), null);
+      .replace("%prefix%", prefix == null ? "" : prefix))), null);
   }
 
   public static Text toNative(String text, @Nullable String prefix, @Nullable ServerPlayerEntity player) {
     return toNative(miniMessage.deserialize(replaceNative(text
-      .replace("%prefix%", prefix == null ? "" : prefix)
-      .replace("%partyprefix%", CobbleUtils.partyLang.getPrefix()))), player);
+      .replace("%prefix%", prefix == null ? "" : prefix))), player);
   }
 
   public static Text toNative(Component component, @Nullable ServerPlayerEntity player) {

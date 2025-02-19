@@ -11,13 +11,6 @@ import com.kingpixel.cobbleutils.events.ItemRightClickEvents;
 import com.kingpixel.cobbleutils.features.Features;
 import com.kingpixel.cobbleutils.features.breeding.config.BreedConfig;
 import com.kingpixel.cobbleutils.features.shops.ShopTransactions;
-import com.kingpixel.cobbleutils.managers.PartyManager;
-import com.kingpixel.cobbleutils.party.command.CommandsParty;
-import com.kingpixel.cobbleutils.party.config.PartyConfig;
-import com.kingpixel.cobbleutils.party.config.PartyLang;
-import com.kingpixel.cobbleutils.party.event.CreatePartyEvent;
-import com.kingpixel.cobbleutils.party.event.DeletePartyEvent;
-import com.kingpixel.cobbleutils.party.util.PartyPlaceholder;
 import com.kingpixel.cobbleutils.properties.BreedablePropertyType;
 import com.kingpixel.cobbleutils.properties.MinIvsPropertyType;
 import com.kingpixel.cobbleutils.util.ShopExtend;
@@ -56,10 +49,6 @@ public class CobbleUtils extends ShopExtend {
   // Lang
   public static Lang language = new Lang();
   public static ShopLang shopLang = new ShopLang();
-  // Party
-  public static PartyConfig partyConfig = new PartyConfig();
-  public static PartyLang partyLang = new PartyLang();
-  public static PartyManager partyManager = new PartyManager();
   public static List<String> modsInUse = new ArrayList<>();
 
 
@@ -80,8 +69,6 @@ public class CobbleUtils extends ShopExtend {
     config.init();
     language.init();
     shopLang.init();
-    partyConfig.init();
-    partyLang.init();
     breedconfig.init();
     if (config.isApiMode()) return;
     DatabaseClientFactory.createDatabaseClient(config.getDatabase());
@@ -93,7 +80,6 @@ public class CobbleUtils extends ShopExtend {
   private static void sign() {
     info(MOD_NAME, "1.1.3", "CobbleUtils");
     LOGGER.info("§e| §6Shop: " + isActive(CobbleUtils.config.isShops()));
-    LOGGER.info("§e| §6Party: " + isActive(CobbleUtils.config.isParty()));
     LOGGER.info("§e| §6Breeding: " + isActive(CobbleUtils.breedconfig.isActive()));
     LOGGER.info("§e| §6Supported economies: Impactor, BlanketEconomy, CobbleDollars, PebbleEconomy and Vault");
     LOGGER.info("§e+-------------------------------+");
@@ -131,26 +117,10 @@ public class CobbleUtils extends ShopExtend {
     if (config.isApiMode()) return;
     CommandRegistrationEvent.EVENT.register((dispatcher, registry, selection) -> {
       CommandTree.register(dispatcher, registry);
-      CommandsParty.register(dispatcher, registry);
-    });
-
-
-    LifecycleEvent.SERVER_STOPPING.register(server -> {
-      CreatePartyEvent.CREATE_PARTY_EVENT.clear();
-      DeletePartyEvent.DELETE_PARTY_EVENT.clear();
-    });
-
-
-    PlayerEvent.PLAYER_JOIN.register(player -> {
-
     });
 
 
     PlayerEvent.PLAYER_QUIT.register(player -> {
-      // leave party
-      if (config.isParty() && partyManager.isPlayerInParty(player) && partyConfig.isTemporalParty()) {
-        partyManager.leaveParty(player);
-      }
       // Remove shop transactions data
       if (config.isShops()) {
         ShopTransactions.transactions.remove(player.getUuid());
@@ -159,8 +129,6 @@ public class CobbleUtils extends ShopExtend {
 
 
     InteractionEvent.RIGHT_CLICK_ITEM.register(ItemRightClickEvents::register);
-
-    PartyPlaceholder.register();
   }
 
   private static void tasks() {

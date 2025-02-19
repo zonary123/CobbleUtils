@@ -99,6 +99,10 @@ public abstract class WalkBreedingMixin {
 
     if (!(entity instanceof ServerPlayerEntity)) {
       double reduce = CobbleUtils.breedconfig.getReduceEggStepsVehicle();
+      if (CobbleUtils.config.isDebug()) {
+        CobbleUtils.LOGGER.info("Delta movement: " + deltaMovement);
+        CobbleUtils.LOGGER.info("Reduce: " + reduce);
+      }
       deltaMovement /= reduce;
     }
     return cobbleUtils$hasStepAcceleratingPokemon(party) ? deltaMovement : deltaMovement / 2;
