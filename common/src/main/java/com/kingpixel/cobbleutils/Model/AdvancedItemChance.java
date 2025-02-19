@@ -10,7 +10,7 @@ import ca.landonjw.gooeylibs2.api.helpers.PaginationHelper;
 import ca.landonjw.gooeylibs2.api.page.LinkedPage;
 import ca.landonjw.gooeylibs2.api.template.types.ChestTemplate;
 import com.kingpixel.cobbleutils.CobbleUtils;
-import com.kingpixel.cobbleutils.Model.Animations.CircleEntityAnimation;
+import com.kingpixel.cobbleutils.Model.Animations.CircleAnimation;
 import com.kingpixel.cobbleutils.api.PermissionApi;
 import com.kingpixel.cobbleutils.features.shops.Shop;
 import com.kingpixel.cobbleutils.util.*;
@@ -133,12 +133,13 @@ public class AdvancedItemChance {
 
   public void giveRewards(ServerPlayerEntity player) {
     if (checker(player)) return;
-    List<ItemChance> rewards = getList(player);
+    List<ItemChance> obtainedRewards = getList(player);
+    List<ItemChance> allRewards = obtainedRewards;
 
     if (giveAll) {
-      ItemChance.getAllRewards(rewards, player);
+      ItemChance.getAllRewards(obtainedRewards, player);
     } else {
-      rewards = ItemChance.getRewards(rewards, player, getAmountReward(player));
+      obtainedRewards = ItemChance.getRewards(obtainedRewards, player, getAmountReward(player));
     }
 
     if (getNewSound() != null) {
@@ -150,7 +151,7 @@ public class AdvancedItemChance {
       particle.sendParticles(player, player);
     }
 
-    List<ItemStack> showRewards = getListDisplay(rewards);
+    List<ItemStack> showRewards = getListDisplay(obtainedRewards);
     switch (animation) {
       case CSGO:
         csgoAnimation(player, showRewards);
@@ -162,17 +163,7 @@ public class AdvancedItemChance {
         totemAnimation(player, showRewards);
         break;
       case CIRCLE:
-        // TODO: Change this for Packets to player
-        for (int i = 0; i < showRewards.size(); i++) {
-          ItemStack showReward = showRewards.get(i);
-          double angle = Math.toRadians((360.0 / showRewards.size()) * i); // Calcula el ángulo para la separación
-          double radius = 2.0; // Radio de separación
-          double offsetX = radius * Math.cos(angle);
-          double offsetZ = radius * Math.sin(angle);
-          var entity = new CircleEntityAnimation(player.getServerWorld(), player.getX() + offsetX, player.getY() + 1,
-            player.getZ() + offsetZ, showReward, player);
-          player.getServerWorld().spawnEntity(entity);
-        }
+        CircleAnimation.start(player, showRewards);
         break;
       default:
         break;

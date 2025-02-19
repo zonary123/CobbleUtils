@@ -86,8 +86,11 @@ public class Shop {
     this.colorItem = "<#6bd68f>";
     this.closeCommand = "";
     this.close = CobbleUtils.language.getItemClose();
+    close.setSlot(49);
     this.next = CobbleUtils.language.getItemNext();
+    next.setSlot(53);
     this.previous = CobbleUtils.language.getItemPrevious();
+    previous.setSlot(45);
     this.products = getDefaultProducts();
     this.fill = new ItemModel("");
     this.fillItems = new ArrayList<>();
@@ -113,8 +116,11 @@ public class Shop {
     this.colorItem = "<#6bd68f>";
     this.closeCommand = "";
     this.close = CobbleUtils.language.getItemClose();
+    close.setSlot(49);
     this.next = CobbleUtils.language.getItemNext();
+    next.setSlot(53);
     this.previous = CobbleUtils.language.getItemPrevious();
+    previous.setSlot(45);
     this.globalDiscount = 0;
     this.display = new ItemModel("cobblemon:poke_ball");
     display.setDisplayname(title);

@@ -15,7 +15,6 @@ import com.kingpixel.cobbleutils.properties.BreedablePropertyType;
 import com.kingpixel.cobbleutils.properties.MinIvsPropertyType;
 import com.kingpixel.cobbleutils.util.ShopExtend;
 import com.kingpixel.cobbleutils.util.SpawnRates;
-import com.kingpixel.cobbleutils.util.Utils;
 import com.kingpixel.cobbleutils.util.UtilsLogger;
 import dev.architectury.event.events.common.CommandRegistrationEvent;
 import dev.architectury.event.events.common.InteractionEvent;
@@ -30,17 +29,14 @@ import static com.kingpixel.cobbleutils.util.EconomyUtil.setEconomyType;
 
 public class CobbleUtils extends ShopExtend {
   public static final String MOD_ID = "cobbleutils";
+  public static final String MOD_NAME = "CobbleUtils";
   public static final String PATH = "/config/cobbleutils";
   public static final String PATH_LANG = PATH + "/lang/";
-  public static final String PATH_PARTY = PATH + "/party/";
-  public static final String PATH_PARTY_LANG = PATH_PARTY + "lang/";
-  public static final String PATH_PARTY_DATA = PATH_PARTY + "data/";
   public static final String PATH_BREED = PATH + "/breed/";
   public static final String PATH_BREED_DATA = PATH_BREED + "data/";
   public static final String PATH_SHOP = CobbleUtils.PATH + "/shop/";
   public static final String PATH_SHOPS = PATH_SHOP + "shops/";
   public static final UtilsLogger LOGGER = new UtilsLogger();
-  public static final String MOD_NAME = "CobbleUtils";
   public static MinecraftServer server;
   public static Config config = new Config();
   public static BreedConfig breedconfig = new BreedConfig();
@@ -102,8 +98,6 @@ public class CobbleUtils extends ShopExtend {
     files(false);
 
     LifecycleEvent.SERVER_LEVEL_LOAD.register(level -> server = level.getServer());
-
-    Utils.removeFiles(PATH_PARTY_DATA);
 
     LifecycleEvent.SERVER_STARTED.register(server -> {
       load();
