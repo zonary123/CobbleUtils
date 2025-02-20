@@ -7,6 +7,7 @@ import net.minecraft.component.DataComponentTypes;
 import net.minecraft.component.type.CustomModelDataComponent;
 import net.minecraft.component.type.LoreComponent;
 import net.minecraft.item.ItemStack;
+import net.minecraft.util.Unit;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -130,6 +131,7 @@ public class Product {
       itemStack.set(DataComponentTypes.CUSTOM_MODEL_DATA,
         new CustomModelDataComponent(getCustomModelData()));
     }
+    itemStack.set(DataComponentTypes.HIDE_ADDITIONAL_TOOLTIP, Unit.INSTANCE);
 
     return itemStack;
   }

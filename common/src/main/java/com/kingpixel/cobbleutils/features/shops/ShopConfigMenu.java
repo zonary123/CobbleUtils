@@ -16,6 +16,7 @@ import net.minecraft.component.DataComponentTypes;
 import net.minecraft.component.type.LoreComponent;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
+import net.minecraft.util.Unit;
 
 import java.io.File;
 import java.io.FileReader;
@@ -236,6 +237,7 @@ public class ShopConfigMenu {
           .display(itemModelShop.getItemStack())
           .with(DataComponentTypes.CUSTOM_NAME, AdventureTranslator.toNative(itemModelShop.getDisplayname()))
           .with(DataComponentTypes.LORE, new LoreComponent(AdventureTranslator.toNativeL(lore)))
+          .with(DataComponentTypes.HIDE_ADDITIONAL_TOOLTIP, Unit.INSTANCE)
           .onClick(action -> {
             if (shop.isActive()) {
               if (shop.getShopType() == null) shop.setShopType(new ShopTypePermanent());

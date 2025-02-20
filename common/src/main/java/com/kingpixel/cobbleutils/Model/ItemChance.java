@@ -24,6 +24,7 @@ import net.minecraft.component.type.LoreComponent;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.util.Unit;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -388,24 +389,28 @@ public class ItemChance {
    */
   private static ItemStack getRewardItemStack(String item, int amount) {
     if (item == null || item.isEmpty()) return ItemStack.EMPTY;
-
+    ItemStack itemStack;
     String[] parts = item.split("\\|");
     if (parts.length > 1) {
-      return getRewardItemStack(parts[0], amount);
+      itemStack = getRewardItemStack(parts[0], amount);
+      itemStack.set(DataComponentTypes.HIDE_ADDITIONAL_TOOLTIP, Unit.INSTANCE);
+      return itemStack;
     }
     if (item.startsWith("pokemon:")) {
-      return PokemonItem.from(getRewardPokemon(item));
+      itemStack = PokemonItem.from(getRewardPokemon(item));
     } else if (item.startsWith("command:")) {
-      return parseCommandItem(item);
+      itemStack = parseCommandItem(item);
     } else if (item.startsWith("money:")) {
-      return parseMoneyItem(item);
+      itemStack = parseMoneyItem(item);
     } else if (item.startsWith("item:")) {
-      return parseItemStack(item, parseAmount(item.split(":")[1]) * amount);
+      itemStack = parseItemStack(item, parseAmount(item.split(":")[1]) * amount);
     } else if (item.startsWith("mod:")) {
-      return getModItem(new ItemChance(item, 100));
+      itemStack = getModItem(new ItemChance(item, 100));
     } else {
-      return Utils.parseItemId(item, amount);
+      itemStack = Utils.parseItemId(item, amount);
     }
+    itemStack.set(DataComponentTypes.HIDE_ADDITIONAL_TOOLTIP, Unit.INSTANCE);
+    return itemStack;
   }
 
   private static ItemStack parseCommandItem(String item) {
