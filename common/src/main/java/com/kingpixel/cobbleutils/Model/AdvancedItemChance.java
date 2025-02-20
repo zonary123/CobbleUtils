@@ -11,6 +11,7 @@ import ca.landonjw.gooeylibs2.api.page.LinkedPage;
 import ca.landonjw.gooeylibs2.api.template.types.ChestTemplate;
 import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.Model.Animations.CircleAnimation;
+import com.kingpixel.cobbleutils.Model.Animations.CSGOAnimation;
 import com.kingpixel.cobbleutils.api.PermissionApi;
 import com.kingpixel.cobbleutils.features.shops.Shop;
 import com.kingpixel.cobbleutils.util.*;
@@ -154,7 +155,7 @@ public class AdvancedItemChance {
     List<ItemStack> showRewards = getListDisplay(obtainedRewards);
     switch (animation) {
       case CSGO:
-        csgoAnimation(player, showRewards);
+        CSGOAnimation.start(player, showRewards);
         break;
       case VISUALITEMS:
         visualItemsAnimation(player, showRewards);
