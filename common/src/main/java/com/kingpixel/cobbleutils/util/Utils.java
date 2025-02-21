@@ -12,10 +12,6 @@ import com.google.gson.JsonSyntaxException;
 import com.google.gson.internal.bind.DateTypeAdapter;
 import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.Model.ItemModel;
-import com.kingpixel.cobbleutils.features.shops.ShopTransactions;
-import com.kingpixel.cobbleutils.features.shops.models.types.ShopActionAdapter;
-import com.kingpixel.cobbleutils.features.shops.models.types.ShopType;
-import com.kingpixel.cobbleutils.features.shops.models.types.ShopTypeAdapter;
 import com.mojang.authlib.GameProfile;
 import kotlin.ranges.IntRange;
 import net.minecraft.component.DataComponentTypes;
@@ -84,8 +80,6 @@ public abstract class Utils {
 
   private static GsonBuilder addAdapters(GsonBuilder builder) {
     return builder
-      .registerTypeAdapter(ShopType.class, new ShopTypeAdapter())
-      .registerTypeAdapter(ShopTransactions.ShopAction.class, new ShopActionAdapter())
       .registerTypeAdapter(ElementalType.class, ElementalTypeAdapter.INSTANCE)
       .registerTypeAdapter(IntRange.class, IntRangeAdapter.INSTANCE)
       .registerTypeAdapter(NbtCompound.class, NbtCompoundAdapter.INSTANCE)
@@ -247,8 +241,7 @@ public abstract class Utils {
   }
 
   public static ItemStack parseItemId(String id, int amount) {
-    ItemStack itemStack = new ItemStack(Registries.ITEM.get(Identifier.of(id)), amount);
-    return itemStack;
+    return new ItemStack(Registries.ITEM.get(Identifier.of(id)), amount);
   }
 
   public static File getAbsolutePath(String directoryPath) {
@@ -275,19 +268,29 @@ public abstract class Utils {
 
   public static ItemStack parseItemModel(ItemModel itemModel, int amount) {
     String item = itemModel.getItem();
+    String nbt = itemModel.getNbt();
     if (item.startsWith("item:")) {
       item = item.replace("item:", "");
       String[] split = item.split(":");
       item = split[1] + ":" + split[2];
       amount = Integer.parseInt(split[0]);
     }
+    String[] nbtSplit = item.split("#");
+    if (nbtSplit.length > 1) {
+      item = nbtSplit[0];
+      nbt = nbtSplit[1];
+    }
     ItemStack itemStack = parseItemId(item, amount);
-    return addThingsItemStack(itemStack, itemModel);
+    itemStack = addThingsItemStack(itemStack, itemModel, nbt);
+    if (itemStack.isEmpty()) {
+      CobbleUtils.LOGGER.error("Item " + item + " is not valid.");
+    }
+    return itemStack;
   }
 
-  public static ItemStack addThingsItemStack(ItemStack itemStack, ItemModel itemModel) {
-    if (itemModel.getNbt() != null && !itemModel.getNbt().isEmpty()) {
-      itemStack = ItemUtils.applyNbt(itemStack, itemModel.getNbt(), itemStack.getCount());
+  public static ItemStack addThingsItemStack(ItemStack itemStack, ItemModel itemModel, String nbt) {
+    if (nbt != null && !nbt.isEmpty()) {
+      itemStack = ItemUtils.applyNbt(itemStack, nbt, itemStack.getCount());
     }
 
     itemStack.set(DataComponentTypes.CUSTOM_NAME, AdventureTranslator.toNativeWithOutPrefix(

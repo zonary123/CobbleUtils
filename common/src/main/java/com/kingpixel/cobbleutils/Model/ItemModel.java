@@ -167,7 +167,7 @@ public class ItemModel {
   public static ItemStack getItemStack(ItemModel itemModel, int amount) {
     if (itemModel.getItem().startsWith("pokemon:")) {
       return Utils.addThingsItemStack(PokemonItem.from(PokemonProperties.Companion.parse(itemModel.getItem().replace(
-        "pokemon:", ""))), itemModel);
+        "pokemon:", ""))), itemModel, null);
     } else if (itemModel.getItem().startsWith("command:")) {
       String command = itemModel.getItem().replace("command:", "");
       for (Map.Entry<String, ItemModel> entry : CobbleUtils.config.getItemsCommands().entrySet()) {
@@ -178,6 +178,8 @@ public class ItemModel {
       return Utils.parseItemId("minecraft:command_block", amount);
     } else if (itemModel.getItem().startsWith("head:")) {
       return Utils.getHead(itemModel.getItem().replace("head:", ""), amount);
+    } else if (itemModel.getItem().startsWith("money:")) {
+      return new ItemChance(itemModel.getItem(), 0).getIcon();
     } else {
       return Utils.parseItemModel(itemModel, amount);
     }

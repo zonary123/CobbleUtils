@@ -235,7 +235,7 @@ public abstract class EconomyUtil {
         Account account = getAccount(player.getUuid(), currency);
         EconomyTransaction transaction = account.deposit(amount);
         if (transaction.successful() && notify) {
-          PlayerUtils.sendMessage(
+/*          PlayerUtils.sendMessage(
             player,
             CobbleUtils.shopLang.getMessageAddMoney()
               .replace("%price%", formatCurrency(amount, account.currency()))
@@ -244,7 +244,7 @@ public abstract class EconomyUtil {
               .replace("%symbol%", getSymbol(account.currency()))
               .replace("%currency%", getCurrencyName(account.currency())),
             CobbleUtils.shopLang.getPrefix()
-          );
+          );*/
           return true;
         }
         return false;
@@ -346,43 +346,11 @@ public abstract class EconomyUtil {
     setEconomyType();
     if (account.balance().compareTo(amount) >= 0) {
       removeMoney(account, amount);
-      sendMessage(account, amount, CobbleUtils.shopLang.getMessageBought());
       return true;
-    } else {
-      sendMessage(account, amount, CobbleUtils.shopLang.getMessageNotHaveMoney());
-      return false;
     }
+    return false;
   }
 
-  private static void sendMessage(Account account, BigDecimal amount, String messageNotHaveMoney) {
-    try {
-      UUID player = account.owner();
-      Currency currency = account.currency();
-      PlayerUtils.sendMessage(CobbleUtils.server.getPlayerManager().getPlayer(player),
-        messageNotHaveMoney
-          .replace("%price%", formatCurrency(amount, currency))
-          .replace("%balance%", formatCurrency(account.balance(), currency))
-          .replace("%symbol%", getSymbol(currency))
-          .replace("%currency%", getCurrencyName(currency)),
-        CobbleUtils.shopLang.getPrefix());
-    } catch (NoSuchMethodError | Exception e) {
-      e.printStackTrace();
-    }
-  }
-
-  private static void sendMessage(ServerPlayerEntity player, BigDecimal amount, String messageNotHaveMoney) {
-    try {
-      PlayerUtils.sendMessage(player,
-        messageNotHaveMoney
-          .replace("%price%", formatCurrency(amount, ""))
-          .replace("%balance%", formatCurrency(getBalance(player, ""), ""))
-          .replace("%symbol%", getSymbol(""))
-          .replace("%currency%", ""),
-        CobbleUtils.shopLang.getPrefix());
-    } catch (NoSuchMethodError | Exception e) {
-      e.printStackTrace();
-    }
-  }
 
   /**
    * Method to check if an account has enough balance and optionally remove the
@@ -407,45 +375,35 @@ public abstract class EconomyUtil {
       case VAULT:
         if (vaultEconomy.has(player.getGameProfile().getName(), amount.doubleValue())) {
           vaultEconomy.withdrawPlayer(player.getGameProfile().getName(), amount.doubleValue());
-          if (notify) sendMessage(player, amount, CobbleUtils.shopLang.getMessageBought());
           return true;
         }
-        if (notify) sendMessage(player, amount, CobbleUtils.shopLang.getMessageNotHaveMoney());
         return false;
       case BLANKECONOMY:
         BigDecimal bal = getBalance(player, currency);
         if (bal.compareTo(amount) >= 0) {
           BlanketEconomy.INSTANCE.getAPI().setBalance(player.getUuid(), bal.subtract(amount), currency);
-          if (notify) sendMessage(player, amount, CobbleUtils.shopLang.getMessageBought());
           return true;
         }
-        if (notify) sendMessage(player, amount, CobbleUtils.shopLang.getMessageNotHaveMoney());
         return false;
       case COBBLEDOLLARS:
         BigInteger balance = ((CobbleDollarsPlayer) player).cobbleDollars$getCobbleDollars();
         if (balance.compareTo(BigInteger.valueOf(amount.longValue())) >= 0) {
           ((CobbleDollarsPlayer) player).cobbleDollars$setCobbleDollars(balance.subtract(BigInteger.valueOf(amount.longValue())));
-          if (notify) sendMessage(player, amount, CobbleUtils.shopLang.getMessageBought());
           return true;
         }
-        if (notify) sendMessage(player, amount, CobbleUtils.shopLang.getMessageNotHaveMoney());
         return false;
       case SDM_ECONOMY:
         long balance1 = CurrencyHelper.getMoney(player, currency);
         if (balance1 >= amount.longValue()) {
           CurrencyHelper.setMoney(player, currency, balance1 - amount.longValue());
-          if (notify) sendMessage(player, amount, CobbleUtils.shopLang.getMessageBought());
           return true;
         }
-        if (notify) sendMessage(player, amount, CobbleUtils.shopLang.getMessageNotHaveMoney());
         return false;
       case PEBBLE_ECONOMY:
         if (pebblesEconomy.getEconomy().getBalance(player.getUuid()) >= amount.doubleValue()) {
           pebblesEconomy.getEconomy().withdraw(player.getUuid(), amount.doubleValue());
-          if (notify) sendMessage(player, amount, CobbleUtils.shopLang.getMessageBought());
           return true;
         }
-        if (notify) sendMessage(player, amount, CobbleUtils.shopLang.getMessageNotHaveMoney());
         return false;
       default:
         return false;

@@ -4,22 +4,17 @@ import com.cobblemon.mod.common.api.properties.CustomPokemonProperty;
 import com.kingpixel.cobbleutils.command.CommandTree;
 import com.kingpixel.cobbleutils.config.Config;
 import com.kingpixel.cobbleutils.config.Lang;
-import com.kingpixel.cobbleutils.config.ShopConfig;
-import com.kingpixel.cobbleutils.config.ShopLang;
 import com.kingpixel.cobbleutils.database.DatabaseClientFactory;
 import com.kingpixel.cobbleutils.events.ItemRightClickEvents;
 import com.kingpixel.cobbleutils.features.Features;
 import com.kingpixel.cobbleutils.features.breeding.config.BreedConfig;
-import com.kingpixel.cobbleutils.features.shops.ShopTransactions;
 import com.kingpixel.cobbleutils.properties.BreedablePropertyType;
 import com.kingpixel.cobbleutils.properties.MinIvsPropertyType;
-import com.kingpixel.cobbleutils.util.ShopExtend;
 import com.kingpixel.cobbleutils.util.SpawnRates;
 import com.kingpixel.cobbleutils.util.UtilsLogger;
 import dev.architectury.event.events.common.CommandRegistrationEvent;
 import dev.architectury.event.events.common.InteractionEvent;
 import dev.architectury.event.events.common.LifecycleEvent;
-import dev.architectury.event.events.common.PlayerEvent;
 import net.minecraft.server.MinecraftServer;
 
 import java.util.ArrayList;
@@ -27,24 +22,20 @@ import java.util.List;
 
 import static com.kingpixel.cobbleutils.util.EconomyUtil.setEconomyType;
 
-public class CobbleUtils extends ShopExtend {
+public class CobbleUtils {
   public static final String MOD_ID = "cobbleutils";
   public static final String MOD_NAME = "CobbleUtils";
   public static final String PATH = "/config/cobbleutils";
   public static final String PATH_LANG = PATH + "/lang/";
   public static final String PATH_BREED = PATH + "/breed/";
   public static final String PATH_BREED_DATA = PATH_BREED + "data/";
-  public static final String PATH_SHOP = CobbleUtils.PATH + "/shop/";
-  public static final String PATH_SHOPS = PATH_SHOP + "shops/";
   public static final UtilsLogger LOGGER = new UtilsLogger();
   public static MinecraftServer server;
   public static Config config = new Config();
   public static BreedConfig breedconfig = new BreedConfig();
-  public static ShopConfig shopConfig = new ShopConfig();
   public static SpawnRates spawnRates = new SpawnRates();
   // Lang
   public static Lang language = new Lang();
-  public static ShopLang shopLang = new ShopLang();
   public static List<String> modsInUse = new ArrayList<>();
 
 
@@ -54,28 +45,23 @@ public class CobbleUtils extends ShopExtend {
   }
 
   public static void load() {
-    files(true);
+    files();
     sign();
     tasks();
     Features.register();
   }
 
 
-  private static void files(boolean shop) {
+  private static void files() {
     config.init();
     language.init();
-    shopLang.init();
     breedconfig.init();
     if (config.isApiMode()) return;
     DatabaseClientFactory.createDatabaseClient(config.getDatabase());
-    if (shop) {
-      shopConfig.init(PATH_SHOP, MOD_ID, PATH_SHOPS);
-    }
   }
 
   private static void sign() {
     info(MOD_NAME, "1.1.3", "CobbleUtils");
-    LOGGER.info("§e| §6Shop: " + isActive(CobbleUtils.config.isShops()));
     LOGGER.info("§e| §6Breeding: " + isActive(CobbleUtils.breedconfig.isActive()));
     LOGGER.info("§e| §6Supported economies: Impactor, BlanketEconomy, CobbleDollars, PebbleEconomy and Vault");
     LOGGER.info("§e+-------------------------------+");
@@ -95,7 +81,7 @@ public class CobbleUtils extends ShopExtend {
   }
 
   private static void events() {
-    files(false);
+    files();
 
     LifecycleEvent.SERVER_LEVEL_LOAD.register(level -> server = level.getServer());
 
@@ -112,15 +98,6 @@ public class CobbleUtils extends ShopExtend {
     CommandRegistrationEvent.EVENT.register((dispatcher, registry, selection) -> {
       CommandTree.register(dispatcher, registry);
     });
-
-
-    PlayerEvent.PLAYER_QUIT.register(player -> {
-      // Remove shop transactions data
-      if (config.isShops()) {
-        ShopTransactions.transactions.remove(player.getUuid());
-      }
-    });
-
 
     InteractionEvent.RIGHT_CLICK_ITEM.register(ItemRightClickEvents::register);
   }

@@ -27,7 +27,6 @@ public class Config {
   private String prefix;
   private String lang;
   private DataBaseConfig database;
-  private boolean shops;
   private boolean activeshinytoken;
   private String pokeshout;
   private String pokeshoutall;
@@ -35,7 +34,6 @@ public class Config {
   private String fill;
   private List<String> commandrewards;
   private List<String> commmandplugin;
-  private List<String> commandshop;
   private String defaultsize;
   private List<SizeChance> pokemonsizes;
   private List<ScalePokemonData> specifiedSizes;
@@ -55,9 +53,7 @@ public class Config {
     fill = "minecraft:gray_stained_glass_pane";
     commandrewards = List.of("storagerewards", "storage");
     commmandplugin = List.of("cobbleutils", "pokeutils");
-    commandshop = List.of("shop", "cushop");
     ApiMode = false;
-    shops = true;
     activeshinytoken = true;
     pokeshout = "pokeshoutplus";
     pokeshoutall = "pokeshoutplusall";
@@ -97,11 +93,8 @@ public class Config {
         debug = config.isDebug();
         prefix = config.getPrefix();
         lang = config.getLang();
-        shops = config.isShops();
         fill = config.getFill();
-        commandshop = config.getCommandshop();
         shinytoken = config.getShinytoken();
-
         database = config.getDatabase();
         pokemonsizes = config.getPokemonsizes();
         defaultsize = config.getDefaultsize();

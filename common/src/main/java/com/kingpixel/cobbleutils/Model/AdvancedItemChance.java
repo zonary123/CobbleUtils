@@ -10,10 +10,9 @@ import ca.landonjw.gooeylibs2.api.helpers.PaginationHelper;
 import ca.landonjw.gooeylibs2.api.page.LinkedPage;
 import ca.landonjw.gooeylibs2.api.template.types.ChestTemplate;
 import com.kingpixel.cobbleutils.CobbleUtils;
-import com.kingpixel.cobbleutils.Model.Animations.CircleAnimation;
 import com.kingpixel.cobbleutils.Model.Animations.CSGOAnimation;
+import com.kingpixel.cobbleutils.Model.Animations.CircleAnimation;
 import com.kingpixel.cobbleutils.api.PermissionApi;
-import com.kingpixel.cobbleutils.features.shops.Shop;
 import com.kingpixel.cobbleutils.util.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -157,9 +156,6 @@ public class AdvancedItemChance {
       case CSGO:
         CSGOAnimation.start(player, showRewards);
         break;
-      case VISUALITEMS:
-        visualItemsAnimation(player, showRewards);
-        break;
       case TOTEM:
         totemAnimation(player, showRewards);
         break;
@@ -212,13 +208,6 @@ public class AdvancedItemChance {
   }
 
 
-  private void visualItemsAnimation(ServerPlayerEntity player, List<ItemStack> rewards) {
-  }
-
-  private void csgoAnimation(ServerPlayerEntity player, List<ItemStack> rewards) {
-  }
-
-
   // Menus methods
 
   public void openMenu(ServerPlayerEntity player, Consumer<ChestTemplate> templateConsumer) {
@@ -260,7 +249,7 @@ public class AdvancedItemChance {
   private void applyTemplate(ServerPlayerEntity player, ChestTemplate template) {
     List<Button> buttons = getButtons(player);
 
-    Shop.Rectangle rectangle = new Shop.Rectangle(1, 1, 4, 7);
+    Rectangle rectangle = new Rectangle(1, 1, 4, 7);
     rectangle.apply(template);
 
     int freeSlots = rectangle.getSlotsFree(template.getRows());

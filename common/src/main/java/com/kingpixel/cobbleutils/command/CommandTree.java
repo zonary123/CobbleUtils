@@ -6,8 +6,6 @@ import com.kingpixel.cobbleutils.command.admin.egg.EggCommand;
 import com.kingpixel.cobbleutils.command.admin.egg.Hatch;
 import com.kingpixel.cobbleutils.command.admin.egg.IncenseCommand;
 import com.kingpixel.cobbleutils.command.base.*;
-import com.kingpixel.cobbleutils.command.base.shops.ShopCommand;
-import com.kingpixel.cobbleutils.command.base.shops.ShopSellCommand;
 import com.kingpixel.cobbleutils.command.test.TestCommands;
 import com.kingpixel.cobbleutils.util.LuckPermsUtil;
 import com.mojang.brigadier.CommandDispatcher;
@@ -83,13 +81,6 @@ public class CommandTree {
 
         // /cobbleutils egg <pokemon>
         BreedCommand.register(dispatcher, base);
-      }
-    }
-
-    if (CobbleUtils.config.isShops()) {
-      for (String literal : CobbleUtils.config.getCommandshop()) {
-        ShopCommand.register(dispatcher, literal, CobbleUtils.shopConfig, CobbleUtils.MOD_ID, false);
-        ShopSellCommand.register(dispatcher, CommandManager.literal("sell"));
       }
     }
 
