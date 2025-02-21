@@ -27,6 +27,7 @@ import net.minecraft.component.type.LoreComponent;
 import net.minecraft.item.ItemStack;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
+import net.minecraft.util.Unit;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -279,6 +280,7 @@ public class Shop {
           .with(DataComponentTypes.LORE, new LoreComponent(AdventureTranslator.toNativeL(getLoreProduct(
             buy, sell, product, player, symbol, typeError, BigDecimal.ONE
           ))))
+          .with(DataComponentTypes.HIDE_ADDITIONAL_TOOLTIP, Unit.INSTANCE)
           .onClick(action -> {
             if (typeError == TypeError.NONE) {
               if (shopConfig.getShopConfigMenu().isViewItemsWithOptionPermission()) {

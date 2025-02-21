@@ -4,6 +4,8 @@ import ca.landonjw.gooeylibs2.api.button.GooeyButton;
 import ca.landonjw.gooeylibs2.api.template.types.ChestTemplate;
 import lombok.Getter;
 import lombok.Setter;
+import net.minecraft.component.DataComponentTypes;
+import net.minecraft.util.Unit;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -40,6 +42,8 @@ public class PanelsConfig {
     for (PanelsConfig panelsConfig : panelsConfigs) {
       GooeyButton button = GooeyButton.builder()
         .display(panelsConfig.getFill().getItemStack())
+        .with(DataComponentTypes.HIDE_ADDITIONAL_TOOLTIP, Unit.INSTANCE)
+        .with(DataComponentTypes.HIDE_TOOLTIP, Unit.INSTANCE)
         .build();
       for (Integer slot : panelsConfig.slots) {
         template.set(slot, button);

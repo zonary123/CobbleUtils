@@ -13,6 +13,7 @@ import lombok.ToString;
 import net.minecraft.component.DataComponentTypes;
 import net.minecraft.component.type.LoreComponent;
 import net.minecraft.item.ItemStack;
+import net.minecraft.util.Unit;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -226,8 +227,9 @@ public class ItemModel {
    */
   public GooeyButton getButton(int amount, String name,
                                List<String> lore, Consumer<ButtonAction> action) {
+    ItemStack itemStack = getItemStack(this, amount);
     GooeyButton.Builder builder = GooeyButton.builder()
-      .display(getItemStack(this, amount));
+      .display(itemStack);
     if (name != null) {
       builder.with(DataComponentTypes.CUSTOM_NAME, AdventureTranslator.toNative(name));
     } else {
@@ -236,9 +238,10 @@ public class ItemModel {
     LoreComponent loreComponent = new LoreComponent(AdventureTranslator.toNativeL(lore != null ? lore : getLore()));
 
     builder.with(DataComponentTypes.LORE, loreComponent);
-
+    builder.with(DataComponentTypes.HIDE_ADDITIONAL_TOOLTIP, Unit.INSTANCE);
     if (action == null) {
-      return builder.build();
+      return builder
+        .build();
     }
     return builder
       .onClick(action)
