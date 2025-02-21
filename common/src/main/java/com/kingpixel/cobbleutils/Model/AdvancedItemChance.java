@@ -10,8 +10,9 @@ import ca.landonjw.gooeylibs2.api.helpers.PaginationHelper;
 import ca.landonjw.gooeylibs2.api.page.LinkedPage;
 import ca.landonjw.gooeylibs2.api.template.types.ChestTemplate;
 import com.kingpixel.cobbleutils.CobbleUtils;
-import com.kingpixel.cobbleutils.Model.Animations.CircleAnimation;
 import com.kingpixel.cobbleutils.Model.Animations.CSGOAnimation;
+import com.kingpixel.cobbleutils.Model.Animations.CircleAnimation;
+import com.kingpixel.cobbleutils.Model.Animations.AllRewardsCircleAnimation;
 import com.kingpixel.cobbleutils.api.PermissionApi;
 import com.kingpixel.cobbleutils.features.shops.Shop;
 import com.kingpixel.cobbleutils.util.*;
@@ -151,11 +152,11 @@ public class AdvancedItemChance {
     if (particle != null) {
       particle.sendParticles(player, player);
     }
-
+    List<ItemStack> showAllRewards = getListDisplay(allRewards);
     List<ItemStack> showRewards = getListDisplay(obtainedRewards);
     switch (animation) {
       case CSGO:
-        CSGOAnimation.start(player, showRewards);
+        CSGOAnimation.start(player, showAllRewards, showRewards);
         break;
       case VISUALITEMS:
         visualItemsAnimation(player, showRewards);
@@ -165,6 +166,9 @@ public class AdvancedItemChance {
         break;
       case CIRCLE:
         CircleAnimation.start(player, showRewards);
+        break;
+      case ALLCIRCLE:
+        AllRewardsCircleAnimation.start(player, showAllRewards);
         break;
       default:
         break;
@@ -177,7 +181,8 @@ public class AdvancedItemChance {
     VISUALITEMS, // Show the won items in front of the user
     CSGO, // Show the items in a CSGO style
     TOTEM, // Show the items in a totem style
-    CIRCLE // Show the items in a circle style
+    CIRCLE, // Show the items in a circle style
+    ALLCIRCLE // Show all the items in a circle style
   }
 
   // Animations methods
