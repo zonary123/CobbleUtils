@@ -37,20 +37,17 @@ public class CSGOAnimation {
                     currentItems[i] = rewardsCopy.get((currentIndex + i) % rewardsCopy.size());
                 }
 
-                int rewardCycle = totalCycles - 4;
+                int rewardCycle = totalCycles - 4; // Sets the Reward Item to end up in the middle slot
 
-                int spinSpeed = startSpinSpeed;
+                int spinSpeed = startSpinSpeed; // Resets the speed on start
 
                 for (int i = 0; i < totalCycles; i++) {
 
                     double progress = (double) i / (totalCycles - 1);
-                    int spinSpeedNew;
-
                     double dynamicDecayFactor = i >= totalCycles - 10 ? 1.2 : decayFactor;
+                    int spinSpeedNew = (int) (startSpinSpeed * Math.pow(dynamicDecayFactor, progress * 15));
 
-                    spinSpeedNew = (int) (startSpinSpeed * Math.pow(dynamicDecayFactor, progress * 15));
-
-                    spinSpeed = (int) Math.max(10, Math.abs(spinSpeedNew - spinSpeed) < 5 ? spinSpeedNew : spinSpeed + Math.signum(spinSpeedNew - spinSpeed) * 5); // Smoothing effect
+                    spinSpeed = (int) Math.max(10, Math.abs(spinSpeedNew - spinSpeed) < 5 ? spinSpeedNew : spinSpeed + Math.signum(spinSpeedNew - spinSpeed) * 5);
 
                     shiftItemsLeft(currentItems, rewardsCopy);
 
