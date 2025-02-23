@@ -1,6 +1,7 @@
 package com.kingpixel.cobbleutils.features.breeding.models;
 
 import com.cobblemon.mod.common.Cobblemon;
+import com.cobblemon.mod.common.api.Priority;
 import com.cobblemon.mod.common.api.abilities.Abilities;
 import com.cobblemon.mod.common.api.abilities.AbilityTemplate;
 import com.cobblemon.mod.common.api.events.CobblemonEvents;
@@ -131,18 +132,21 @@ public class EggData {
     }
     String pokemonId = species == null || species.isEmpty() ? "rattata" : species;
     AbilityTemplate abilityTemplate;
+    AbilityTemplate randomAbility =
+      PokemonUtils.getRandomAbility(PokemonProperties.Companion.parse(pokemonId + " " + form).create()).getTemplate();
     if (ability.isEmpty()) {
-      abilityTemplate =
-        PokemonUtils.getRandomAbility(PokemonProperties.Companion.parse(pokemonId + " " + form).create()).getTemplate();
+      abilityTemplate = randomAbility;
     } else {
       abilityTemplate = Abilities.INSTANCE.get(this.ability);
     }
+    if (abilityTemplate == null) {
+      abilityTemplate = randomAbility;
+    }
 
-    PokemonProperties pokemonProperties = PokemonProperties.Companion.parse(pokemonId + " " + form + " ability=" + abilityTemplate.getName());
-
+    PokemonProperties pokemonProperties = PokemonProperties.Companion.parse(pokemonId + " " + form);
 
     Pokemon pokemon = pokemonProperties.create();
-
+    pokemon.setAbility$common(abilityTemplate.create(false, Priority.LOW));
     pokemon.getPersistentData().copyFrom(egg.getPersistentData());
     Breeding.UserInfo userInfo = Breeding.countryPlayer(player);
     if (userInfo != null) {

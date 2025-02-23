@@ -29,7 +29,7 @@ public class PlayerUtils {
 
   @Deprecated
   public static void sendMessage(ServerPlayerEntity player, String message, String prefix) {
-    if (!message.isEmpty()) {
+    if (message != null && !message.isEmpty()) {
       player.sendMessage(AdventureTranslator.toNative(message, prefix, player));
     }
   }
@@ -45,7 +45,7 @@ public class PlayerUtils {
 
   public static void sendMessage(ServerPlayerEntity player, String message, String prefix, TypeMessage typeMessage) {
     switch (typeMessage) {
-      case CHAT -> sendMessage(player, message);
+      case CHAT -> sendMessage(player, message, prefix);
       case ACTIONBAR -> player.sendMessage(AdventureTranslator.toNative(message, prefix, player), true);
       case BROADCAST -> broadcast(message, prefix);
     }

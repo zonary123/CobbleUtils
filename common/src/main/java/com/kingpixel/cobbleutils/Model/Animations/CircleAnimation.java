@@ -41,12 +41,12 @@ public class CircleAnimation {
       setPickupDelay(Integer.MAX_VALUE);
       setInvisible(false);
       setInvulnerable(true);
-      setVelocity(Vec3d.ZERO);
 
       // Calculate initial offsets
       Vec3d playerPos = player.getPos();
       this.initialOffsetX = x - playerPos.x;
       this.initialOffsetZ = z - playerPos.z;
+
     }
 
 
@@ -59,14 +59,15 @@ public class CircleAnimation {
           this.kill();
           return;
         }
+        double angle = Math.toRadians((this.ticks * 2) % 360); // Incremento de ángulo más gradual
+        double offsetX = initialOffsetX * Math.cos(angle) - initialOffsetZ * Math.sin(angle);
+        double offsetZ = initialOffsetX * Math.sin(angle) + initialOffsetZ * Math.cos(angle);
+        double targetX = this.player.getX() + offsetX;
+        double targetY = this.player.getY() + 1;
+        double targetZ = this.player.getZ() + offsetZ;
 
-        if (ticks % 10 == 0) {
-          double angle = Math.toRadians((this.ticks * 2) % 360); // Incremento de ángulo más gradual
-          double offsetX = initialOffsetX * Math.cos(angle) - initialOffsetZ * Math.sin(angle);
-          double offsetZ = initialOffsetX * Math.sin(angle) + initialOffsetZ * Math.cos(angle);
-          Vec3d itemPos = new Vec3d(player.getPos().x + offsetX, player.getPos().y + 1, player.getPos().z + offsetZ);
-          setPos(itemPos.x, itemPos.y, itemPos.z);
-        }
+        // Interpola suavemente la posición y rotación
+        this.lerpPosAndRotation(1, targetX, targetY, targetZ, 0, 0);
 
         if (this.ticks >= 160) {
           this.kill();

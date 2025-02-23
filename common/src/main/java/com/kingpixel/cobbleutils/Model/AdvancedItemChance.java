@@ -10,17 +10,16 @@ import ca.landonjw.gooeylibs2.api.helpers.PaginationHelper;
 import ca.landonjw.gooeylibs2.api.page.LinkedPage;
 import ca.landonjw.gooeylibs2.api.template.types.ChestTemplate;
 import com.kingpixel.cobbleutils.CobbleUtils;
-import com.kingpixel.cobbleutils.Model.Animations.CircleAnimation;
+import com.kingpixel.cobbleutils.Model.Animations.AllRewardsCircleAnimation;
 import com.kingpixel.cobbleutils.Model.Animations.CSGOAnimation;
+import com.kingpixel.cobbleutils.Model.Animations.CircleAnimation;
 import com.kingpixel.cobbleutils.api.PermissionApi;
-import com.kingpixel.cobbleutils.features.shops.Shop;
 import com.kingpixel.cobbleutils.util.*;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 import net.minecraft.component.DataComponentTypes;
 import net.minecraft.component.type.LoreComponent;
-import net.minecraft.entity.ItemEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
@@ -157,15 +156,13 @@ public class AdvancedItemChance {
       case CSGO:
         CSGOAnimation.start(player, showAllRewards, showRewards);
         break;
-      case TOTEM:
-        totemAnimation(player, showRewards);
-        break;
       case CIRCLE:
         CircleAnimation.start(player, showRewards);
         break;
       case ALLCIRCLE:
         AllRewardsCircleAnimation.start(player, showAllRewards);
         break;
+
       default:
         break;
     }
@@ -174,44 +171,10 @@ public class AdvancedItemChance {
 
   private enum Animations {
     NONE, // No animation
-    VISUALITEMS, // Show the won items in front of the user
     CSGO, // Show the items in a CSGO style
-    TOTEM, // Show the items in a totem style
     CIRCLE, // Show the items in a circle style
-    ALLCIRCLE // Show all the items in a circle style
+    ALLCIRCLE, // Show all the items in a circle style
   }
-
-  // Animations methods
-
-  // TODO: Implement the animation of totem showing the items in front of the player
-  private void totemAnimation(ServerPlayerEntity player, List<ItemStack> rewards) {
-    // Iterate through the rewards and display them in front of the player
-    List<ItemEntity> itemEntities = new ArrayList<>();
-    for (ItemStack itemStack : rewards) {
-      // Create an item entity to display the item
-      ItemEntity itemEntity = new ItemEntity(player.getWorld(), player.getX(), player.getY() + 1, player.getZ(), itemStack);
-      // Set the item entity to be stationary
-      itemEntity.setVelocity(0, 0, 0);
-      itemEntity.setNoGravity(true);
-      itemEntity.setPickupDelay(32767);
-
-      itemEntities.add(itemEntity);
-    }
-
-    itemEntities.forEach(itemEntity -> {
-      // Spawn the item entity in the world
-      if (player.getWorld().spawnEntity(itemEntity)) {
-        if (CobbleUtils.config.isDebug()) {
-          CobbleUtils.LOGGER.info("Item entity spawned");
-        }
-      } else {
-        if (CobbleUtils.config.isDebug()) {
-          CobbleUtils.LOGGER.info("Item entity not spawned");
-        }
-      }
-    });
-  }
-
 
   // Menus methods
 

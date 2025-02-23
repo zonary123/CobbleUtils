@@ -6,7 +6,6 @@ import com.kingpixel.cobbleutils.command.admin.egg.EggCommand;
 import com.kingpixel.cobbleutils.command.admin.egg.Hatch;
 import com.kingpixel.cobbleutils.command.admin.egg.IncenseCommand;
 import com.kingpixel.cobbleutils.command.base.*;
-import com.kingpixel.cobbleutils.command.test.TestCommands;
 import com.kingpixel.cobbleutils.util.LuckPermsUtil;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
@@ -40,9 +39,6 @@ public class CommandTree {
       ModRewardsCommand.register(dispatcher, base);
 
       WikiCommand.register(dispatcher, base, "https://zonary123-dev.gitbook.io/zonary123-dev-docs/mods/cobbleutils");
-
-      // /cobbleutils scale <scale> <slot> and /cobbleutils scale <scale> <slot> <player>
-      PokemonSize.register(dispatcher, base);
 
       // /cobbleutils reload
       Reload.register(dispatcher, base);
@@ -84,12 +80,6 @@ public class CommandTree {
       }
     }
 
-    if (CobbleUtils.config.isDebug()) {
-      LiteralArgumentBuilder<ServerCommandSource> base = CommandManager.literal("cobbleutilstest")
-        .requires(source -> LuckPermsUtil.checkPermission(source, 2, List.of("cobbleutils.admin")));
-
-      TestCommands.register(dispatcher, base);
-    }
 
   }
 

@@ -47,6 +47,7 @@ public class BreedConfig {
   private int raritySpawnEgg;
   private boolean obtainPokeBallFromMother;
   private List<String> eggcommand;
+  private double multiplierAbilityAcceleration;
   private List<String> abilityAcceleration;
   private double reduceEggStepsVehicle;
   private List<String> permittedVehicles;
@@ -118,10 +119,10 @@ public class BreedConfig {
     this.prefix = "&7[<#82d448>Breeding&7] &8» &a";
     this.showIvs = false;
     this.eggcommand = List.of("daycare", "pokebreed", "breed");
+    this.multiplierAbilityAcceleration = 1.0;
     this.abilityAcceleration = List.of("magmaarmor",
       "flamebody",
       "steamengine");
-
     this.reduceEggStepsVehicle = 2f;
     this.permittedVehicles = List.of("minecraft:boat", "minecraft:horse", "cobblmeon:pokemon");
     this.titleselectplot = "<#82d448>Select Plot";
@@ -142,6 +143,7 @@ public class BreedConfig {
     this.tickstocheck = 20;
     this.multipliermasuda = 1.5f;
     this.multiplierShiny = 1.5f;
+
     this.permissionAutoClaim = "cobbleutils.breeding.autoclaim";
     this.cooldown = 30;
     this.cooldowns = Map.of(

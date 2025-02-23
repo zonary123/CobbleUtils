@@ -31,9 +31,6 @@ public abstract class WalkBreedingMixin {
   @Inject(method = "onTeleportConfirm", at = @At("HEAD"))
   public void breeding$handlePendingTeleport(TeleportConfirmC2SPacket packet, CallbackInfo ci) {
     tp = true;
-    if (CobbleUtils.config.isDebug()) {
-      CobbleUtils.LOGGER.info("Teleport confirm packet received");
-    }
   }
 
   @Inject(method = "onPlayerMove", at = @At("HEAD"))
@@ -49,10 +46,7 @@ public abstract class WalkBreedingMixin {
         var party = Cobblemon.INSTANCE.getStorage().getParty(player);
 
         entity = player.getVehicle() != null ? player.getVehicle() : player;
-        if (entity == null) {
-          CobbleUtils.LOGGER.error("Entity is null");
-          return;
-        }
+        if (entity == null) return;
 
         double deltaMovement = cobbleUtils$getDeltaMovement(packet, party, entity);
 
@@ -98,21 +92,17 @@ public abstract class WalkBreedingMixin {
     double deltaMovement = Math.hypot(deltaX, deltaZ);
 
     if (!(entity instanceof ServerPlayerEntity)) {
-      double reduce = CobbleUtils.breedconfig.getReduceEggStepsVehicle();
-      if (CobbleUtils.config.isDebug()) {
-        CobbleUtils.LOGGER.info("Delta movement: " + deltaMovement);
-        CobbleUtils.LOGGER.info("Reduce: " + reduce);
-      }
-      deltaMovement /= reduce;
+      deltaMovement /= CobbleUtils.breedconfig.getReduceEggStepsVehicle();
     }
-    return cobbleUtils$hasStepAcceleratingPokemon(party) ? deltaMovement : deltaMovement / 2;
+    return cobbleUtils$hasStepAcceleratingPokemon(party) ? deltaMovement * CobbleUtils.breedconfig.getMultiplierAbilityAcceleration() : deltaMovement / 2;
   }
 
   @Unique
   private boolean cobbleUtils$hasStepAcceleratingPokemon(PlayerPartyStore party) {
     for (Pokemon pokemon : party) {
-      if (CobbleUtils.breedconfig.getAbilityAcceleration().contains(pokemon.getAbility().getName()))
+      if (CobbleUtils.breedconfig.getAbilityAcceleration().contains(pokemon.getAbility().getName())) {
         return true;
+      }
     }
     return false;
   }

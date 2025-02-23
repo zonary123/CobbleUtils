@@ -4,7 +4,6 @@ import ca.landonjw.gooeylibs2.api.tasks.Task;
 import com.cobblemon.mod.common.Cobblemon;
 import com.cobblemon.mod.common.api.Priority;
 import com.cobblemon.mod.common.api.events.CobblemonEvents;
-import com.cobblemon.mod.common.entity.pokemon.PokemonEntity;
 import com.cobblemon.mod.common.pokemon.Pokemon;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -20,7 +19,6 @@ import com.kingpixel.cobbleutils.features.breeding.models.EggData;
 import com.kingpixel.cobbleutils.util.Utils;
 import dev.architectury.event.events.common.PlayerEvent;
 import kotlin.Unit;
-import net.minecraft.entity.Entity;
 import net.minecraft.server.network.ServerPlayerEntity;
 
 import java.io.BufferedReader;
@@ -100,7 +98,11 @@ public class Breeding {
     // Todo: Add egg generation in the world
 
     CobblemonEvents.POKEMON_ENTITY_SPAWN.subscribe(Priority.HIGHEST, evt -> {
-      if (CobbleUtils.breedconfig.isSpawnEggWorld()) handleEgg(evt.getEntity());
+      if (CobbleUtils.breedconfig.isSpawnEggWorld()) {
+        if (Utils.RANDOM.nextInt(CobbleUtils.breedconfig.getRaritySpawnEgg()) == 0) {
+          EggData.convertToEgg(evt.getEntity());
+        }
+      }
       return Unit.INSTANCE;
     });
 
@@ -136,15 +138,6 @@ public class Breeding {
     EggInteract.register();
     NationalityPokemon.register();
 
-  }
-
-  private static void handleEgg(Entity entity) {
-
-    if (entity instanceof PokemonEntity pokemonEntity) {
-      if (Utils.RANDOM.nextInt(CobbleUtils.breedconfig.getRaritySpawnEgg()) == 0) {
-        EggData.convertToEgg(pokemonEntity);
-      }
-    }
   }
 
 

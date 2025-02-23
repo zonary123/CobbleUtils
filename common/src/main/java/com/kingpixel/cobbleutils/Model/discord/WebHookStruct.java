@@ -107,8 +107,14 @@ public class WebHookStruct {
         .replace("%biome%", biome)
         .replace("%world%", world);
     }
+    Pokemon pokemon;
+    if (pokemonEntity == null) {
+      pokemon = null;
+    } else {
+      pokemon = pokemonEntity.getPokemon();
+    }
 
-    return PokemonUtils.replace(description, pokemonEntity.getPokemon());
+    return PokemonUtils.replace(description, pokemon);
   }
 
   private PokemonEntity getPokemonEntity(int i, List<PokemonEntity> pokemons) {

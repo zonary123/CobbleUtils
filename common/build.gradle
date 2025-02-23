@@ -56,9 +56,6 @@ dependencies {
     // Calculator API
     api("net.objecthunter:exp4j:0.4.8")
 
-    // Polymer
-    modImplementation("eu.pb4:polymer-core:${property("polymer_core_version")}")
-
     // ! Tests
     testCompileOnly 'org.projectlombok:lombok:1.18.30'
     testAnnotationProcessor 'org.projectlombok:lombok:1.18.30'
