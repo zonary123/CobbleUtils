@@ -31,7 +31,7 @@ public class PokemonData {
   }
 
   public static PokemonData from(Pokemon pokemon) {
-    return new PokemonData(pokemon.getSpecies().showdownId(), pokemon.getForm().getName());
+    return new PokemonData(pokemon.getSpecies().showdownId(), pokemon.getForm().formOnlyShowdownId());
   }
 
   public static PokemonData from(Species specie) {

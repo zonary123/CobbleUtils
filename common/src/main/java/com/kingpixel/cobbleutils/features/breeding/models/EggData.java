@@ -873,7 +873,7 @@ public class EggData {
 
     // Form Regional
     for (String label : pokemon.getForm().getLabels()) {
-      if (label.contains("regional")) {
+      if (label.contains("regional") || label.contains("gen8a")) {
         form.append(" ").append("region_bias=").append(pokemon.getForm().formOnlyShowdownId());
       }
     }
