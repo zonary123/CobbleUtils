@@ -1,8 +1,10 @@
 package com.kingpixel.cobbleutils.Model.Animations;
 
-import net.minecraft.entity.ItemEntity;
+import net.minecraft.entity.EquipmentSlot;
+import net.minecraft.entity.decoration.ArmorStandEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.util.math.EulerAngle;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 
@@ -10,66 +12,72 @@ import java.util.List;
 
 public class AllRewardsCircleAnimation {
 
-    private static final int LIFETIME_TICKS = 100;
-    private static final double ROTATION_SPEED = 2.0;
-    private static final double RADIUS = 3.0;
+    public static void start(ServerPlayerEntity player, List<ItemStack> showAllRewards, Vec3d position) {
+        int totalRewards = showAllRewards.size();
+        Vec3d centerPosition = AnimationUtils.getPosition(player, position);
+        double radius = 3;
 
-    public static void start(ServerPlayerEntity player, List<ItemStack> rewardItems) {
-        if (rewardItems.isEmpty()) {
-            return;
-        }
+        for (int i = 0; i < totalRewards; i++) {
+            double angle = Math.toRadians((360.0 / totalRewards) * i);
+            double offsetX = radius * Math.cos(angle);
+            double offsetZ = radius * Math.sin(angle);
+            double offsetY = centerPosition.y;
 
-        World world = player.getServerWorld();
-        Vec3d initialPos = player.getPos();
+            ItemStack reward = showAllRewards.get(i);
+            Vec3d entityPosition = new Vec3d(centerPosition.x + offsetX, offsetY, centerPosition.z + offsetZ);
+            float yaw = AnimationUtils.getYawToFacePlayer(player, entityPosition);
 
-        for (int i = 0; i < rewardItems.size(); i++) {
-            ItemStack reward = rewardItems.get(i);
-            double angle = Math.toRadians((360.0 / rewardItems.size()) * i);
-            double offsetX = RADIUS * Math.cos(angle);
-            double offsetZ = RADIUS * Math.sin(angle);
-            var entity = new SmoothSpinEntity(world, initialPos, initialPos.x + offsetX, initialPos.y + 1, initialPos.z + offsetZ, reward, angle);
-            world.spawnEntity(entity);
+            CircleEntity circleEntity = new CircleEntity(player.getServerWorld(), entityPosition.x, entityPosition.y, entityPosition.z, reward, player, angle);
+            circleEntity.setYaw(yaw);
+
+            player.getServerWorld().spawnEntity(circleEntity);
         }
     }
 
-    public static class SmoothSpinEntity extends ItemEntity {
-        private final Vec3d origin;
-        private double angle;
-        private int ticksExisted = 0;
+    public static class CircleEntity extends ArmorStandEntity {
+        private int ticks = 0;
+        private final ServerPlayerEntity player;
+        private final double radius;
+        private final double initialAngle;
 
-        public SmoothSpinEntity(World world, Vec3d origin, double x, double y, double z, ItemStack stack, double initialAngle) {
-            super(world, x, y, z, stack);
-            this.origin = origin;
-            this.angle = initialAngle;
+        public CircleEntity(World world, double x, double y, double z, ItemStack stack, ServerPlayerEntity player, double initialAngle) {
+            super(world, x, y, z);
+            this.player = player;
+            this.radius = 3;
+            this.initialAngle = initialAngle;
+
+            equipStack(EquipmentSlot.MAINHAND, stack);
             setNoGravity(true);
-            setPickupDelay(Integer.MAX_VALUE);
+            setInvisible(true);
             setInvulnerable(true);
-            setVelocity(Vec3d.ZERO);
+            setRightArmRotation(new EulerAngle(90, 0, 180));
         }
 
         @Override
         public void tick() {
-            try {
-                super.tick();
+            super.tick();
 
-                if (ticksExisted >= LIFETIME_TICKS) {
-                    this.kill();
-                    return;
-                }
-
-                angle += Math.toRadians(ROTATION_SPEED);
-                if (angle >= 2 * Math.PI) {
-                    angle -= 2 * Math.PI;
-                }
-
-                double offsetX = RADIUS * Math.cos(angle);
-                double offsetZ = RADIUS * Math.sin(angle);
-                setPos(origin.x + offsetX, origin.y + 1, origin.z + offsetZ);
-
-                ticksExisted++;
-            } catch (Exception e) {
-                e.printStackTrace();
+            if (this.player == null || this.player.isRemoved() || !this.isAlive()) {
+                this.kill();
+                return;
             }
+
+            Vec3d centerPosition = AnimationUtils.getPosition(player, null);
+            double angle = this.initialAngle + Math.toRadians((this.ticks * 4) % 360);
+            double offsetX = this.radius * Math.cos(angle);
+            double offsetZ = this.radius * Math.sin(angle);
+
+            double targetX = centerPosition.x + offsetX;
+            double targetY = centerPosition.y;
+            double targetZ = centerPosition.z + offsetZ;
+
+            this.refreshPositionAndAngles(targetX, targetY, targetZ, AnimationUtils.getYawToFacePlayer(player, this.getPos()), this.getPitch());
+
+            if (this.ticks >= 160) {
+                this.kill();
+            }
+
+            this.ticks++;
         }
 
         @Override

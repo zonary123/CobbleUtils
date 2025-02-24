@@ -1,81 +1,83 @@
 package com.kingpixel.cobbleutils.Model.Animations;
 
-import com.kingpixel.cobbleutils.CobbleUtils;
-import net.minecraft.entity.ItemEntity;
+import net.minecraft.entity.EquipmentSlot;
+import net.minecraft.entity.decoration.ArmorStandEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.util.math.EulerAngle;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 
 import java.util.List;
 
-/**
- * Author: Carlos Varas Alonso - 16/02/2025 22:36
- */
 public class CircleAnimation {
-  public static void start(ServerPlayerEntity player, List<ItemStack> showRewards) {
-    // TODO: Change this for Packets to player
-    for (int i = 0; i < showRewards.size(); i++) {
-      ItemStack showReward = showRewards.get(i);
-      double angle = Math.toRadians((360.0 / showRewards.size()) * i); // Calcula el ángulo para la separación
-      double radius = 2.0; // Radio de separación
+
+  public static void start(ServerPlayerEntity player, List<ItemStack> showRewards, Vec3d position) {
+    int totalRewards = 5;
+    Vec3d centerPosition = AnimationUtils.getPosition(player, position);
+    double radius = 3;
+
+    for (int i = 0; i < totalRewards; i++) {
+      double angle = Math.toRadians((360.0 / totalRewards) * i);
       double offsetX = radius * Math.cos(angle);
       double offsetZ = radius * Math.sin(angle);
-      var entity = new CircleEntity(player.getServerWorld(), player.getX() + offsetX, player.getY() + 1,
-        player.getZ() + offsetZ, showReward, player);
-      player.getServerWorld().spawnEntity(entity);
+      double offsetY = centerPosition.y;
+
+      ItemStack reward = showRewards.get(i % showRewards.size());
+      Vec3d entityPosition = new Vec3d(centerPosition.x + offsetX, offsetY, centerPosition.z + offsetZ);
+      float yaw = AnimationUtils.getYawToFacePlayer(player, entityPosition);
+
+      CircleEntity circleEntity = new CircleEntity(player.getServerWorld(), entityPosition.x, entityPosition.y, entityPosition.z, reward, player, angle);
+      circleEntity.setYaw(yaw);
+
+      player.getServerWorld().spawnEntity(circleEntity);
     }
   }
 
-  public static class CircleEntity extends ItemEntity {
+  public static class CircleEntity extends ArmorStandEntity {
     private int ticks = 0;
     private final ServerPlayerEntity player;
-    private final double initialOffsetX;
-    private final double initialOffsetZ;
+    private final double radius;
+    private final double initialAngle;
 
-    public CircleEntity(World world, double x, double y, double z, ItemStack stack, ServerPlayerEntity player) {
-      super(world, x, y, z, stack);
-      CobbleUtils.LOGGER.info("ItemShowEntity");
+    public CircleEntity(World world, double x, double y, double z, ItemStack stack, ServerPlayerEntity player, double initialAngle) {
+      super(world, x, y, z);
       this.player = player;
+      this.radius = 3;
+      this.initialAngle = initialAngle;
+
+      equipStack(EquipmentSlot.MAINHAND, stack);
       setNoGravity(true);
-      setPickupDelay(Integer.MAX_VALUE);
-      setInvisible(false);
+      setInvisible(true);
       setInvulnerable(true);
-
-      // Calculate initial offsets
-      Vec3d playerPos = player.getPos();
-      this.initialOffsetX = x - playerPos.x;
-      this.initialOffsetZ = z - playerPos.z;
-
+      setRightArmRotation(new EulerAngle(90, 0, 180));
     }
-
 
     @Override
     public void tick() {
-      try {
-        super.tick();
+      super.tick();
 
-        if (this.player == null || this.player.isRemoved() || !this.isAlive()) {
-          this.kill();
-          return;
-        }
-        double angle = Math.toRadians((this.ticks * 2) % 360); // Incremento de ángulo más gradual
-        double offsetX = initialOffsetX * Math.cos(angle) - initialOffsetZ * Math.sin(angle);
-        double offsetZ = initialOffsetX * Math.sin(angle) + initialOffsetZ * Math.cos(angle);
-        double targetX = this.player.getX() + offsetX;
-        double targetY = this.player.getY() + 1;
-        double targetZ = this.player.getZ() + offsetZ;
-
-        // Interpola suavemente la posición y rotación
-        this.lerpPosAndRotation(1, targetX, targetY, targetZ, 0, 0);
-
-        if (this.ticks >= 160) {
-          this.kill();
-        }
-        this.ticks++;
-      } catch (Exception e) {
-        e.printStackTrace();
+      if (this.player == null || this.player.isRemoved() || !this.isAlive()) {
+        this.kill();
+        return;
       }
+
+      Vec3d centerPosition = AnimationUtils.getPosition(player, null);
+      double angle = this.initialAngle + Math.toRadians((this.ticks * 4) % 360);
+      double offsetX = this.radius * Math.cos(angle);
+      double offsetZ = this.radius * Math.sin(angle);
+
+      double targetX = centerPosition.x + offsetX;
+      double targetY = centerPosition.y;
+      double targetZ = centerPosition.z + offsetZ;
+
+      this.refreshPositionAndAngles(targetX, targetY, targetZ, AnimationUtils.getYawToFacePlayer(player, this.getPos()), this.getPitch());
+
+      if (this.ticks >= 160) {
+        this.kill();
+      }
+
+      this.ticks++;
     }
 
     @Override
@@ -84,4 +86,3 @@ public class CircleAnimation {
     }
   }
 }
-

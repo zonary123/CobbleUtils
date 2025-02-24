@@ -11,6 +11,7 @@ import ca.landonjw.gooeylibs2.api.page.LinkedPage;
 import ca.landonjw.gooeylibs2.api.template.types.ChestTemplate;
 import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.Model.Animations.AllRewardsCircleAnimation;
+import com.kingpixel.cobbleutils.Model.Animations.AnimationUtils;
 import com.kingpixel.cobbleutils.Model.Animations.CSGOAnimation;
 import com.kingpixel.cobbleutils.Model.Animations.CircleAnimation;
 import com.kingpixel.cobbleutils.api.PermissionApi;
@@ -23,6 +24,7 @@ import net.minecraft.component.type.LoreComponent;
 import net.minecraft.item.ItemStack;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
+import net.minecraft.util.math.Vec3d;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -152,28 +154,30 @@ public class AdvancedItemChance {
     }
     List<ItemStack> showAllRewards = getListDisplay(allRewards);
     List<ItemStack> showRewards = getListDisplay(obtainedRewards);
+
+    Vec3d centerPosition = AnimationUtils.getPosition(player, null);
+
     switch (animation) {
       case CSGO:
         CSGOAnimation.start(player, showAllRewards, showRewards);
         break;
       case CIRCLE:
-        CircleAnimation.start(player, showRewards);
+        CircleAnimation.start(player, showRewards, centerPosition);
         break;
       case ALLCIRCLE:
-        AllRewardsCircleAnimation.start(player, showAllRewards);
+        AllRewardsCircleAnimation.start(player, showAllRewards, centerPosition);
         break;
 
       default:
         break;
     }
-
   }
 
   private enum Animations {
     NONE, // No animation
     CSGO, // Show the items in a CSGO style
     CIRCLE, // Show the items in a circle style
-    ALLCIRCLE, // Show all the items in a circle style
+    ALLCIRCLE // Show all the items in a circle style
   }
 
   // Menus methods

@@ -8,6 +8,7 @@ import ca.landonjw.gooeylibs2.api.template.types.ChestTemplate;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.sound.SoundEvents;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -20,12 +21,15 @@ public class CSGOAnimation {
     private static final Random random = new Random();
     private static final int currentIndex = 0;
 
-    private static final int totalCycles = 50; // Changes how many cycles the animation does change this higher if you increase speed or want the animation longer
+    private static final int totalCycles = 50; // Changes how many cycles the animation does
     private static final int startSpinSpeed = 40; // Lower = Faster // Starts off fast
     private static final double decayFactor = 1.1; // Increases how fast it slows down the animation
 
     public static void start(ServerPlayerEntity player, List<ItemStack> showAllRewards, List<ItemStack> showRewards) {
         List<ItemStack> rewardsCopy = new ArrayList<>(showAllRewards);
+
+        player.getServerWorld().playSound(null, player.getX(), player.getY(), player.getZ(),
+                SoundEvents.BLOCK_CHEST_OPEN, player.getSoundCategory(), 1.0f, 1.0f);
 
         new Thread(() -> {
             try {
@@ -61,6 +65,10 @@ public class CSGOAnimation {
                     }
 
                     UIManager.openUIForcefully(player, GooeyPage.builder().template(template).build());
+
+                    player.getServerWorld().playSound(null, player.getX(), player.getY(), player.getZ(),
+                            SoundEvents.ENTITY_EXPERIENCE_ORB_PICKUP, player.getSoundCategory(), 0.5f, 0.6f);
+
 
                     Thread.sleep(spinSpeed);
                 }
