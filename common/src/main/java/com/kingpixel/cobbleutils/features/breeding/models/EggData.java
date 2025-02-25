@@ -131,22 +131,21 @@ public class EggData {
       return;
     }
     String pokemonId = species == null || species.isEmpty() ? "rattata" : species;
+
+    PokemonProperties pokemonProperties = PokemonProperties.Companion.parse(pokemonId + " " + form);
+    Pokemon pokemon = pokemonProperties.create();
+
     AbilityTemplate abilityTemplate;
     AbilityTemplate randomAbility =
-      PokemonUtils.getRandomAbility(PokemonProperties.Companion.parse(pokemonId + " " + form).create()).getTemplate();
+      PokemonUtils.getRandomAbility(pokemon).getTemplate();
     if (ability.isEmpty()) {
       abilityTemplate = randomAbility;
     } else {
       abilityTemplate = Abilities.INSTANCE.get(this.ability);
     }
-    if (abilityTemplate == null) {
-      abilityTemplate = randomAbility;
-    }
+    if (abilityTemplate == null) abilityTemplate = randomAbility;
 
-    PokemonProperties pokemonProperties = PokemonProperties.Companion.parse(pokemonId + " " + form);
-
-    Pokemon pokemon = pokemonProperties.create();
-    pokemon.setAbility$common(abilityTemplate.create(false, Priority.LOW));
+    pokemon.setAbility$common(abilityTemplate.create(false, Priority.HIGHEST));
     pokemon.getPersistentData().copyFrom(egg.getPersistentData());
     Breeding.UserInfo userInfo = Breeding.countryPlayer(player);
     if (userInfo != null) {

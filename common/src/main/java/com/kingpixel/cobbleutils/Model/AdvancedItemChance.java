@@ -167,7 +167,6 @@ public class AdvancedItemChance {
       case ALLCIRCLE:
         AllRewardsCircleAnimation.start(player, showAllRewards, centerPosition);
         break;
-
       default:
         break;
     }
