@@ -1,6 +1,8 @@
 package com.kingpixel.cobbleutils;
 
 import com.cobblemon.mod.common.api.properties.CustomPokemonProperty;
+import com.kingpixel.cobbleutils.Model.properties.BreedablePropertyType;
+import com.kingpixel.cobbleutils.Model.properties.MinIvsPropertyType;
 import com.kingpixel.cobbleutils.command.CommandTree;
 import com.kingpixel.cobbleutils.config.Config;
 import com.kingpixel.cobbleutils.config.Lang;
@@ -8,8 +10,6 @@ import com.kingpixel.cobbleutils.database.DatabaseClientFactory;
 import com.kingpixel.cobbleutils.events.ItemRightClickEvents;
 import com.kingpixel.cobbleutils.features.Features;
 import com.kingpixel.cobbleutils.features.breeding.config.BreedConfig;
-import com.kingpixel.cobbleutils.properties.BreedablePropertyType;
-import com.kingpixel.cobbleutils.properties.MinIvsPropertyType;
 import com.kingpixel.cobbleutils.util.SpawnRates;
 import com.kingpixel.cobbleutils.util.UtilsLogger;
 import dev.architectury.event.events.common.CommandRegistrationEvent;

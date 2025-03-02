@@ -3,13 +3,14 @@ package com.kingpixel.cobbleutils.config;
 import com.cobblemon.mod.common.pokemon.Pokemon;
 import com.google.gson.Gson;
 import com.kingpixel.cobbleutils.CobbleUtils;
-import com.kingpixel.cobbleutils.Model.*;
+import com.kingpixel.cobbleutils.Model.DataBaseConfig;
+import com.kingpixel.cobbleutils.Model.ItemModel;
+import com.kingpixel.cobbleutils.Model.PokemonData;
 import com.kingpixel.cobbleutils.util.Utils;
 import lombok.Data;
 import lombok.Getter;
 import lombok.ToString;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -32,11 +33,7 @@ public class Config {
   private String pokeshoutall;
   private int cooldownpokeshout;
   private String fill;
-  private List<String> commandrewards;
   private List<String> commmandplugin;
-  private String defaultsize;
-  private List<SizeChance> pokemonsizes;
-  private List<ScalePokemonData> specifiedSizes;
   private List<PokemonData> shinytokenBlacklist;
   private List<PokemonData> blacklist;
   private List<PokemonData> legends;
@@ -51,20 +48,12 @@ public class Config {
     prefix = "§7[§6CobbleUtils§7] ";
     lang = "en";
     fill = "minecraft:gray_stained_glass_pane";
-    commandrewards = List.of("storagerewards", "storage");
     commmandplugin = List.of("cobbleutils", "pokeutils");
     ApiMode = false;
     activeshinytoken = true;
     pokeshout = "pokeshoutplus";
     pokeshoutall = "pokeshoutplusall";
     cooldownpokeshout = 60;
-    defaultsize = "Normal";
-    pokemonsizes = List.of(
-      new SizeChance("Tiny", 0.5f, 5),
-      new SizeChance("Small", 0.75f, 15),
-      new SizeChance("Normal", 1.0f, 75),
-      new SizeChance("Big", 1.25f, 15),
-      new SizeChance("Giant", 1.5f, 5));
     shinytoken = new ItemModel("minecraft:paper", "<gradient:#e0d234:#ede69a><bold>Shiny Token", List.of("§aShiny " +
       "Token"), 0);
     shinytokenBlacklist = List.of(new PokemonData("ditto", "normal"));
@@ -80,9 +69,6 @@ public class Config {
     rarity.put("rare", 0.3);
     rarity.put("epic", 0.1);
     database = new DataBaseConfig();
-    specifiedSizes = new ArrayList<>();
-    specifiedSizes.add(new ScalePokemonData("ditto", "normal", SizeChanceWithoutItem.transform(pokemonsizes)));
-    specifiedSizes.add(new ScalePokemonData("zorua", "hisui", SizeChanceWithoutItem.transform(pokemonsizes)));
   }
 
   public void init() {
@@ -96,11 +82,8 @@ public class Config {
         fill = config.getFill();
         shinytoken = config.getShinytoken();
         database = config.getDatabase();
-        pokemonsizes = config.getPokemonsizes();
-        defaultsize = config.getDefaultsize();
         pokeshout = config.getPokeshout();
         pokeshoutall = config.getPokeshoutall();
-        commandrewards = config.getCommandrewards();
         commmandplugin = config.getCommmandplugin();
         itemsCommands = config.getItemsCommands();
         cooldownpokeshout = config.getCooldownpokeshout();
@@ -111,7 +94,6 @@ public class Config {
         activeshinytoken = config.isActiveshinytoken();
         forms = config.getForms();
         rarity = config.getRarity();
-        specifiedSizes = config.getSpecifiedSizes();
         ApiMode = config.isApiMode();
         String data = gson.toJson(this);
         CompletableFuture<Boolean> futureWrite = Utils.writeFileAsync(CobbleUtils.PATH, "config.json",
@@ -135,44 +117,9 @@ public class Config {
 
   }
 
-  /**
-   * Método para obtener un tamaño de Pokémon basado en las probabilidades
-   * configuradas.
-   *
-   * @return El tamaño del Pokémon seleccionado según las probabilidades.
-   */
-  public SizeChance getRandomPokemonSize() {
-    int totalWeight = pokemonsizes.stream().mapToInt(SizeChance::getChance).sum();
-    int randomValue = Utils.RANDOM.nextInt(totalWeight) + 1;
-
-    int currentWeight = 0;
-    for (SizeChance sizeChance : pokemonsizes) {
-      currentWeight += sizeChance.getChance();
-      if (randomValue <= currentWeight) {
-        return sizeChance;
-      }
-    }
-    return new SizeChance();
-  }
-
-  public boolean isBlacklisted(Pokemon pokemon) {
-    return blacklist.stream().anyMatch(pokemonData -> PokemonData.equals(pokemonData, PokemonData.from(pokemon)));
-  }
-
   public boolean isShinyTokenBlacklisted(Pokemon pokemon) {
     return shinytokenBlacklist.stream()
       .anyMatch(pokemonData -> PokemonData.equals(pokemonData, PokemonData.from(pokemon)));
   }
 
-  public boolean isLegendary(Pokemon pokemon) {
-    return legends.stream().anyMatch(pokemonData -> PokemonData.equals(pokemonData, PokemonData.from(pokemon)));
-  }
-
-  public boolean isUltraBeast(Pokemon pokemon) {
-    return ultraBeasts.stream().anyMatch(pokemonData -> PokemonData.equals(pokemonData, PokemonData.from(pokemon)));
-  }
-
-  public boolean isForm(String form) {
-    return forms.contains(form);
-  }
 }

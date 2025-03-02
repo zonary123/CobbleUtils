@@ -47,7 +47,7 @@ public class BreedableCommand implements Command<ServerCommandSource> {
                         pokemon.getPersistentData().putBoolean(CobbleUtilsTags.BREEDABLE_TAG,
                           breedable);
                         pokemon.getPersistentData().putBoolean(CobbleUtilsTags.BREEDABLE_BUILDER_TAG,
-                          breedable);
+                          true);
                         AdventureTranslator.toNative(
                           PokemonUtils.replace(
                             "Set breedable to %breedable% to %pokemon%"
@@ -63,7 +63,7 @@ public class BreedableCommand implements Command<ServerCommandSource> {
                         .requires(source ->
                           LuckPermsUtil.checkPermission(source, 2, List.of("cobbleutils.breedableother", "cobbleutils.admin")))
                         .executes(context -> {
-                          ServerPlayerEntity player = context.getSource().getPlayerOrThrow();
+                          ServerPlayerEntity player = EntityArgumentType.getPlayer(context, "player");
                           Pokemon pokemon = PartySlotArgumentType.Companion.getPokemonOf(context,
                             "slot", player);
                           if (pokemon != null) {
@@ -71,7 +71,7 @@ public class BreedableCommand implements Command<ServerCommandSource> {
                             pokemon.getPersistentData().putBoolean(CobbleUtilsTags.BREEDABLE_TAG,
                               breedable);
                             pokemon.getPersistentData().putBoolean(CobbleUtilsTags.BREEDABLE_BUILDER_TAG,
-                              breedable);
+                              true);
                             player.sendMessage(
                               AdventureTranslator.toNative(
                                 PokemonUtils.replace(

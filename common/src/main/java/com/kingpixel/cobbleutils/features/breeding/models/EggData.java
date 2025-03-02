@@ -143,9 +143,7 @@ public class EggData {
     }
     if (abilityTemplate == null) abilityTemplate = randomAbility;
 
-    Pokemon pokemon =
-      PokemonProperties.Companion.parse(pokemonId + " " + form + " ability=" + abilityTemplate.getName()).create();
-    pokemon.getAbility().setForced$common(false);
+    Pokemon pokemon = PokemonProperties.Companion.parse(pokemonId + " " + form + " ability=" + abilityTemplate.getName()).create();
     pokemon.getPersistentData().copyFrom(egg.getPersistentData());
     Breeding.UserInfo userInfo = Breeding.countryPlayer(player);
     if (userInfo != null) {

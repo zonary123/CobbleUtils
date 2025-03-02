@@ -2,6 +2,7 @@ package com.kingpixel.cobbleutils.Model;
 
 import ca.landonjw.gooeylibs2.api.button.GooeyButton;
 import ca.landonjw.gooeylibs2.api.template.types.ChestTemplate;
+import com.kingpixel.cobbleutils.util.UIUtils;
 import lombok.Getter;
 import lombok.Setter;
 import net.minecraft.component.DataComponentTypes;
@@ -39,6 +40,10 @@ public class PanelsConfig {
   }
 
   public static void applyConfig(ChestTemplate template, List<PanelsConfig> panelsConfigs) {
+    applyConfig(template, panelsConfigs, 6);
+  }
+
+  public static void applyConfig(ChestTemplate template, List<PanelsConfig> panelsConfigs, int rows) {
     for (PanelsConfig panelsConfig : panelsConfigs) {
       GooeyButton button = GooeyButton.builder()
         .display(panelsConfig.getFill().getItemStack())
@@ -46,7 +51,8 @@ public class PanelsConfig {
         .with(DataComponentTypes.HIDE_TOOLTIP, Unit.INSTANCE)
         .build();
       for (Integer slot : panelsConfig.slots) {
-        template.set(slot, button);
+        if (UIUtils.isInside(slot, rows))
+          template.set(slot, button);
       }
     }
   }

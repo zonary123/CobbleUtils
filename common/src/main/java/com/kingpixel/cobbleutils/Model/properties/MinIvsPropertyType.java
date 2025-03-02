@@ -1,4 +1,4 @@
-package com.kingpixel.cobbleutils.properties;
+package com.kingpixel.cobbleutils.Model.properties;
 
 import com.cobblemon.mod.common.api.properties.CustomPokemonPropertyType;
 import org.jetbrains.annotations.NotNull;
