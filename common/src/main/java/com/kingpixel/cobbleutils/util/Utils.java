@@ -290,7 +290,23 @@ public abstract class Utils {
 
   public static ItemStack addThingsItemStack(ItemStack itemStack, ItemModel itemModel, String nbt) {
     if (nbt != null && !nbt.isEmpty()) {
-      itemStack = ItemUtils.applyNbt(itemStack, nbt, itemStack.getCount());
+      String item = itemModel.getItem();
+      String supportNbt = "";
+      String[] split = item.split("#");
+      if (split.length > 1) {
+        item = split[0];
+        supportNbt = split[1];
+      }
+      String[] splitItem = item.split(":");
+      if (splitItem.length > 2) {
+        item = splitItem[2] + ":" + splitItem[3];
+      } else {
+        item = splitItem[0] + ":" + splitItem[1];
+      }
+      itemStack = ItemUtils.applyNbt(item, itemStack, itemModel.getNbt() == null || itemModel.getNbt().isEmpty() ?
+          supportNbt
+          : nbt,
+        itemStack.getCount());
     }
 
     itemStack.set(DataComponentTypes.CUSTOM_NAME, AdventureTranslator.toNativeWithOutPrefix(

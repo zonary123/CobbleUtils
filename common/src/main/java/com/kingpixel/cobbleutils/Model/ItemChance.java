@@ -312,7 +312,7 @@ public class ItemChance {
     itemStack.setCount(amount);
     if (split.length < 2) return itemStack;
     String nbt = split[1];
-    itemStack = ItemUtils.applyNbt(itemStack, nbt, amount);
+    itemStack = ItemUtils.applyNbt(iditem, itemStack, nbt, amount);
     return itemStack;
   }
 

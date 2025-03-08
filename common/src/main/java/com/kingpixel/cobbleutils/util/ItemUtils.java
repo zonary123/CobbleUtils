@@ -2,10 +2,10 @@ package com.kingpixel.cobbleutils.util;
 
 import com.google.gson.JsonObject;
 import com.kingpixel.cobbleutils.CobbleUtils;
+import com.mojang.brigadier.StringReader;
 import com.mojang.serialization.Dynamic;
-import kotlin.text.Regex;
 import net.minecraft.SharedConstants;
-import net.minecraft.component.ComponentChanges;
+import net.minecraft.command.argument.ItemStackArgumentType;
 import net.minecraft.component.DataComponentTypes;
 import net.minecraft.datafixer.TypeReferences;
 import net.minecraft.item.ItemStack;
@@ -44,16 +44,13 @@ public class ItemUtils {
     return jsonObject.toString();
   }
 
-  public static ItemStack applyNbt(ItemStack itemStack, String nbt, int amount) {
+  public static ItemStack applyNbt(String item, ItemStack itemStack, String nbt, int amount) {
     try {
       if (nbt != null && !nbt.isEmpty()) {
-        var parseNbt = StringNbtReader.parse(nbt);
-        // Test Code
-        var namespacedKeyPattern = new Regex("^[a-z0-9_.-]+:[a-z0-9_/.-]+$");
-
-        var isLegacy = parseNbt.getKeys().stream().anyMatch(it -> !namespacedKeyPattern.matches(it));
+        boolean isLegacy = nbt.startsWith("{");
 
         if (isLegacy) {
+          var parseNbt = StringNbtReader.parse(nbt);
           var legacyNbt = new NbtCompound();
           legacyNbt.putString("id", itemStack.getRegistryEntry().getIdAsString());
           legacyNbt.putInt("Count", amount);
@@ -69,17 +66,18 @@ public class ItemUtils {
 
           itemStack = ItemStack.CODEC.parse(getNbt(), updatedNbt).result().orElse(ItemStack.EMPTY);
         } else {
-          var updatedNbt =
-            ComponentChanges.CODEC.parse(getNbt(), StringNbtReader.parse(nbt)).result().orElse(null);
-          if (updatedNbt != null) {
-            itemStack.applyUnvalidatedChanges(updatedNbt);
-            //itemStack.applyChanges(updatedNbt);
+          String result = item + nbt;
+          if (CobbleUtils.config.isDebug()) {
+            CobbleUtils.LOGGER.info("Item: " + item);
+            CobbleUtils.LOGGER.info("NBT: " + nbt);
+            CobbleUtils.LOGGER.info("Result: " + result);
           }
-          itemStack.setCount(amount);
+          itemStack = new ItemStackArgumentType(CobbleUtils.commandRegistryAccess)
+            .parse(new StringReader(result))
+            .createStack(amount, false);
         }
 
       }
-    } catch (NullPointerException ignored) {
     } catch (Exception e) {
       CobbleUtils.LOGGER.error("Error al aplicar NBT a un item: " + e.getMessage());
       return itemStack;

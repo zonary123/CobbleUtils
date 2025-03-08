@@ -37,8 +37,8 @@ dependencies {
     // Economy
     // Economy Impactor
     implementation("net.impactdev.impactor.api:economy:${property("impactor_version")}")
-    api(files("libs/blanketeconomy-1.4.jar"))
-    api(files("libs/cobbledollars-fabric-2.0.0-BETA1+1.21.1.jar"))
+    api(files("libs/beconomy-1.5.jar"))
+    api(files("libs/CobbleDollars-fabric-2.0.0+Beta-3+1.21.1.jar"))
     api(files("libs/pebbles-economy-1.0.1-1.21.1.jar"))
     api("org.spigotmc:spigot-api:${property("spigot_version")}")
     api("com.github.MilkBowl:VaultAPI:${property("vault_api_version")}")

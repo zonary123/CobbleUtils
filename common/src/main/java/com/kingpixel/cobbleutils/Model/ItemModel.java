@@ -237,9 +237,15 @@ public class ItemModel {
     } else {
       builder.with(DataComponentTypes.CUSTOM_NAME, AdventureTranslator.toNative(getDisplayname()));
     }
-    LoreComponent loreComponent = new LoreComponent(AdventureTranslator.toNativeL(lore != null ? lore : getLore()));
 
-    builder.with(DataComponentTypes.LORE, loreComponent);
+    if (lore != null && !lore.isEmpty()) {
+      LoreComponent loreComponent = new LoreComponent(AdventureTranslator.toNativeL(lore));
+      builder.with(DataComponentTypes.LORE, loreComponent);
+    } else {
+      LoreComponent loreComponent = new LoreComponent(AdventureTranslator.toNativeL(this.getLore()));
+      builder.with(DataComponentTypes.LORE, loreComponent);
+    }
+    
     builder.with(DataComponentTypes.HIDE_ADDITIONAL_TOOLTIP, Unit.INSTANCE);
     if (action == null) {
       return builder

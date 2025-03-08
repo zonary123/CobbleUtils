@@ -15,7 +15,7 @@ import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
 import net.milkbowl.vault.economy.Economy;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.sixik.sdm_economy.api.CurrencyHelper;
-import org.blanketeconomy.api.BlanketEconomy;
+import org.beconomy.api.BEconomy;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.intellij.lang.annotations.Subst;
@@ -62,7 +62,6 @@ public abstract class EconomyUtil {
     if (balance != null) {
       return formatCurrency(balance, currency);
     }
-
 
     // En caso de que el balance sea null, retornas una cadena vacía o algún valor por defecto.
     return "0.00";
@@ -156,8 +155,8 @@ public abstract class EconomyUtil {
 
   private static boolean isBlankEconomyPresent() {
     try {
-      BlanketEconomy.INSTANCE.initialize(CobbleUtils.server);
-      BlanketEconomy.INSTANCE.getAPI();
+      BEconomy.INSTANCE.initialize(CobbleUtils.server);
+      BEconomy.INSTANCE.getAPI();
       return true;
     } catch (NoClassDefFoundError | Exception e) {
       CobbleUtils.LOGGER.error("BlanketEconomy not found");
@@ -253,7 +252,7 @@ public abstract class EconomyUtil {
         return vaultEconomy.depositPlayer(player.getGameProfile().getName(), amount.doubleValue()).transactionSuccess();
       }
       case BLANKECONOMY: {
-        BlanketEconomy.INSTANCE.getAPI().addBalance(player.getUuid(), amount, currency);
+        BEconomy.INSTANCE.getAPI().addBalance(player.getUuid(), amount, currency);
         return true;
       }
       case COBBLEDOLLARS: {
@@ -298,8 +297,8 @@ public abstract class EconomyUtil {
       case VAULT:
         return vaultEconomy.bankWithdraw(player.getGameProfile().getName(), amount.doubleValue()).transactionSuccess();
       case BLANKECONOMY:
-        BigDecimal bal = BlanketEconomy.INSTANCE.getAPI().getBalance(player.getUuid(), currency);
-        BlanketEconomy.INSTANCE.getAPI().setBalance(player.getUuid(), bal.subtract(amount), currency);
+        BigDecimal bal = BEconomy.INSTANCE.getAPI().getBalance(player.getUuid(), currency);
+        BEconomy.INSTANCE.getAPI().setBalance(player.getUuid(), bal.subtract(amount), currency);
         return true;
       case COBBLEDOLLARS:
         BigInteger balance = ((CobbleDollarsPlayer) player).cobbleDollars$getCobbleDollars();
@@ -381,7 +380,7 @@ public abstract class EconomyUtil {
       case BLANKECONOMY:
         BigDecimal bal = getBalance(player, currency);
         if (bal.compareTo(amount) >= 0) {
-          BlanketEconomy.INSTANCE.getAPI().setBalance(player.getUuid(), bal.subtract(amount), currency);
+          BEconomy.INSTANCE.getAPI().setBalance(player.getUuid(), bal.subtract(amount), currency);
           return true;
         }
         return false;
@@ -482,10 +481,10 @@ public abstract class EconomyUtil {
         }
       }
       case BLANKECONOMY -> {
-        return amount + " " + BlanketEconomy.INSTANCE.getAPI().getCurrencySymbol(currency);
+        return amount + " " + getSymbol(currency);
       }
       case VAULT -> {
-        return vaultEconomy.format(amount.doubleValue());
+        return vaultEconomy.format(amount.doubleValue()) + " " + getSymbol(currency);
       }
       default -> {
         return CobbleUtils.language.getDefaultSymbol() + amount;
@@ -558,7 +557,7 @@ public abstract class EconomyUtil {
           yield symbol;
         }
         case VAULT -> CobbleUtils.language.getDefaultSymbol();
-        case BLANKECONOMY -> BlanketEconomy.INSTANCE.getAPI().getCurrencySymbol(currency);
+        case BLANKECONOMY -> BEconomy.INSTANCE.getAPI().getCurrencySymbol(currency);
         case COBBLEDOLLARS -> CobbleUtils.language.getDefaultSymbol();
         case SDM_ECONOMY -> CobbleUtils.language.getDefaultSymbol();
         default -> CobbleUtils.language.getDefaultSymbol();
@@ -622,7 +621,7 @@ public abstract class EconomyUtil {
         yield BigDecimal.valueOf(vaultBalance).setScale(2, RoundingMode.HALF_UP);
       }
       case BLANKECONOMY -> {
-        BigDecimal blanketBalance = BlanketEconomy.INSTANCE.getAPI().getBalance(player.getUuid(), currency);
+        BigDecimal blanketBalance = BEconomy.INSTANCE.getAPI().getBalance(player.getUuid(), currency);
         // Redondear el balance si es necesario
         yield blanketBalance.setScale(2, RoundingMode.HALF_UP);
       }
@@ -640,7 +639,7 @@ public abstract class EconomyUtil {
     switch (economyType) {
       case IMPACTOR -> getAccount(player.getUuid(), curreny).set(money);
       case VAULT -> vaultEconomy.depositPlayer(player.getGameProfile().getName(), money.doubleValue());
-      case BLANKECONOMY -> BlanketEconomy.INSTANCE.getAPI().setBalance(player.getUuid(), money, curreny);
+      case BLANKECONOMY -> BEconomy.INSTANCE.getAPI().setBalance(player.getUuid(), money, curreny);
       case COBBLEDOLLARS ->
         ((CobbleDollarsPlayer) player).cobbleDollars$setCobbleDollars(BigInteger.valueOf(money.longValue()));
       case PEBBLE_ECONOMY -> pebblesEconomy.getEconomy().setBalance(player.getUuid(), money.doubleValue());

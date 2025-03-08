@@ -71,7 +71,7 @@ public class Sound {
 
   public void playSoundPlayer(ServerPlayerEntity player) {
     try {
-      player.playSound(SoundUtil.getSound(sound), getVolume(), getPitch());
+      player.playSoundToPlayer(SoundUtil.getSound(sound), SoundCategory.PLAYERS, getVolume(), getPitch());
     } catch (NoSuchMethodError | Exception e) {
       e.printStackTrace();
     }
