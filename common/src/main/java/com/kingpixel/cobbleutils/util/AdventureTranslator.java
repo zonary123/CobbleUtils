@@ -31,6 +31,7 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import net.minecraft.registry.BuiltinRegistries;
 import net.minecraft.registry.RegistryWrapper;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -43,7 +44,10 @@ import java.util.List;
 
 public class AdventureTranslator {
   private static final MiniMessage miniMessage = MiniMessage.miniMessage();
-
+  public static LegacyComponentSerializer legacyComponentSerializer = LegacyComponentSerializer.builder()
+    .character('§')
+    .hexColors()
+    .build();
   private static RegistryWrapper.WrapperLookup wrapperLookup;
 
   private static RegistryWrapper.WrapperLookup getWrapper() {

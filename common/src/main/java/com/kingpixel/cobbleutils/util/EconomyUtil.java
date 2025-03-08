@@ -1,7 +1,5 @@
 package com.kingpixel.cobbleutils.util;
 
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 import com.kingpixel.cobbleutils.CobbleUtils;
 import fr.harmex.cobbledollars.common.CobbleDollars;
 import fr.harmex.cobbledollars.common.utils.CobbleDollarsPlayer;
@@ -24,7 +22,6 @@ import tech.sethi.pebbleseconomy.PebblesEconomyInitializer;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.RoundingMode;
-import java.util.NoSuchElementException;
 import java.util.UUID;
 
 
@@ -451,34 +448,11 @@ public abstract class EconomyUtil {
           return CobbleUtils.language.getDefaultSymbol() + amount;
         }
         if (!currency.contains(":")) currency = "impactor:" + currency;
-        String json = "";
-        try {
-          json =
-            GsonComponentSerializer.gson()
-              .serialize(impactorService.currencies().currency(Key.key(currency))
-                .orElseGet(() -> {
-                  CobbleUtils.LOGGER.error("Not found Currency -> " + finalCurrency + "| Amount -> " + amount);
-                  return impactorService.currencies().primary();
-                }).format(amount));
-          if (json.contains("text")) {
-            JsonObject jsonObject = JsonParser.parseString(json).getAsJsonObject();
-            return jsonObject.get("text").getAsString();
-          } else {
-            return json.replace("\"", "");
-          }
-        } catch (IllegalStateException e) {
-          return json;
-        } catch (NoSuchElementException e) {
-          e.printStackTrace();
-          CobbleUtils.LOGGER.error("Not found Currency -> " + currency + "| Amount ->" +
-            " " + amount);
-          return CobbleUtils.language.getDefaultSymbol() + amount;
-        } catch (Exception e) {
-          CobbleUtils.LOGGER.error("Error formatting currency -> " + currency + "| Amount ->" +
-            " " + amount);
-          e.printStackTrace();
-          return CobbleUtils.language.getDefaultSymbol() + amount;
-        }
+        return AdventureTranslator.legacyComponentSerializer.serialize(impactorService.currencies().currency(Key.key(currency))
+          .orElseGet(() -> {
+            CobbleUtils.LOGGER.error("Not found Currency -> " + finalCurrency + "| Amount -> " + amount);
+            return impactorService.currencies().primary();
+          }).format(amount));
       }
       case BLANKECONOMY -> {
         return amount + " " + getSymbol(currency);

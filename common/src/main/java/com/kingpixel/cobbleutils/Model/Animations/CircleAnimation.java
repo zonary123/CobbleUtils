@@ -2,8 +2,11 @@ package com.kingpixel.cobbleutils.Model.Animations;
 
 import net.minecraft.entity.EquipmentSlot;
 import net.minecraft.entity.decoration.ArmorStandEntity;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.util.ActionResult;
+import net.minecraft.util.Hand;
 import net.minecraft.util.math.EulerAngle;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
@@ -78,6 +81,14 @@ public class CircleAnimation {
       }
 
       this.ticks++;
+    }
+
+    @Override public ActionResult interactAt(PlayerEntity player, Vec3d hitPos, Hand hand) {
+      return ActionResult.FAIL;
+    }
+
+    @Override public boolean canEquip(ItemStack stack) {
+      return false;
     }
 
     @Override
