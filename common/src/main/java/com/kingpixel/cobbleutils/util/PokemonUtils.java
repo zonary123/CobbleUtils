@@ -14,8 +14,6 @@ import com.cobblemon.mod.common.pokemon.*;
 import com.cobblemon.mod.common.pokemon.abilities.HiddenAbilityType;
 import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.Model.CobbleUtilsTags;
-import com.kingpixel.cobbleutils.Model.PokemonChance;
-import com.kingpixel.cobbleutils.features.breeding.models.EggData;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
@@ -346,8 +344,7 @@ public class PokemonUtils {
     if (species.showdownId().equals("manaphy"))
       return PokemonSpecies.INSTANCE.getByIdentifier(Identifier.of("cobblemon:phione")).create(1);
     Species firstEvolution = getFirstPreEvolution(species);
-
-    Pokemon specialPokemon = findSpecialPokemon(firstEvolution);
+    Pokemon specialPokemon = firstEvolution.create(1);
 
     // Usamos Objects.requireNonNullElseGet para devolver el Pokémon especial si existe, o crear uno nuevo si no
     return Objects.requireNonNullElseGet(specialPokemon, () -> firstEvolution.create(1));
@@ -366,22 +363,6 @@ public class PokemonUtils {
     }
 
     return species;
-  }
-
-  private static Pokemon findSpecialPokemon(Species species) {
-    List<PokemonChance> specialPokemons = new ArrayList<>();
-
-    for (EggData.PokemonRareMecanic pokemonRareMechanic : CobbleUtils.breedconfig.getPokemonRareMechanics()) {
-      for (PokemonChance pokemon : pokemonRareMechanic.getPokemons()) {
-        if (pokemon.getPokemon().equalsIgnoreCase(species.showdownId())) {
-          specialPokemons = pokemonRareMechanic.getPokemons();
-          break;
-        }
-      }
-    }
-
-
-    return PokemonChance.getPokemonCreate(specialPokemons);
   }
 
 

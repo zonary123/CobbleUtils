@@ -1,15 +1,11 @@
 package com.kingpixel.cobbleutils;
 
 import com.cobblemon.mod.common.api.properties.CustomPokemonProperty;
-import com.kingpixel.cobbleutils.Model.properties.BreedablePropertyType;
 import com.kingpixel.cobbleutils.Model.properties.MinIvsPropertyType;
 import com.kingpixel.cobbleutils.command.CommandTree;
 import com.kingpixel.cobbleutils.config.Config;
 import com.kingpixel.cobbleutils.config.Lang;
-import com.kingpixel.cobbleutils.database.DatabaseClientFactory;
 import com.kingpixel.cobbleutils.events.ItemRightClickEvents;
-import com.kingpixel.cobbleutils.features.Features;
-import com.kingpixel.cobbleutils.features.breeding.config.BreedConfig;
 import com.kingpixel.cobbleutils.util.CobbleUtilsBridgeGTS;
 import com.kingpixel.cobbleutils.util.SpawnRates;
 import com.kingpixel.cobbleutils.util.UtilsLogger;
@@ -35,7 +31,6 @@ public class CobbleUtils {
   public static CommandRegistryAccess commandRegistryAccess;
   public static MinecraftServer server;
   public static Config config = new Config();
-  public static BreedConfig breedconfig = new BreedConfig();
   public static SpawnRates spawnRates = new SpawnRates();
   // Lang
   public static Lang language = new Lang();
@@ -51,7 +46,6 @@ public class CobbleUtils {
     files();
     sign();
     tasks();
-    Features.register();
     try {
       if (config.isGtsSupport()) {
         new CobbleUtilsBridgeGTS();
@@ -65,13 +59,10 @@ public class CobbleUtils {
   private static void files() {
     config.init();
     language.init();
-    breedconfig.init();
-    DatabaseClientFactory.createDatabaseClient(config.getDatabase());
   }
 
   private static void sign() {
     info(MOD_NAME, "1.1.3", "CobbleUtils");
-    LOGGER.info("§e| §6Breeding: " + isActive(CobbleUtils.breedconfig.isActive()));
     LOGGER.info("§e| §6Supported economies: Impactor, BlanketEconomy, CobbleDollars, PebbleEconomy and Vault");
     LOGGER.info("§e+-------------------------------+");
   }
@@ -99,11 +90,8 @@ public class CobbleUtils {
       load();
       spawnRates.init();
       CustomPokemonProperty.Companion.register(MinIvsPropertyType.getInstance());
-      if (CobbleUtils.breedconfig.isActive()) {
-        CustomPokemonProperty.Companion.register(BreedablePropertyType.getInstance());
-      }
     });
-    
+
     CommandRegistrationEvent.EVENT.register((dispatcher, registry, selection) -> {
       CommandTree.register(dispatcher, registry);
       commandRegistryAccess = registry;

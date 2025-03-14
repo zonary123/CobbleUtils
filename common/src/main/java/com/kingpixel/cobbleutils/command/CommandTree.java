@@ -2,10 +2,10 @@ package com.kingpixel.cobbleutils.command;
 
 import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.command.admin.*;
-import com.kingpixel.cobbleutils.command.admin.egg.EggCommand;
-import com.kingpixel.cobbleutils.command.admin.egg.Hatch;
-import com.kingpixel.cobbleutils.command.admin.egg.IncenseCommand;
-import com.kingpixel.cobbleutils.command.base.*;
+import com.kingpixel.cobbleutils.command.base.PokeShout;
+import com.kingpixel.cobbleutils.command.base.PokeShoutAll;
+import com.kingpixel.cobbleutils.command.base.PokeShoutAllMe;
+import com.kingpixel.cobbleutils.command.base.PokeShoutMe;
 import com.kingpixel.cobbleutils.util.LuckPermsUtil;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
@@ -50,37 +50,7 @@ public class CommandTree {
 
       // /cobbleutils pokerename <slot> <name>
       PokeRename.register(dispatcher, base);
-
-      if (CobbleUtils.breedconfig.isActive()) {
-        // /cobbleutils breedable <slot> <breedable>
-        BreedableCommand.register(dispatcher, base);
-
-        // /cobbleutils egg <pokemon>
-        EggCommand.register(dispatcher, base);
-
-        // /cobbleutils incense <item>
-        IncenseCommand.register(dispatcher, base);
-        // /egginfo <slot>
-        EggInfoCommand.register(dispatcher, CommandManager.literal("egginfo"));
-
-        Hatch.register(dispatcher, CommandManager.literal("hatch"));
-      }
-
-
     }
-
-    if (CobbleUtils.breedconfig.isActive()) {
-      for (String literal : CobbleUtils.breedconfig.getEggcommand()) {
-        LiteralArgumentBuilder<ServerCommandSource> base = CommandManager.literal(literal)
-          .requires(source -> LuckPermsUtil.checkPermission(source, 2, List.of("cobbleutils.admin", "cobbleutils.user",
-            "cobbleutils.daycare")));
-
-        // /cobbleutils egg <pokemon>
-        BreedCommand.register(dispatcher, base);
-      }
-    }
-
-
   }
 
 

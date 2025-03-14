@@ -45,8 +45,8 @@ public class Config {
 
   public Config() {
     debug = false;
-    prefix = "§7[§6CobbleUtils§7] ";
     GtsSupport = false;
+    prefix = "§7[§6CobbleUtils§7] ";
     lang = "en";
     fill = "minecraft:gray_stained_glass_pane";
     commmandplugin = List.of("cobbleutils", "pokeutils");
@@ -75,26 +75,8 @@ public class Config {
     CompletableFuture<Boolean> futureRead = Utils.readFileAsync(CobbleUtils.PATH, "config.json",
       el -> {
         Gson gson = Utils.newGson();
-        Config config = gson.fromJson(el, Config.class);
-        debug = config.isDebug();
-        prefix = config.getPrefix();
-        lang = config.getLang();
-        fill = config.getFill();
-        shinytoken = config.getShinytoken();
-        database = config.getDatabase();
-        pokeshout = config.getPokeshout();
-        pokeshoutall = config.getPokeshoutall();
-        commmandplugin = config.getCommmandplugin();
-        itemsCommands = config.getItemsCommands();
-        cooldownpokeshout = config.getCooldownpokeshout();
-        shinytokenBlacklist = config.getShinytokenBlacklist();
-        blacklist = config.getBlacklist();
-        legends = config.getLegends();
-        ultraBeasts = config.getUltraBeasts();
-        activeshinytoken = config.isActiveshinytoken();
-        forms = config.getForms();
-        rarity = config.getRarity();
-        String data = gson.toJson(this);
+        CobbleUtils.config = gson.fromJson(el, Config.class);
+        String data = gson.toJson(CobbleUtils.config);
         CompletableFuture<Boolean> futureWrite = Utils.writeFileAsync(CobbleUtils.PATH, "config.json",
           data);
         if (!futureWrite.join()) {
@@ -105,7 +87,8 @@ public class Config {
     if (!futureRead.join()) {
       CobbleUtils.LOGGER.info("No config.json file found for" + CobbleUtils.MOD_NAME + ". Attempting to generate one.");
       Gson gson = Utils.newGson();
-      String data = gson.toJson(this);
+      CobbleUtils.config = this;
+      String data = gson.toJson(CobbleUtils.config);
       CompletableFuture<Boolean> futureWrite = Utils.writeFileAsync(CobbleUtils.PATH, "config.json",
         data);
 

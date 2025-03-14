@@ -20,16 +20,18 @@ import java.util.UUID;
  */
 
 public class CobbleUtilsBridgeGTS implements GtsEconomy {
-  private boolean introduced = false;
+  private static boolean introduced = false;
 
   public CobbleUtilsBridgeGTS() {
-    CobbleUtils.LOGGER.info("GtsEconomyProvider initialized");
-    try {
-      Class.forName("org.pokesplash.gts.api.economy.GtsEconomy");
-      GtsEconomyProvider.putEconomy(Priority.HIGHEST, this);
-      introduced = true;
-    } catch (NoClassDefFoundError | NoSuchMethodError | Exception ignored) {
-      CobbleUtils.LOGGER.warn("GtsEconomy class not found, skipping GtsEconomyProvider initialization.");
+    if (!introduced) {
+      CobbleUtils.LOGGER.info("GtsEconomyProvider initialized");
+      try {
+        Class.forName("org.pokesplash.gts.api.economy.GtsEconomy");
+        GtsEconomyProvider.putEconomy(Priority.HIGHEST, this);
+        introduced = true;
+      } catch (NoClassDefFoundError | NoSuchMethodError | Exception ignored) {
+        CobbleUtils.LOGGER.warn("GtsEconomy class not found, skipping GtsEconomyProvider initialization.");
+      }
     }
   }
 
