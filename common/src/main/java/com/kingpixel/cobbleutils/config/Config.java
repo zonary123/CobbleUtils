@@ -24,7 +24,7 @@ import java.util.concurrent.CompletableFuture;
 @ToString
 public class Config {
   private boolean debug;
-  private boolean ApiMode;
+  private boolean GtsSupport;
   private String prefix;
   private String lang;
   private DataBaseConfig database;
@@ -46,10 +46,10 @@ public class Config {
   public Config() {
     debug = false;
     prefix = "§7[§6CobbleUtils§7] ";
+    GtsSupport = false;
     lang = "en";
     fill = "minecraft:gray_stained_glass_pane";
     commmandplugin = List.of("cobbleutils", "pokeutils");
-    ApiMode = false;
     activeshinytoken = true;
     pokeshout = "pokeshoutplus";
     pokeshoutall = "pokeshoutplusall";
@@ -94,7 +94,6 @@ public class Config {
         activeshinytoken = config.isActiveshinytoken();
         forms = config.getForms();
         rarity = config.getRarity();
-        ApiMode = config.isApiMode();
         String data = gson.toJson(this);
         CompletableFuture<Boolean> futureWrite = Utils.writeFileAsync(CobbleUtils.PATH, "config.json",
           data);

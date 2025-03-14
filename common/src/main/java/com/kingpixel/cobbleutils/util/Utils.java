@@ -4,6 +4,7 @@ import com.cobblemon.mod.common.api.moves.Move;
 import com.cobblemon.mod.common.api.moves.adapters.MoveTemplateAdapter;
 import com.cobblemon.mod.common.api.types.ElementalType;
 import com.cobblemon.mod.common.api.types.adapters.ElementalTypeAdapter;
+import com.cobblemon.mod.common.pokemon.Pokemon;
 import com.cobblemon.mod.common.util.adapters.IntRangeAdapter;
 import com.cobblemon.mod.common.util.adapters.NbtCompoundAdapter;
 import com.google.gson.Gson;
@@ -12,6 +13,8 @@ import com.google.gson.JsonSyntaxException;
 import com.google.gson.internal.bind.DateTypeAdapter;
 import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.Model.ItemModel;
+import com.kingpixel.cobbleutils.adapter.ItemStackAdapter;
+import com.kingpixel.cobbleutils.adapter.PokemonAdapter;
 import com.mojang.authlib.GameProfile;
 import kotlin.ranges.IntRange;
 import net.minecraft.component.DataComponentTypes;
@@ -85,7 +88,9 @@ public abstract class Utils {
       .registerTypeAdapter(NbtCompound.class, NbtCompoundAdapter.INSTANCE)
       .registerTypeAdapter(Move.class, MoveTemplateAdapter.INSTANCE)
       .registerTypeAdapter(NbtCompoundAdapter.class, NbtCompoundAdapter.INSTANCE)
-      .registerTypeAdapter(DateTypeAdapter.class, new DateTypeAdapter());
+      .registerTypeAdapter(DateTypeAdapter.class, new DateTypeAdapter())
+      .registerTypeAdapter(Pokemon.class, PokemonAdapter.INSTANCE)
+      .registerTypeAdapter(ItemStack.class, ItemStackAdapter.INSTANCE);
   }
 
   public static CompletableFuture<Boolean> writeFileAsync(String filePath, String filename, String data) {
@@ -269,22 +274,28 @@ public abstract class Utils {
   public static ItemStack parseItemModel(ItemModel itemModel, int amount) {
     String item = itemModel.getItem();
     String nbt = itemModel.getNbt();
+
+    // Split item string to handle NBT if present
+    String[] nbtSplit = item.split("#");
+    if (nbtSplit.length > 1) {
+      item = nbtSplit[0];
+      nbt = nbtSplit[1];
+    }
+
+    // Handle custom item format
     if (item.startsWith("item:")) {
       item = item.replace("item:", "");
       String[] split = item.split(":");
       item = split[1] + ":" + split[2];
       amount = Integer.parseInt(split[0]);
     }
-    String[] nbtSplit = item.split("#");
-    if (nbtSplit.length > 1) {
-      item = nbtSplit[0];
-      nbt = nbtSplit[1];
-    }
+
+    // Parse the item ID and create the ItemStack
     ItemStack itemStack = parseItemId(item, amount);
+
+    // Apply additional NBT and properties to the ItemStack
     itemStack = addThingsItemStack(itemStack, itemModel, nbt);
-    if (itemStack.isEmpty()) {
-      CobbleUtils.LOGGER.error("Item " + item + " is not valid.");
-    }
+
     return itemStack;
   }
 

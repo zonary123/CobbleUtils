@@ -35,7 +35,7 @@ public abstract class WalkBreedingMixin {
 
   @Inject(method = "onPlayerMove", at = @At("HEAD"))
   public void breeding$onPlayerMove(PlayerMoveC2SPacket packet, CallbackInfo ci) {
-    if (!CobbleUtils.breedconfig.isActive() || CobbleUtils.config.isApiMode()) return;
+    if (!CobbleUtils.breedconfig.isActive()) return;
     tick++;
 
     if (tick % CobbleUtils.breedconfig.getTicksToWalking() == 0) {

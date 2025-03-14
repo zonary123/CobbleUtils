@@ -16,10 +16,13 @@ public class EconomyApi {
    * @param player  The player to add the money
    * @param money   The amount of money
    * @param curreny The currency to add
+   *
+   * @return
    */
-  public static void addMoney(ServerPlayerEntity player, BigDecimal money, @Nonnull String curreny) {
+  public static boolean addMoney(ServerPlayerEntity player, BigDecimal money, @Nonnull String curreny) {
     EconomyUtil.setEconomyType();
-    EconomyUtil.addMoney(player, curreny, money);
+    return EconomyUtil.addMoney(player, curreny, money);
+
   }
 
   /**
@@ -28,10 +31,12 @@ public class EconomyApi {
    * @param player  The player to remove the money
    * @param money   The amount of money
    * @param curreny The currency to remove
+   *
+   * @return
    */
-  public static void removeMoney(ServerPlayerEntity player, BigDecimal money, @Nonnull String curreny) {
+  public static boolean removeMoney(ServerPlayerEntity player, BigDecimal money, @Nonnull String curreny) {
     EconomyUtil.setEconomyType();
-    EconomyUtil.removeMoney(player, curreny, money);
+    return EconomyUtil.removeMoney(player, curreny, money);
   }
 
   /**

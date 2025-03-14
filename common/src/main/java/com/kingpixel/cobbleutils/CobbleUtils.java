@@ -10,6 +10,7 @@ import com.kingpixel.cobbleutils.database.DatabaseClientFactory;
 import com.kingpixel.cobbleutils.events.ItemRightClickEvents;
 import com.kingpixel.cobbleutils.features.Features;
 import com.kingpixel.cobbleutils.features.breeding.config.BreedConfig;
+import com.kingpixel.cobbleutils.util.CobbleUtilsBridgeGTS;
 import com.kingpixel.cobbleutils.util.SpawnRates;
 import com.kingpixel.cobbleutils.util.UtilsLogger;
 import dev.architectury.event.events.common.CommandRegistrationEvent;
@@ -51,6 +52,13 @@ public class CobbleUtils {
     sign();
     tasks();
     Features.register();
+    try {
+      if (config.isGtsSupport()) {
+        new CobbleUtilsBridgeGTS();
+      }
+    } catch (NoClassDefFoundError | NoSuchMethodError | Exception ignored) {
+      LOGGER.error("Error while trying to get GtsEconomyProvider");
+    }
   }
 
 
@@ -58,7 +66,6 @@ public class CobbleUtils {
     config.init();
     language.init();
     breedconfig.init();
-    if (config.isApiMode()) return;
     DatabaseClientFactory.createDatabaseClient(config.getDatabase());
   }
 
@@ -82,21 +89,21 @@ public class CobbleUtils {
     LOGGER.info("§e+-------------------------------+");
   }
 
+
   private static void events() {
-    files();
 
     LifecycleEvent.SERVER_LEVEL_LOAD.register(level -> server = level.getServer());
 
     LifecycleEvent.SERVER_STARTED.register(server -> {
+      files();
       load();
-      if (config.isApiMode()) return;
       spawnRates.init();
       CustomPokemonProperty.Companion.register(MinIvsPropertyType.getInstance());
-      if (CobbleUtils.breedconfig.isActive())
+      if (CobbleUtils.breedconfig.isActive()) {
         CustomPokemonProperty.Companion.register(BreedablePropertyType.getInstance());
+      }
     });
-
-    if (config.isApiMode()) return;
+    
     CommandRegistrationEvent.EVENT.register((dispatcher, registry, selection) -> {
       CommandTree.register(dispatcher, registry);
       commandRegistryAccess = registry;

@@ -54,7 +54,11 @@ public class PokemonUtils {
   private static void replace(Pokemon pokemon, List<String> finalLore, String s) {
     String replaced = replace(s, pokemon);
     for (int i = 0; i < 4; i++) {
-      replaced = replaced.replace("%move" + (i + 1) + "%", getMoveTranslate(pokemon.getMoveSet().get(i)));
+      if (pokemon == null) {
+        replaced = replaced.replace("%move" + (i + 1) + "%", CobbleUtils.language.getUnknown());
+      } else {
+        replaced = replaced.replace("%move" + (i + 1) + "%", getMoveTranslate(pokemon.getMoveSet().get(i)));
+      }
     }
     replaced = replaced.replace("%lorepokemon%", "");
     finalLore.add(replaced);

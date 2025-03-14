@@ -46,7 +46,8 @@ dependencies {
     // Kyori Adventure
     shadowCommon("net.kyori:adventure-text-serializer-gson:${property("kyori_version")}")
     shadowCommon("net.kyori:adventure-text-minimessage:${property("kyori_version")}")
-
+    shadowCommon("net.kyori:adventure-text-serializer-legacy:4.14.0")
+    //shadowCommon("net.kyori:adventure-platform-fabric:6.2.0")
 
     // Database
     shadowCommon("org.mongodb:mongodb-driver-sync:${property("mongodb_version")}") { transitive = true }
@@ -54,7 +55,7 @@ dependencies {
 
     // Economy Vault
     shadowCommon("com.github.MilkBowl:VaultAPI:${property("vault_api_version")}")
-
+    shadowCommon(files("libs/Vault-1.7.3.jar"))
     // Discord
     shadowCommon("club.minnced:discord-webhooks:${property("discord_webhooks_version")}")
     shadowCommon("org.json:json:20210307")
@@ -110,6 +111,7 @@ shadowJar {
         exclude("org/sqlite/native/Mac/**/*")
         exclude("org/sqlite/native/Solaris/**/*")
     }
+    //relocate("net.milkbowl.vault", "net.milkbowl.vault")
     relocate("com.mongodb", "com.kingpixel.cobbleutils.mongodb")
     relocate("org.bson", "com.kingpixel.cobbleutils.bson")
 

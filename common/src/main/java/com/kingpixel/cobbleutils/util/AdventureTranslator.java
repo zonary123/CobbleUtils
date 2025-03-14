@@ -43,7 +43,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class AdventureTranslator {
-  private static final MiniMessage miniMessage = MiniMessage.miniMessage();
+  public static final MiniMessage miniMessage = MiniMessage.miniMessage();
   public static LegacyComponentSerializer legacyComponentSerializer = LegacyComponentSerializer.builder()
     .character('§')
     .hexColors()

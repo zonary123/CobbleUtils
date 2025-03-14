@@ -17,6 +17,7 @@ public class PokemonBlackList {
   private List<String> pokemons;
   private List<String> labels;
   private List<String> types;
+  private List<String> forms;
 
   public PokemonBlackList() {
     this.pokemons = new ArrayList<>();
@@ -25,11 +26,20 @@ public class PokemonBlackList {
     labels.add("gen1_Example");
     this.types = new ArrayList<>();
     types.add("water_Example");
+    this.forms = new ArrayList<>();
+    forms.add("hisuian_Example");
   }
 
   public boolean isBlackListed(Pokemon pokemon) {
-    boolean showdownId = this.pokemons.contains(pokemon.showdownId()) || this.pokemons.contains("*");
+    boolean showdownId = this.pokemons.contains(pokemon.getForm().showdownId())
+      || this.pokemons.contains("*")
+      || this.pokemons.contains(pokemon.showdownId())
+      || this.pokemons.contains(pokemon.getSpecies().showdownId());
+    if (showdownId) return true;
     boolean isLabel = pokemon.getForm().getLabels().stream().anyMatch(this.labels::contains);
+    if (isLabel) return true;
+    boolean isForm = this.forms.contains(pokemon.getForm().formOnlyShowdownId());
+    if (isForm) return true;
     boolean isType;
 
     List<ElementalType> typeList = new ArrayList<>();
@@ -38,7 +48,7 @@ public class PokemonBlackList {
       String keyType = type.getResourceLocation().getPath();
       return this.types.contains(keyType);
     });
-    return showdownId || isLabel || isType;
+    return isType;
 
   }
 }

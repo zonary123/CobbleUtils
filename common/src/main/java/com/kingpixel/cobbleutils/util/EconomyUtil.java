@@ -15,6 +15,8 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.sixik.sdm_economy.api.CurrencyHelper;
 import org.beconomy.api.BEconomy;
 import org.bukkit.Bukkit;
+import org.bukkit.OfflinePlayer;
+import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.intellij.lang.annotations.Subst;
 import tech.sethi.pebbleseconomy.PebblesEconomyInitializer;
@@ -22,6 +24,8 @@ import tech.sethi.pebbleseconomy.PebblesEconomyInitializer;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.RoundingMode;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 
@@ -122,6 +126,11 @@ public abstract class EconomyUtil {
     try {
       if (Bukkit.getServer().getPluginManager().getPlugin("Vault") == null) {
         CobbleUtils.LOGGER.info("Cannot find Vault!");
+        List<String> plugins = new ArrayList<>();
+        for (Plugin plugin : Bukkit.getServer().getPluginManager().getPlugins()) {
+          plugins.add(plugin.getName());
+        }
+        CobbleUtils.LOGGER.info("Report this to zonary123 Plugins to Vault -> " + plugins);
       } else {
         RegisteredServiceProvider<Economy> rsp = Bukkit.getServer().getServicesManager().getRegistration(Economy.class);
         if (rsp == null) {
@@ -246,7 +255,7 @@ public abstract class EconomyUtil {
         return false;
       }
       case VAULT: {
-        return vaultEconomy.depositPlayer(player.getGameProfile().getName(), amount.doubleValue()).transactionSuccess();
+        return vaultEconomy.depositPlayer(Bukkit.getOfflinePlayer(player.getUuid()), amount.doubleValue()).transactionSuccess();
       }
       case BLANKECONOMY: {
         BEconomy.INSTANCE.getAPI().addBalance(player.getUuid(), amount, currency);
@@ -292,7 +301,13 @@ public abstract class EconomyUtil {
         EconomyTransaction transaction = account.withdraw(amount);
         return transaction.successful();
       case VAULT:
-        return vaultEconomy.bankWithdraw(player.getGameProfile().getName(), amount.doubleValue()).transactionSuccess();
+        OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(player.getUuid());
+        boolean result = vaultEconomy.withdrawPlayer(offlinePlayer, amount.doubleValue()).transactionSuccess();
+        if (!result) {
+          CobbleUtils.LOGGER.error("No se pudo retirar el dinero de " + player.getName());
+          return result;
+        }
+        return true;
       case BLANKECONOMY:
         BigDecimal bal = BEconomy.INSTANCE.getAPI().getBalance(player.getUuid(), currency);
         BEconomy.INSTANCE.getAPI().setBalance(player.getUuid(), bal.subtract(amount), currency);
@@ -369,8 +384,9 @@ public abstract class EconomyUtil {
       case IMPACTOR:
         return hasEnoughImpactor(getAccount(player.getUuid(), currency), amount);
       case VAULT:
-        if (vaultEconomy.has(player.getGameProfile().getName(), amount.doubleValue())) {
-          vaultEconomy.withdrawPlayer(player.getGameProfile().getName(), amount.doubleValue());
+        OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(player.getUuid());
+        if (vaultEconomy.has(offlinePlayer, amount.doubleValue())) {
+          vaultEconomy.withdrawPlayer(offlinePlayer, amount.doubleValue());
           return true;
         }
         return false;
@@ -590,9 +606,13 @@ public abstract class EconomyUtil {
     return switch (economyType) {
       case IMPACTOR -> getAccount(player.getUuid(), currency).balance();
       case VAULT -> {
-        double vaultBalance = vaultEconomy.getBalance(player.getGameProfile().getName());
-        // Asegurarse de que el valor tenga 2 decimales y redondeo apropiado
-        yield BigDecimal.valueOf(vaultBalance).setScale(2, RoundingMode.HALF_UP);
+        double vaultBalance = vaultEconomy.getBalance(Bukkit.getOfflinePlayer(player.getUuid()));
+        if (CobbleUtils.config.isDebug()) {
+          if (vaultBalance == 0) {
+            CobbleUtils.LOGGER.error("Vault balance is 0");
+          }
+        }
+        yield BigDecimal.valueOf(vaultBalance);
       }
       case BLANKECONOMY -> {
         BigDecimal blanketBalance = BEconomy.INSTANCE.getAPI().getBalance(player.getUuid(), currency);
@@ -612,7 +632,7 @@ public abstract class EconomyUtil {
     setEconomyType();
     switch (economyType) {
       case IMPACTOR -> getAccount(player.getUuid(), curreny).set(money);
-      case VAULT -> vaultEconomy.depositPlayer(player.getGameProfile().getName(), money.doubleValue());
+      case VAULT -> vaultEconomy.depositPlayer(Bukkit.getOfflinePlayer(player.getUuid()), money.doubleValue());
       case BLANKECONOMY -> BEconomy.INSTANCE.getAPI().setBalance(player.getUuid(), money, curreny);
       case COBBLEDOLLARS ->
         ((CobbleDollarsPlayer) player).cobbleDollars$setCobbleDollars(BigInteger.valueOf(money.longValue()));

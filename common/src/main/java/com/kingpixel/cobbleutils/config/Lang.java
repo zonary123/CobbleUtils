@@ -167,7 +167,8 @@ public class Lang {
       "<#98eb59><lang:cobblemon.ui.moves>: &f%move1% &f- %move2% &f- %move3% &f- %move4%",
       "<#b0eb59><lang:cobblemon.ui.info.original_trainer>: &f%owner%",
       "<#b0eb59>Country: &f%country%",
-      "<#b0eb59>EggGroups: &f%egggroups%"
+      "<#b0eb59>EggGroups: &f%egggroups%",
+      "<#b0eb59>ShowdownId: &f%showdownid%"
     );
     lorechance = List.of(
       "&7Chance: &e%chance%&f%"

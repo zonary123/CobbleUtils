@@ -36,12 +36,12 @@ public abstract class LuckPermsUtil {
     } else if (haveFabricPermissionsApi()) {
       PERMISSION_TYPE = Permission.FABRIC_PERMISSIONS_API;
       CobbleUtils.LOGGER.info("Fabric permissions detected");
-    } else if (getLuckPermsApi() != null) {
-      PERMISSION_TYPE = Permission.LUCKPERMS;
-      CobbleUtils.LOGGER.info("LuckPerms detected");
     } else if (haveBukkitPermissionApi()) {
       PERMISSION_TYPE = Permission.BUKKIT_PERMISSION_API;
       CobbleUtils.LOGGER.info("Bukkit permissions detected");
+    } else if (getLuckPermsApi() != null) {
+      PERMISSION_TYPE = Permission.LUCKPERMS;
+      CobbleUtils.LOGGER.info("LuckPerms detected");
     } else {
       CobbleUtils.LOGGER.error("No permission system detected");
       PERMISSION_TYPE = Permission.NONE;
