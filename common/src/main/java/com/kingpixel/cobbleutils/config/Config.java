@@ -3,14 +3,14 @@ package com.kingpixel.cobbleutils.config;
 import com.cobblemon.mod.common.pokemon.Pokemon;
 import com.google.gson.Gson;
 import com.kingpixel.cobbleutils.CobbleUtils;
-import com.kingpixel.cobbleutils.Model.DataBaseConfig;
-import com.kingpixel.cobbleutils.Model.ItemModel;
-import com.kingpixel.cobbleutils.Model.PokemonData;
+import com.kingpixel.cobbleutils.Model.*;
 import com.kingpixel.cobbleutils.util.Utils;
+import com.kingpixel.cobbleutils.util.economys.*;
 import lombok.Data;
 import lombok.Getter;
 import lombok.ToString;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -24,10 +24,12 @@ import java.util.concurrent.CompletableFuture;
 @ToString
 public class Config {
   private boolean debug;
-  private boolean GtsSupport;
   private String prefix;
   private String lang;
   private DataBaseConfig database;
+  private boolean GtsSupport;
+  private EconomyUse GtsEconomyToUse;
+  private List<PriorityEconomy> priorityEconomy;
   private boolean activeshinytoken;
   private String pokeshout;
   private String pokeshoutall;
@@ -45,9 +47,17 @@ public class Config {
 
   public Config() {
     debug = false;
-    GtsSupport = false;
     prefix = "§7[§6CobbleUtils§7] ";
     lang = "en";
+    GtsSupport = false;
+    GtsEconomyToUse = new EconomyUse(ImpactorEconomy.IDENTIFY, "");
+    priorityEconomy = new ArrayList<>();
+    priorityEconomy.add(new PriorityEconomy(ImpactorEconomy.IDENTIFY, Priority.HIGHEST));
+    priorityEconomy.add(new PriorityEconomy(BeEconomy.IDENTIFY, Priority.HIGH));
+    priorityEconomy.add(new PriorityEconomy(CobbleDollarsEconomy.IDENTIFY, Priority.MEDIUM));
+    priorityEconomy.add(new PriorityEconomy(PebbleEconomy.IDENTIFY, Priority.LOW));
+    priorityEconomy.add(new PriorityEconomy(VaultEconomy.IDENTIFY, Priority.LOW));
+    priorityEconomy.add(new PriorityEconomy(SDMEconomy.IDENTIFY, Priority.LOWEST));
     fill = "minecraft:gray_stained_glass_pane";
     commmandplugin = List.of("cobbleutils", "pokeutils");
     activeshinytoken = true;
@@ -98,6 +108,7 @@ public class Config {
     }
 
   }
+
 
   public boolean isShinyTokenBlacklisted(Pokemon pokemon) {
     return shinytokenBlacklist.stream()

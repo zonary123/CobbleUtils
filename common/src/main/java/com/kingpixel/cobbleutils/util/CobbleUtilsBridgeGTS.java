@@ -1,8 +1,8 @@
 package com.kingpixel.cobbleutils.util;
 
 import com.kingpixel.cobbleutils.CobbleUtils;
+import com.kingpixel.cobbleutils.Model.EconomyUse;
 import com.kingpixel.cobbleutils.api.EconomyApi;
-import net.minecraft.server.network.ServerPlayerEntity;
 import org.pokesplash.gts.api.economy.GtsEconomy;
 import org.pokesplash.gts.api.economy.GtsEconomyProvider;
 import org.pokesplash.gts.enumeration.Priority;
@@ -37,26 +37,20 @@ public class CobbleUtilsBridgeGTS implements GtsEconomy {
 
   @Override public boolean add(UUID uuid, double v) {
     try {
-      ServerPlayerEntity player = getPlayer(uuid);
-      if (player == null) {
-        CobbleUtils.LOGGER.warn("Player " + uuid + " not found!");
-        return false;
-      }
-      return EconomyApi.addMoney(player, BigDecimal.valueOf(v), "");
+      return EconomyApi.addMoney(uuid, BigDecimal.valueOf(v), getConfig().getCurrency(), getConfig().getEconomyId());
     } catch (NoClassDefFoundError | NoSuchMethodError | Exception e) {
       e.printStackTrace();
       return false;
     }
   }
 
+  private EconomyUse getConfig() {
+    return CobbleUtils.config.getGtsEconomyToUse();
+  }
+
   @Override public boolean remove(UUID uuid, double v) {
     try {
-      ServerPlayerEntity player = getPlayer(uuid);
-      if (player == null) {
-        CobbleUtils.LOGGER.warn("Player " + uuid + " not found!");
-        return false;
-      }
-      return EconomyApi.removeMoney(player, BigDecimal.valueOf(v), "");
+      return EconomyApi.removeMoney(uuid, BigDecimal.valueOf(v), getConfig().getCurrency(), getConfig().getEconomyId());
     } catch (NoClassDefFoundError | NoSuchMethodError | Exception e) {
       e.printStackTrace();
       return false;
@@ -65,28 +59,10 @@ public class CobbleUtilsBridgeGTS implements GtsEconomy {
 
   @Override public double balance(UUID uuid) {
     try {
-      ServerPlayerEntity player = getPlayer(uuid);
-      if (player == null) {
-        CobbleUtils.LOGGER.warn("Player " + uuid + " not found!");
-        return 0;
-      }
-      double money = EconomyApi.getMoney(player, "").doubleValue();
-      if (CobbleUtils.config.isDebug()) {
-        CobbleUtils.LOGGER.info("Player " + uuid + " has " + money);
-      }
-      return money;
+      return EconomyApi.getBalance(uuid, getConfig().getCurrency(), getConfig().getEconomyId()).doubleValue();
     } catch (NoClassDefFoundError | NoSuchMethodError | Exception e) {
       e.printStackTrace();
       return 0;
-    }
-  }
-
-  private ServerPlayerEntity getPlayer(UUID uuid) {
-    try {
-      return CobbleUtils.server.getPlayerManager().getPlayer(uuid);
-    } catch (Exception e) {
-      e.printStackTrace();
-      return null;
     }
   }
 }

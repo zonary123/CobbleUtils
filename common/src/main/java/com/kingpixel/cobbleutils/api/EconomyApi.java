@@ -1,67 +1,129 @@
 package com.kingpixel.cobbleutils.api;
 
-import com.kingpixel.cobbleutils.util.EconomyUtil;
-import net.minecraft.server.network.ServerPlayerEntity;
+import com.kingpixel.cobbleutils.CobbleUtils;
+import com.kingpixel.cobbleutils.Model.Priority;
+import com.kingpixel.cobbleutils.Model.PriorityEconomy;
+import com.kingpixel.cobbleutils.util.economys.*;
 
-import javax.annotation.Nonnull;
 import java.math.BigDecimal;
+import java.util.*;
 
 /**
  * @author Carlos Varas Alonso - 05/11/2024 23:58
  */
 public class EconomyApi {
+  private static final Set<EconomyAbstract> economys = new HashSet<>();
+
+  public static void setEconomyType() {
+    List<EconomyAbstract> remove = new ArrayList<>();
+    economys.add(new BeEconomy());
+    economys.add(new CobbleDollarsEconomy());
+    economys.add(new ImpactorEconomy());
+    economys.add(new PebbleEconomy());
+    economys.add(new SDMEconomy());
+    economys.add(new VaultEconomy());
+    economys.forEach(economy -> {
+      if (!economy.isPresent()) {
+        remove.add(economy);
+      }
+    });
+    remove.forEach(economys::remove);
+  }
+
+  private static EconomyAbstract getEconomy(String EconomyId) {
+    if (economys.isEmpty()) throw new RuntimeException("You dont have any economy, Supported: " +
+      "BeEconomy, CobbleDollarsEconomy, ImpactorEconomy, PebbleEconomy, SDMEconomy, VaultEconomy");
+    if (economys.size() == 1) {
+      return economys.iterator().next();
+    } else {
+      for (EconomyAbstract economy : economys) {
+        if (economy.getIdentify().equalsIgnoreCase(EconomyId)) {
+          return economy;
+        }
+      }
+    }
+
+    EconomyAbstract economy = getHighestPriorityEconomy();
+    if (economy == null) throw new RuntimeException("CobbleUtils could not find any economy with that id");
+    return economy;
+  }
+
+  private static EconomyAbstract getHighestPriorityEconomy() {
+    List<EconomyAbstract> economyList = new ArrayList<>(economys);
+    economyList.sort((e1, e2) -> {
+      Priority p1 = CobbleUtils.config.getPriorityEconomy().stream()
+        .filter(pe -> pe.getEconomyId().equals(e1.getIdentify()))
+        .findFirst()
+        .map(PriorityEconomy::getPriority)
+        .orElse(Priority.LOWEST);
+      Priority p2 = CobbleUtils.config.getPriorityEconomy().stream()
+        .filter(pe -> pe.getEconomyId().equals(e2.getIdentify()))
+        .findFirst()
+        .map(PriorityEconomy::getPriority)
+        .orElse(Priority.LOWEST);
+      return p1.compareTo(p2);
+    });
+    return economyList.isEmpty() ? null : economyList.getFirst();
+  }
+
+  /**
+   * Add a new economy
+   *
+   * @param economy The economy to add
+   */
+  public static void addEconomy(EconomyAbstract economy) {
+    economys.add(economy);
+  }
+
   /**
    * Add money to the player
    *
-   * @param player  The player to add the money
-   * @param money   The amount of money
-   * @param curreny The currency to add
+   * @param playerUuid The player to add the money
+   * @param money      The amount of money
+   * @param currency   The currency to add
    *
-   * @return
+   * @return If the money was added
    */
-  public static boolean addMoney(ServerPlayerEntity player, BigDecimal money, @Nonnull String curreny) {
-    EconomyUtil.setEconomyType();
-    return EconomyUtil.addMoney(player, curreny, money);
-
+  public static boolean addMoney(UUID playerUuid, BigDecimal money, String currency,
+                                 String economyId) {
+    return getEconomy(economyId).deposit(playerUuid, money, currency);
   }
 
   /**
    * Remove money from the player
    *
-   * @param player  The player to remove the money
-   * @param money   The amount of money
-   * @param curreny The currency to remove
+   * @param playerUuid The player to remove the money
+   * @param money      The amount of money
+   * @param currency   The currency to remove
    *
-   * @return
+   * @return If the money was removed
    */
-  public static boolean removeMoney(ServerPlayerEntity player, BigDecimal money, @Nonnull String curreny) {
-    EconomyUtil.setEconomyType();
-    return EconomyUtil.removeMoney(player, curreny, money);
+  public static boolean removeMoney(UUID playerUuid, BigDecimal money, String currency, String economyId) {
+
+    return getEconomy(economyId).withdraw(playerUuid, money, currency);
   }
 
   /**
    * Get the money of the player
    *
-   * @param player  The player to get the money
-   * @param curreny The currency to get
+   * @param playerUuid The player to get the money
+   * @param currency   The currency to get
    *
    * @return The amount of money
    */
-  public static BigDecimal getMoney(ServerPlayerEntity player, @Nonnull String curreny) {
-    EconomyUtil.setEconomyType();
-    return EconomyUtil.getBalance(player, curreny);
+  public static BigDecimal getBalance(UUID playerUuid, String currency, String economyId) {
+    return getEconomy(economyId).getBalance(playerUuid, currency);
   }
 
   /**
    * Set the money of the player
    *
-   * @param player  The player to set the money
-   * @param money   The amount of money
-   * @param curreny The currency to set
+   * @param playerUuid The player to set the money
+   * @param money      The amount of money
+   * @param currency   The currency to set
    */
-  public static void setMoney(ServerPlayerEntity player, BigDecimal money, @Nonnull String curreny) {
-    EconomyUtil.setEconomyType();
-    EconomyUtil.setMoney(player, curreny, money);
+  public static boolean setBalance(UUID playerUuid, BigDecimal money, String currency, String economyId) {
+    return getEconomy(economyId).setBalance(playerUuid, money, currency);
   }
 
   /**
@@ -72,56 +134,23 @@ public class EconomyApi {
    *
    * @return The formatted money
    */
-  public static String formatMoney(BigDecimal money, @Nonnull String currency) {
-    EconomyUtil.setEconomyType();
-    return EconomyUtil.formatCurrency(money, currency);
-  }
-
-  /**
-   * Check if the player has enough money
-   *
-   * @param player   The player to check the money
-   * @param money    The amount of money
-   * @param currency The currency to check
-   *
-   * @return If the player has enough money
-   */
-  @Deprecated(forRemoval = true, since = "1.1.3 - 07/01/2025 23:58")
-  public static String formatMoney(ServerPlayerEntity player, BigDecimal money, @Nonnull String currency) {
-    EconomyUtil.setEconomyType();
-    return EconomyUtil.formatCurrency(money, currency);
-  }
-
-
-  /**
-   * Check if the player has enough money and remove it
-   *
-   * @param player   The player to check the money
-   * @param money    The amount of money
-   * @param currency The currency to check
-   *
-   * @return If the player has enough money
-   */
-  @Deprecated(forRemoval = true, since = "1.1.3 - 05/11/2024 23:58")
-  public static boolean hasEnoughMoney(ServerPlayerEntity player, BigDecimal money, @Nonnull String currency) {
-    EconomyUtil.setEconomyType();
-    return EconomyUtil.hasEnough(player, currency, money);
+  public static String formatMoney(BigDecimal money, String currency, String economyId) {
+    return getEconomy(economyId).format(money, currency);
   }
 
   /**
    * Check if the player has enough money and remove it
    *
-   * @param player   The player to check the money
-   * @param money    The amount of money
-   * @param currency The currency to check
-   * @param notify   If the player should be notified
+   * @param playerUuid The player to check the money
+   * @param money      The amount of money
+   * @param currency   The currency to check
+   * @param economyId  The economy to check
    *
    * @return If the player has enough money
    */
-  public static boolean hasEnoughMoney(ServerPlayerEntity player, BigDecimal money,
-                                       @Nonnull String currency, boolean notify) {
-    EconomyUtil.setEconomyType();
-    return EconomyUtil.hasEnough(player, currency, money, notify);
+  public static boolean hasEnoughMoney(UUID playerUuid, BigDecimal money, String currency, boolean removeMoney,
+                                       String economyId) {
+    return getEconomy(economyId).hasEnough(playerUuid, money, currency, removeMoney);
   }
 
   /**
@@ -131,8 +160,7 @@ public class EconomyApi {
    *
    * @return The symbol of the currency
    */
-  public static String getSymbol(String currency) {
-    EconomyUtil.setEconomyType();
-    return EconomyUtil.getSymbol(currency);
+  public static String getSymbol(String currency, String economyId) {
+    return getEconomy(economyId).getSymbol(currency);
   }
 }

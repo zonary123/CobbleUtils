@@ -6,5 +6,6 @@ package com.kingpixel.cobbleutils.util;
 public enum TypeMessage {
   CHAT,
   ACTIONBAR,
+  ACTIONBAR_BROADCAST,
   BROADCAST
 }

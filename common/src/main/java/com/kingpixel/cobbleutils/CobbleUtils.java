@@ -2,6 +2,7 @@ package com.kingpixel.cobbleutils;
 
 import com.cobblemon.mod.common.api.properties.CustomPokemonProperty;
 import com.kingpixel.cobbleutils.Model.properties.MinIvsPropertyType;
+import com.kingpixel.cobbleutils.api.EconomyApi;
 import com.kingpixel.cobbleutils.command.CommandTree;
 import com.kingpixel.cobbleutils.config.Config;
 import com.kingpixel.cobbleutils.config.Lang;
@@ -17,8 +18,6 @@ import net.minecraft.server.MinecraftServer;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import static com.kingpixel.cobbleutils.util.EconomyUtil.setEconomyType;
 
 public class CobbleUtils {
   public static final String MOD_ID = "cobbleutils";
@@ -45,7 +44,6 @@ public class CobbleUtils {
   public static void load() {
     files();
     sign();
-    tasks();
     try {
       if (config.isGtsSupport()) {
         new CobbleUtilsBridgeGTS();
@@ -86,10 +84,10 @@ public class CobbleUtils {
     LifecycleEvent.SERVER_LEVEL_LOAD.register(level -> server = level.getServer());
 
     LifecycleEvent.SERVER_STARTED.register(server -> {
-      files();
       load();
       spawnRates.init();
       CustomPokemonProperty.Companion.register(MinIvsPropertyType.getInstance());
+      EconomyApi.setEconomyType();
     });
 
     CommandRegistrationEvent.EVENT.register((dispatcher, registry, selection) -> {
@@ -99,19 +97,5 @@ public class CobbleUtils {
 
     InteractionEvent.RIGHT_CLICK_ITEM.register(ItemRightClickEvents::register);
   }
-
-  private static void tasks() {
-
-
-    setEconomyType();
-  }
-
-
-  private static String isActive(boolean active) {
-    if (active) {
-      return "§aActive";
-    } else {
-      return "§cInactive";
-    }
-  }
+  
 }

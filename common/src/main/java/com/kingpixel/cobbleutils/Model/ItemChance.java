@@ -15,6 +15,7 @@ import com.cobblemon.mod.common.api.storage.NoPokemonStoreException;
 import com.cobblemon.mod.common.item.PokemonItem;
 import com.cobblemon.mod.common.pokemon.Pokemon;
 import com.kingpixel.cobbleutils.CobbleUtils;
+import com.kingpixel.cobbleutils.api.EconomyApi;
 import com.kingpixel.cobbleutils.util.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -275,6 +276,7 @@ public class ItemChance {
       }
     } catch (Exception e) {
       CobbleUtils.LOGGER.error("Error giving reward: " + e.getMessage());
+      e.printStackTrace();
       return false;
     }
   }
@@ -300,7 +302,7 @@ public class ItemChance {
         .replace("%amount%", String.valueOf(money)),
       "");
 
-    return EconomyUtil.addMoney(player, currency, BigDecimal.valueOf(money));
+    return EconomyApi.addMoney(player.getUuid(), BigDecimal.valueOf(money), currency, "");
   }
 
   private static ItemStack parseItemStack(String item, int amount) {

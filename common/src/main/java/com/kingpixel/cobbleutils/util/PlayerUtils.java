@@ -47,10 +47,16 @@ public class PlayerUtils {
     switch (typeMessage) {
       case CHAT -> sendMessage(player, message, prefix);
       case ACTIONBAR -> player.sendMessage(AdventureTranslator.toNative(message, prefix, player), true);
+      case ACTIONBAR_BROADCAST -> {
+        for (ServerPlayerEntity serverPlayerEntity : CobbleUtils.server.getPlayerManager().getPlayerList()) {
+          serverPlayerEntity.sendMessage(AdventureTranslator.toNative(message, prefix, serverPlayerEntity), true);
+        }
+      }
       case BROADCAST -> broadcast(message, prefix);
     }
   }
 
+  @Deprecated
   public static void broadcast(String message) {
     if (!message.isEmpty()) {
       CobbleUtils.server.getPlayerManager().getPlayerList().forEach(player -> sendMessage(player, message));
