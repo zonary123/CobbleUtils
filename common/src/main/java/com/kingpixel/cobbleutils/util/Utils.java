@@ -9,7 +9,6 @@ import com.cobblemon.mod.common.util.adapters.IntRangeAdapter;
 import com.cobblemon.mod.common.util.adapters.NbtCompoundAdapter;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.google.gson.JsonSyntaxException;
 import com.google.gson.internal.bind.DateTypeAdapter;
 import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.Model.ItemModel;
@@ -43,13 +42,10 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
-import java.util.Scanner;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 import java.util.function.Consumer;
 
 public abstract class Utils {
@@ -95,46 +91,53 @@ public abstract class Utils {
 
   public static CompletableFuture<Boolean> writeFileAsync(String filePath, String filename, String data) {
     CompletableFuture<Boolean> future = new CompletableFuture<>();
-
     Path path = Paths.get(new File("").getAbsolutePath() + filePath, filename);
     File file = path.toFile();
 
-    if (!Files.exists(path.getParent())) {
-      file.getParentFile().mkdirs();
-    }
+    try {
+      if (!Files.exists(path.getParent())) {
+        Files.createDirectories(path.getParent());
+      }
 
-    try (AsynchronousFileChannel fileChannel = AsynchronousFileChannel.open(
-      path,
-      StandardOpenOption.WRITE,
-      StandardOpenOption.CREATE,
-      StandardOpenOption.TRUNCATE_EXISTING)) {
-      ByteBuffer buffer = ByteBuffer.wrap(data.getBytes(charset));
+      AsynchronousFileChannel fileChannel = AsynchronousFileChannel.open(
+        path,
+        StandardOpenOption.WRITE,
+        StandardOpenOption.CREATE,
+        StandardOpenOption.TRUNCATE_EXISTING
+      );
+
+      ByteBuffer buffer = ByteBuffer.wrap(data.getBytes(StandardCharsets.UTF_8));
 
       fileChannel.write(buffer, 0, buffer, new CompletionHandler<Integer, ByteBuffer>() {
         @Override
         public void completed(Integer result, ByteBuffer attachment) {
-          attachment.clear();
           try {
             fileChannel.close();
+            future.complete(true);
           } catch (IOException e) {
-            throw new RuntimeException(e);
+            future.completeExceptionally(e);
           }
-          future.complete(true);
         }
 
         @Override
         public void failed(Throwable exc, ByteBuffer attachment) {
-          future.complete(writeFileSync(file, data));
+          CobbleUtils.LOGGER.error("Async file write failed, writing synchronously.");
+          exc.printStackTrace();
+          boolean syncSuccess = writeFileSync(file, data); // Asegúrate de que writeFileSync() devuelve un boolean válido
+          future.complete(syncSuccess);
         }
       });
+
     } catch (IOException | SecurityException e) {
       CobbleUtils.LOGGER.fatal("Unable to write file asynchronously, attempting sync write.");
-      future.complete(future.complete(false));
       e.printStackTrace();
+      boolean syncSuccess = writeFileSync(file, data);
+      future.complete(syncSuccess);
     }
 
     return future;
   }
+
 
   public static boolean writeFileSync(File file, String data) {
     try (FileWriter writer = new FileWriter(file, charset)) {
@@ -148,58 +151,73 @@ public abstract class Utils {
 
   public static CompletableFuture<Boolean> readFileAsync(String filePath, String filename, Consumer<String> callback) {
     CompletableFuture<Boolean> future = new CompletableFuture<>();
-    ExecutorService executor = Executors.newSingleThreadExecutor();
-
     Path path = Paths.get(new File("").getAbsolutePath() + filePath, filename);
     File file = path.toFile();
 
     if (!file.exists()) {
       future.complete(false);
-      executor.shutdown();
       return future;
     }
 
-    try (AsynchronousFileChannel fileChannel = AsynchronousFileChannel.open(path, StandardOpenOption.READ)) {
+    try {
+      AsynchronousFileChannel fileChannel = AsynchronousFileChannel.open(path, StandardOpenOption.READ);
       ByteBuffer buffer = ByteBuffer.allocate((int) fileChannel.size());
 
-      Future<Integer> readResult = fileChannel.read(buffer, 0);
-      readResult.get();
-      buffer.flip();
+      fileChannel.read(buffer, 0, buffer, new CompletionHandler<Integer, ByteBuffer>() {
+        @Override
+        public void completed(Integer result, ByteBuffer attachment) {
+          attachment.flip();
+          byte[] bytes = new byte[attachment.remaining()];
+          attachment.get(bytes);
+          String fileContent = new String(bytes, StandardCharsets.UTF_8);
 
-      byte[] bytes = new byte[buffer.remaining()];
-      buffer.get(bytes);
-      String fileContent = new String(bytes, charset);
+          callback.accept(fileContent);
 
-      callback.accept(fileContent);
+          try {
+            fileChannel.close();
+          } catch (IOException e) {
+            future.completeExceptionally(e);
+            return;
+          }
 
-      fileChannel.close();
-      executor.shutdown();
-      future.complete(true);
-    } catch (JsonSyntaxException e) {
-      CobbleUtils.LOGGER.error("Malformed JSON in file " + file.getAbsolutePath() + " - " + e.getMessage());
-      future.complete(false);
-      executor.shutdown();
+          future.complete(true);
+        }
+
+        @Override
+        public void failed(Throwable exc, ByteBuffer attachment) {
+          CobbleUtils.LOGGER.error("Failed to read file asynchronously, attempting sync read.");
+          exc.printStackTrace();
+          boolean syncSuccess = readFileSync(file, callback);
+          future.complete(syncSuccess);
+          try {
+            fileChannel.close();
+          } catch (IOException e) {
+            future.completeExceptionally(e);
+          }
+        }
+      });
+
+    } catch (IOException e) {
+      CobbleUtils.LOGGER.fatal("Unable to read file asynchronously, attempting sync read.");
       e.printStackTrace();
-    } catch (Exception e) {
-      future.complete(readFileSync(file, callback));
-      executor.shutdown();
-      e.printStackTrace();
+      boolean syncSuccess = readFileSync(file, callback);
+      future.complete(syncSuccess);
     }
 
     return future;
   }
 
+
   public static boolean readFileSync(File file, Consumer<String> callback) {
-    try (Scanner reader = new Scanner(file, charset)) {
-      StringBuilder data = new StringBuilder();
-      while (reader.hasNextLine()) {
-        data.append(reader.nextLine());
-      }
-      callback.accept(data.toString());
-      return true;
-    } catch (JsonSyntaxException e) {
-      e.printStackTrace();
+    if (!file.exists() || !file.isFile()) {
+      System.err.println("El archivo no existe o no es válido: " + file.getPath());
       return false;
+    }
+    try {
+      List<String> lines = Files.readAllLines(file.toPath(), StandardCharsets.UTF_8);
+      String content = String.join("\n", lines); // Mantiene los saltos de línea
+      callback.accept(content);
+      return true;
     } catch (IOException e) {
       e.printStackTrace();
       return false;
@@ -207,23 +225,25 @@ public abstract class Utils {
   }
 
   public static String readFileSync(File file) throws IOException {
-    // Verifica si el archivo existe y es un archivo regular
     if (!file.exists() || !file.isFile()) {
-      throw new IllegalArgumentException("El archivo no existe o no es un archivo regular: " + file.getPath());
+      throw new IllegalArgumentException("El archivo no existe o no es válido: " + file.getPath());
     }
-    return Files.readString(Path.of(file.getPath()), charset);
+    return Files.readString(file.toPath(), StandardCharsets.UTF_8);
   }
 
-  public static CompletableFuture<Void> writeFileAsync(File file, String content) {
-    return CompletableFuture.runAsync(() -> {
-      try (FileWriter writer = new FileWriter(file)) {
-        writer.write(content);
+  public static CompletableFuture<Boolean> writeFileAsync(File file, String content) {
+    return CompletableFuture.supplyAsync(() -> {
+      try {
+        Files.writeString(file.toPath(), content, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+        return true; // Indica que se escribió con éxito
       } catch (IOException e) {
+        CobbleUtils.LOGGER.error("Error al escribir el archivo: " + file.getPath());
         e.printStackTrace();
-        throw new RuntimeException("Error al escribir el archivo: " + file.getPath(), e);
+        return false; // Retorna false si hubo un error
       }
     });
   }
+
 
   public static void broadcastMessage(String message) {
     MinecraftServer server = CobbleUtils.server;

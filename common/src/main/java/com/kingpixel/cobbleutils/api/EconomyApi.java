@@ -3,7 +3,9 @@ package com.kingpixel.cobbleutils.api;
 import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.Model.Priority;
 import com.kingpixel.cobbleutils.Model.PriorityEconomy;
-import com.kingpixel.cobbleutils.util.economys.*;
+import com.kingpixel.cobbleutils.util.economy.*;
+import lombok.Data;
+import lombok.Getter;
 
 import java.math.BigDecimal;
 import java.util.*;
@@ -11,28 +13,39 @@ import java.util.*;
 /**
  * @author Carlos Varas Alonso - 05/11/2024 23:58
  */
+@Data
 public class EconomyApi {
-  private static final Set<EconomyAbstract> economys = new HashSet<>();
+  @Getter private static Set<EconomyAbstract> economys = new HashSet<>();
 
   public static void setEconomyType() {
-    List<EconomyAbstract> remove = new ArrayList<>();
-    economys.add(new BeEconomy());
-    economys.add(new CobbleDollarsEconomy());
     economys.add(new ImpactorEconomy());
+    economys.add(new CobbleDollarsEconomy());
+    economys.add(new BeEconomy());
     economys.add(new PebbleEconomy());
     economys.add(new SDMEconomy());
     economys.add(new VaultEconomy());
-    economys.forEach(economy -> {
-      if (!economy.isPresent()) {
-        remove.add(economy);
+
+    economys.removeIf(economy -> {
+      try {
+        economy.isPresent();
+        CobbleUtils.LOGGER.info("Economy found: " + economy.getIdentify());
+        return false;
+      } catch (NoClassDefFoundError | IncompatibleClassChangeError | Exception e) {
+        CobbleUtils.LOGGER.info("Economy not found: " + economy.getIdentify());
+        return true;
       }
     });
-    remove.forEach(economys::remove);
   }
 
+
   private static EconomyAbstract getEconomy(String EconomyId) {
-    if (economys.isEmpty()) throw new RuntimeException("You dont have any economy, Supported: " +
-      "BeEconomy, CobbleDollarsEconomy, ImpactorEconomy, PebbleEconomy, SDMEconomy, VaultEconomy");
+    if (economys.isEmpty()) {
+      setEconomyType();
+      if (economys.isEmpty()) {
+        throw new RuntimeException("You dont have any economy, Supported: " +
+          "BeEconomy, CobbleDollarsEconomy, ImpactorEconomy, PebbleEconomy, SDMEconomy, VaultEconomy");
+      }
+    }
     if (economys.size() == 1) {
       return economys.iterator().next();
     } else {
@@ -66,13 +79,16 @@ public class EconomyApi {
     return economyList.isEmpty() ? null : economyList.getFirst();
   }
 
+
   /**
    * Add a new economy
    *
    * @param economy The economy to add
    */
   public static void addEconomy(EconomyAbstract economy) {
-    economys.add(economy);
+    if (economy.isPresent()) {
+      economys.add(economy);
+    }
   }
 
   /**

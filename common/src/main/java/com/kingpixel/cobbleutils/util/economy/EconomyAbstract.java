@@ -1,6 +1,7 @@
-package com.kingpixel.cobbleutils.util.economys;
+package com.kingpixel.cobbleutils.util.economy;
 
 import com.kingpixel.cobbleutils.CobbleUtils;
+import lombok.Data;
 import net.minecraft.server.network.ServerPlayerEntity;
 
 import java.math.BigDecimal;
@@ -9,6 +10,7 @@ import java.util.UUID;
 /**
  * @author Carlos Varas Alonso - 29/01/2025 4:06
  */
+@Data
 public abstract class EconomyAbstract {
 
   public abstract String getIdentify();

@@ -1,6 +1,8 @@
-package com.kingpixel.cobbleutils.util.economys;
+package com.kingpixel.cobbleutils.util.economy;
 
 import com.kingpixel.cobbleutils.CobbleUtils;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
 import tech.sethi.pebbleseconomy.PebblesEconomyInitializer;
 
 import java.math.BigDecimal;
@@ -9,23 +11,21 @@ import java.util.UUID;
 /**
  * @author Carlos Varas Alonso - 16/03/2025 3:51
  */
+@EqualsAndHashCode(callSuper = true) @Data
 public class PebbleEconomy extends EconomyAbstract {
   public static final String IDENTIFY = "PEBBLE_ECONOMY";
   private PebblesEconomyInitializer service;
+
+  public PebbleEconomy() {
+  }
 
   @Override public String getIdentify() {
     return IDENTIFY;
   }
 
   @Override public boolean isPresent() {
-    try {
-      service = PebblesEconomyInitializer.INSTANCE;
-      CobbleUtils.LOGGER.info("PebbleEconomy isPresent Identifier: " + getIdentify());
-      return true;
-    } catch (NoClassDefFoundError | Exception e) {
-      CobbleUtils.LOGGER.error("Pebble Economy not found");
-      return false;
-    }
+    service = PebblesEconomyInitializer.INSTANCE;
+    return true;
   }
 
   @Override public boolean deposit(UUID playerUuid, BigDecimal money, String currency) {

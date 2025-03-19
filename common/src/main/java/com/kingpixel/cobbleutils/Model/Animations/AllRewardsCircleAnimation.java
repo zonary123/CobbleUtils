@@ -27,6 +27,7 @@ public class AllRewardsCircleAnimation {
       double offsetY = centerPosition.y;
 
       ItemStack reward = showAllRewards.get(i);
+      if (reward == null) continue;
       Vec3d entityPosition = new Vec3d(centerPosition.x + offsetX, offsetY, centerPosition.z + offsetZ);
       float yaw = AnimationUtils.getYawToFacePlayer(player, entityPosition);
 

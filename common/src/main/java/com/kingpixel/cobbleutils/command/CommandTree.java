@@ -50,6 +50,8 @@ public class CommandTree {
 
       // /cobbleutils pokerename <slot> <name>
       PokeRename.register(dispatcher, base);
+
+      EconomyIdCommand.register(dispatcher, base);
     }
   }
 

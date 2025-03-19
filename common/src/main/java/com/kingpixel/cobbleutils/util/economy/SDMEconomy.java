@@ -1,6 +1,8 @@
-package com.kingpixel.cobbleutils.util.economys;
+package com.kingpixel.cobbleutils.util.economy;
 
 import com.kingpixel.cobbleutils.CobbleUtils;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
 import net.sixik.sdm_economy.api.CurrencyHelper;
 
 import java.math.BigDecimal;
@@ -9,8 +11,12 @@ import java.util.UUID;
 /**
  * @author Carlos Varas Alonso - 16/03/2025 3:56
  */
+@EqualsAndHashCode(callSuper = true) @Data
 public class SDMEconomy extends EconomyAbstract {
-  public static final String IDENTIFY = "PEBBLE_ECONOMY";
+  public static final String IDENTIFY = "SDME_ECONOMY";
+
+  public SDMEconomy() {
+  }
 
   @Override public String getIdentify() {
     return IDENTIFY;
@@ -18,14 +24,8 @@ public class SDMEconomy extends EconomyAbstract {
 
 
   @Override public boolean isPresent() {
-    try {
-      CurrencyHelper.getAllCurrencyKeys();
-      CobbleUtils.LOGGER.info("SDM Economy isPresent Identifier: " + getIdentify());
-      return true;
-    } catch (NoClassDefFoundError | Exception e) {
-      CobbleUtils.LOGGER.error("SDM Economy not found");
-      return false;
-    }
+    CurrencyHelper.getAllCurrencyKeys();
+    return true;
   }
 
   @Override public boolean deposit(UUID playerUuid, BigDecimal money, String currency) {

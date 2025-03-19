@@ -16,7 +16,7 @@ import java.util.List;
 public class CircleAnimation {
 
   public static void start(ServerPlayerEntity player, List<ItemStack> showRewards, Vec3d position) {
-    int totalRewards = 5;
+    int totalRewards = showRewards.size();
     Vec3d centerPosition = AnimationUtils.getPosition(player, position);
     double radius = 3;
 
@@ -26,7 +26,8 @@ public class CircleAnimation {
       double offsetZ = radius * Math.sin(angle);
       double offsetY = centerPosition.y;
 
-      ItemStack reward = showRewards.get(i % showRewards.size());
+      ItemStack reward = showRewards.get(i);
+      if (reward == null) continue;
       Vec3d entityPosition = new Vec3d(centerPosition.x + offsetX, offsetY, centerPosition.z + offsetZ);
       float yaw = AnimationUtils.getYawToFacePlayer(player, entityPosition);
 

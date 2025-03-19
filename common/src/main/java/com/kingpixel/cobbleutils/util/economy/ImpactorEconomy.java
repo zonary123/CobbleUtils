@@ -1,7 +1,9 @@
-package com.kingpixel.cobbleutils.util.economys;
+package com.kingpixel.cobbleutils.util.economy;
 
 import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.util.AdventureTranslator;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
 import net.impactdev.impactor.api.economy.EconomyService;
 import net.impactdev.impactor.api.economy.accounts.Account;
 import net.impactdev.impactor.api.economy.currency.Currency;
@@ -15,27 +17,21 @@ import java.util.UUID;
 /**
  * @author Carlos Varas Alonso - 29/01/2025 4:13
  */
+@EqualsAndHashCode(callSuper = true) @Data
 public class ImpactorEconomy extends EconomyAbstract {
   public static final String IDENTIFY = "IMPACTOR";
   public static EconomyService service;
+
+  public ImpactorEconomy() {
+  }
 
   @Override public String getIdentify() {
     return IDENTIFY;
   }
 
   @Override public boolean isPresent() {
-    boolean present = false;
-    try {
-      service = EconomyService.instance();
-      present = service != null;
-      if (present) {
-        CobbleUtils.LOGGER.info("Impactor found Identifier: " + getIdentify());
-      }
-      return present;
-    } catch (IllegalStateException | NullPointerException | NoClassDefFoundError | IncompatibleClassChangeError e) {
-      CobbleUtils.LOGGER.error("Impactor not found");
-      return present;
-    }
+    service = EconomyService.instance();
+    return true;
   }
 
   @Override public boolean deposit(UUID playerUuid, BigDecimal money, String currency) {

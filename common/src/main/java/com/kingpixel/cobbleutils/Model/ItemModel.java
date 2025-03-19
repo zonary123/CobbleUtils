@@ -2,11 +2,13 @@ package com.kingpixel.cobbleutils.Model;
 
 import ca.landonjw.gooeylibs2.api.button.ButtonAction;
 import ca.landonjw.gooeylibs2.api.button.GooeyButton;
+import ca.landonjw.gooeylibs2.api.template.types.ChestTemplate;
 import com.cobblemon.mod.common.api.pokemon.PokemonProperties;
 import com.cobblemon.mod.common.item.PokemonItem;
 import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.util.AdventureTranslator;
 import com.kingpixel.cobbleutils.util.Utils;
+import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
@@ -26,8 +28,10 @@ import java.util.function.Consumer;
 @Getter
 @Setter
 @ToString
+@Data
 public class ItemModel {
   private Integer slot;
+  private Integer[] slots;
   private String item;
   private String displayname;
   private List<String> lore = new ArrayList<>();
@@ -37,6 +41,7 @@ public class ItemModel {
 
   public ItemModel() {
     this.slot = 0;
+    this.slots = new Integer[]{};
     this.item = "minecraft:emerald";
     this.displayname = "";
     this.lore = new ArrayList<>();
@@ -46,6 +51,7 @@ public class ItemModel {
 
   public ItemModel(String item) {
     this.slot = 0;
+    this.slots = new Integer[]{};
     this.item = item;
     this.displayname = "";
     this.lore = new ArrayList<>();
@@ -55,6 +61,7 @@ public class ItemModel {
 
   public ItemModel(String item, String displayname) {
     this.slot = 0;
+    this.slots = new Integer[]{};
     this.item = item;
     this.displayname = displayname;
     this.lore = new ArrayList<>();
@@ -63,12 +70,14 @@ public class ItemModel {
   }
 
   public ItemModel(String item, String displayname, List<String> lore) {
+    this.slots = new Integer[]{};
     this.item = item;
     this.displayname = displayname;
     this.lore = lore;
   }
 
   public ItemModel(String item, String displayname, List<String> lore, int customModelData) {
+    this.slots = new Integer[]{};
     this.item = item;
     this.displayname = displayname;
     this.lore = lore;
@@ -118,6 +127,7 @@ public class ItemModel {
 
   public ItemModel(ItemModel itemMoney) {
     this.slot = itemMoney.getSlot();
+    this.slots = itemMoney.getSlots();
     this.item = itemMoney.getItem();
     this.displayname = itemMoney.getDisplayname();
     this.lore = itemMoney.getLore();
@@ -245,7 +255,7 @@ public class ItemModel {
       LoreComponent loreComponent = new LoreComponent(AdventureTranslator.toNativeL(this.getLore()));
       builder.with(DataComponentTypes.LORE, loreComponent);
     }
-    
+
     builder.with(DataComponentTypes.HIDE_ADDITIONAL_TOOLTIP, Unit.INSTANCE);
     if (action == null) {
       return builder
@@ -256,5 +266,9 @@ public class ItemModel {
       .build();
   }
 
+  public void applyTemplate(ChestTemplate template, GooeyButton button) {
+    template.set(slot, button);
+    if (slots != null) for (Integer slot : slots) template.set(slot, button);
+  }
 
 }

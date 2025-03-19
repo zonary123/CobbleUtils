@@ -255,18 +255,27 @@ public class ItemChance {
       } else if (item.startsWith("item:")) {
         itemStack = parseItemStack(item, parseAmount(item.split(":")[1]) * amount);
         if (!player.getInventory().insertStack(itemStack)) {
-          player.dropItem(itemStack, false);
+          player.dropItem(itemStack, true);
         }
         return true;
       } else if (item.startsWith("mod:")) {
         itemStack = getModItem(itemChance);
         if (!player.getInventory().insertStack(itemStack)) {
-          player.dropItem(itemStack, false);
+          player.dropItem(itemStack, true);
         }
         return true;
       } else if (item.startsWith("polymer:")) {
         CobbleUtils.LOGGER.info("Polymer not supported yet");
         return false;
+      } else if (item.startsWith("message:")) {
+        String message = item.replace("message:", "");
+        PlayerUtils.sendMessage(
+          player,
+          message,
+          CobbleUtils.config.getPrefix(),
+          TypeMessage.CHAT
+        );
+        return true;
       } else {
         itemStack = Utils.parseItemId(item, amount);
         if (!player.getInventory().insertStack(itemStack)) {

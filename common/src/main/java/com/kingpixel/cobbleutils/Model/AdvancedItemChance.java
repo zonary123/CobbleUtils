@@ -39,6 +39,7 @@ import java.util.function.Consumer;
 @Setter
 @ToString
 public class AdvancedItemChance {
+  // TODO: Add queue for the ANIMATIONS
   // Title of the menu rewards
   private String title;
   // Options for the rewards
@@ -157,6 +158,8 @@ public class AdvancedItemChance {
 
     Vec3d centerPosition = AnimationUtils.getPosition(player, null);
 
+    //TODO: Change how the animations are called for queue.
+
     switch (animation) {
       case CSGO:
         CSGOAnimation.start(player, showAllRewards, showRewards);
@@ -174,6 +177,7 @@ public class AdvancedItemChance {
 
   private enum Animations {
     NONE, // No animation
+    RANDOM,
     CSGO, // Show the items in a CSGO style
     CIRCLE, // Show the items in a circle style
     ALLCIRCLE // Show all the items in a circle style

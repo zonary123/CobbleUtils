@@ -1,6 +1,8 @@
-package com.kingpixel.cobbleutils.util.economys;
+package com.kingpixel.cobbleutils.util.economy;
 
 import com.kingpixel.cobbleutils.CobbleUtils;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
 import net.milkbowl.vault.economy.Economy;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.Plugin;
@@ -14,38 +16,38 @@ import java.util.UUID;
 /**
  * @author Carlos Varas Alonso - 16/03/2025 3:30
  */
+@EqualsAndHashCode(callSuper = true) @Data
 public class VaultEconomy extends EconomyAbstract {
   public static final String IDENTIFY = "VAULT";
   private Economy service;
+
+  public VaultEconomy() {
+
+  }
 
   @Override public String getIdentify() {
     return IDENTIFY;
   }
 
   @Override public boolean isPresent() {
-    try {
-      if (Bukkit.getServer().getPluginManager().getPlugin("Vault") == null) {
-        CobbleUtils.LOGGER.info("Cannot find Vault!");
-        List<String> plugins = new ArrayList<>();
-        for (Plugin plugin : Bukkit.getServer().getPluginManager().getPlugins()) {
-          plugins.add(plugin.getName());
-        }
-        CobbleUtils.LOGGER.info("Report this to zonary123 Plugins to Vault -> " + plugins);
-      } else {
-        RegisteredServiceProvider<Economy> rsp = Bukkit.getServer().getServicesManager().getRegistration(Economy.class);
-        if (rsp == null) {
-          CobbleUtils.LOGGER.info("Registered Service Provider for Economy.class not found");
-        } else {
-          service = rsp.getProvider();
-          CobbleUtils.LOGGER.info("Economy successfully hooked up");
-          CobbleUtils.LOGGER.info("Economy: " + service.getName());
-          CobbleUtils.LOGGER.info("Economy vault found Identifier: " + getIdentify());
-          return true;
-        }
+    if (Bukkit.getServer().getPluginManager().getPlugin("Vault") == null) {
+      CobbleUtils.LOGGER.info("Cannot find Vault!");
+      List<String> plugins = new ArrayList<>();
+      for (Plugin plugin : Bukkit.getServer().getPluginManager().getPlugins()) {
+        plugins.add(plugin.getName());
       }
-    } catch (NoClassDefFoundError | Exception e) {
-      CobbleUtils.LOGGER.error("Vault not found");
-      return false;
+      CobbleUtils.LOGGER.info("Report this to zonary123 Plugins to Vault -> " + plugins);
+    } else {
+      RegisteredServiceProvider<Economy> rsp = Bukkit.getServer().getServicesManager().getRegistration(Economy.class);
+      if (rsp == null) {
+        CobbleUtils.LOGGER.info("Registered Service Provider for Economy.class not found");
+      } else {
+        service = rsp.getProvider();
+        CobbleUtils.LOGGER.info("Economy successfully hooked up");
+        CobbleUtils.LOGGER.info("Economy: " + service.getName());
+        CobbleUtils.LOGGER.info("Economy vault found Identifier: " + getIdentify());
+        return true;
+      }
     }
     return false;
   }

@@ -1,8 +1,10 @@
-package com.kingpixel.cobbleutils.util.economys;
+package com.kingpixel.cobbleutils.util.economy;
 
 import com.kingpixel.cobbleutils.CobbleUtils;
 import fr.harmex.cobbledollars.common.CobbleDollars;
 import fr.harmex.cobbledollars.common.utils.CobbleDollarsPlayer;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -11,8 +13,12 @@ import java.util.UUID;
 /**
  * @author Carlos Varas Alonso - 16/03/2025 3:41
  */
+@EqualsAndHashCode(callSuper = true) @Data
 public class CobbleDollarsEconomy extends EconomyAbstract {
   public static final String IDENTIFY = "COBBLE_DOLLARS";
+
+  public CobbleDollarsEconomy() {
+  }
 
   @Override public String getIdentify() {
     return IDENTIFY;
@@ -21,10 +27,9 @@ public class CobbleDollarsEconomy extends EconomyAbstract {
   @Override public boolean isPresent() {
     try {
       CobbleDollars.INSTANCE.getImplementation();
-      CobbleUtils.LOGGER.info("CobbleDollars found Identifier: " + getIdentify());
       return true;
-    } catch (NoClassDefFoundError | Exception e) {
-      CobbleUtils.LOGGER.error("CobbleDollars not found");
+    } catch (IllegalStateException | NullPointerException | NoClassDefFoundError | IncompatibleClassChangeError e) {
+      e.printStackTrace();
       return false;
     }
   }

@@ -1,6 +1,8 @@
-package com.kingpixel.cobbleutils.util.economys;
+package com.kingpixel.cobbleutils.util.economy;
 
 import com.kingpixel.cobbleutils.CobbleUtils;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
 import org.beconomy.api.BEconomy;
 import org.beconomy.api.EconomyAPI;
 
@@ -10,25 +12,22 @@ import java.util.UUID;
 /**
  * @author Carlos Varas Alonso - 16/03/2025 3:35
  */
+@EqualsAndHashCode(callSuper = true) @Data
 public class BeEconomy extends EconomyAbstract {
   public static final String IDENTIFY = "BECONOMY";
   private static EconomyAPI service;
 
+  public BeEconomy() {
+  }
 
   @Override public String getIdentify() {
     return IDENTIFY;
   }
 
   @Override public boolean isPresent() {
-    try {
-      BEconomy.INSTANCE.initialize(CobbleUtils.server);
-      service = BEconomy.INSTANCE.getAPI();
-      CobbleUtils.LOGGER.info("BlanketEconomy found Identifier: " + getIdentify());
-      return true;
-    } catch (NoClassDefFoundError | Exception e) {
-      CobbleUtils.LOGGER.error("BlanketEconomy not found");
-      return false;
-    }
+    BEconomy.INSTANCE.initialize(CobbleUtils.server);
+    service = BEconomy.INSTANCE.getAPI();
+    return true;
   }
 
   @Override public boolean deposit(UUID playerUuid, BigDecimal money, String currency) {

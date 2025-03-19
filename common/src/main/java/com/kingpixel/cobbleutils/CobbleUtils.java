@@ -44,6 +44,7 @@ public class CobbleUtils {
   public static void load() {
     files();
     sign();
+    EconomyApi.setEconomyType();
     try {
       if (config.isGtsSupport()) {
         new CobbleUtilsBridgeGTS();
@@ -61,7 +62,7 @@ public class CobbleUtils {
 
   private static void sign() {
     info(MOD_NAME, "1.1.3", "CobbleUtils");
-    LOGGER.info("§e| §6Supported economies: Impactor, BlanketEconomy, CobbleDollars, PebbleEconomy and Vault");
+    LOGGER.info("§e| §6Supported economies: Impactor, BlanketEconomy, CobbleDollars, SDMEconomy, PebbleEconomy and Vault");
     LOGGER.info("§e+-------------------------------+");
   }
 
@@ -81,13 +82,15 @@ public class CobbleUtils {
 
   private static void events() {
 
-    LifecycleEvent.SERVER_LEVEL_LOAD.register(level -> server = level.getServer());
+
+    LifecycleEvent.SERVER_LEVEL_LOAD.register(level -> {
+      server = level.getServer();
+    });
 
     LifecycleEvent.SERVER_STARTED.register(server -> {
-      load();
       spawnRates.init();
       CustomPokemonProperty.Companion.register(MinIvsPropertyType.getInstance());
-      EconomyApi.setEconomyType();
+      load();
     });
 
     CommandRegistrationEvent.EVENT.register((dispatcher, registry, selection) -> {
@@ -97,5 +100,5 @@ public class CobbleUtils {
 
     InteractionEvent.RIGHT_CLICK_ITEM.register(ItemRightClickEvents::register);
   }
-  
+
 }
