@@ -1,4 +1,4 @@
-package com.kingpixel.cobbleutils.util.economy;
+package com.kingpixel.cobbleutils.util.economys;
 
 import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.util.AdventureTranslator;
@@ -85,5 +85,9 @@ public class ImpactorEconomy extends EconomyAbstract {
     }
     CobbleUtils.LOGGER.error("Currency not found: " + currency + " using primary currency");
     return service.currencies().primary();
+  }
+
+  @Override public int getDecimals(String currency) {
+    return getCurrency(currency).decimals();
   }
 }

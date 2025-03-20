@@ -3,7 +3,7 @@ package com.kingpixel.cobbleutils.api;
 import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.Model.Priority;
 import com.kingpixel.cobbleutils.Model.PriorityEconomy;
-import com.kingpixel.cobbleutils.util.economy.*;
+import com.kingpixel.cobbleutils.util.economys.*;
 import lombok.Data;
 import lombok.Getter;
 
@@ -27,10 +27,17 @@ public class EconomyApi {
 
     economys.removeIf(economy -> {
       try {
-        economy.isPresent();
-        CobbleUtils.LOGGER.info("Economy found: " + economy.getIdentify());
-        return false;
+        if (economy.isPresent()) {
+          CobbleUtils.LOGGER.info("Economy found: " + economy.getIdentify());
+          return false;
+        } else {
+          CobbleUtils.LOGGER.info("Economy not found: " + economy.getIdentify());
+          return true;
+        }
       } catch (NoClassDefFoundError | IncompatibleClassChangeError | Exception e) {
+        if (CobbleUtils.config.isDebug()) {
+          e.printStackTrace();
+        }
         CobbleUtils.LOGGER.info("Economy not found: " + economy.getIdentify());
         return true;
       }
@@ -42,7 +49,7 @@ public class EconomyApi {
     if (economys.isEmpty()) {
       setEconomyType();
       if (economys.isEmpty()) {
-        throw new RuntimeException("You dont have any economy, Supported: " +
+        throw new RuntimeException("You dont have any economys, Supported: " +
           "BeEconomy, CobbleDollarsEconomy, ImpactorEconomy, PebbleEconomy, SDMEconomy, VaultEconomy");
       }
     }
@@ -57,7 +64,7 @@ public class EconomyApi {
     }
 
     EconomyAbstract economy = getHighestPriorityEconomy();
-    if (economy == null) throw new RuntimeException("CobbleUtils could not find any economy with that id");
+    if (economy == null) throw new RuntimeException("CobbleUtils could not find any economys with that id");
     return economy;
   }
 
@@ -81,14 +88,12 @@ public class EconomyApi {
 
 
   /**
-   * Add a new economy
+   * Add a new economys
    *
-   * @param economy The economy to add
+   * @param economy The economys to add
    */
   public static void addEconomy(EconomyAbstract economy) {
-    if (economy.isPresent()) {
-      economys.add(economy);
-    }
+    economys.add(economy);
   }
 
   /**
@@ -160,7 +165,7 @@ public class EconomyApi {
    * @param playerUuid The player to check the money
    * @param money      The amount of money
    * @param currency   The currency to check
-   * @param economyId  The economy to check
+   * @param economyId  The economys to check
    *
    * @return If the player has enough money
    */

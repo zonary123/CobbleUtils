@@ -1,4 +1,4 @@
-package com.kingpixel.cobbleutils.util.economy;
+package com.kingpixel.cobbleutils.util.economys;
 
 import com.kingpixel.cobbleutils.CobbleUtils;
 import fr.harmex.cobbledollars.common.CobbleDollars;
@@ -25,13 +25,8 @@ public class CobbleDollarsEconomy extends EconomyAbstract {
   }
 
   @Override public boolean isPresent() {
-    try {
-      CobbleDollars.INSTANCE.getImplementation();
-      return true;
-    } catch (IllegalStateException | NullPointerException | NoClassDefFoundError | IncompatibleClassChangeError e) {
-      e.printStackTrace();
-      return false;
-    }
+    CobbleDollars.INSTANCE.getImplementation();
+    return true;
   }
 
   @Override public boolean deposit(UUID playerUuid, BigDecimal money, String currency) {
@@ -67,5 +62,9 @@ public class CobbleDollarsEconomy extends EconomyAbstract {
     if (player == null) return false;
     player.cobbleDollars$setCobbleDollars(BigInteger.valueOf(money.longValue()));
     return true;
+  }
+
+  @Override public int getDecimals(String currency) {
+    return 5;
   }
 }

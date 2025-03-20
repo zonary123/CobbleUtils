@@ -15,8 +15,8 @@ import java.util.UUID;
  */
 
 /**
- * This class bridges the CobbleUtils economy system with the GTS economy system.
- * It conditionally registers the GTS economy provider if the GTS economy class is available.
+ * This class bridges the CobbleUtils economys system with the GTS economys system.
+ * It conditionally registers the GTS economys provider if the GTS economys class is available.
  */
 
 public class CobbleUtilsBridgeGTS implements GtsEconomy {

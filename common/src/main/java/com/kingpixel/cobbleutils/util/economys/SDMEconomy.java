@@ -1,4 +1,4 @@
-package com.kingpixel.cobbleutils.util.economy;
+package com.kingpixel.cobbleutils.util.economys;
 
 import com.kingpixel.cobbleutils.CobbleUtils;
 import lombok.Data;
@@ -50,5 +50,9 @@ public class SDMEconomy extends EconomyAbstract {
   @Override public boolean setBalance(UUID playerUuid, BigDecimal money, String currency) {
     CurrencyHelper.setMoney(getPlayer(playerUuid), currency, money.longValue());
     return true;
+  }
+
+  @Override public int getDecimals(String currency) {
+    return 5;
   }
 }

@@ -1,4 +1,4 @@
-package com.kingpixel.cobbleutils.util.economy;
+package com.kingpixel.cobbleutils.util.economys;
 
 import com.kingpixel.cobbleutils.CobbleUtils;
 import lombok.Data;
@@ -98,6 +98,16 @@ public abstract class EconomyAbstract {
    * @return true if the balance was set
    */
   public abstract boolean setBalance(UUID playerUuid, BigDecimal money, String currency);
+
+  /**
+   * get the decimals of the currency
+   *
+   * @param currency The currency to get the decimals
+   *
+   * @return The decimals of the currency
+   */
+  public abstract int getDecimals(String currency);
+
 
   public ServerPlayerEntity getPlayer(UUID uuid) {
     return CobbleUtils.server.getPlayerManager().getPlayer(uuid);

@@ -1,4 +1,4 @@
-package com.kingpixel.cobbleutils.util.economy;
+package com.kingpixel.cobbleutils.util.economys;
 
 import com.kingpixel.cobbleutils.CobbleUtils;
 import lombok.Data;
@@ -29,7 +29,8 @@ public class VaultEconomy extends EconomyAbstract {
     return IDENTIFY;
   }
 
-  @Override public boolean isPresent() {
+  @Override
+  public boolean isPresent() {
     if (Bukkit.getServer().getPluginManager().getPlugin("Vault") == null) {
       CobbleUtils.LOGGER.info("Cannot find Vault!");
       List<String> plugins = new ArrayList<>();
@@ -45,7 +46,6 @@ public class VaultEconomy extends EconomyAbstract {
         service = rsp.getProvider();
         CobbleUtils.LOGGER.info("Economy successfully hooked up");
         CobbleUtils.LOGGER.info("Economy: " + service.getName());
-        CobbleUtils.LOGGER.info("Economy vault found Identifier: " + getIdentify());
         return true;
       }
     }
@@ -71,5 +71,9 @@ public class VaultEconomy extends EconomyAbstract {
   @Override public boolean setBalance(UUID playerUuid, BigDecimal money, String currency) {
     CobbleUtils.LOGGER.info("setBalance not implemented for BeEconomy");
     return false;
+  }
+
+  @Override public int getDecimals(String currency) {
+    return 5;
   }
 }
