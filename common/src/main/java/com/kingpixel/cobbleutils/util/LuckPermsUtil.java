@@ -13,8 +13,6 @@ import org.bukkit.plugin.RegisteredServiceProvider;
 
 import java.util.List;
 
-import static dev.architectury.platform.Platform.isNeoForge;
-
 public abstract class LuckPermsUtil {
 
   private static Permission PERMISSION_TYPE;
@@ -30,10 +28,7 @@ public abstract class LuckPermsUtil {
 
   private static void setup() {
     if (PERMISSION_TYPE != null) return;
-    if (isNeoForge()) {
-      PERMISSION_TYPE = Permission.LUCKPERMS;
-      CobbleUtils.LOGGER.info("Neoforge detected");
-    } else if (haveFabricPermissionsApi()) {
+    if (haveFabricPermissionsApi()) {
       PERMISSION_TYPE = Permission.FABRIC_PERMISSIONS_API;
       CobbleUtils.LOGGER.info("Fabric permissions detected");
     } else if (haveBukkitPermissionApi()) {

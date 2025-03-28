@@ -38,6 +38,10 @@ public class PokemonFormula {
     }
   }
 
+  public static void removeFormula(String identifier) {
+    expressions.remove(identifier);
+  }
+
   public Expression getPokemonExpression(Pokemon pokemon, String identifier) {
     Expression expression = getExpression(identifier);
     expression.setVariable("base", getBase(pokemon));

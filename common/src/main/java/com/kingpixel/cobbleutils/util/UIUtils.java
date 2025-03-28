@@ -29,7 +29,6 @@ import net.minecraft.text.Text;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
 
@@ -338,33 +337,28 @@ public class UIUtils {
                                           String titlemenu) throws ExecutionException, InterruptedException {
     ChestTemplate template = ChestTemplate.builder(4).build();
 
-    List<CompletableFuture<Void>> slotFutures = new ArrayList<>();
+    List<Button> slotFutures = new ArrayList<>();
 
     for (int i = 0; i < partyStore.size(); i++) {
       int slotIndex = i;
-      CompletableFuture<Void> slotFuture = CompletableFuture.runAsync(() -> {
-        GooeyButton slot;
-        Pokemon pokemon = partyStore.get(slotIndex);
-        slot = UIUtils.createButtonPokemon(pokemon, actionpokemon);
-        int row = slotIndex / 3 + 1;
-        int col = slotIndex % 3 + 3;
-        template.set(row, col, slot);
-      });
-      slotFutures.add(slotFuture);
+      GooeyButton slot;
+      Pokemon pokemon = partyStore.get(slotIndex);
+      slot = UIUtils.createButtonPokemon(pokemon, actionpokemon);
+      int row = slotIndex / 3 + 1;
+      int col = slotIndex % 3 + 3;
+      template.set(row, col, slot);
+
+      slotFutures.add(slot);
     }
 
-    CompletableFuture<Void> allSlotsFuture = CompletableFuture.allOf(
-      slotFutures.toArray(new CompletableFuture[0]));
+    template.fill(GooeyButton.of(Utils.parseItemId(CobbleUtils.config.getFill())));
 
-    return allSlotsFuture.thenApplyAsync(v -> {
-      template.fill(GooeyButton.of(Utils.parseItemId(CobbleUtils.config.getFill())));
-      return GooeyPage.builder()
-        .template(template)
-        .title(AdventureTranslator.toNative(CobbleUtils.language.getTitleparty()))
-        .onClose(pageAction -> SoundUtil.playSound(CobbleUtils.language.getSoundclose(), pageAction.getPlayer()))
-        .onOpen(pageAction -> SoundUtil.playSound(CobbleUtils.language.getSoundopen(), pageAction.getPlayer()))
-        .build();
-    }).get();
+    return GooeyPage.builder()
+      .template(template)
+      .title(AdventureTranslator.toNative(CobbleUtils.language.getTitleparty()))
+      .onClose(pageAction -> SoundUtil.playSound(CobbleUtils.language.getSoundclose(), pageAction.getPlayer()))
+      .onOpen(pageAction -> SoundUtil.playSound(CobbleUtils.language.getSoundopen(), pageAction.getPlayer()))
+      .build();
   }
 
   /**
@@ -379,41 +373,28 @@ public class UIUtils {
    * @throws InterruptedException If the current thread was interrupted
    */
   public static GooeyPage createPageParty(ServerPlayerEntity player, Consumer<PokemonButtonAction> actionpokemon,
-                                          Consumer<ButtonAction> actionclose) throws ExecutionException,
-    InterruptedException {
+                                          Consumer<ButtonAction> actionclose) {
     ChestTemplate template = ChestTemplate.builder(4).build();
-    PlayerPartyStore partyStore = null;
-    partyStore = Cobblemon.INSTANCE.getStorage().getParty(player);
-    List<CompletableFuture<Void>> slotFutures = new ArrayList<>();
+    PlayerPartyStore partyStore = Cobblemon.INSTANCE.getStorage().getParty(player);
 
     for (int i = 0; i < partyStore.size(); i++) {
       int slotIndex = i;
-      PlayerPartyStore finalPartyStore = partyStore;
-      CompletableFuture<Void> slotFuture = CompletableFuture.runAsync(() -> {
-        GooeyButton slot;
-        Pokemon pokemon = finalPartyStore.get(slotIndex);
-        slot = UIUtils.createButtonPokemon(pokemon, actionpokemon);
-        int row = slotIndex / 3 + 1;
-        int col = slotIndex % 3 + 3;
-        template.set(row, col, slot);
-      });
-      slotFutures.add(slotFuture);
+      Pokemon pokemon = partyStore.get(slotIndex);
+      GooeyButton slot = UIUtils.createButtonPokemon(pokemon, actionpokemon);
+      int row = slotIndex / 3 + 1;
+      int col = slotIndex % 3 + 3;
+      template.set(row, col, slot);
     }
 
-    CompletableFuture<Void> allSlotsFuture = CompletableFuture.allOf(
-      slotFutures.toArray(new CompletableFuture[0]));
+    template.fill(GooeyButton.of(Utils.parseItemId(CobbleUtils.config.getFill())));
+    template.set(0, 4, getPcButton(player, actionpokemon, actionclose));
 
-    return allSlotsFuture.thenApplyAsync(v -> {
-      template.fill(GooeyButton.of(Utils.parseItemId(CobbleUtils.config.getFill())));
-      template.set(0, 4, getPcButton(player, actionpokemon, actionclose));
-
-      return GooeyPage.builder()
-        .template(template)
-        .title(AdventureTranslator.toNative(CobbleUtils.language.getTitleparty()))
-        .onClose(pageAction -> SoundUtil.playSound(CobbleUtils.language.getSoundclose(), pageAction.getPlayer()))
-        .onOpen(pageAction -> SoundUtil.playSound(CobbleUtils.language.getSoundopen(), pageAction.getPlayer()))
-        .build();
-    }).get();
+    return GooeyPage.builder()
+      .template(template)
+      .title(AdventureTranslator.toNative(CobbleUtils.language.getTitleparty()))
+      .onClose(pageAction -> SoundUtil.playSound(CobbleUtils.language.getSoundclose(), pageAction.getPlayer()))
+      .onOpen(pageAction -> SoundUtil.playSound(CobbleUtils.language.getSoundopen(), pageAction.getPlayer()))
+      .build();
   }
 
   /**
