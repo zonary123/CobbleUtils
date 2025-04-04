@@ -30,7 +30,7 @@ import java.util.function.Consumer;
 @ToString
 @Data
 public class ItemModel {
-  private Integer slot;
+  private int slot;
   private Integer[] slots;
   private String item;
   private String displayname;
@@ -133,6 +133,10 @@ public class ItemModel {
     this.lore = itemMoney.getLore();
     CustomModelData = itemMoney.getCustomModelData();
     this.nbt = itemMoney.getNbt();
+  }
+
+  public void setSlot(Integer slot) {
+    this.slot = slot;
   }
 
   /**

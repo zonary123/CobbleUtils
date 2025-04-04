@@ -22,20 +22,19 @@ public class PlayerUtils {
   // Comando
   @Deprecated
   public static void sendMessage(ServerPlayerEntity player, String message) {
-    if (!message.isEmpty()) {
-      player.sendMessage(AdventureTranslator.toNativeWithOutPrefix(message, player));
-    }
+    if (message.isEmpty()) return;
+    player.sendMessage(AdventureTranslator.toNativeWithOutPrefix(message, player));
   }
 
   @Deprecated
   public static void sendMessage(ServerPlayerEntity player, String message, String prefix) {
-    if (message != null && !message.isEmpty()) {
-      player.sendMessage(AdventureTranslator.toNative(message, prefix, player));
-    }
+    if (message.isEmpty()) return;
+    player.sendMessage(AdventureTranslator.toNative(message, prefix, player));
   }
 
   @Deprecated
   public static void sendMessage(ServerPlayerEntity player, String message, String prefix, boolean broadcast) {
+    if (message.isEmpty()) return;
     if (broadcast) {
       broadcast(message, prefix);
     } else {
@@ -44,6 +43,8 @@ public class PlayerUtils {
   }
 
   public static void sendMessage(ServerPlayerEntity player, String message, String prefix, TypeMessage typeMessage) {
+    if (message.isEmpty()) return;
+    
     switch (typeMessage) {
       case CHAT -> sendMessage(player, message, prefix);
       case ACTIONBAR -> player.sendMessage(AdventureTranslator.toNative(message, prefix, player), true);

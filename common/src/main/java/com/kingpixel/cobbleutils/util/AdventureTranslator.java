@@ -33,6 +33,8 @@ import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import net.minecraft.registry.BuiltinRegistries;
+import net.minecraft.registry.Registry;
+import net.minecraft.registry.RegistryKey;
 import net.minecraft.registry.RegistryWrapper;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.MutableText;
@@ -41,6 +43,8 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+import java.util.stream.Stream;
 
 public class AdventureTranslator {
   public static final MiniMessage miniMessage = MiniMessage.miniMessage();
@@ -52,7 +56,21 @@ public class AdventureTranslator {
 
   private static RegistryWrapper.WrapperLookup getWrapper() {
     try {
-      if (wrapperLookup == null) wrapperLookup = BuiltinRegistries.createWrapperLookup();
+      if (wrapperLookup == null) {
+        wrapperLookup = BuiltinRegistries.createWrapperLookup();
+        if (wrapperLookup == null) {
+          wrapperLookup = new RegistryWrapper.WrapperLookup() {
+            @Override public Stream<RegistryKey<? extends Registry<?>>> streamAllRegistryKeys() {
+              return Stream.empty();
+            }
+
+            @Override
+            public <T> Optional<RegistryWrapper.Impl<T>> getOptionalWrapper(RegistryKey<? extends Registry<? extends T>> registryRef) {
+              return Optional.empty();
+            }
+          };
+        }
+      }
       return wrapperLookup;
     } catch (Exception e) {
       e.printStackTrace();

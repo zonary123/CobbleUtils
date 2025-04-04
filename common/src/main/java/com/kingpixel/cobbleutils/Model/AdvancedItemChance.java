@@ -41,6 +41,7 @@ import java.util.function.Consumer;
 public class AdvancedItemChance {
   // TODO: Add queue for the ANIMATIONS
   // Title of the menu rewards
+  private boolean showMenu;
   private String title;
   // Options for the rewards
   private boolean giveAll;
@@ -54,6 +55,7 @@ public class AdvancedItemChance {
   private final Map<String, List<ItemChance>> lootTable;
 
   public AdvancedItemChance() {
+    this.showMenu = true;
     this.title = "";
     this.giveAll = false;
     this.amountRewardsPermission = new HashMap<>();
@@ -186,6 +188,7 @@ public class AdvancedItemChance {
   // Menus methods
 
   public void openMenu(ServerPlayerEntity player, Consumer<ChestTemplate> templateConsumer) {
+    if (!showMenu) return;
     ChestTemplate template = ChestTemplate.builder(6)
       .build();
 
@@ -200,6 +203,7 @@ public class AdvancedItemChance {
 
   public void openMenu(ServerPlayerEntity player, Consumer<ChestTemplate> templateConsumer,
                        Consumer<ButtonAction> close) {
+    if (!showMenu) return;
     ChestTemplate template = ChestTemplate.builder(6)
       .build();
 
@@ -212,6 +216,7 @@ public class AdvancedItemChance {
 
   @Deprecated
   public void openMenu(ServerPlayerEntity player) {
+    if (!showMenu) return;
     ChestTemplate template = ChestTemplate.builder(6)
       .build();
 

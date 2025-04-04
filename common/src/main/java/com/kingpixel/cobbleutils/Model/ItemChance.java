@@ -192,7 +192,7 @@ public class ItemChance {
     itemChances.add(new ItemChance("pokemon:rattata alola", 1.0));
     itemChances.add(new ItemChance("command:lp user %player% permission set a", 1.0, "minecraft:emerald", "Give " +
       "permission a"));
-    itemChances.add(new ItemChance("command:lp user %player% permission set a|lp user %player% permission set b", 1.0
+    itemChances.add(new ItemChance("command:lp user %player% permission set a|command:lp user %player% permission set b", 1.0
       , "minecraft:emerald", "Give permission a and b"));
     itemChances.add(new ItemChance("money:1", 1.0));
     itemChances.add(new ItemChance("money:tokens:1", 1.0));

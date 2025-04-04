@@ -17,6 +17,7 @@ import net.minecraft.util.Hand;
 public class ItemRightClickEvents {
   public static CompoundEventResult register(PlayerEntity player, Hand hand) {
     ItemStack itemStack = player.getStackInHand(hand);
+    if (itemStack.isEmpty()) return CompoundEventResult.pass();
     NbtComponent tag = itemStack.get(DataComponentTypes.CUSTOM_DATA);
     if (tag == null) return CompoundEventResult.pass();
     if (tag.contains("shinytoken") && itemStack.getItem() == CobbleUtils.config.getShinytoken().getItemStack().getItem()) {
