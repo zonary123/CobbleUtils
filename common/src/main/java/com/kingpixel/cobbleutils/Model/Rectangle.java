@@ -59,4 +59,32 @@ public class Rectangle {
     return totalSlots - actualOccupiedSlots;
   }
 
+  public int getOccupiedSlots() {
+    return length * width;
+  }
+
+  public int getStartSlot() {
+    return (startRow * 9) + startColumn;
+  }
+
+  public int getEndSlot(int rows) {
+    int totalSlots = rows * 9;
+    int endSlot = getStartSlot() + getOccupiedSlots() - 1;
+
+    return Math.min(endSlot, totalSlots - 1);
+  }
+
+  public int getActualOccupiedSlots(int rows) {
+    return getEndSlot(rows) - getStartSlot() + 1;
+  }
+
+
+  public int getEndRow() {
+    return startRow + length - 1;
+  }
+  
+  public int getEndColumn() {
+    return startColumn + width - 1;
+  }
+
 }

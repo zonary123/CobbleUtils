@@ -7,6 +7,7 @@ import com.cobblemon.mod.common.api.pokemon.PokemonProperties;
 import com.cobblemon.mod.common.item.PokemonItem;
 import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.util.AdventureTranslator;
+import com.kingpixel.cobbleutils.util.UIUtils;
 import com.kingpixel.cobbleutils.util.Utils;
 import lombok.Data;
 import lombok.Getter;
@@ -30,7 +31,7 @@ import java.util.function.Consumer;
 @ToString
 @Data
 public class ItemModel {
-  private int slot;
+  private Integer slot;
   private Integer[] slots;
   private String item;
   private String displayname;
@@ -40,7 +41,7 @@ public class ItemModel {
 
 
   public ItemModel() {
-    this.slot = 0;
+    this.slot = null;
     this.slots = new Integer[]{};
     this.item = "minecraft:emerald";
     this.displayname = "";
@@ -70,6 +71,7 @@ public class ItemModel {
   }
 
   public ItemModel(String item, String displayname, List<String> lore) {
+    this.slot = 0;
     this.slots = new Integer[]{};
     this.item = item;
     this.displayname = displayname;
@@ -77,6 +79,7 @@ public class ItemModel {
   }
 
   public ItemModel(String item, String displayname, List<String> lore, int customModelData) {
+    this.slot = 0;
     this.slots = new Integer[]{};
     this.item = item;
     this.displayname = displayname;
@@ -102,6 +105,7 @@ public class ItemModel {
   }
 
   public ItemModel(String item, String displayname, List<String> lore, long customModelData) {
+    this.slot = 0;
     this.item = item;
     this.displayname = displayname;
     this.lore = lore;
@@ -133,10 +137,6 @@ public class ItemModel {
     this.lore = itemMoney.getLore();
     CustomModelData = itemMoney.getCustomModelData();
     this.nbt = itemMoney.getNbt();
-  }
-
-  public void setSlot(Integer slot) {
-    this.slot = slot;
   }
 
   /**
@@ -271,8 +271,12 @@ public class ItemModel {
   }
 
   public void applyTemplate(ChestTemplate template, GooeyButton button) {
-    template.set(slot, button);
-    if (slots != null) for (Integer slot : slots) template.set(slot, button);
+    if (UIUtils.isInside(slot, template.getRows())) template.set(slot, button);
+    if (slots != null) {
+      for (Integer slot : slots) {
+        if (UIUtils.isInside(slot, template.getRows())) template.set(slot, button);
+      }
+    }
   }
 
 }

@@ -145,10 +145,9 @@ public class Lang {
     lorepokemon = List.of(
       "<#83dcde><lang:cobblemon.ui.lv> &f%level%",
       "<#14b2dd><lang:cobblemon.ui.info.type>: &f%types%",
+      "<#ecca18>Form: &f%form%",
       "<#4969dc>Gender: %gender%",
       "<#D0A5DE><lang:cobblemon.ui.stats.friendship>: &f%friendship%",
-      "<#ab8fdb>Legendary: %legendary%",
-      "<#ab8fdb>Ultra Beast: %ultrabeast%",
       "<#de896f>Tradeable: &f%tradeable%",
       "<#b0eb59>Breedable: &f%breedable%",
       "<#9be8c2><lang:cobblemon.ui.info.nature>: &f%nature% &f(&a↑%up%&f/&c↓%down%&f)",
@@ -163,12 +162,11 @@ public class Lang {
       "<#e35146>Ball: &f%ball%",
       "<#ecca18>Size: &f%size%",
       "<#ecca18><lang:cobblemon.held_item>: &f%item%",
-      "<#ecca18>Form: &f%form%",
       "<#98eb59><lang:cobblemon.ui.moves>: &f%move1% &f- %move2% &f- %move3% &f- %move4%",
-      "<#b0eb59><lang:cobblemon.ui.info.original_trainer>: &f%owner%",
-      "<#b0eb59>Country: &f%country%",
-      "<#b0eb59>EggGroups: &f%egggroups%",
-      "<#b0eb59>ShowdownId: &f%showdownid%"
+      //"<#b0eb59><lang:cobblemon.ui.info.original_trainer>: &f%owner%",
+      "<#b0eb59>Country: &f%country%"
+      //"<#b0eb59>EggGroups: &f%egggroups%",
+      //"<#b0eb59>ShowdownId: &f%showdownid%"
     );
     lorechance = List.of(
       "&7Chance: &e%chance%&f%"

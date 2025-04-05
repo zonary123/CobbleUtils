@@ -10,6 +10,7 @@ import net.minecraft.server.network.ServerPlayerEntity;
 
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * @author Carlos Varas Alonso - 19/11/2024 2:16
@@ -43,24 +44,36 @@ public class WebHookData {
    */
   public void sendWebHook(String id, WebHookStruct struct, List<ServerPlayerEntity> players,
                           List<Pokemon> pokemons) {
-    if (!ENABLED || URL_WEBHOOK.isEmpty()) return;
-    WebhookClient client = webhooks.get(id);
-    if (client == null) {
-      client = WebhookClient.withUrl(URL_WEBHOOK);
-      webhooks.put(id, client);
-    }
-    client.send(struct.getMessage(this, players, pokemons));
+    CompletableFuture.runAsync(() -> {
+        if (!ENABLED || URL_WEBHOOK.isEmpty()) return;
+        WebhookClient client = webhooks.get(id);
+        if (client == null) {
+          client = WebhookClient.withUrl(URL_WEBHOOK);
+          webhooks.put(id, client);
+        }
+        client.send(struct.getMessage(this, players, pokemons));
+      })
+      .exceptionally(e -> {
+        e.printStackTrace();
+        return null;
+      });
   }
 
   public void sendWebHookEntity(String id, WebHookStruct struct, List<ServerPlayerEntity> players,
                                 List<PokemonEntity> pokemons) {
-    if (!ENABLED || URL_WEBHOOK.isEmpty()) return;
-    WebhookClient client = webhooks.get(id);
-    if (client == null) {
-      client = WebhookClient.withUrl(URL_WEBHOOK);
-      webhooks.put(id, client);
-    }
-    client.send(struct.getMessageEntity(this, players, pokemons));
+    CompletableFuture.runAsync(() -> {
+        if (!ENABLED || URL_WEBHOOK.isEmpty()) return;
+        WebhookClient client = webhooks.get(id);
+        if (client == null) {
+          client = WebhookClient.withUrl(URL_WEBHOOK);
+          webhooks.put(id, client);
+        }
+        client.send(struct.getMessageEntity(this, players, pokemons));
+      })
+      .exceptionally(e -> {
+        e.printStackTrace();
+        return null;
+      });
   }
 
 }

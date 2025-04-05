@@ -52,6 +52,7 @@ public class AdventureTranslator {
     .character('§')
     .hexColors()
     .build();
+  
   private static RegistryWrapper.WrapperLookup wrapperLookup;
 
   private static RegistryWrapper.WrapperLookup getWrapper() {

@@ -103,7 +103,8 @@ shadowJar {
     exclude("org/sqlite/native/Solaris/**/*")
     exclude("kotlin/**")
     exclude("junit/**")
-    
+    exclude("net/milkbowl/vault/chat/**/*")
+    exclude("net/milkbowl/vault/permission/**/*")
     // Relocate packages
     relocate("org.sqlite", "com.kingpixel.cobbleutils.org.sqlite") {
         exclude("org/sqlite/native/Linux-Android/**/*")
