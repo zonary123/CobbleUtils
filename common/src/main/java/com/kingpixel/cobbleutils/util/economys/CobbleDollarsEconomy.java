@@ -40,8 +40,9 @@ public class CobbleDollarsEconomy extends EconomyAbstract {
     CobbleDollarsPlayer player = (CobbleDollarsPlayer) getPlayer(playerUuid);
     if (player == null) return false;
     BigInteger balance = player.cobbleDollars$getCobbleDollars();
-    if (balance.compareTo(BigInteger.valueOf(money.longValue())) >= 0) {
-      player.cobbleDollars$addCobbleDollars(balance.subtract(BigInteger.valueOf(money.longValue())));
+    BigInteger integerMoney = BigInteger.valueOf(money.longValue());
+    if (balance.compareTo(integerMoney) >= 0) {
+      player.cobbleDollars$setCobbleDollars(balance.subtract(integerMoney));
       return true;
     }
     return false;

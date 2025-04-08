@@ -18,7 +18,7 @@ import java.util.Map;
 @Data
 public class PokemonFormula {
   private static final Map<String, Expression> expressions = new HashMap<>();
-  private String formula = "base + gender + labels + nature + ability + ivsAverage + ivsTotal + evsTotal + evsAverage".intern();
+  private String formula = "base + gender + labels + nature + ability + ivsAverage + ivsTotal + evsTotal + evsAverage";
   private float base = 0;
   private float shiny = 0;
   private float ability = 0;
@@ -33,9 +33,15 @@ public class PokemonFormula {
   private Map<String, Float> labels = new HashMap<>();
 
   public PokemonFormula() {
+    pokemonBase.put("example", 0f);
+    form.put("example", 0f);
+    aspect.put("example", 0f);
     for (@NotNull Gender value : Gender.values()) {
       gender.put(value, 0.0F);
     }
+    nature.put("example", 0f);
+    ball.put("example", 0f);
+    labels.put("example", 0f);
   }
 
   public static void removeFormula(String identifier) {
@@ -45,7 +51,7 @@ public class PokemonFormula {
   public Expression getPokemonExpression(Pokemon pokemon, String identifier) {
     Expression expression = getExpression(identifier);
     expression.setVariable("base", getBase(pokemon));
-    expression.setVariable("shiny", pokemon.getShiny() ? shiny : 0.0);
+    expression.setVariable("shiny", pokemon.getShiny() ? shiny : 1.0);
     expression.setVariable("gender", getGender(pokemon));
     expression.setVariable("labels", getLabel(pokemon));
     expression.setVariable("nature", getNature(pokemon));
@@ -53,10 +59,18 @@ public class PokemonFormula {
     expression.setVariable("form", getForm(pokemon));
     expression.setVariable("ball", getBall(pokemon));
     expression.setVariable("aspect", getAspect(pokemon));
-    expression.setVariable("ivsAverage", PokemonUtils.getIvsAverage(pokemon.getIvs()));
-    expression.setVariable("ivsTotal", PokemonUtils.getIvsTotal(pokemon.getIvs()));
-    expression.setVariable("evsTotal", PokemonUtils.getEvsTotal(pokemon.getEvs()));
-    expression.setVariable("evsAverage", PokemonUtils.getEvsAverage(pokemon.getEvs()));
+    int ivsAverage = PokemonUtils.getIvsAverage(pokemon.getIvs());
+    if (ivsAverage == 0) ivsAverage = 1;
+    expression.setVariable("ivsAverage", ivsAverage);
+    int ivsTotal = PokemonUtils.getIvsTotal(pokemon.getIvs());
+    if (ivsTotal == 0) ivsTotal = 1;
+    expression.setVariable("ivsTotal", ivsTotal);
+    int evsTotal = PokemonUtils.getEvsTotal(pokemon.getEvs());
+    if (evsTotal == 0) evsTotal = 1;
+    expression.setVariable("evsTotal", evsTotal);
+    int evsAverage = PokemonUtils.getEvsAverage(pokemon.getEvs());
+    if (evsAverage == 0) evsAverage = 1;
+    expression.setVariable("evsAverage", evsAverage);
     return expression;
   }
 
@@ -69,7 +83,7 @@ public class PokemonFormula {
 
   private Expression getExpression(String identifier) {
     return expressions.computeIfAbsent(identifier.intern(), id -> {
-      ExpressionBuilder builder = new ExpressionBuilder(this.formula);
+      ExpressionBuilder builder = new ExpressionBuilder(this.formula.intern());
       builder.variable("base");
       builder.variable("shiny");
       builder.variable("gender");

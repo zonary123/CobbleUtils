@@ -9,6 +9,7 @@ import com.kingpixel.cobbleutils.config.Lang;
 import com.kingpixel.cobbleutils.events.ItemRightClickEvents;
 import com.kingpixel.cobbleutils.util.CobbleUtilsBridgeGTS;
 import com.kingpixel.cobbleutils.util.SpawnRates;
+import com.kingpixel.cobbleutils.util.Utils;
 import com.kingpixel.cobbleutils.util.UtilsLogger;
 import dev.architectury.event.events.common.CommandRegistrationEvent;
 import dev.architectury.event.events.common.InteractionEvent;
@@ -91,6 +92,10 @@ public class CobbleUtils {
       spawnRates.init();
       CustomPokemonProperty.Companion.register(MinIvsPropertyType.getInstance());
       load();
+    });
+
+    LifecycleEvent.SERVER_STOPPING.register(server1 -> {
+      Utils.shutdownExecutor();
     });
 
     CommandRegistrationEvent.EVENT.register((dispatcher, registry, selection) -> {

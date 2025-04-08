@@ -95,11 +95,14 @@ public abstract class LuckPermsUtil {
 
   private static boolean checkFabricPermissions(ServerCommandSource source, int level, List<String> permissions) {
     if (permissions == null || permissions.isEmpty()) return true;
+    boolean hasPermission = false;
     for (String permission : permissions) {
       if (permission.isEmpty()) return true;
-      if (Permissions.require(permission, level).test(source)) return true;
+      if (Permissions.require(permission, level).test(source)) {
+        hasPermission = true;
+      }
     }
-    return false;
+    return hasPermission;
   }
 
 
@@ -118,11 +121,14 @@ public abstract class LuckPermsUtil {
       CobbleUtils.LOGGER.error("User not found in LuckPerms");
       return false;
     }
-
+    boolean hasPermission = false;
     for (String permission : permissions) {
       if (permission == null || permission.isEmpty()) return true;
-      if (user.getCachedData().getPermissionData().checkPermission(permission).asBoolean()) return true;
+      if (user.getCachedData().getPermissionData().checkPermission(permission).asBoolean()) {
+        hasPermission = true;
+      }
     }
+    if (hasPermission) return true;
     return source.hasPermissionLevel(level);
   }
 

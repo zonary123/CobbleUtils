@@ -1,5 +1,6 @@
 package com.kingpixel.cobbleutils.Model;
 
+import com.cobblemon.mod.common.api.pokemon.egg.EggGroup;
 import com.cobblemon.mod.common.api.types.ElementalType;
 import com.cobblemon.mod.common.pokemon.Pokemon;
 import lombok.Getter;
@@ -15,14 +16,17 @@ import java.util.List;
 @Setter
 public class PokemonBlackList {
   private List<String> pokemons;
-  private List<String> labels;
-  private List<String> types;
   private List<String> forms;
   private List<String> aspects;
+  private List<String> labels;
+  private List<EggGroup> eggGroups;
+  private List<String> types;
 
   public PokemonBlackList() {
     this.pokemons = new ArrayList<>();
-    pokemons.add("magikarp_Example");
+    pokemons.add("ditto");
+    pokemons.add("egg");
+    pokemons.add("pokestop");
     this.labels = new ArrayList<>();
     labels.add("gen1_Example");
     this.types = new ArrayList<>();
@@ -31,9 +35,14 @@ public class PokemonBlackList {
     forms.add("hisuian_Example");
     this.aspects = new ArrayList<>();
     aspects.add("gmax_Example");
+    this.eggGroups = new ArrayList<>();
+    eggGroups.add(EggGroup.DITTO);
   }
 
   public boolean isBlackListed(Pokemon pokemon) {
+    for (EggGroup eggGroup : eggGroups) {
+      if (pokemon.getForm().getEggGroups().contains(eggGroup)) return true;
+    }
     boolean showdownId = this.pokemons.contains(pokemon.getForm().showdownId())
       || this.pokemons.contains("*")
       || this.pokemons.contains(pokemon.showdownId())

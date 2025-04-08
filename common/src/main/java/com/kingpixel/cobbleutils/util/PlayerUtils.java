@@ -23,12 +23,14 @@ public class PlayerUtils {
   @Deprecated
   public static void sendMessage(ServerPlayerEntity player, String message) {
     if (message.isEmpty()) return;
+    if (player == null) return;
     player.sendMessage(AdventureTranslator.toNativeWithOutPrefix(message, player));
   }
 
   @Deprecated
   public static void sendMessage(ServerPlayerEntity player, String message, String prefix) {
     if (message.isEmpty()) return;
+    if (player == null) return;
     player.sendMessage(AdventureTranslator.toNative(message, prefix, player));
   }
 
@@ -44,7 +46,7 @@ public class PlayerUtils {
 
   public static void sendMessage(ServerPlayerEntity player, String message, String prefix, TypeMessage typeMessage) {
     if (message.isEmpty()) return;
-    
+
     switch (typeMessage) {
       case CHAT -> sendMessage(player, message, prefix);
       case ACTIONBAR -> player.sendMessage(AdventureTranslator.toNative(message, prefix, player), true);

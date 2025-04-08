@@ -1,8 +1,11 @@
 package com.kingpixel.cobbleutils.Model;
 
+import ca.landonjw.gooeylibs2.api.button.GooeyButton;
 import ca.landonjw.gooeylibs2.api.button.PlaceholderButton;
 import ca.landonjw.gooeylibs2.api.template.types.ChestTemplate;
 import lombok.*;
+
+import java.util.List;
 
 /**
  * @author Carlos Varas Alonso - 21/02/2025 4:35
@@ -59,32 +62,21 @@ public class Rectangle {
     return totalSlots - actualOccupiedSlots;
   }
 
-  public int getOccupiedSlots() {
+  public void apply(ChestTemplate template, List<GooeyButton> buttons) {
+    int max = buttons.size();
+    int index = 0;
+    int maxRow = startRow + length;
+    int maxColumn = startColumn + width;
+    for (int row = startRow; row < maxRow; row++) {
+      for (int column = startColumn; column < maxColumn; column++) {
+        if (index >= max) return;
+        template.set(row, column, buttons.get(index++));
+      }
+    }
+  }
+
+  public int getTotalSlots() {
     return length * width;
-  }
-
-  public int getStartSlot() {
-    return (startRow * 9) + startColumn;
-  }
-
-  public int getEndSlot(int rows) {
-    int totalSlots = rows * 9;
-    int endSlot = getStartSlot() + getOccupiedSlots() - 1;
-
-    return Math.min(endSlot, totalSlots - 1);
-  }
-
-  public int getActualOccupiedSlots(int rows) {
-    return getEndSlot(rows) - getStartSlot() + 1;
-  }
-
-
-  public int getEndRow() {
-    return startRow + length - 1;
-  }
-  
-  public int getEndColumn() {
-    return startColumn + width - 1;
   }
 
 }

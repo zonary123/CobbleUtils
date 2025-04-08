@@ -20,6 +20,11 @@ import net.minecraft.server.network.ServerPlayerEntity;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 /**
@@ -71,117 +76,204 @@ public class PartyPcMenu {
     this.panelsPc.add(new PanelsConfig(new ItemModel("minecraft:light_blue_stained_glass_pane"), rowsPc));
   }
 
+  private static final Map<UUID, Long> cooldowns = new ConcurrentHashMap<>();
+  private static final long COOLDOWN_TIME_MS = 250;
+
+  private boolean isOnCooldown(ServerPlayerEntity player) {
+    UUID playerId = player.getUuid();
+    long currentTime = System.currentTimeMillis();
+    Long lastExecutionTime = cooldowns.get(playerId);
+
+    if (lastExecutionTime != null && (currentTime - lastExecutionTime) < COOLDOWN_TIME_MS) return true;
+
+    cooldowns.put(playerId, currentTime);
+    return false;
+  }
+
+  @Deprecated(forRemoval = true)
   private void openPc(ServerPlayerEntity player,
                       Consumer<PokemonButtonAction> pokemonAction, int pos, Consumer<ButtonAction> closeAction) {
-    ChestTemplate template = ChestTemplate
-      .builder(rowsPc)
-      .build();
+    openPc(player, pokemonAction, pos, closeAction, null);
+  }
 
-    PanelsConfig.applyConfig(template, panelsPc);
-
-    var pc = Cobblemon.INSTANCE.getStorage().getPC(player);
-    List<Pokemon> pokemons = new ArrayList<>();
-    for (Pokemon pokemon : pc) {
-      if (pokemon != null) {
-        pokemons.add(pokemon);
-      }
+  private void openPc(ServerPlayerEntity player,
+                      Consumer<PokemonButtonAction> pokemonAction, int pos, Consumer<ButtonAction> closeAction,
+                      PokemonBlackList blackList) {
+    if (isOnCooldown(player)) {
+      if (CobbleUtils.config.isDebug())
+        CobbleUtils.LOGGER.warn("Player " + player.getName().getString() + " is on cooldown for opening PC menu.");
+      return;
     }
-    int maxSize = pokemons.size();
-    int start = pos;
-    int end = Math.min(pos + rectanglePc.getSlotsFree(rowsPc), maxSize);
+    CompletableFuture.runAsync(() -> {
+        ChestTemplate template = ChestTemplate
+          .builder(rowsPc)
+          .build();
 
-    Rectangle rectangle = rectanglePc;
-    int slots = rowsPc * 9;
-    int slotIndex = 0;
+        PanelsConfig.applyConfig(template, panelsPc);
 
-    for (int row = rectangle.getStartRow(); row < rectangle.getStartRow() + rectangle.getLength(); row++) {
-      for (int column = rectangle.getStartColumn(); column < rectangle.getStartColumn() + rectangle.getWidth(); column++) {
-        if (slotIndex - 2 >= end - start || start + slotIndex >= maxSize) break;
-        Pokemon pokemon = pokemons.get(start + slotIndex);
-        GooeyButton.Builder button;
-        if (pokemon == null) {
-          button = GooeyButton.builder()
-            .display(CobbleUtils.language.getItemNoPokemon().getItemStack());
-        } else {
-          button = GooeyButton.builder()
-            .display(PokemonItem.from(pokemon))
-            .with(DataComponentTypes.CUSTOM_NAME, AdventureTranslator.toNativeComponent(PokemonUtils.replace(pokemon)))
-            .with(DataComponentTypes.LORE,
-              new LoreComponent(AdventureTranslator.toNativeL(PokemonUtils.replaceLore(pokemon))));
+        var pc = Cobblemon.INSTANCE.getStorage().getPC(player);
+        List<Pokemon> pokemons = new ArrayList<>();
+        for (Pokemon pokemon : pc) {
+          if (pokemon != null) {
+            if (blackList == null) {
+              pokemons.add(pokemon);
+            } else {
+              if (!blackList.isBlackListed(pokemon)) pokemons.add(pokemon);
+            }
+          }
         }
-        button.onClick(action -> {
-          pokemonAction.accept(new PokemonButtonAction(action, pokemon));
-        });
+        int maxSize = pokemons.size();
+        if (maxSize == 0) return;
+        int start = pos;
+        int slotsRectangle = rectanglePc.getWidth() * rectanglePc.getLength();
+        int end = Math.min(pos + slotsRectangle, maxSize);
 
-        int slot = row * 9 + column;
-        template.set(slot, button.build());
-        slotIndex++;
-      }
-    }
+        Rectangle rectangle = rectanglePc;
+        int index = 0;
 
-    if (pos > 0) {
-      previousPc.applyTemplate(template, previousPc.getButton(action -> {
-        openPc(player, pokemonAction, Math.max(0, pos - rectangle.getWidth() * rectangle.getLength()), closeAction);
-      }));
-    }
+        for (int row = rectangle.getStartRow(); row < rectangle.getLength() + rectangle.getStartRow(); row++) {
+          for (int column = rectangle.getStartColumn(); column < rectangle.getWidth() + rectangle.getStartColumn(); column++) {
+            int currentIndex = start + index;
+            if (currentIndex >= maxSize) break;
+            Pokemon pokemon = pokemons.get(currentIndex);
+            GooeyButton.Builder button;
+            if (pokemon == null) {
+              button = GooeyButton.builder()
+                .display(CobbleUtils.language.getItemNoPokemon().getItemStack());
+            } else {
+              button = GooeyButton.builder()
+                .display(PokemonItem.from(pokemon))
+                .with(DataComponentTypes.CUSTOM_NAME, AdventureTranslator.toNativeComponent(PokemonUtils.replace(pokemon)))
+                .with(DataComponentTypes.LORE,
+                  new LoreComponent(AdventureTranslator.toNativeL(PokemonUtils.replaceLore(pokemon))));
+            }
+            button.onClick(action -> {
+              pokemonAction.accept(new PokemonButtonAction(action, pokemon));
+            });
 
-    closePc.applyTemplate(template, closePc.getButton(closeAction));
+            template.set(row, column, button.build());
+            index++;
+          }
+        }
 
-    if (end < maxSize - 2) {
-      nextPc.applyTemplate(template, nextPc.getButton(action -> {
-        openPc(player, pokemonAction, Math.min(maxSize, pos + rectangle.getWidth() * rectangle.getLength()), closeAction);
-      }));
-    }
+        if (pos > 0) {
+          previousPc.applyTemplate(template, previousPc.getButton(action -> {
+            openPc(player, pokemonAction, Math.max(0, pos - rectangle.getWidth() * rectangle.getLength()), closeAction, blackList);
+          }));
+        }
 
-    GooeyPage page = GooeyPage.builder()
-      .title(AdventureTranslator.toNative(titlePc))
-      .template(template)
-      .build();
+        closePc.applyTemplate(template, closePc.getButton(closeAction));
 
-    UIManager.openUIForcefully(player, page);
+        if (end < maxSize) {
+          nextPc.applyTemplate(template, nextPc.getButton(action -> {
+            openPc(player, pokemonAction, Math.min(maxSize, pos + rectangle.getWidth() * rectangle.getLength()),
+              closeAction, blackList);
+          }));
+        }
+
+        GooeyPage page = GooeyPage.builder()
+          .title(AdventureTranslator.toNative(titlePc))
+          .template(template)
+          .build();
+
+        UIManager.openUIForcefully(player, page);
+      })
+      .orTimeout(5, TimeUnit.SECONDS)
+      .exceptionally(e -> {
+        if (e instanceof java.util.concurrent.TimeoutException) {
+          CobbleUtils.LOGGER.error("Task timed out while opening PC menu.");
+        } else {
+          CobbleUtils.LOGGER.error("Error while opening PC menu. " + e);
+        }
+        return null;
+      });
+  }
+
+  @Deprecated(forRemoval = true)
+  public void openParty(ServerPlayerEntity player, Consumer<Template> templateConsumer,
+                        Consumer<PokemonButtonAction> pokemonAction, Consumer<ButtonAction> closeActionParty) {
+    openParty(player, templateConsumer, pokemonAction, closeActionParty, null);
   }
 
   public void openParty(ServerPlayerEntity player, Consumer<Template> templateConsumer,
-                        Consumer<PokemonButtonAction> pokemonAction, Consumer<ButtonAction> closeActionParty) {
-    ChestTemplate template = ChestTemplate
-      .builder(rowsParty)
-      .build();
-
-    PanelsConfig.applyConfig(template, panelsParty);
-    if (templateConsumer != null) {
-      templateConsumer.accept(template);
+                        Consumer<PokemonButtonAction> pokemonAction, Consumer<ButtonAction> closeActionParty,
+                        PokemonBlackList blackList) {
+    if (isOnCooldown(player)) {
+      if (CobbleUtils.config.isDebug())
+        CobbleUtils.LOGGER.warn("Player " + player.getName().getString() + " is on cooldown for opening PC menu.");
+      return;
     }
+    CompletableFuture.runAsync(() -> {
+        ChestTemplate template = ChestTemplate
+          .builder(rowsParty)
+          .build();
 
-    var party = Cobblemon.INSTANCE.getStorage().getParty(player);
+        PanelsConfig.applyConfig(template, panelsParty);
+        if (templateConsumer != null) {
+          templateConsumer.accept(template);
+        }
 
-    for (int i = 0; i < slotsParty.length; i++) {
-      int slot = slotsParty[i];
-      Pokemon pokemon = party.get(i);
-      GooeyButton.Builder button;
-      if (pokemon == null) {
-        button = GooeyButton.builder()
-          .display(CobbleUtils.language.getItemNoPokemon().getItemStack());
-      } else {
-        button = GooeyButton.builder()
-          .display(PokemonItem.from(pokemon))
-          .with(DataComponentTypes.CUSTOM_NAME, AdventureTranslator.toNativeComponent(PokemonUtils.replace(pokemon)))
-          .with(DataComponentTypes.LORE,
-            new LoreComponent(AdventureTranslator.toNativeL(PokemonUtils.replaceLore(pokemon))));
-      }
-      template.set(slot, button.build());
-    }
+        var party = Cobblemon.INSTANCE.getStorage().getParty(player);
 
-    closeParty.applyTemplate(template, closeParty.getButton(closeActionParty));
+        for (int i = 0; i < slotsParty.length; i++) {
+          int slot = slotsParty[i];
+          Pokemon pokemon = party.get(i);
+          GooeyButton.Builder button;
+          if (pokemon == null) {
+            button = GooeyButton.builder()
+              .display(CobbleUtils.language.getItemNoPokemon().getItemStack());
+          } else {
+            if (blackList == null) {
+              button = GooeyButton.builder()
+                .display(PokemonItem.from(pokemon))
+                .with(DataComponentTypes.CUSTOM_NAME, AdventureTranslator.toNativeComponent(PokemonUtils.replace(pokemon)))
+                .with(DataComponentTypes.LORE,
+                  new LoreComponent(AdventureTranslator.toNativeL(PokemonUtils.replaceLore(pokemon))))
+                .onClick(action -> {
+                  pokemonAction.accept(new PokemonButtonAction(action, pokemon));
+                });
+            } else {
+              if (blackList.isBlackListed(pokemon)) {
+                button = GooeyButton.builder()
+                  .display(CobbleUtils.language.getItemNoPokemon().getItemStack());
+              } else {
+                button = GooeyButton.builder()
+                  .display(PokemonItem.from(pokemon))
+                  .with(DataComponentTypes.CUSTOM_NAME, AdventureTranslator.toNativeComponent(PokemonUtils.replace(pokemon)))
+                  .with(DataComponentTypes.LORE,
+                    new LoreComponent(AdventureTranslator.toNativeL(PokemonUtils.replaceLore(pokemon))))
+                  .onClick(action -> {
+                    pokemonAction.accept(new PokemonButtonAction(action, pokemon));
+                  });
+              }
+            }
 
-    pc.applyTemplate(template, pc.getButton(action -> {
-      openPc(player, pokemonAction, 0, closePc -> openParty(player, templateConsumer, pokemonAction, closeActionParty));
-    }));
+          }
+          template.set(slot, button.build());
+        }
 
-    GooeyPage page = GooeyPage.builder()
-      .title(AdventureTranslator.toNative(titleParty))
-      .template(template)
-      .build();
+        closeParty.applyTemplate(template, closeParty.getButton(closeActionParty));
 
-    UIManager.openUIForcefully(player, page);
+        pc.applyTemplate(template, pc.getButton(action -> {
+          openPc(player, pokemonAction, 0, closePc -> openParty(player, templateConsumer, pokemonAction, closeActionParty
+            , blackList), blackList);
+        }));
+
+        GooeyPage page = GooeyPage.builder()
+          .title(AdventureTranslator.toNative(titleParty))
+          .template(template)
+          .build();
+
+        UIManager.openUIForcefully(player, page);
+      })
+      .orTimeout(5, TimeUnit.SECONDS)
+      .exceptionally(e -> {
+        if (e instanceof java.util.concurrent.TimeoutException) {
+          CobbleUtils.LOGGER.error("Task timed out while opening PC menu.");
+        } else {
+          CobbleUtils.LOGGER.error("Error while opening PC menu. " + e);
+        }
+        return null;
+      });
   }
 }
