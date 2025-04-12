@@ -100,7 +100,7 @@ public abstract class Utils {
   public static void shutdownExecutor() {
     IO_EXECUTOR.shutdown();
     try {
-      if (!IO_EXECUTOR.awaitTermination(3, TimeUnit.SECONDS)) {
+      if (!IO_EXECUTOR.awaitTermination(5, TimeUnit.SECONDS)) {
         IO_EXECUTOR.shutdownNow();
       }
     } catch (InterruptedException e) {
@@ -138,7 +138,6 @@ public abstract class Utils {
         return false;
       });
   }
-
 
   public static boolean writeFileSync(File file, String data) {
     try (FileWriter writer = new FileWriter(file, charset)) {

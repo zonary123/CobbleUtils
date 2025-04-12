@@ -293,14 +293,20 @@ public class ItemChance {
   private static boolean handleMoneyReward(ServerPlayerEntity player, String item) {
     int money;
     String currency = "";
+    String economyId = "";
     switch (item.split(":").length) {
       case 2:
-        money = Integer.parseInt(item.split(":")[1]);
+        money = Integer.parseInt(item.split(":")[1].intern());
         currency = "dollars";
         break;
       case 3:
-        money = Integer.parseInt(item.split(":")[2]);
-        currency = item.split(":")[1];
+        money = Integer.parseInt(item.split(":")[2].intern());
+        currency = item.split(":")[1].intern();
+        break;
+      case 4:
+        money = Integer.parseInt(item.split(":")[3]);
+        economyId = item.split(":")[1].intern();
+        currency = item.split(":")[2].intern();
         break;
       default:
         money = Integer.parseInt(item.replace("money:", ""));
@@ -311,7 +317,7 @@ public class ItemChance {
         .replace("%amount%", String.valueOf(money)),
       "");
 
-    return EconomyApi.addMoney(player.getUuid(), BigDecimal.valueOf(money), currency, "");
+    return EconomyApi.addMoney(player.getUuid(), BigDecimal.valueOf(money), currency, economyId);
   }
 
   private static ItemStack parseItemStack(String item, int amount) {

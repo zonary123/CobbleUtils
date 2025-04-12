@@ -71,18 +71,14 @@ public class ImpactorEconomy extends EconomyAbstract {
    * @return The account.
    */
   private Account getAccount(UUID uuid, String currency) {
-    if (!service.hasAccount(uuid).join()) {
-      return service.account(uuid).join();
-    }
+    if (!service.hasAccount(uuid).join()) return service.account(uuid).join();
     return service.account(getCurrency(currency), uuid).join();
   }
 
   private Currency getCurrency(@Subst("") String currency) {
     if (!currency.contains(":")) currency = "impactor:" + currency;
     var c = service.currencies().currency(Key.key(currency));
-    if (c.isPresent()) {
-      return c.get();
-    }
+    if (c.isPresent()) return c.get();
     CobbleUtils.LOGGER.error("Currency not found: " + currency + " using primary currency");
     return service.currencies().primary();
   }

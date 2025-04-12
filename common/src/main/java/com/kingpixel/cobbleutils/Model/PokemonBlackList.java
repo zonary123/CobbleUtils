@@ -28,7 +28,9 @@ public class PokemonBlackList {
     pokemons.add("egg");
     pokemons.add("pokestop");
     this.labels = new ArrayList<>();
-    labels.add("gen1_Example");
+    labels.add("legendary");
+    labels.add("mythical");
+    labels.add("ultra_beast");
     this.types = new ArrayList<>();
     types.add("water_Example");
     this.forms = new ArrayList<>();

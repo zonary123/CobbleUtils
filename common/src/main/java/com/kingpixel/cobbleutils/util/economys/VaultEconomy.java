@@ -69,7 +69,11 @@ public class VaultEconomy extends EconomyAbstract {
   }
 
   @Override public boolean setBalance(UUID playerUuid, BigDecimal money, String currency) {
-    CobbleUtils.LOGGER.info("setBalance not implemented for BeEconomy");
+    var offlinePlayer = Bukkit.getOfflinePlayer(playerUuid);
+    if (service.hasAccount(offlinePlayer)) {
+      service.withdrawPlayer(offlinePlayer, getBalance(playerUuid, currency).doubleValue());
+      return service.depositPlayer(offlinePlayer, money.doubleValue()).transactionSuccess();
+    }
     return false;
   }
 

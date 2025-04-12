@@ -38,6 +38,7 @@ public class ItemModel {
   private List<String> lore = new ArrayList<>();
   private long CustomModelData = 0;
   private String nbt;
+  private Boolean tooltip;
 
 
   public ItemModel() {
@@ -260,7 +261,8 @@ public class ItemModel {
       builder.with(DataComponentTypes.LORE, loreComponent);
     }
 
-    builder.with(DataComponentTypes.HIDE_ADDITIONAL_TOOLTIP, Unit.INSTANCE);
+    if (Boolean.TRUE.equals(tooltip)) builder.with(DataComponentTypes.HIDE_ADDITIONAL_TOOLTIP, Unit.INSTANCE);
+
     if (action == null) {
       return builder
         .build();
@@ -271,10 +273,11 @@ public class ItemModel {
   }
 
   public void applyTemplate(ChestTemplate template, GooeyButton button) {
-    if (UIUtils.isInside(slot, template.getRows())) template.set(slot, button);
+    int rows = template.getRows();
+    if (UIUtils.isInside(slot, rows)) template.set(slot, button);
     if (slots != null) {
       for (Integer slot : slots) {
-        if (UIUtils.isInside(slot, template.getRows())) template.set(slot, button);
+        if (UIUtils.isInside(slot, rows)) template.set(slot, button);
       }
     }
   }

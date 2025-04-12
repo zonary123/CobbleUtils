@@ -37,7 +37,7 @@ public class CobbleUtilsBridgeGTS implements GtsEconomy {
 
   @Override public boolean add(UUID uuid, double v) {
     try {
-      return EconomyApi.addMoney(uuid, BigDecimal.valueOf(v), getConfig().getCurrency(), getConfig().getEconomyId());
+      return EconomyApi.addMoney(uuid, BigDecimal.valueOf(v), getConfig());
     } catch (NoClassDefFoundError | NoSuchMethodError | Exception e) {
       e.printStackTrace();
       return false;
@@ -50,7 +50,7 @@ public class CobbleUtilsBridgeGTS implements GtsEconomy {
 
   @Override public boolean remove(UUID uuid, double v) {
     try {
-      return EconomyApi.removeMoney(uuid, BigDecimal.valueOf(v), getConfig().getCurrency(), getConfig().getEconomyId());
+      return EconomyApi.removeMoney(uuid, BigDecimal.valueOf(v), getConfig());
     } catch (NoClassDefFoundError | NoSuchMethodError | Exception e) {
       e.printStackTrace();
       return false;
@@ -59,7 +59,7 @@ public class CobbleUtilsBridgeGTS implements GtsEconomy {
 
   @Override public double balance(UUID uuid) {
     try {
-      return EconomyApi.getBalance(uuid, getConfig().getCurrency(), getConfig().getEconomyId()).doubleValue();
+      return EconomyApi.getBalance(uuid, getConfig()).doubleValue();
     } catch (NoClassDefFoundError | NoSuchMethodError | Exception e) {
       e.printStackTrace();
       return 0;

@@ -57,6 +57,7 @@ public class Sound {
   }
 
   public void playSoundNearPlayers(Entity entity) {
+    if (sound == null || sound.isEmpty()) return;
     try {
       List<ServerPlayerEntity> players = entity.getWorld().getEntitiesByClass(ServerPlayerEntity.class,
         new Box(entity.getBlockPos()).expand(getRange()), player -> true);
@@ -70,6 +71,7 @@ public class Sound {
   }
 
   public void playSoundPlayer(ServerPlayerEntity player) {
+    if (sound == null || sound.isEmpty()) return;
     try {
       player.playSoundToPlayer(SoundUtil.getSound(sound), SoundCategory.PLAYERS, getVolume(), getPitch());
     } catch (NoSuchMethodError | Exception e) {

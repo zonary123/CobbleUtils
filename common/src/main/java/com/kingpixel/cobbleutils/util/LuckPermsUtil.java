@@ -129,7 +129,7 @@ public abstract class LuckPermsUtil {
       }
     }
     if (hasPermission) return true;
-    return source.hasPermissionLevel(level);
+    return source.hasPermissionLevel(level == 4 ? 2 : level);
   }
 
 
@@ -143,14 +143,9 @@ public abstract class LuckPermsUtil {
     if (permission == null || permission.isEmpty()) return true;
     return switch (PERMISSION_TYPE) {
       case LUCKPERMS, BUKKIT_PERMISSION_API ->
-        checkLuckPermsPermission(player.getCommandSource(), List.of(permission), 4);
-      case FABRIC_PERMISSIONS_API -> Permissions.require(permission, 4).test(player.getCommandSource());
-      default -> player.hasPermissionLevel(4);
+        checkLuckPermsPermission(player.getCommandSource(), List.of(permission), 2);
+      case FABRIC_PERMISSIONS_API -> Permissions.require(permission, 2).test(player.getCommandSource());
+      default -> player.hasPermissionLevel(2);
     };
-  }
-
-  public static boolean hasOp(ServerPlayerEntity player) {
-    setup();
-    return player.hasPermissionLevel(4);
   }
 }

@@ -52,7 +52,7 @@ public class AdventureTranslator {
     .character('§')
     .hexColors()
     .build();
-  
+
   private static RegistryWrapper.WrapperLookup wrapperLookup;
 
   private static RegistryWrapper.WrapperLookup getWrapper() {
@@ -139,6 +139,7 @@ public class AdventureTranslator {
     for (String loreLine : lore) {
       loreString.add(toNative(miniMessage.deserialize(replaceNative(loreLine)), null));
     }
+
     return loreString;
   }
 

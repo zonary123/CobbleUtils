@@ -104,6 +104,7 @@ public class PartyPcMenu {
         CobbleUtils.LOGGER.warn("Player " + player.getName().getString() + " is on cooldown for opening PC menu.");
       return;
     }
+    long startTime = System.currentTimeMillis();
     CompletableFuture.runAsync(() -> {
         ChestTemplate template = ChestTemplate
           .builder(rowsPc)
@@ -137,20 +138,24 @@ public class PartyPcMenu {
             if (currentIndex >= maxSize) break;
             Pokemon pokemon = pokemons.get(currentIndex);
             GooeyButton.Builder button;
+            long currentTimeMillis = System.currentTimeMillis();
             if (pokemon == null) {
               button = GooeyButton.builder()
                 .display(CobbleUtils.language.getItemNoPokemon().getItemStack());
             } else {
               button = GooeyButton.builder()
                 .display(PokemonItem.from(pokemon))
-                .with(DataComponentTypes.CUSTOM_NAME, AdventureTranslator.toNativeComponent(PokemonUtils.replace(pokemon)))
+                .with(DataComponentTypes.CUSTOM_NAME, AdventureTranslator.toNative(PokemonUtils.replace(pokemon)))
                 .with(DataComponentTypes.LORE,
                   new LoreComponent(AdventureTranslator.toNativeL(PokemonUtils.replaceLore(pokemon))));
             }
             button.onClick(action -> {
               pokemonAction.accept(new PokemonButtonAction(action, pokemon));
             });
-
+            long endTimeMillis = System.currentTimeMillis();
+            if (CobbleUtils.config.isDebug()) {
+              CobbleUtils.LOGGER.info("Time to create a pokemon Button " + (endTimeMillis - currentTimeMillis) + "ms");
+            }
             template.set(row, column, button.build());
             index++;
           }
@@ -177,6 +182,10 @@ public class PartyPcMenu {
           .build();
 
         UIManager.openUIForcefully(player, page);
+        if (CobbleUtils.config.isDebug()) {
+          long endTime = System.currentTimeMillis(); // Fin del tiempo
+          CobbleUtils.LOGGER.info("Pc menu opened in " + (endTime - startTime) + " ms.");
+        }
       })
       .orTimeout(5, TimeUnit.SECONDS)
       .exceptionally(e -> {
@@ -203,6 +212,7 @@ public class PartyPcMenu {
         CobbleUtils.LOGGER.warn("Player " + player.getName().getString() + " is on cooldown for opening PC menu.");
       return;
     }
+    long startTime = System.currentTimeMillis(); // Inicio del tiempo
     CompletableFuture.runAsync(() -> {
         ChestTemplate template = ChestTemplate
           .builder(rowsParty)
@@ -219,6 +229,8 @@ public class PartyPcMenu {
           int slot = slotsParty[i];
           Pokemon pokemon = party.get(i);
           GooeyButton.Builder button;
+
+          long start = System.currentTimeMillis();
           if (pokemon == null) {
             button = GooeyButton.builder()
               .display(CobbleUtils.language.getItemNoPokemon().getItemStack());
@@ -245,7 +257,12 @@ public class PartyPcMenu {
                   .onClick(action -> {
                     pokemonAction.accept(new PokemonButtonAction(action, pokemon));
                   });
+
               }
+            }
+            long end = System.currentTimeMillis();
+            if (CobbleUtils.config.isDebug()) {
+              CobbleUtils.LOGGER.info("Time to create a pokemon Button " + (end - start) + "ms");
             }
 
           }
@@ -265,6 +282,10 @@ public class PartyPcMenu {
           .build();
 
         UIManager.openUIForcefully(player, page);
+        if (CobbleUtils.config.isDebug()) {
+          long endTime = System.currentTimeMillis(); // Fin del tiempo
+          CobbleUtils.LOGGER.info("Party menu opened in " + (endTime - startTime) + " ms.");
+        }
       })
       .orTimeout(5, TimeUnit.SECONDS)
       .exceptionally(e -> {

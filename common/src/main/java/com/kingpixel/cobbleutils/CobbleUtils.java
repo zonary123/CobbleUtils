@@ -94,7 +94,7 @@ public class CobbleUtils {
       load();
     });
 
-    LifecycleEvent.SERVER_STOPPING.register(server1 -> {
+    LifecycleEvent.SERVER_STOPPED.register(server1 -> {
       Utils.shutdownExecutor();
     });
 

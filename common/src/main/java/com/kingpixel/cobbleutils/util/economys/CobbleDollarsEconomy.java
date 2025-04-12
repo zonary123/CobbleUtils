@@ -66,6 +66,6 @@ public class CobbleDollarsEconomy extends EconomyAbstract {
   }
 
   @Override public int getDecimals(String currency) {
-    return 5;
+    return 0;
   }
 }
