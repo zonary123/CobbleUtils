@@ -76,7 +76,7 @@ public class WebHookStruct {
 
     if (pokemonEntity != null) {
       description = description
-        .replace("%pokemon%", pokemonEntity.getPokemon().getDisplayName().getString())
+        .replace("%pokemon%", pokemonEntity.getPokemon().getSpecies().getName())
         .replace("%ability%", pokemonEntity.getPokemon().getAbility().getName())
         .replace("%nature%", pokemonEntity.getPokemon().getNature().getName().getPath())
         .replace("%move1%", getMove(pokemonEntity.getPokemon().getMoveSet().get(0)))
@@ -188,7 +188,7 @@ public class WebHookStruct {
 
     if (pokemon != null) {
       description = description
-        .replace("%pokemon%", pokemon.getDisplayName().getString())
+        .replace("%pokemon%", pokemon.getSpecies().getName())
         .replace("%ability%", pokemon.getAbility().getName())
         .replace("%nature%", pokemon.getNature().getName().getPath())
         .replace("%move1%", getMove(pokemon.getMoveSet().get(0)))
