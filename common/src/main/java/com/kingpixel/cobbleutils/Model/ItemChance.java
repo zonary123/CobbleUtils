@@ -291,33 +291,40 @@ public class ItemChance {
   }
 
   private static boolean handleMoneyReward(ServerPlayerEntity player, String item) {
-    int money;
-    String currency = "";
+    String[] parts = item.split(":");
+    BigDecimal money = BigDecimal.ZERO;
+    String currency = "dollars";
     String economyId = "";
-    switch (item.split(":").length) {
-      case 2:
-        money = Integer.parseInt(item.split(":")[1].intern());
-        currency = "dollars";
-        break;
-      case 3:
-        money = Integer.parseInt(item.split(":")[2].intern());
-        currency = item.split(":")[1].intern();
-        break;
-      case 4:
-        money = Integer.parseInt(item.split(":")[3]);
-        economyId = item.split(":")[1].intern();
-        currency = item.split(":")[2].intern();
-        break;
-      default:
-        money = Integer.parseInt(item.replace("money:", ""));
-        break;
+
+    try {
+      switch (parts.length) {
+        case 2:
+          money = new BigDecimal(parts[1]);
+          break;
+        case 3:
+          currency = parts[1];
+          money = new BigDecimal(parts[2]);
+          break;
+        case 4:
+          economyId = parts[1];
+          currency = parts[2];
+          money = new BigDecimal(parts[3]);
+          break;
+        default:
+          money = new BigDecimal(item.replace("money:", ""));
+          break;
+      }
+    } catch (NumberFormatException e) {
+      CobbleUtils.LOGGER.error("Invalid money format in item: " + item);
+      return false;
     }
+
     PlayerUtils.sendMessage(player,
       CobbleUtils.language.getMessageReceiveMoney()
-        .replace("%amount%", String.valueOf(money)),
+        .replace("%amount%", EconomyApi.formatMoney(money, currency, economyId)),
       "");
 
-    return EconomyApi.addMoney(player.getUuid(), BigDecimal.valueOf(money), currency, economyId);
+    return EconomyApi.addMoney(player.getUuid(), money, currency, economyId);
   }
 
   private static ItemStack parseItemStack(String item, int amount) {
@@ -443,21 +450,34 @@ public class ItemChance {
   private static ItemStack parseMoneyItem(String item) {
     String[] parts = item.split(":");
     String currency = "money";
-    int amount = 1;
+    String economyId = "";
+    BigDecimal value;
 
-    switch (parts.length) {
-      case 2:
-        amount = Integer.parseInt(parts[1]);
-        break;
-      case 3:
-        currency = parts[1];
-        amount = Integer.parseInt(parts[2]);
-        break;
+    try {
+      switch (parts.length) {
+        case 2:
+          value = new BigDecimal(parts[1]);
+          break;
+        case 3:
+          currency = parts[1];
+          value = new BigDecimal(parts[2]);
+          break;
+        case 4:
+          economyId = parts[1];
+          currency = parts[2];
+          value = new BigDecimal(parts[3]);
+          break;
+        default:
+          throw new IllegalArgumentException("Invalid Format: " + item);
+      }
+    } catch (NumberFormatException e) {
+      throw new IllegalArgumentException("Invalid value: " + item, e);
     }
 
     ItemModel impactorItem = new ItemModel(CobbleUtils.language.getItemsEconomy().getOrDefault(currency,
       new ItemModel(CobbleUtils.language.getItemMoney())));
-    impactorItem.setDisplayname(impactorItem.getDisplayname().replace("%amount%", String.valueOf(amount)));
+    impactorItem.setDisplayname(impactorItem.getDisplayname().replace("%amount%", EconomyApi.formatMoney(value,
+      currency, economyId)));
 
     return impactorItem.getItemStack();
   }
@@ -511,18 +531,36 @@ public class ItemChance {
   }
 
   private static String getMoneyTitle(String item) {
-    int money;
-    if (item.split(":").length < 3) {
-      money = Integer.parseInt(item.replace("money:", ""));
-      ItemModel itemModel = new ItemModel(CobbleUtils.language.getItemMoney());
-      return itemModel.getDisplayname().replace("%amount%", String.valueOf(money));
-    } else {
-      money = Integer.parseInt(item.split(":")[2]);
-      String currency = item.split(":")[1];
-      ItemModel impactorItem = new ItemModel(CobbleUtils.language.getItemsEconomy().getOrDefault(currency,
-        new ItemModel(CobbleUtils.language.getItemMoney())));
-      return impactorItem.getDisplayname().replace("%amount%", String.valueOf(money));
+    String[] parts = item.split(":");
+    BigDecimal money = BigDecimal.ZERO;
+    String currency = "money";
+    String economyId = "";
+
+    try {
+      switch (parts.length) {
+        case 2:
+          money = new BigDecimal(parts[1]);
+          break;
+        case 3:
+          currency = parts[1];
+          money = new BigDecimal(parts[2]);
+          break;
+        case 4:
+          economyId = parts[1];
+          currency = parts[2];
+          money = new BigDecimal(parts[3]);
+          break;
+        default:
+          throw new IllegalArgumentException("Formato inválido: " + item);
+      }
+    } catch (NumberFormatException e) {
+      CobbleUtils.LOGGER.error("Valor inválido en el item: " + item);
+      return "Formato de dinero inválido";
     }
+
+    ItemModel itemModel = CobbleUtils.language.getItemsEconomy().getOrDefault(currency,
+      new ItemModel(CobbleUtils.language.getItemMoney()));
+    return itemModel.getDisplayname().replace("%amount%", EconomyApi.formatMoney(money, currency, economyId));
   }
 
   private static String getItemTitle(String item) {

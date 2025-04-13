@@ -25,6 +25,15 @@ public class PanelsConfig {
     this.slots = List.of();
   }
 
+  public PanelsConfig(int rows) {
+    this.fill = new ItemModel("minecraft:gray_stained_glass_pane");
+    this.slots = new ArrayList<>();
+    int size = rows * 9;
+    for (int i = 0; i < size; i++) {
+      this.slots.add(i);
+    }
+  }
+
   public PanelsConfig(ItemModel fill, List<Integer> slots) {
     this.fill = fill;
     this.slots = slots;

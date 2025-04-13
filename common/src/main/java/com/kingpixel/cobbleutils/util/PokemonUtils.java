@@ -145,7 +145,7 @@ public class PokemonUtils {
     map.put("%nature" + indexStr + "%", getNatureTranslate(nature));
     map.put("%pokemon" + indexStr + "%", isEgg(pokemon)
       ? pokemon.getPersistentData().getString("species")
-      : getName(pokemon));
+      : getTranslatedName(pokemon));
     map.put("%shiny" + indexStr + "%", pokemon.getShiny() ? CobbleUtils.language.getSymbolshiny() : "");
     map.put("%ability" + indexStr + "%", isEgg(pokemon)
       ? pokemon.getPersistentData().getString("ability")
@@ -355,10 +355,8 @@ public class PokemonUtils {
   /**
    *
    */
-  public static String getName(Pokemon pokemon) {
-    return pokemon.getSpecies().getName();
-
-
+  public static String getTranslatedName(Pokemon pokemon) {
+    return "<lang:cobblemon.species." + pokemon.getSpecies().showdownId() + ".name>";
   }
 
   /**
@@ -766,11 +764,11 @@ public class PokemonUtils {
       }
     }
     if (CobbleUtils.config.isDebug()) {
-      CobbleUtils.LOGGER.info("Illegal ability: Pokemon: " + getName(pokemon) + "\n Ability: " + getAbilityTranslate(pokemon.getAbility()));
+      CobbleUtils.LOGGER.info("Illegal ability: Pokemon: " + getTranslatedName(pokemon) + "\n Ability: " + getAbilityTranslate(pokemon.getAbility()));
     }
     pokemon.updateAbility(getRandomAbility(pokemon));
     if (CobbleUtils.config.isDebug()) {
-      CobbleUtils.LOGGER.info("New ability: Pokemon: " + getName(pokemon) + "\n Ability: " + getAbilityTranslate(pokemon.getAbility()));
+      CobbleUtils.LOGGER.info("New ability: Pokemon: " + getTranslatedName(pokemon) + "\n Ability: " + getAbilityTranslate(pokemon.getAbility()));
     }
     return false;
   }

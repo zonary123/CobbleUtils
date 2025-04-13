@@ -30,6 +30,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 /**
@@ -138,6 +140,7 @@ public class AdvancedItemChance {
 
   public void giveRewards(ServerPlayerEntity player) {
     if (checker(player)) return;
+
     List<ItemChance> obtainedRewards = getList(player);
     List<ItemChance> allRewards = obtainedRewards;
 
@@ -175,6 +178,7 @@ public class AdvancedItemChance {
       default:
         break;
     }
+
   }
 
   private enum Animations {
@@ -189,41 +193,64 @@ public class AdvancedItemChance {
 
   public void openMenu(ServerPlayerEntity player, Consumer<ChestTemplate> templateConsumer) {
     if (!showMenu) return;
-    ChestTemplate template = ChestTemplate.builder(6)
-      .build();
+    CompletableFuture.runAsync(() -> {
+        ChestTemplate template = ChestTemplate.builder(6)
+          .build();
 
-    ItemModel itemClose = CobbleUtils.language.getItemClose();
-    template.set(49, itemClose.getButton(action -> {
-      UIManager.closeUI(action.getPlayer());
-    }));
+        ItemModel itemClose = CobbleUtils.language.getItemClose();
+        template.set(49, itemClose.getButton(action -> {
+          UIManager.closeUI(action.getPlayer());
+        }));
 
-    templateConsumer.accept(template);
-    applyTemplate(player, template);
+        templateConsumer.accept(template);
+        applyTemplate(player, template);
+      })
+      .orTimeout(5, TimeUnit.SECONDS)
+      .exceptionally(e -> {
+        e.printStackTrace();
+        return null;
+      });
   }
 
   public void openMenu(ServerPlayerEntity player, Consumer<ChestTemplate> templateConsumer,
                        Consumer<ButtonAction> close) {
     if (!showMenu) return;
-    ChestTemplate template = ChestTemplate.builder(6)
-      .build();
+    CompletableFuture.runAsync(() -> {
+        ChestTemplate template = ChestTemplate.builder(6)
+          .build();
 
-    ItemModel itemClose = CobbleUtils.language.getItemClose();
-    template.set(49, itemClose.getButton(close));
+        ItemModel itemClose = CobbleUtils.language.getItemClose();
+        template.set(49, itemClose.getButton(close));
 
-    templateConsumer.accept(template);
-    applyTemplate(player, template);
+        templateConsumer.accept(template);
+        applyTemplate(player, template);
+      })
+      .orTimeout(5, TimeUnit.SECONDS)
+      .exceptionally(e -> {
+        e.printStackTrace();
+        return null;
+      });
+
   }
 
   @Deprecated
   public void openMenu(ServerPlayerEntity player) {
     if (!showMenu) return;
-    ChestTemplate template = ChestTemplate.builder(6)
-      .build();
+    CompletableFuture.runAsync(() -> {
+        ChestTemplate template = ChestTemplate.builder(6)
+          .build();
 
-    template.set(49, UIUtils.getCloseButton(action -> {
-      UIManager.closeUI(action.getPlayer());
-    }));
-    applyTemplate(player, template);
+        template.set(49, UIUtils.getCloseButton(action -> {
+          UIManager.closeUI(action.getPlayer());
+        }));
+        applyTemplate(player, template);
+      })
+      .orTimeout(5, TimeUnit.SECONDS)
+      .exceptionally(e -> {
+        e.printStackTrace();
+        return null;
+      });
+
   }
 
   private void applyTemplate(ServerPlayerEntity player, ChestTemplate template) {

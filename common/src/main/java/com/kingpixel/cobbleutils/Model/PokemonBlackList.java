@@ -42,27 +42,19 @@ public class PokemonBlackList {
   }
 
   public boolean isBlackListed(Pokemon pokemon) {
-    for (EggGroup eggGroup : eggGroups) {
-      if (pokemon.getForm().getEggGroups().contains(eggGroup)) return true;
-    }
-    boolean showdownId = this.pokemons.contains(pokemon.getForm().showdownId())
-      || this.pokemons.contains("*")
-      || this.pokemons.contains(pokemon.showdownId())
-      || this.pokemons.contains(pokemon.getSpecies().showdownId());
-    if (showdownId) return true;
-    boolean isLabel = pokemon.getForm().getLabels().stream().anyMatch(this.labels::contains);
-    if (isLabel) return true;
-    boolean isForm = this.forms.contains(pokemon.getForm().formOnlyShowdownId());
-    if (isForm) return true;
-    boolean isType;
+    if (pokemon.getForm().getEggGroups().stream().anyMatch(eggGroups::contains)) return true;
+    if (pokemons.contains("*") || pokemons.contains(pokemon.getForm().showdownId()) || pokemons.contains(pokemon.showdownId()) || pokemons.contains(pokemon.getSpecies().showdownId()))
+      return true;
+    if (pokemon.getForm().getLabels().stream().anyMatch(labels::contains)) return true;
+    if (forms.contains(pokemon.getForm().formOnlyShowdownId())) return true;
 
     List<ElementalType> typeList = new ArrayList<>();
     pokemon.getTypes().forEach(typeList::add);
-    isType = typeList.stream().anyMatch(type -> {
+    if (typeList.stream().anyMatch(type -> {
       String keyType = type.getResourceLocation().getPath();
       return this.types.contains(keyType);
-    });
-    if (isType) return true;
+    })) return true;
+    
     for (String aspect : pokemon.getAspects()) {
       if (this.aspects.contains(aspect)) return true;
     }
