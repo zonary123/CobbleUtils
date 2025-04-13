@@ -8,6 +8,7 @@ import ca.landonjw.gooeylibs2.api.template.types.ChestTemplate;
 import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.Model.ItemModel;
 import com.kingpixel.cobbleutils.Model.PanelsConfig;
+import com.kingpixel.cobbleutils.config.Lang;
 import com.kingpixel.cobbleutils.util.AdventureTranslator;
 import lombok.Data;
 import net.minecraft.item.ItemStack;
@@ -30,11 +31,18 @@ public class ConfirmMenu {
     this.rows = 3;
     this.title = "Confirm";
     this.slotDisplay = 13;
-    this.confirm = CobbleUtils.language.getItemConfirm();
+    Lang lang = CobbleUtils.language;
+    if (lang != null) {
+      this.confirm = CobbleUtils.language.getItemConfirm();
+      this.cancel = CobbleUtils.language.getItemCancel();
+      this.close = CobbleUtils.language.getItemClose();
+    } else {
+      this.confirm = new ItemModel("minecraft:green_stained_glass_pane", "&aConfirm");
+      this.cancel = new ItemModel("minecraft:red_stained_glass_pane", "&cCancel");
+      this.close = new ItemModel("minecraft:barrier", "&cClose");
+    }
     confirm.setSlot(10);
-    this.cancel = CobbleUtils.language.getItemCancel();
     cancel.setSlot(16);
-    this.close = CobbleUtils.language.getItemClose();
     close.setSlot(22);
     this.panels = List.of(
       new PanelsConfig(rows)

@@ -182,7 +182,7 @@ public class PokemonUtils {
     List<Move> moves = pokemon.getMoveSet().getMoves();
     for (int i = 0; i < 4; i++) {
       String key = "%move" + indexStr + (i + 1) + "%";
-      String value = i < moves.size() ? getMoveTranslate(moves.get(i)) : "";
+      String value = i < moves.size() ? getMoveTranslate(moves.get(i)) : CobbleUtils.language.getNone();
       map.put(key, value);
     }
 

@@ -3,6 +3,8 @@ package com.kingpixel.cobbleutils.config;
 import com.google.gson.Gson;
 import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.Model.ItemModel;
+import com.kingpixel.cobbleutils.ui.ConfirmMenu;
+import com.kingpixel.cobbleutils.ui.PartyPcMenu;
 import com.kingpixel.cobbleutils.util.Utils;
 import lombok.Getter;
 import lombok.Setter;
@@ -96,8 +98,9 @@ public class Lang {
   private ItemModel itemCancel;
   private ItemModel itemCommand;
   private ItemModel itemAdvancedRewardsInfo;
-
   private Map<String, ItemModel> itemsEconomy;
+  private PartyPcMenu partyPcMenu;
+  private ConfirmMenu confirmMenu;
 
   /**
    * Constructor to generate a file if one doesn't exist.
@@ -223,7 +226,7 @@ public class Lang {
     movecolor.put("ground", "<gradient:#B8860B:#D2B48C>");
     movecolor.put("psychic", "<gradient:#D74DE2:#DE77E7>");
     movecolor.put("fairy", "<gradient:#9C38A5:#C06EC7>");
-    itemMoney = new ItemModel("cobblemon:relic_coin", "%amount% &ePokeDollars", List.of(), 0);
+    itemMoney = new ItemModel("cobblemon:relic_coin", "%amount%", List.of(), 0);
     itemPc = new ItemModel("cobblemon:pc", "&bPC", List.of(
       "&7Right click to open"
     ), 0);
@@ -239,11 +242,13 @@ public class Lang {
       ".</gradient>";
     this.defaultSymbol = "&e$";
     this.itemsEconomy = new HashMap<>();
-    itemsEconomy.put("dollars", new ItemModel("minecraft:emerald", "<gradient:#00ff00:#00ff00><bold>Common", List.of(
+    itemsEconomy.put("dollars", new ItemModel("minecraft:emerald", "%amount%", List.of(
       "§aCommon")));
     itemAdvancedRewardsInfo = new ItemModel(4, "minecraft:book", "<gradient:#00ff00:#00ff00><bold>Info", List.of(
       "&7AmountRewards: &e%amount%",
       "&7Get all: %getall%"), 0);
+    partyPcMenu = new PartyPcMenu();
+    confirmMenu = new ConfirmMenu();
   }
 
   /**

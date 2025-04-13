@@ -1,6 +1,5 @@
 package com.kingpixel.cobbleutils.config;
 
-import com.cobblemon.mod.common.pokemon.Pokemon;
 import com.google.gson.Gson;
 import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.Model.*;
@@ -36,12 +35,8 @@ public class Config {
   private int cooldownpokeshout;
   private String fill;
   private List<String> commmandplugin;
-  private List<PokemonData> shinytokenBlacklist;
-  private List<PokemonData> blacklist;
-  private List<PokemonData> legends;
-  private List<PokemonData> ultraBeasts;
-  private List<String> forms;
   private ItemModel shinytoken;
+  private PokemonBlackList shinytokenBlacklist;
   private Map<String, ItemModel> itemsCommands;
   private Map<String, Double> rarity;
 
@@ -66,10 +61,7 @@ public class Config {
     cooldownpokeshout = 60;
     shinytoken = new ItemModel("minecraft:paper", "<gradient:#e0d234:#ede69a><bold>Shiny Token", List.of("§aShiny " +
       "Token"), 0);
-    shinytokenBlacklist = List.of(new PokemonData("ditto", "normal"));
-    blacklist = List.of(new PokemonData("ditto", "normal"));
-    legends = List.of(new PokemonData("mewtwo", "normal"));
-    forms = List.of("Normal", "Hisui", "Galar");
+    shinytokenBlacklist = new PokemonBlackList();
     itemsCommands = new HashMap<>();
     itemsCommands.put("give", new ItemModel("minecraft:chest", "<gradient:#e0d234:#ede69a><bold>Item", List.of(
       "§aThis give you a item")));
@@ -107,12 +99,6 @@ public class Config {
       }
     }
 
-  }
-
-
-  public boolean isShinyTokenBlacklisted(Pokemon pokemon) {
-    return shinytokenBlacklist.stream()
-      .anyMatch(pokemonData -> PokemonData.equals(pokemonData, PokemonData.from(pokemon)));
   }
 
 }

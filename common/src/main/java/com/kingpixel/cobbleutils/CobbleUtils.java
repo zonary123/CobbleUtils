@@ -82,7 +82,7 @@ public class CobbleUtils {
 
 
   private static void events() {
-
+    files();
 
     LifecycleEvent.SERVER_LEVEL_LOAD.register(level -> {
       server = level.getServer();

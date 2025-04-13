@@ -15,7 +15,10 @@ import com.kingpixel.cobbleutils.Model.Animations.AnimationUtils;
 import com.kingpixel.cobbleutils.Model.Animations.CSGOAnimation;
 import com.kingpixel.cobbleutils.Model.Animations.CircleAnimation;
 import com.kingpixel.cobbleutils.api.PermissionApi;
-import com.kingpixel.cobbleutils.util.*;
+import com.kingpixel.cobbleutils.util.AdventureTranslator;
+import com.kingpixel.cobbleutils.util.PlayerUtils;
+import com.kingpixel.cobbleutils.util.TypeMessage;
+import com.kingpixel.cobbleutils.util.Utils;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
@@ -240,7 +243,7 @@ public class AdvancedItemChance {
         ChestTemplate template = ChestTemplate.builder(6)
           .build();
 
-        template.set(49, UIUtils.getCloseButton(action -> {
+        template.set(49, CobbleUtils.language.getItemClose().getButton(action -> {
           UIManager.closeUI(action.getPlayer());
         }));
         applyTemplate(player, template);

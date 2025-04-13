@@ -1,7 +1,7 @@
 package com.kingpixel.cobbleutils.events;
 
+import ca.landonjw.gooeylibs2.api.UIManager;
 import com.kingpixel.cobbleutils.CobbleUtils;
-import com.kingpixel.cobbleutils.ui.ShinyTokenUI;
 import com.kingpixel.cobbleutils.util.PlayerUtils;
 import dev.architectury.event.CompoundEventResult;
 import net.minecraft.component.DataComponentTypes;
@@ -22,13 +22,31 @@ public class ItemRightClickEvents {
     if (tag == null) return CompoundEventResult.pass();
     if (tag.contains("shinytoken") && itemStack.getItem() == CobbleUtils.config.getShinytoken().getItemStack().getItem()) {
       if (!CobbleUtils.config.isActiveshinytoken()) return CompoundEventResult.pass();
-      try {
-        ShinyTokenUI.openmenu((ServerPlayerEntity) player);
-      } catch (ClassCastException ignored) {
-        ShinyTokenUI.openmenu(PlayerUtils.castPlayer(player));
-      }
+      open(PlayerUtils.castPlayer(player), itemStack);
     }
     return CompoundEventResult.pass();
+  }
 
+  private static void open(ServerPlayerEntity player, ItemStack itemStack) {
+    CobbleUtils.language.getPartyPcMenu().openParty(
+      player,
+      template -> {
+      },
+      action -> {
+        var pokemon = action.getPokemon();
+        if (!pokemon.getShiny()) {
+          pokemon.setShiny(true);
+          itemStack.decrement(1);
+          UIManager.closeUI(action.getAction().getPlayer());
+        }
+      },
+      close -> {
+        open(player, itemStack);
+      },
+      CobbleUtils.config.getShinytokenBlacklist(),
+      null,
+      null,
+      CobbleUtils.language.getConfirmMenu()
+    );
   }
 }
