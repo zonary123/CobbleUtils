@@ -32,6 +32,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 /**
  * Represents an item chance model with methods to handle rewards.
@@ -245,7 +246,8 @@ public class ItemChance {
         Pokemon pokemon = getRewardPokemon(item);
         return Cobblemon.INSTANCE.getStorage().getParty(player).add(pokemon);
       } else if (item.startsWith("command:")) {
-        String[] commandParts = item.split("#");
+        String regex = "(?<!" + Pattern.quote("<") + ")" + Pattern.quote("#");
+        String[] commandParts = item.split(regex);
         for (String commandPart : commandParts) {
           CobbleUtilities.executeCommand(player, commandPart.replace("command:", ""));
         }
