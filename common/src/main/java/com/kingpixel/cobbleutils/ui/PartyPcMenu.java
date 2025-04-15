@@ -62,10 +62,12 @@ public class PartyPcMenu {
     this.panelsParty.add(new PanelsConfig(new ItemModel("minecraft:light_blue_stained_glass_pane"), rowsParty));
     this.titlePc = "&bPC";
     this.rowsPc = 6;
-    this.rectanglePc = new Rectangle(rowsParty);
+    this.rectanglePc = new Rectangle(rowsPc);
     rectanglePc.setStartRow(1);
     rectanglePc.setStartColumn(1);
     rectanglePc.setWidth(7);
+    rectanglePc.setLength(4);
+
     this.previousPc = new ItemModel("minecraft:arrow", "&aPrevious");
     previousPc.setSlot(45);
     this.closePc = new ItemModel("minecraft:barrier", "&cClose");
@@ -99,7 +101,7 @@ public class PartyPcMenu {
       return GooeyButton.builder()
         .display(CobbleUtils.language.getItemNoPokemon().getItemStack());
     }
-    
+
     List<String> lore;
     if (lorePokemon != null) {
       lore = new ArrayList<>(PokemonUtils.replace(lorePokemon, pokemon));

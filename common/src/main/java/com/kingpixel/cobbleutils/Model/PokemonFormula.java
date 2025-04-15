@@ -59,31 +59,31 @@ public class PokemonFormula {
     expression.setVariable("form", getForm(pokemon));
     expression.setVariable("ball", getBall(pokemon));
     expression.setVariable("aspect", getAspect(pokemon));
-    int ivsAverage = PokemonUtils.getIvsAverage(pokemon.getIvs());
-    if (ivsAverage == 0) ivsAverage = 1;
+
+    int ivsAverage = Math.max(PokemonUtils.getIvsAverage(pokemon.getIvs()), 1);
+    int ivsTotal = Math.max(PokemonUtils.getIvsTotal(pokemon.getIvs()), 1);
+    int evsTotal = Math.max(PokemonUtils.getEvsTotal(pokemon.getEvs()), 1);
+    int evsAverage = Math.max(PokemonUtils.getEvsAverage(pokemon.getEvs()), 1);
+
     expression.setVariable("ivsAverage", ivsAverage);
-    int ivsTotal = PokemonUtils.getIvsTotal(pokemon.getIvs());
-    if (ivsTotal == 0) ivsTotal = 1;
     expression.setVariable("ivsTotal", ivsTotal);
-    int evsTotal = PokemonUtils.getEvsTotal(pokemon.getEvs());
-    if (evsTotal == 0) evsTotal = 1;
     expression.setVariable("evsTotal", evsTotal);
-    int evsAverage = PokemonUtils.getEvsAverage(pokemon.getEvs());
-    if (evsAverage == 0) evsAverage = 1;
     expression.setVariable("evsAverage", evsAverage);
+
     return expression;
   }
 
   private float getAspect(Pokemon pokemon) {
-    for (String pAspect : pokemon.getAspects()) {
-      if (this.aspect.containsKey(pAspect)) return this.aspect.get(pAspect);
-    }
-    return 0;
+    return pokemon.getAspects().stream()
+      .filter(this.aspect::containsKey)
+      .map(this.aspect::get)
+      .findFirst()
+      .orElse(0f);
   }
 
   private Expression getExpression(String identifier) {
-    return expressions.computeIfAbsent(identifier.intern(), id -> {
-      ExpressionBuilder builder = new ExpressionBuilder(this.formula.intern());
+    return expressions.computeIfAbsent(identifier, id -> {
+      ExpressionBuilder builder = new ExpressionBuilder(this.formula);
       builder.variable("base");
       builder.variable("shiny");
       builder.variable("gender");
@@ -102,15 +102,15 @@ public class PokemonFormula {
   }
 
   private float getBase(Pokemon pokemon) {
-    return pokemonBase.getOrDefault(pokemon.showdownId().intern(), this.base);
+    return pokemonBase.getOrDefault(pokemon.showdownId(), this.base);
   }
 
   private float getForm(Pokemon pokemon) {
-    return this.form.getOrDefault(pokemon.getForm().formOnlyShowdownId().intern(), 0.0f);
+    return this.form.getOrDefault(pokemon.getForm().formOnlyShowdownId(), 0.0f);
   }
 
   private float getBall(Pokemon pokemon) {
-    return this.ball.getOrDefault(pokemon.getCaughtBall().getName().toTranslationKey().intern(), 0.0f);
+    return this.ball.getOrDefault(pokemon.getCaughtBall().getName().toTranslationKey(), 0.0f);
   }
 
   private float getGender(Pokemon pokemon) {
@@ -122,20 +122,12 @@ public class PokemonFormula {
   }
 
   private float getLabel(Pokemon pokemon) {
-    float value = 0;
-    if (this.accumulationLabels) {
-      for (String label : pokemon.getForm().getLabels()) {
-        value += this.labels.getOrDefault(label.intern(), 0.0f);
-      }
-    } else {
-      for (String label : pokemon.getForm().getLabels()) {
-        value = Math.max(value, this.labels.getOrDefault(label.intern(), 0.0f));
-      }
-    }
-    return value;
+    return pokemon.getForm().getLabels().stream()
+      .map(label -> this.labels.getOrDefault(label, 0f))
+      .reduce(0f, this.accumulationLabels ? Float::sum : Math::max);
   }
 
   private float getNature(Pokemon pokemon) {
-    return nature.getOrDefault(pokemon.getNature().getDisplayName().intern(), 0.0f);
+    return nature.getOrDefault(pokemon.getNature().getDisplayName(), 0.0f);
   }
 }
