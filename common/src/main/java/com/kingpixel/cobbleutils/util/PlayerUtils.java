@@ -51,8 +51,9 @@ public class PlayerUtils {
       case CHAT -> sendMessage(player, message, prefix);
       case ACTIONBAR -> player.sendMessage(AdventureTranslator.toNative(message, prefix, player), true);
       case ACTIONBAR_BROADCAST -> {
+        var text = AdventureTranslator.toNative(message, prefix);
         for (ServerPlayerEntity serverPlayerEntity : CobbleUtils.server.getPlayerManager().getPlayerList()) {
-          serverPlayerEntity.sendMessage(AdventureTranslator.toNative(message, prefix, serverPlayerEntity), true);
+          serverPlayerEntity.sendMessage(text, true);
         }
       }
       case BROADCAST -> broadcast(message, prefix);
@@ -68,7 +69,10 @@ public class PlayerUtils {
 
   public static void broadcast(String message, String prefix) {
     if (!message.isEmpty()) {
-      CobbleUtils.server.getPlayerManager().getPlayerList().forEach(player -> sendMessage(player, message, prefix));
+      var text = AdventureTranslator.toNative(message, prefix);
+      CobbleUtils.server.getPlayerManager().getPlayerList().forEach(player -> {
+        player.sendMessage(text);
+      });
     }
   }
 

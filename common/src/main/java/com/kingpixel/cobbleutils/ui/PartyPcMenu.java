@@ -15,6 +15,7 @@ import com.kingpixel.cobbleutils.Model.PanelsConfig;
 import com.kingpixel.cobbleutils.Model.PokemonBlackList;
 import com.kingpixel.cobbleutils.Model.Rectangle;
 import com.kingpixel.cobbleutils.action.PokemonButtonAction;
+import com.kingpixel.cobbleutils.ui.builds.PartyPcMenuBuilder;
 import com.kingpixel.cobbleutils.util.AdventureTranslator;
 import com.kingpixel.cobbleutils.util.PokemonUtils;
 import lombok.Data;
@@ -67,7 +68,6 @@ public class PartyPcMenu {
     rectanglePc.setStartColumn(1);
     rectanglePc.setWidth(7);
     rectanglePc.setLength(4);
-
     this.previousPc = new ItemModel("minecraft:arrow", "&aPrevious");
     previousPc.setSlot(45);
     this.closePc = new ItemModel("minecraft:barrier", "&cClose");
@@ -76,6 +76,105 @@ public class PartyPcMenu {
     nextPc.setSlot(53);
     this.panelsPc = new ArrayList<>();
     this.panelsPc.add(new PanelsConfig(new ItemModel("minecraft:light_blue_stained_glass_pane"), rowsPc));
+  }
+
+  public static PartyPcMenuBuilder builder() {
+    return new PartyPcMenuBuilder();
+  }
+
+  public void openPc(PartyPcMenuBuilder builder, int pos) {
+    if (isOnCooldown(builder.getPlayer())) {
+      if (CobbleUtils.config.isDebug())
+        CobbleUtils.LOGGER.warn("Player " + builder.getPlayer().getName().getString() + " is on cooldown for opening PC menu.");
+      return;
+    }
+
+    CompletableFuture.runAsync(() -> {
+      ChestTemplate template = ChestTemplate.builder(rowsPc).build();
+      PanelsConfig.applyConfig(template, panelsPc);
+
+      var pc = Cobblemon.INSTANCE.getStorage().getPC(builder.getPlayer());
+      List<Pokemon> pokemons = new ArrayList<>();
+      for (Pokemon pokemon : pc) {
+        if (pokemon != null && (builder.getBlackList() == null || !builder.getBlackList().isBlackListed(pokemon))) {
+          pokemons.add(pokemon);
+        }
+      }
+
+      int maxSize = pokemons.size();
+      if (maxSize == 0) return;
+
+      Rectangle rectangle = rectanglePc;
+      int index = 0;
+      int currentIndex;
+      for (int row = rectangle.getStartRow(); row < rectangle.getLength() + rectangle.getStartRow(); row++) {
+        for (int column = rectangle.getStartColumn(); column < rectangle.getWidth() + rectangle.getStartColumn(); column++) {
+          currentIndex = pos + index;
+          if (currentIndex >= maxSize) break;
+          Pokemon pokemon = pokemons.get(currentIndex);
+          GooeyButton.Builder button = createPokemonButton(pokemon, builder);
+          template.set(row, column, button.build());
+          index++;
+        }
+      }
+
+      applyPaginationButtons(template, pos, maxSize, rectangle, builder);
+
+      GooeyPage page = GooeyPage.builder()
+        .title(AdventureTranslator.toNative(titlePc))
+        .template(template)
+        .build();
+
+      UIManager.openUIForcefully(builder.getPlayer(), page);
+    }).orTimeout(5, TimeUnit.SECONDS).exceptionally(e -> {
+      CobbleUtils.LOGGER.error("Error while opening PC menu: " + e);
+      return null;
+    });
+  }
+
+  public void openParty(PartyPcMenuBuilder builder) {
+    if (isOnCooldown(builder.getPlayer())) {
+      if (CobbleUtils.config.isDebug())
+        CobbleUtils.LOGGER.warn("Player " + builder.getPlayer().getName().getString() + " is on cooldown for opening Party menu.");
+      return;
+    }
+
+    CompletableFuture.runAsync(() -> {
+      ChestTemplate template = ChestTemplate
+        .builder(rowsParty)
+        .build();
+
+      PanelsConfig.applyConfig(template, panelsParty);
+
+      if (builder.getTemplateConsumer() != null) {
+        builder.getTemplateConsumer().accept(template);
+      }
+
+      var party = Cobblemon.INSTANCE.getStorage().getParty(builder.getPlayer());
+
+      for (int i = 0; i < slotsParty.length; i++) {
+        int slot = slotsParty[i];
+        Pokemon pokemon = party.get(i);
+        GooeyButton.Builder button = createPokemonButton(pokemon, builder);
+        template.set(slot, button.build());
+      }
+
+      closeParty.applyTemplate(template, closeParty.getButton(close -> UIManager.closeUI(close.getPlayer())));
+
+      pc.applyTemplate(template, pc.getButton(action -> {
+        openPc(builder, 0);
+      }));
+
+      GooeyPage page = GooeyPage.builder()
+        .title(AdventureTranslator.toNative(titleParty))
+        .template(template)
+        .build();
+
+      UIManager.openUIForcefully(builder.getPlayer(), page);
+    }).orTimeout(5, TimeUnit.SECONDS).exceptionally(e -> {
+      CobbleUtils.LOGGER.error("Error while opening Party menu: " + e);
+      return null;
+    });
   }
 
   private static final Map<UUID, Long> cooldowns = new ConcurrentHashMap<>();
@@ -92,10 +191,13 @@ public class PartyPcMenu {
     return false;
   }
 
-  private GooeyButton.Builder createPokemonButton(Pokemon pokemon, List<String> lorePokemon,
-                                                  BiConsumer<Pokemon, List<String>> loreModifier,
-                                                  Consumer<PokemonButtonAction> pokemonAction,
-                                                  PokemonBlackList blackList, ConfirmMenu confirmMenu, Consumer<ButtonAction> closeAction) {
+  private GooeyButton.Builder createPokemonButton(Pokemon pokemon, PartyPcMenuBuilder builder) {
+    var blackList = builder.getBlackList();
+    var pokemonAction = builder.getPokemonAction();
+    var closeAction = builder.getCloseAction();
+    var confirmMenu = builder.getConfirmMenu();
+    var lorePokemon = builder.getLorePokemon();
+    var loreModifier = builder.getLoreModifier();
 
     if (pokemon == null || (blackList != null && blackList.isBlackListed(pokemon))) {
       return GooeyButton.builder()
@@ -112,7 +214,12 @@ public class PartyPcMenu {
       lore = PokemonUtils.replaceLore(pokemon);
     }
 
-    ItemStack itemStack = PokemonItem.from(pokemon);
+    ItemStack itemStack;
+    if (builder.getItemStackProvider() != null) {
+      itemStack = builder.getItemStackProvider().apply(pokemon);
+    } else {
+      itemStack = PokemonItem.from(pokemon);
+    }
     itemStack.set(DataComponentTypes.CUSTOM_NAME, AdventureTranslator.toNative(PokemonUtils.replace(pokemon)));
     itemStack.set(DataComponentTypes.LORE, new LoreComponent(AdventureTranslator.toNativeL(lore)));
     return GooeyButton.builder()
@@ -120,9 +227,14 @@ public class PartyPcMenu {
       .onClick(action -> {
         if (confirmMenu != null) {
           confirmMenu.open(action.getPlayer(), itemStack, confirmAction -> {
-            // Acción final al confirmar
             pokemonAction.accept(new PokemonButtonAction(action, pokemon));
-          }, closeAction);
+          }, close -> {
+            if (closeAction == null) {
+              UIManager.closeUI(close.getPlayer());
+            } else {
+              closeAction.accept(close);
+            }
+          });
         } else {
           pokemonAction.accept(new PokemonButtonAction(action, pokemon));
         }
@@ -130,123 +242,40 @@ public class PartyPcMenu {
   }
 
   private void applyPaginationButtons(ChestTemplate template, int pos, int maxSize, Rectangle rectangle,
-                                      ServerPlayerEntity player, Consumer<PokemonButtonAction> pokemonAction,
-                                      Consumer<ButtonAction> closeAction, PokemonBlackList blackList,
-                                      List<String> lorePokemon, BiConsumer<Pokemon, List<String>> loreModifier,
-                                      ConfirmMenu confirmMenu) {
+                                      PartyPcMenuBuilder builder) {
     if (pos > 0) {
       previousPc.applyTemplate(template, previousPc.getButton(action -> {
-        openPc(player, pokemonAction, Math.max(0, pos - rectangle.getWidth() * rectangle.getLength()),
-          closeAction, blackList, lorePokemon, loreModifier, confirmMenu);
+        openPc(builder, Math.max(0, pos - rectangle.getWidth() * rectangle.getLength()));
       }));
     }
 
-    closePc.applyTemplate(template, closePc.getButton(closeAction));
+    closePc.applyTemplate(template, closePc.getButton(action -> {
+      openParty(builder);
+    }));
 
     if (pos + rectangle.getWidth() * rectangle.getLength() < maxSize) {
       nextPc.applyTemplate(template, nextPc.getButton(action -> {
-        openPc(player, pokemonAction, Math.min(maxSize, pos + rectangle.getWidth() * rectangle.getLength()),
-          closeAction, blackList, lorePokemon, loreModifier, confirmMenu);
+        openPc(builder, Math.min(maxSize, pos + rectangle.getWidth() * rectangle.getLength()));
       }));
     }
-  }
-
-  public void openPc(ServerPlayerEntity player, Consumer<PokemonButtonAction> pokemonAction, int pos,
-                     Consumer<ButtonAction> closeAction, PokemonBlackList blackList, List<String> lorePokemon,
-                     BiConsumer<Pokemon, List<String>> loreModifier, ConfirmMenu confirmMenu) {
-    if (isOnCooldown(player)) {
-      if (CobbleUtils.config.isDebug())
-        CobbleUtils.LOGGER.warn("Player " + player.getName().getString() + " is on cooldown for opening PC menu.");
-      return;
-    }
-
-    CompletableFuture.runAsync(() -> {
-      ChestTemplate template = ChestTemplate.builder(rowsPc).build();
-      PanelsConfig.applyConfig(template, panelsPc);
-
-      var pc = Cobblemon.INSTANCE.getStorage().getPC(player);
-      List<Pokemon> pokemons = new ArrayList<>();
-      for (Pokemon pokemon : pc) {
-        if (pokemon != null && (blackList == null || !blackList.isBlackListed(pokemon))) {
-          pokemons.add(pokemon);
-        }
-      }
-
-      int maxSize = pokemons.size();
-      if (maxSize == 0) return;
-
-      Rectangle rectangle = rectanglePc;
-      int index = 0;
-      int currentIndex;
-      for (int row = rectangle.getStartRow(); row < rectangle.getLength() + rectangle.getStartRow(); row++) {
-        for (int column = rectangle.getStartColumn(); column < rectangle.getWidth() + rectangle.getStartColumn(); column++) {
-          currentIndex = pos + index;
-          if (currentIndex >= maxSize) break;
-          Pokemon pokemon = pokemons.get(currentIndex);
-          GooeyButton.Builder button = createPokemonButton(pokemon, lorePokemon, loreModifier, pokemonAction,
-            blackList, confirmMenu, closeAction);
-          template.set(row, column, button.build());
-          index++;
-        }
-      }
-
-      applyPaginationButtons(template, pos, maxSize, rectangle, player, pokemonAction, closeAction, blackList, lorePokemon, loreModifier, confirmMenu);
-
-      GooeyPage page = GooeyPage.builder()
-        .title(AdventureTranslator.toNative(titlePc))
-        .template(template)
-        .build();
-
-      UIManager.openUIForcefully(player, page);
-    }).orTimeout(5, TimeUnit.SECONDS).exceptionally(e -> {
-      CobbleUtils.LOGGER.error("Error while opening PC menu: " + e);
-      return null;
-    });
   }
 
   public void openParty(ServerPlayerEntity player, Consumer<Template> templateConsumer,
-                        Consumer<PokemonButtonAction> pokemonAction, Consumer<ButtonAction> closeActionParty,
+                        Consumer<PokemonButtonAction> pokemonAction, Consumer<ButtonAction> closeActionConfirmMenu,
                         PokemonBlackList blackList, List<String> lorePokemon,
                         BiConsumer<Pokemon, List<String>> loreModifier, ConfirmMenu confirmMenu) {
-    if (isOnCooldown(player)) {
-      if (CobbleUtils.config.isDebug())
-        CobbleUtils.LOGGER.warn("Player " + player.getName().getString() + " is on cooldown for opening Party menu.");
-      return;
-    }
-
-    CompletableFuture.runAsync(() -> {
-      ChestTemplate template = ChestTemplate.builder(rowsParty).build();
-      PanelsConfig.applyConfig(template, panelsParty);
-
-      if (templateConsumer != null) {
-        templateConsumer.accept(template);
-      }
-
-      var party = Cobblemon.INSTANCE.getStorage().getParty(player);
-
-      for (int i = 0; i < slotsParty.length; i++) {
-        int slot = slotsParty[i];
-        Pokemon pokemon = party.get(i);
-        GooeyButton.Builder button = createPokemonButton(pokemon, lorePokemon, loreModifier, pokemonAction, blackList, confirmMenu, closeActionParty);
-        template.set(slot, button.build());
-      }
-
-      closeParty.applyTemplate(template, closeParty.getButton(closeActionParty));
-
-      pc.applyTemplate(template, pc.getButton(action -> {
-        openPc(player, pokemonAction, 0, closePc -> openParty(player, templateConsumer, pokemonAction, closeActionParty,
-          blackList, lorePokemon, loreModifier, confirmMenu), blackList, lorePokemon, loreModifier, confirmMenu);
-      }));
-
-      GooeyPage page = GooeyPage.builder()
-        .title(AdventureTranslator.toNative(titleParty))
-        .template(template)
-        .build();
-
-      UIManager.openUIForcefully(player, page);
-    }).orTimeout(5, TimeUnit.SECONDS).exceptionally(e -> {
-      CobbleUtils.LOGGER.error("Error while opening Party menu: " + e);
-      return null;
-    });
+    var builder = PartyPcMenu.builder()
+      .setPlayer(player)
+      .setTemplateConsumer(templateConsumer)
+      .setPokemonAction(pokemonAction)
+      .setBlackList(blackList)
+      .setLorePokemon(lorePokemon)
+      .setLoreModifier(loreModifier)
+      .setConfirmMenu(confirmMenu)
+      .setCloseAction(closeActionConfirmMenu)
+      .build();
+    openParty(builder);
   }
+
+
 }

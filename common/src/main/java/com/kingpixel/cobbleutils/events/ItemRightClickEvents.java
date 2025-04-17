@@ -2,6 +2,7 @@ package com.kingpixel.cobbleutils.events;
 
 import ca.landonjw.gooeylibs2.api.UIManager;
 import com.kingpixel.cobbleutils.CobbleUtils;
+import com.kingpixel.cobbleutils.ui.PartyPcMenu;
 import com.kingpixel.cobbleutils.util.PlayerUtils;
 import dev.architectury.event.CompoundEventResult;
 import net.minecraft.component.DataComponentTypes;
@@ -28,25 +29,25 @@ public class ItemRightClickEvents {
   }
 
   private static void open(ServerPlayerEntity player, ItemStack itemStack) {
-    CobbleUtils.language.getPartyPcMenu().openParty(
-      player,
-      template -> {
-      },
-      action -> {
+    var builder = PartyPcMenu.builder()
+      .setPlayer(player)
+      .setTemplateConsumer(template -> {
+      })
+      .setCloseAction(close -> {
+        open(player, itemStack);
+      })
+      .setPokemonAction(action -> {
         var pokemon = action.getPokemon();
         if (!pokemon.getShiny()) {
           pokemon.setShiny(true);
           itemStack.decrement(1);
           UIManager.closeUI(action.getAction().getPlayer());
         }
-      },
-      close -> {
-        open(player, itemStack);
-      },
-      CobbleUtils.config.getShinytokenBlacklist(),
-      null,
-      null,
-      CobbleUtils.language.getConfirmMenu()
-    );
+      })
+      .setBlackList(CobbleUtils.config.getShinytokenBlacklist())
+      .setPartyPcMenu(CobbleUtils.language.getPartyPcMenu())
+      .setConfirmMenu(CobbleUtils.language.getConfirmMenu())
+      .build();
+    CobbleUtils.language.getPartyPcMenu().openParty(builder);
   }
 }

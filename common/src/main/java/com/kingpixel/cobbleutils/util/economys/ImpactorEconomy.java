@@ -79,7 +79,8 @@ public class ImpactorEconomy extends EconomyAbstract {
     if (!currency.contains(":")) currency = "impactor:" + currency;
     var c = service.currencies().currency(Key.key(currency));
     if (c.isPresent()) return c.get();
-    CobbleUtils.LOGGER.error("Currency not found: " + currency + " using primary currency");
+    if (CobbleUtils.config.isDebug())
+      CobbleUtils.LOGGER.error("Currency not found: " + currency + " using primary currency");
     return service.currencies().primary();
   }
 

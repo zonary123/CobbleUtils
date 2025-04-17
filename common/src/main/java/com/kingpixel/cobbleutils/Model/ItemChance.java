@@ -189,11 +189,11 @@ public class ItemChance {
     List<ItemChance> itemChances = new ArrayList<>();
     itemChances.add(new ItemChance("minecraft:dirt", 999.0));
     itemChances.add(new ItemChance("item:1:minecraft:dirt", 1.0));
-    itemChances.add(new ItemChance("item:1:minecraft:dirt#{CustomModelData:1}", 1.0));
+    itemChances.add(new ItemChance("item:1:minecraft:dirt#[minecraft:custom_model_data=1]", 1.0));
     itemChances.add(new ItemChance("pokemon:rattata alola", 1.0));
     itemChances.add(new ItemChance("command:lp user %player% permission set a", 1.0, "minecraft:emerald", "Give " +
       "permission a"));
-    itemChances.add(new ItemChance("command:lp user %player% permission set a|command:lp user %player% permission set b", 1.0
+    itemChances.add(new ItemChance("command:lp user %player% permission set a#lp user %player% permission set b", 1.0
       , "minecraft:emerald", "Give permission a and b"));
     itemChances.add(new ItemChance("money:1", 1.0));
     itemChances.add(new ItemChance("money:tokens:1", 1.0));
@@ -249,7 +249,7 @@ public class ItemChance {
         String regex = "(?<!" + Pattern.quote("<") + ")" + Pattern.quote("#");
         String[] commandParts = item.split(regex);
         for (String commandPart : commandParts) {
-          CobbleUtilities.executeCommand(player, commandPart.replace("command:", ""));
+          CobbleUtilities.executeCommand(player, commandPart.replace("command:", "").trim());
         }
         return true;
       } else if (item.startsWith("money:")) {
@@ -289,6 +289,15 @@ public class ItemChance {
       CobbleUtils.LOGGER.error("Error giving reward: " + e.getMessage());
       e.printStackTrace();
       return false;
+    }
+  }
+
+  private static Pokemon getRewardPokemon(String item) {
+    String p = item.replace("pokemon:", "");
+    if (p.isEmpty()) {
+      return PokemonProperties.Companion.parse("rattata").create();
+    } else {
+      return PokemonProperties.Companion.parse(p).create();
     }
   }
 
@@ -342,14 +351,6 @@ public class ItemChance {
     return itemStack;
   }
 
-  private static Pokemon getRewardPokemon(String item) {
-    String p = item.replace("pokemon:", "");
-    if (p.isEmpty()) {
-      return PokemonProperties.Companion.parse("rattata").create();
-    } else {
-      return PokemonProperties.Companion.parse(p).create();
-    }
-  }
 
   /**
    * Gets the title of the item based on its type.

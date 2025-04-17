@@ -62,6 +62,7 @@ public class Sound {
       List<ServerPlayerEntity> players = entity.getWorld().getEntitiesByClass(ServerPlayerEntity.class,
         new Box(entity.getBlockPos()).expand(getRange()), player -> true);
       SoundEvent sound = SoundUtil.getSound(getSound());
+      if (sound == null) return;
       if (players != null && !players.isEmpty()) {
         players.forEach(player -> player.playSoundToPlayer(sound, SoundCategory.PLAYERS, getVolume(), getPitch()));
       }
@@ -73,7 +74,9 @@ public class Sound {
   public void playSoundPlayer(ServerPlayerEntity player) {
     if (sound == null || sound.isEmpty()) return;
     try {
-      player.playSoundToPlayer(SoundUtil.getSound(sound), SoundCategory.PLAYERS, getVolume(), getPitch());
+      var sound = SoundUtil.getSound(getSound());
+      if (sound == null) return;
+      player.playSoundToPlayer(sound, SoundCategory.PLAYERS, getVolume(), getPitch());
     } catch (NoSuchMethodError | Exception e) {
       e.printStackTrace();
     }

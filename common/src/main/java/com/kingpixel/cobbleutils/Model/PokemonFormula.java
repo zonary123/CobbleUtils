@@ -40,8 +40,8 @@ public class PokemonFormula {
       gender.put(value, 0.0F);
     }
     nature.put("example", 0f);
-    ball.put("example", 0f);
-    labels.put("example", 0f);
+    ball.put("cobblemon:poke_ball", 0f);
+    labels.put("legendary", 0f);
   }
 
   public static void removeFormula(String identifier) {

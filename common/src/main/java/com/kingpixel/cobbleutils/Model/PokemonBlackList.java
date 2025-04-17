@@ -24,7 +24,6 @@ public class PokemonBlackList {
 
   public PokemonBlackList() {
     this.pokemons = new ArrayList<>();
-    pokemons.add("ditto");
     pokemons.add("egg");
     pokemons.add("pokestop");
     this.labels = new ArrayList<>();
@@ -38,7 +37,6 @@ public class PokemonBlackList {
     this.aspects = new ArrayList<>();
     aspects.add("gmax_Example");
     this.eggGroups = new ArrayList<>();
-    eggGroups.add(EggGroup.DITTO);
   }
 
   public boolean isBlackListed(Pokemon pokemon) {
@@ -54,7 +52,7 @@ public class PokemonBlackList {
       String keyType = type.getResourceLocation().getPath();
       return this.types.contains(keyType);
     })) return true;
-    
+
     for (String aspect : pokemon.getAspects()) {
       if (this.aspects.contains(aspect)) return true;
     }
