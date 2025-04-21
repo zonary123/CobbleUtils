@@ -35,7 +35,7 @@ public class PokemonUtils {
    * @return The lore with the replaced placeholders
    */
   public static List<String> replace(List<String> lore, Pokemon pokemon) {
-    List<String> finalLore = new ArrayList<>();
+    List<String> finalLore = new ArrayList<>(lore.size());
     for (String s : lore) {
       if (s.contains("%lorepokemon%")) {
         for (String additionalLine : CobbleUtils.language.getLorepokemon()) {
@@ -50,13 +50,6 @@ public class PokemonUtils {
 
   private static void replace(Pokemon pokemon, List<String> finalLore, String s) {
     String replaced = replace(s, pokemon);
-    for (int i = 0; i < 4; i++) {
-      if (pokemon == null) {
-        replaced = replaced.replace("%move" + (i + 1) + "%", CobbleUtils.language.getUnknown());
-      } else {
-        replaced = replaced.replace("%move" + (i + 1) + "%", getMoveTranslate(pokemon.getMoveSet().get(i)));
-      }
-    }
     replaced = replaced.replace("%lorepokemon%", "");
     finalLore.add(replaced);
   }
@@ -107,22 +100,7 @@ public class PokemonUtils {
         .replaceAll(Matcher.quoteReplacement(CobbleUtils.language.getUnknown()));
     }
 
-    // Calcular 'ah' solo si se necesita
-    String ah = "";
-    if (message.contains("%ah")) {
-      if (isEgg(pokemon)) {
-        Pokemon p = PokemonProperties.Companion.parse(pokemon.getSpecies().showdownId()).create();
-        String ability = pokemon.getPersistentData().getString("ability");
-        p.updateAbility(!ability.isEmpty()
-          ? Abilities.INSTANCE.get(ability).create(false, Priority.LOWEST)
-          : getRandomAbility(p));
-        ah = isAH(p) ? CobbleUtils.language.getAH() : "";
-      } else {
-        ah = isAH(pokemon) ? CobbleUtils.language.getAH() : "";
-      }
-    }
-
-    Map<String, String> placeholders = buildPlaceholders(pokemon, indexStr, ah);
+    Map<String, String> placeholders = buildPlaceholders(pokemon, indexStr);
 
     // Reemplazar usando Matcher + StringBuffer
     Matcher matcher = PLACEHOLDER_PATTERN.matcher(message);
@@ -136,7 +114,7 @@ public class PokemonUtils {
     return result.toString();
   }
 
-  private static Map<String, String> buildPlaceholders(Pokemon pokemon, String indexStr, String ah) {
+  private static Map<String, String> buildPlaceholders(Pokemon pokemon, String indexStr) {
     Nature nature = pokemon.getNature();
 
     Map<String, String> map = new HashMap<>();
@@ -191,7 +169,18 @@ public class PokemonUtils {
     map.put("%rarity" + indexStr + "%", getRarityS(pokemon));
     map.put("%breedable" + indexStr + "%", isBreedable(pokemon) ? CobbleUtils.language.getYes() : CobbleUtils.language.getNo());
     map.put("%friendship" + indexStr + "%", String.valueOf(pokemon.getFriendship()));
-    map.put("%ah" + indexStr + "%", ah);
+    StringBuilder ah = new StringBuilder();
+    if (isEgg(pokemon)) {
+      Pokemon p = PokemonProperties.Companion.parse(pokemon.getSpecies().showdownId()).create();
+      String ability = pokemon.getPersistentData().getString("ability");
+      p.updateAbility(!ability.isEmpty()
+        ? Abilities.INSTANCE.get(ability).create(false, Priority.LOWEST)
+        : getRandomAbility(p));
+      ah.append(isAH(p) ? CobbleUtils.language.getAH() : "");
+    } else {
+      ah.append(isAH(pokemon) ? CobbleUtils.language.getAH() : "");
+    }
+    map.put("%ah" + indexStr + "%", ah.toString());
 
     String country = pokemon.getPersistentData().getString(CobbleUtilsTags.COUNTRY_TAG);
     map.put("%country" + indexStr + "%", country.isEmpty() ? CobbleUtils.language.getNone() : country);
@@ -294,15 +283,12 @@ public class PokemonUtils {
    * @return The string with the replaced placeholders
    */
   public static String replace(String message, List<Pokemon> pokemons) {
-    if (pokemons.isEmpty()) {
-      return message;
-    }
+    if (pokemons.isEmpty()) return message;
     int size = pokemons.size();
     for (int i = 0; i < size; i++) {
       Pokemon pokemon = pokemons.get(i);
       message = replacePlaceholders(message, pokemon, size == 1 ? null : i + 1);
     }
-
     return message;
   }
 

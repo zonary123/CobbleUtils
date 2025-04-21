@@ -17,7 +17,7 @@
     ]
   },
   "license": "${license}",
-  "environment": "server",
+  "environment": "*",
   "depends": {
     "fabricloader": "*",
     "fabric": "*",

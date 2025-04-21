@@ -90,6 +90,7 @@ public class PartyPcMenu {
     }
 
     CompletableFuture.runAsync(() -> {
+      long startTime = System.currentTimeMillis();
       ChestTemplate template = ChestTemplate.builder(rowsPc).build();
       PanelsConfig.applyConfig(template, panelsPc);
 
@@ -126,6 +127,10 @@ public class PartyPcMenu {
         .build();
 
       UIManager.openUIForcefully(builder.getPlayer(), page);
+      long endTime = System.currentTimeMillis();
+      if (CobbleUtils.config.isDebug()) {
+        CobbleUtils.LOGGER.info("Time taken to open PC menu: " + (endTime - startTime) + "ms");
+      }
     }).orTimeout(5, TimeUnit.SECONDS).exceptionally(e -> {
       CobbleUtils.LOGGER.error("Error while opening PC menu: " + e);
       return null;
@@ -140,6 +145,7 @@ public class PartyPcMenu {
     }
 
     CompletableFuture.runAsync(() -> {
+      long startTime = System.currentTimeMillis();
       ChestTemplate template = ChestTemplate
         .builder(rowsParty)
         .build();
@@ -171,6 +177,10 @@ public class PartyPcMenu {
         .build();
 
       UIManager.openUIForcefully(builder.getPlayer(), page);
+      long endTime = System.currentTimeMillis();
+      if (CobbleUtils.config.isDebug()) {
+        CobbleUtils.LOGGER.info("Time taken to open Party menu: " + (endTime - startTime) + "ms");
+      }
     }).orTimeout(5, TimeUnit.SECONDS).exceptionally(e -> {
       CobbleUtils.LOGGER.error("Error while opening Party menu: " + e);
       return null;

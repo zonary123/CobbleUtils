@@ -97,51 +97,36 @@ public class PlayerUtils {
     return cooldown;
   }
 
+  @Deprecated(forRemoval = true, since = "1.1.3")
   public static String getCooldown(Date date) {
-    if (date == null) {
-      return CobbleUtils.language.getNocooldown();
-    }
-    long time = date.getTime() - new Date().getTime();
-    long seconds = time / 1000;
-    long minutes = seconds / 60;
-    long hours = minutes / 60;
-    long days = hours / 24;
+    if (date == null) return CobbleUtils.language.getNocooldown();
+    return getCooldown(date.getTime());
+  }
 
-    long remainingHours = hours % 24;
-    long remainingMinutes = minutes % 60;
-    long remainingSeconds = seconds % 60;
+  public static String getCooldown(long timestamp) {
+    long time = timestamp - System.currentTimeMillis();
+    if (time <= 0) return CobbleUtils.language.getNocooldown();
+
+    long[] units = {time / (1000 * 60 * 60 * 24),
+      (time / (1000 * 60 * 60)) % 24,
+      (time / (1000 * 60)) % 60,
+      (time / 1000) % 60};
+
+    String[] singularLabels = {CobbleUtils.language.getDay(), CobbleUtils.language.getHour(),
+      CobbleUtils.language.getMinute(), CobbleUtils.language.getSecond()};
+    String[] pluralLabels = {CobbleUtils.language.getDays(), CobbleUtils.language.getHours(),
+      CobbleUtils.language.getMinutes(), CobbleUtils.language.getSeconds()};
 
     StringBuilder result = new StringBuilder();
+    for (int i = 0; i < units.length; i++) {
+      if (units[i] > 0) {
+        result.append(units[i] != 1
+          ? pluralLabels[i].replace("%s", Long.toString(units[i]))
+          : singularLabels[i].replace("%s", Long.toString(units[i])));
+      }
+    }
 
-    if (days > 0) {
-      String dayString = days != 1 ? CobbleUtils.language.getDays().replace("%s", String.valueOf(days))
-        : CobbleUtils.language.getDay().replace("%s", String.valueOf(days));
-      result.append(dayString);
-    }
-    if (remainingHours > 0) {
-      String hourString = remainingHours != 1 ? CobbleUtils.language.getHours().replace("%s",
-        String.valueOf(remainingHours))
-        : CobbleUtils.language.getHour().replace("%s", String.valueOf(remainingHours));
-      result.append(hourString);
-    }
-    if (remainingMinutes > 0) {
-      String minuteString = remainingMinutes != 1 ? CobbleUtils.language.getMinutes().replace("%s",
-        String.valueOf(remainingMinutes))
-        : CobbleUtils.language.getMinute().replace("%s",
-        String.valueOf(remainingMinutes));
-      result.append(minuteString);
-    }
-    if (remainingSeconds > 0) {
-      String secondString = remainingSeconds != 1 ? CobbleUtils.language.getSeconds().replace("%s",
-        String.valueOf(remainingSeconds))
-        : CobbleUtils.language.getSecond().replace("%s",
-        String.valueOf(remainingSeconds));
-      result.append(secondString);
-    }
-    if (result.isEmpty())
-      return CobbleUtils.language.getNocooldown();
-
-    return result.toString().trim();
+    return result.isEmpty() ? CobbleUtils.language.getNocooldown() : result.toString().trim();
   }
 
   public static ItemStack getHeadItem(ServerPlayerEntity player) {

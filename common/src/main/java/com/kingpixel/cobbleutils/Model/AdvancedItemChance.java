@@ -164,10 +164,13 @@ public class AdvancedItemChance {
     List<ItemStack> showAllRewards = getListDisplay(allRewards);
     List<ItemStack> showRewards = getListDisplay(obtainedRewards);
 
+
+    initAnimation(animation, player, showAllRewards, showRewards);
+  }
+
+
+  public static void initAnimation(Animations animation, ServerPlayerEntity player, List<ItemStack> showAllRewards, List<ItemStack> showRewards) {
     Vec3d centerPosition = AnimationUtils.getPosition(player, null);
-
-    //TODO: Change how the animations are called for queue.
-
     switch (animation) {
       case CSGO:
         CSGOAnimation.start(player, showAllRewards, showRewards);
@@ -181,10 +184,9 @@ public class AdvancedItemChance {
       default:
         break;
     }
-
   }
 
-  private enum Animations {
+  public enum Animations {
     NONE, // No animation
     RANDOM,
     CSGO, // Show the items in a CSGO style

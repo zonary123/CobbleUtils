@@ -4,10 +4,7 @@ import com.cobblemon.mod.common.command.argument.PartySlotArgumentType;
 import com.cobblemon.mod.common.pokemon.Pokemon;
 import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.api.PermissionApi;
-import com.kingpixel.cobbleutils.util.AdventureTranslator;
-import com.kingpixel.cobbleutils.util.PlayerUtils;
-import com.kingpixel.cobbleutils.util.PokemonUtils;
-import com.kingpixel.cobbleutils.util.Utils;
+import com.kingpixel.cobbleutils.util.*;
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
@@ -21,7 +18,6 @@ import net.minecraft.text.HoverEvent;
 import net.minecraft.text.Style;
 import net.minecraft.text.Text;
 
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -32,7 +28,7 @@ import java.util.concurrent.TimeUnit;
  * @author Carlos Varas Alonso - 26/07/2024 14:14
  */
 public class PokeShout implements Command<CommandSource> {
-  private static Map<UUID, Date> cooldowns = new ConcurrentHashMap<>();
+  private static Map<UUID, Long> cooldowns = new ConcurrentHashMap<>();
 
   public static void register(CommandDispatcher<ServerCommandSource> dispatcher,
                               LiteralArgumentBuilder<ServerCommandSource> base) {
@@ -50,23 +46,27 @@ public class PokeShout implements Command<CommandSource> {
               }
               Pokemon pokemon = PartySlotArgumentType.Companion.getPokemon(context, "slot");
               ServerPlayerEntity player = context.getSource().getPlayerOrThrow();
-              Date cooldown = cooldowns.get(player.getUuid());
-              if (PlayerUtils.isCooldown(cooldown)) {
-                PlayerUtils.sendMessage(player, CobbleUtils.language.getMessageCooldown()
-                  .replace("%cooldown%", String.valueOf(PlayerUtils.getCooldown(cooldown)))
-                  .replace("%prefix%", CobbleUtils.config.getPrefix())
-                );
-                return 0;
-              }
-              cooldowns.put(player.getUuid(),
-                new Date(System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(CobbleUtils.config.getCooldownpokeshout())));
-              if (pokemon != null) {
-                Utils.broadcastMessage(getMessage(player, pokemon));
-                return 1;
-              } else {
+              if (player == null) return 0;
+              if (pokemon == null) {
                 PlayerUtils.sendMessage(player, CobbleUtils.language.getMessageNoPokemon());
                 return 0;
               }
+              long cooldown = cooldowns.get(player.getUuid());
+              if (PlayerUtils.isCooldown(cooldown)) {
+                PlayerUtils.sendMessage(player,
+                  CobbleUtils.language.getMessageCooldown()
+                    .replace("%cooldown%", String.valueOf(PlayerUtils.getCooldown(cooldown))),
+                  CobbleUtils.config.getPrefix(),
+                  TypeMessage.CHAT
+                );
+                return 0;
+              }
+              cooldowns.put(player.getUuid(), System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(CobbleUtils.config.getCooldownpokeshout()));
+              if (pokemon != null) {
+                Utils.broadcastMessage(getMessage(player, pokemon));
+                return 1;
+              }
+              return 0;
             })));
   }
 
@@ -83,8 +83,7 @@ public class PokeShout implements Command<CommandSource> {
     return AdventureTranslator.toNativeComponent(messageContent)
       .setStyle(Style.EMPTY
         .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT,
-          AdventureTranslator.toNative(PokemonUtils.replace(
-            "%lorepokemon%", pokemon)))));
+          AdventureTranslator.toNative(String.join("\n", PokemonUtils.replaceLore(pokemon))))));
   }
 
 }

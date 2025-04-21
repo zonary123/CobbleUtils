@@ -135,7 +135,7 @@ public class AdventureTranslator {
   }
 
   public static List<Text> toNativeL(List<String> lore) {
-    List<Text> loreString = new ArrayList<>();
+    List<Text> loreString = new ArrayList<>(lore.size());
     for (String loreLine : lore) {
       loreString.add(toNative(miniMessage.deserialize(replaceNative(loreLine)), null));
     }
@@ -144,7 +144,7 @@ public class AdventureTranslator {
   }
 
   public static List<Text> toNativeL(List<String> lore, @Nullable ServerPlayerEntity player) {
-    List<Text> loreString = new ArrayList<>();
+    List<Text> loreString = new ArrayList<>(lore.size());
     for (String loreLine : lore) {
       loreString.add(toNative(miniMessage.deserialize(replaceNative(loreLine)), player));
     }

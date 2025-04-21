@@ -8,9 +8,11 @@ import lombok.Getter;
 import lombok.Setter;
 import net.minecraft.server.network.ServerPlayerEntity;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author Carlos Varas Alonso - 19/11/2024 2:16
@@ -18,7 +20,7 @@ import java.util.concurrent.CompletableFuture;
 @Getter
 @Setter
 public class WebHookData {
-  public static Map<String, WebhookClient> webhooks;
+  public static Map<String, WebhookClient> webhooks = new HashMap<>();
 
   private boolean ENABLED;
   private String URL_WEBHOOK;
@@ -53,6 +55,7 @@ public class WebHookData {
         }
         client.send(struct.getMessage(this, players, pokemons));
       })
+      .orTimeout(5, TimeUnit.SECONDS)
       .exceptionally(e -> {
         e.printStackTrace();
         return null;
@@ -70,6 +73,7 @@ public class WebHookData {
         }
         client.send(struct.getMessageEntity(this, players, pokemons));
       })
+      .orTimeout(5, TimeUnit.SECONDS)
       .exceptionally(e -> {
         e.printStackTrace();
         return null;

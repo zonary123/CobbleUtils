@@ -7,6 +7,7 @@ import com.kingpixel.cobbleutils.util.PlayerUtils;
 import dev.architectury.event.CompoundEventResult;
 import net.minecraft.component.DataComponentTypes;
 import net.minecraft.component.type.NbtComponent;
+import net.minecraft.entity.EntityPose;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -17,6 +18,7 @@ import net.minecraft.util.Hand;
  */
 public class ItemRightClickEvents {
   public static CompoundEventResult register(PlayerEntity player, Hand hand) {
+    if (player.isInPose(EntityPose.CROUCHING)) return CompoundEventResult.pass();
     ItemStack itemStack = player.getStackInHand(hand);
     if (itemStack.isEmpty()) return CompoundEventResult.pass();
     NbtComponent tag = itemStack.get(DataComponentTypes.CUSTOM_DATA);
