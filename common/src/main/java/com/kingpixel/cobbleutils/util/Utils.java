@@ -108,6 +108,7 @@ public abstract class Utils {
       }
     } catch (InterruptedException e) {
       IO_EXECUTOR.shutdownNow();
+      CobbleUtils.LOGGER.error("Error shutting down IO executor: " + e);
     }
   }
 

@@ -1,7 +1,10 @@
 package com.kingpixel.cobbleutils.util;
 
 import com.cobblemon.mod.common.api.Priority;
-import com.cobblemon.mod.common.api.abilities.*;
+import com.cobblemon.mod.common.api.abilities.Abilities;
+import com.cobblemon.mod.common.api.abilities.Ability;
+import com.cobblemon.mod.common.api.abilities.AbilityPool;
+import com.cobblemon.mod.common.api.abilities.PotentialAbility;
 import com.cobblemon.mod.common.api.moves.Move;
 import com.cobblemon.mod.common.api.pokemon.PokemonProperties;
 import com.cobblemon.mod.common.api.pokemon.PokemonSpecies;
@@ -14,13 +17,12 @@ import com.cobblemon.mod.common.pokemon.*;
 import com.cobblemon.mod.common.pokemon.abilities.HiddenAbilityType;
 import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.Model.CobbleUtilsTags;
-import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 
 import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.function.BiConsumer;
+import java.util.stream.Stream;
 
 /**
  * @author Carlos Varas Alonso - 28/06/2024 18:53
@@ -35,17 +37,14 @@ public class PokemonUtils {
    * @return The lore with the replaced placeholders
    */
   public static List<String> replace(List<String> lore, Pokemon pokemon) {
-    List<String> finalLore = new ArrayList<>(lore.size());
-    for (String s : lore) {
-      if (s.contains("%lorepokemon%")) {
-        for (String additionalLine : CobbleUtils.language.getLorepokemon()) {
-          replace(pokemon, finalLore, additionalLine);
-        }
-      } else {
-        replace(pokemon, finalLore, s);
-      }
-    }
-    return finalLore;
+    Map<String, String> placeholders = buildPlaceholders(pokemon, null);
+
+    return lore.stream()
+      .flatMap(s -> s.contains("%lorepokemon%")
+        ? CobbleUtils.language.getLorepokemon().stream()
+        .map(additionalLine -> replacePlaceholders(additionalLine, placeholders))
+        : Stream.of(replacePlaceholders(s, placeholders)))
+      .toList();
   }
 
   private static void replace(Pokemon pokemon, List<String> finalLore, String s) {
@@ -87,88 +86,81 @@ public class PokemonUtils {
     return replace(CobbleUtils.language.getPokemonnameformat(), pokemon);
   }
 
-  private static final Pattern PLACEHOLDER_PATTERN = Pattern.compile("%[^%]+%");
-
-  private static String replacePlaceholders(String message, Pokemon pokemon, Integer index) {
-    if (message == null || message.isEmpty()) return "";
-    if (!message.contains("%")) return message;
-
-    String indexStr = (index == null || index == 0) ? "" : index.toString();
-
-    if (pokemon == null) {
-      return PLACEHOLDER_PATTERN.matcher(message)
-        .replaceAll(Matcher.quoteReplacement(CobbleUtils.language.getUnknown()));
+  private static String replacePlaceholders(String message, Map<String, String> placeholders) {
+    if (message == null || !message.contains("%")) return message;
+    if (placeholders.isEmpty()) return message;
+    for (Map.Entry<String, String> entry : placeholders.entrySet()) {
+      message = message.replace(entry.getKey(), entry.getValue());
     }
-
-    Map<String, String> placeholders = buildPlaceholders(pokemon, indexStr);
-
-    // Reemplazar usando Matcher + StringBuffer
-    Matcher matcher = PLACEHOLDER_PATTERN.matcher(message);
-    StringBuilder result = new StringBuilder();
-    while (matcher.find()) {
-      String placeholder = matcher.group();
-      String replacement = placeholders.getOrDefault(placeholder, placeholder); // si no hay reemplazo, dejar igual
-      matcher.appendReplacement(result, Matcher.quoteReplacement(replacement));
-    }
-    matcher.appendTail(result);
-    return result.toString();
+    return message;
   }
 
   private static Map<String, String> buildPlaceholders(Pokemon pokemon, String indexStr) {
-    Nature nature = pokemon.getNature();
-
+    indexStr = indexStr == null ? "" : indexStr;
     Map<String, String> map = new HashMap<>();
-    map.put("%showdownid" + indexStr + "%", pokemon.showdownId());
-    map.put("%level" + indexStr + "%", String.valueOf(pokemon.getLevel()));
-    map.put("%nature" + indexStr + "%", getNatureTranslate(nature));
-    map.put("%pokemon" + indexStr + "%", isEgg(pokemon)
-      ? pokemon.getPersistentData().getString("species")
-      : getTranslatedName(pokemon));
-    map.put("%shiny" + indexStr + "%", pokemon.getShiny() ? CobbleUtils.language.getSymbolshiny() : "");
-    map.put("%ability" + indexStr + "%", isEgg(pokemon)
-      ? pokemon.getPersistentData().getString("ability")
-      : getAbilityTranslate(pokemon.getAbility()));
-    map.put("%tradeable" + indexStr + "%", pokemon.getTradeable() ? CobbleUtils.language.getYes() : CobbleUtils.language.getNo());
+    String finalIndexStr = indexStr;
+    BiConsumer<String, String> put = (key, value) -> map.put("%" + key + finalIndexStr + "%", value != null ? value : CobbleUtils.language.getUnknown());
 
-    // IVs
-    map.put("%ivshp" + indexStr + "%", String.valueOf(pokemon.getIvs().get(Stats.HP)));
-    map.put("%ivsatk" + indexStr + "%", String.valueOf(pokemon.getIvs().get(Stats.ATTACK)));
-    map.put("%ivsdef" + indexStr + "%", String.valueOf(pokemon.getIvs().get(Stats.DEFENCE)));
-    map.put("%ivsspa" + indexStr + "%", String.valueOf(pokemon.getIvs().get(Stats.SPECIAL_ATTACK)));
-    map.put("%ivsspdef" + indexStr + "%", String.valueOf(pokemon.getIvs().get(Stats.SPECIAL_DEFENCE)));
-    map.put("%ivsspeed" + indexStr + "%", String.valueOf(pokemon.getIvs().get(Stats.SPEED)));
-
-    // EVs
-    map.put("%evshp" + indexStr + "%", String.valueOf(pokemon.getEvs().get(Stats.HP)));
-    map.put("%evsatk" + indexStr + "%", String.valueOf(pokemon.getEvs().get(Stats.ATTACK)));
-    map.put("%evsdef" + indexStr + "%", String.valueOf(pokemon.getEvs().get(Stats.DEFENCE)));
-    map.put("%evsspa" + indexStr + "%", String.valueOf(pokemon.getEvs().get(Stats.SPECIAL_ATTACK)));
-    map.put("%evsspdef" + indexStr + "%", String.valueOf(pokemon.getEvs().get(Stats.SPECIAL_DEFENCE)));
-    map.put("%evsspeed" + indexStr + "%", String.valueOf(pokemon.getEvs().get(Stats.SPEED)));
-
-    map.put("%item" + indexStr + "%", ItemUtils.getTranslatedName(pokemon.heldItem()));
-    map.put("%size" + indexStr + "%", getSize(pokemon));
-    map.put("%form" + indexStr + "%", getForm(pokemon));
-    map.put("%up" + indexStr + "%", getStatTranslate(nature.getIncreasedStat()));
-    map.put("%down" + indexStr + "%", getStatTranslate(nature.getDecreasedStat()));
-    map.put("%ball" + indexStr + "%", getPokeBallTranslate(pokemon.getCaughtBall()));
-    map.put("%gender" + indexStr + "%", getGenderTranslate(pokemon.getGender()));
-    map.put("%ivs" + indexStr + "%", getIvsAverage(pokemon.getIvs()).toString());
-    map.put("%evs" + indexStr + "%", getEvsTotal(pokemon.getEvs()).toString());
-
-    // Moves con seguridad por si no hay suficientes
-    List<Move> moves = pokemon.getMoveSet().getMoves();
-    for (int i = 0; i < 4; i++) {
-      String key = "%move" + indexStr + (i + 1) + "%";
-      String value = i < moves.size() ? getMoveTranslate(moves.get(i)) : CobbleUtils.language.getNone();
-      map.put(key, value);
+    if (pokemon == null) {
+      List<String> keys = List.of("showdownid", "level", "nature", "pokemon", "shiny", "ability", "tradeable",
+        "ivshp", "ivsatk", "ivsdef", "ivsspa", "ivsspdef", "ivsspeed",
+        "evshp", "evsatk", "evsdef", "evsspa", "evsspdef", "evsspeed",
+        "item", "size", "form", "up", "down", "ball", "gender", "ivs", "evs",
+        "move1", "move2", "move3", "move4", "owner", "types", "rarity", "breedable",
+        "friendship", "ah", "country", "egggroups", "dex", "labels", "aspects");
+      keys.forEach(k -> put.accept(k, CobbleUtils.language.getUnknown()));
+      return map;
     }
 
-    map.put("%owner" + indexStr + "%", getOwnerName(pokemon));
-    map.put("%types" + indexStr + "%", getType(pokemon));
-    map.put("%rarity" + indexStr + "%", getRarityS(pokemon));
-    map.put("%breedable" + indexStr + "%", isBreedable(pokemon) ? CobbleUtils.language.getYes() : CobbleUtils.language.getNo());
-    map.put("%friendship" + indexStr + "%", String.valueOf(pokemon.getFriendship()));
+    Nature nature = pokemon.getNature();
+    put.accept("showdownid", pokemon.showdownId());
+    put.accept("level", String.valueOf(pokemon.getLevel()));
+    put.accept("nature", getNatureTranslate(nature));
+    put.accept("pokemon", isEgg(pokemon)
+      ? pokemon.getPersistentData().getString("species")
+      : getTranslatedName(pokemon));
+    put.accept("shiny", pokemon.getShiny() ? CobbleUtils.language.getSymbolshiny() : "");
+    put.accept("ability", isEgg(pokemon)
+      ? pokemon.getPersistentData().getString("ability")
+      : getAbilityTranslate(pokemon.getAbility()));
+    put.accept("tradeable", pokemon.getTradeable() ? CobbleUtils.language.getYes() : CobbleUtils.language.getNo());
+
+    // IVs y EVs
+    for (Stats stat : Stats.values()) {
+      String name = "";
+      switch (stat) {
+        case HP -> name = "hp";
+        case ATTACK -> name = "atk";
+        case DEFENCE -> name = "def";
+        case SPECIAL_ATTACK -> name = "spa";
+        case SPECIAL_DEFENCE -> name = "spdef";
+        case SPEED -> name = "speed";
+      }
+      put.accept("ivs" + name, String.valueOf(pokemon.getIvs().get(stat)));
+      put.accept("evs" + name, String.valueOf(pokemon.getEvs().get(stat)));
+    }
+
+    put.accept("item", ItemUtils.getTranslatedName(pokemon.heldItem()));
+    put.accept("size", getSize(pokemon));
+    put.accept("form", getForm(pokemon));
+    put.accept("up", getStatTranslate(nature.getIncreasedStat()));
+    put.accept("down", getStatTranslate(nature.getDecreasedStat()));
+    put.accept("ball", getPokeBallTranslate(pokemon.getCaughtBall()));
+    put.accept("gender", getGenderTranslate(pokemon.getGender()));
+    put.accept("ivs", getIvsAverage(pokemon.getIvs()).toString());
+    put.accept("evs", getEvsTotal(pokemon.getEvs()).toString());
+
+    List<Move> moves = pokemon.getMoveSet().getMoves();
+    for (int i = 0; i < 4; i++) {
+      put.accept("move" + (i + 1), i < moves.size() ? getMoveTranslate(moves.get(i)) : CobbleUtils.language.getNone());
+    }
+
+    put.accept("owner", getOwnerName(pokemon));
+    put.accept("types", getType(pokemon));
+    put.accept("rarity", getRarityS(pokemon));
+    put.accept("breedable", isBreedable(pokemon) ? CobbleUtils.language.getYes() : CobbleUtils.language.getNo());
+    put.accept("friendship", String.valueOf(pokemon.getFriendship()));
+
     StringBuilder ah = new StringBuilder();
     if (isEgg(pokemon)) {
       Pokemon p = PokemonProperties.Companion.parse(pokemon.getSpecies().showdownId()).create();
@@ -180,18 +172,75 @@ public class PokemonUtils {
     } else {
       ah.append(isAH(pokemon) ? CobbleUtils.language.getAH() : "");
     }
-    map.put("%ah" + indexStr + "%", ah.toString());
+    put.accept("ah", ah.toString());
 
     String country = pokemon.getPersistentData().getString(CobbleUtilsTags.COUNTRY_TAG);
-    map.put("%country" + indexStr + "%", country.isEmpty() ? CobbleUtils.language.getNone() : country);
+    put.accept("country", country.isEmpty() ? CobbleUtils.language.getNone() : country);
 
-    map.put("%egggroups" + indexStr + "%", eggGroups(pokemon));
-    map.put("%dex" + indexStr + "%", String.valueOf(pokemon.getSpecies().getNationalPokedexNumber()));
-    map.put("%labels" + indexStr + "%", pokemon.getForm().getLabels().toString());
-    map.put("%aspects" + indexStr + "%", pokemon.getAspects().stream().toList().toString());
+    put.accept("egggroups", eggGroups(pokemon));
+    put.accept("dex", String.valueOf(pokemon.getSpecies().getNationalPokedexNumber()));
+    put.accept("labels", pokemon.getForm().getLabels().toString());
+    put.accept("aspects", pokemon.getAspects().stream().toList().toString());
 
     return map;
   }
+
+
+  /**
+   * Replace the placeholders with the pokemon data
+   *
+   * @param message The string to replace
+   * @param pokemon The pokemon to get the data
+   *
+   * @return The string with the replaced placeholders
+   */
+  public static String replace(String message, Pokemon pokemon) {
+    if (message == null || message.isEmpty()) return "";
+    if (!message.contains("%")) return message;
+
+    Map<String, String> placeholders = buildPlaceholders(pokemon, null);
+
+    if (message.contains("%lorepokemon%")) {
+      StringBuilder loreStringBuilder = new StringBuilder();
+      CobbleUtils.language.getLorepokemon().forEach(lore -> loreStringBuilder.append(lore).append("\n"));
+      message = message.replace("%lorepokemon%", loreStringBuilder.toString());
+    }
+
+    return replacePlaceholders(message, placeholders);
+  }
+
+  /**
+   * Replace the placeholders with the pokemon data
+   *
+   * @param message  The string to replace
+   * @param pokemons The pokemon to get the data
+   *
+   * @return The string with the replaced placeholders
+   */
+  public static String replace(String message, List<Pokemon> pokemons) {
+    if (pokemons.isEmpty()) return message;
+
+    int size = pokemons.size();
+    for (int i = 0; i < size; i++) {
+      Pokemon pokemon = pokemons.get(i);
+      Map<String, String> placeholders = buildPlaceholders(pokemon, String.valueOf(size == 1 ? null : i + 1));
+      message = replacePlaceholders(message, placeholders);
+    }
+    return message;
+  }
+
+  public static boolean isEgg(Pokemon pokemon) {
+    return pokemon.getSpecies().showdownId().equalsIgnoreCase("egg");
+  }
+
+  public static String eggGroups(Pokemon pokemon) {
+    StringBuilder s = new StringBuilder();
+    for (EggGroup eggGroup : pokemon.getSpecies().getEggGroups()) {
+      s.append("&e").append(eggGroup).append(" ");
+    }
+    return s.toString();
+  }
+
 
   private static String getForm(Pokemon pokemon) {
     if (pokemon == null) return CobbleUtils.language.getUnknown();
@@ -228,82 +277,12 @@ public class PokemonUtils {
       : CobbleUtils.language.getForms().getOrDefault(pokemon.getForm().getName(), pokemon.getForm().getName());
   }
 
-  /**
-   * Replace the placeholders with the pokemon data
-   *
-   * @param message The string to replace
-   * @param pokemon The pokemon to get the data
-   *
-   * @return The string with the replaced placeholders
-   */
-  public static String replace(String message, Pokemon pokemon) {
-    if (message == null || message.isEmpty()) return "";
-    if (!message.contains("%")) return message;
-    if (message.contains("%lorepokemon%")) {
-      StringBuilder loreStringBuilder = new StringBuilder();
-      CobbleUtils.language.getLorepokemon().forEach(lore -> loreStringBuilder.append(lore).append("\n"));
-
-      String lorepokemon = loreStringBuilder.toString();
-      message = message.replace("%lorepokemon%", lorepokemon);
-    }
-
-    return replacePlaceholders(message, pokemon, null); // null indica que no hay índice
-  }
-
-  public static boolean isEgg(Pokemon pokemon) {
-    return pokemon.getSpecies().showdownId().equalsIgnoreCase("egg");
-  }
-
-  public static String eggGroups(Pokemon pokemon) {
-    StringBuilder s = new StringBuilder();
-    for (EggGroup eggGroup : pokemon.getSpecies().getEggGroups()) {
-      s.append("&e").append(eggGroup).append(" ");
-    }
-    return s.toString();
-  }
-
-  /**
-   * Check if the pokemon has pokerus
-   *
-   * @param pokemon The pokemon to check
-   *
-   * @return If the pokemon has pokerus
-   */
-  public static boolean isPokerus(Pokemon pokemon) {
-    return pokemon.getPersistentData().getBoolean("pokerus");
-  }
-
-
-  /**
-   * Replace the placeholders with the pokemon data
-   *
-   * @param message  The string to replace
-   * @param pokemons The pokemon to get the data
-   *
-   * @return The string with the replaced placeholders
-   */
-  public static String replace(String message, List<Pokemon> pokemons) {
-    if (pokemons.isEmpty()) return message;
-    int size = pokemons.size();
-    for (int i = 0; i < size; i++) {
-      Pokemon pokemon = pokemons.get(i);
-      message = replacePlaceholders(message, pokemon, size == 1 ? null : i + 1);
-    }
-    return message;
-  }
-
   public static Pokemon getFirstEvolution(Pokemon pokemon) {
-    if (CobbleUtils.config.isDebug()) {
-      CobbleUtils.LOGGER.info("getFirstEvolution(Pokemon pokemon) -> " + pokemon.showdownId());
-    }
     Pokemon firstEvolution = pokemon;
     while (firstEvolution.getPreEvolution() != null) {
       firstEvolution = firstEvolution.getPreEvolution().getSpecies().create(1);
       firstEvolution.setForm(firstEvolution.getForm());
       firstEvolution.updateForm();
-    }
-    if (CobbleUtils.config.isDebug()) {
-      CobbleUtils.LOGGER.info("getFirstEvolution() First evolution: " + firstEvolution.showdownId());
     }
     return firstEvolution;
   }
@@ -639,23 +618,6 @@ public class PokemonUtils {
   }
 
   /**
-   * Get the hidden ability of the pokemon
-   *
-   * @param pokemon The pokemon to get the hidden ability
-   *
-   * @return The hidden ability of the pokemon
-   */
-  public static Ability getAH(Pokemon pokemon) {
-    for (PotentialAbility ability : pokemon.getForm().getAbilities()) {
-      if (ability.getType() instanceof HiddenAbilityType) {
-        return ability.getTemplate().create(false, Priority.LOWEST);
-      }
-    }
-    return getRandomAbility(pokemon);
-  }
-
-
-  /**
    * Check if the pokemon has the hidden ability
    *
    * @param pokemon The pokemon to check
@@ -664,51 +626,25 @@ public class PokemonUtils {
    */
   public static boolean isAH(Pokemon pokemon) {
     int size = 0;
-    for (PotentialAbility ability : pokemon.getForm().getAbilities()) {
-      size++;
+    var map = pokemon.getForm().getAbilities().getMapping();
+    List<String> abilities = new ArrayList<>();
+    for (Map.Entry<Priority, List<PotentialAbility>> entry : map.entrySet()) {
+      var list = entry.getValue();
+      if (list != null && !list.isEmpty()) {
+        for (PotentialAbility ability : list) {
+          String name = ability.getTemplate().getName();
+          if (abilities.contains(name)) continue;
+          size++;
+          abilities.add(name);
+        }
+      }
     }
-    if (size == 1) return false;
+    if (size <= 1) {
+      return false;
+    }
     for (PotentialAbility ability : pokemon.getForm().getAbilities()) {
       if (ability.getType() instanceof HiddenAbilityType) {
         return ability.getTemplate().getName().equalsIgnoreCase(pokemon.getAbility().getTemplate().getName());
-      }
-    }
-    return false;
-  }
-
-  /**
-   * Check if the pokemon has the hidden ability
-   *
-   * @param pokemon The pokemon to check
-   * @param ability The ability to check
-   *
-   * @return If the pokemon has the hidden ability
-   */
-  public static boolean isAH(Pokemon pokemon, AbilityTemplate ability) {
-    for (PotentialAbility potentialAbility : pokemon.getForm().getAbilities()) {
-      if (potentialAbility.getType() instanceof HiddenAbilityType) {
-        if (potentialAbility.getTemplate().create(false, Priority.LOWEST).getName().equalsIgnoreCase(ability.getName())) {
-          return true;
-        }
-      }
-    }
-    return false;
-  }
-
-  /**
-   * Check if the species has the hidden ability
-   *
-   * @param pokemon The species to check
-   * @param ability The ability to check
-   *
-   * @return If the species has the hidden ability
-   */
-  public static boolean isAH(Pokemon pokemon, Ability ability) {
-    for (PotentialAbility potentialAbility : pokemon.getForm().getAbilities()) {
-      if (potentialAbility.getType() instanceof HiddenAbilityType) {
-        if (potentialAbility.getTemplate().create(false, Priority.LOWEST).getName().equalsIgnoreCase(ability.getName())) {
-          return true;
-        }
       }
     }
     return false;
@@ -727,20 +663,6 @@ public class PokemonUtils {
       return abilityList.getFirst();
     }
     return abilityList.get(Utils.RANDOM.nextInt(abilityList.size()));
-  }
-
-  public static void isLegalAbility(ServerPlayerEntity player, Pokemon pokemon) {
-    boolean legal = isLegalAbility(pokemon);
-    try {
-      if (pokemon.getAbility().getForced()) {
-        pokemon.getAbility().setForced$common(false);
-      }
-    } catch (Exception e) {
-      CobbleUtils.LOGGER.error("Error setting forced ability: " + e.getMessage());
-    }
-    if (!legal && CobbleUtils.config.isDebug()) {
-      CobbleUtils.LOGGER.info("Fix illegal ability: Player: " + player.getGameProfile().getName());
-    }
   }
 
   public static boolean isLegalAbility(Pokemon pokemon) {
