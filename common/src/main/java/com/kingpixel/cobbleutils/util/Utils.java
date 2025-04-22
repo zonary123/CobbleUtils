@@ -108,7 +108,6 @@ public abstract class Utils {
       }
     } catch (InterruptedException e) {
       IO_EXECUTOR.shutdownNow();
-      Thread.currentThread().interrupt();
     }
   }
 
