@@ -82,6 +82,14 @@ public class PartyPcMenu {
     return new PartyPcMenuBuilder();
   }
 
+  private boolean isBanned(Pokemon pokemon, PartyPcMenuBuilder builder) {
+    boolean isBanned = false;
+    if (builder.getCustomFilter() != null) isBanned = builder.getCustomFilter().test(pokemon);
+    if (isBanned) return true;
+    if (builder.getBlackList() != null) isBanned = builder.getBlackList().isBlackListed(pokemon);
+    return isBanned;
+  }
+
   public void openPc(PartyPcMenuBuilder builder, int pos) {
     if (isOnCooldown(builder.getPlayer())) {
       if (CobbleUtils.config.isDebug())
@@ -97,7 +105,7 @@ public class PartyPcMenu {
       var pc = Cobblemon.INSTANCE.getStorage().getPC(builder.getPlayer());
       List<Pokemon> pokemons = new ArrayList<>();
       for (Pokemon pokemon : pc) {
-        if (pokemon != null && (builder.getBlackList() == null || !builder.getBlackList().isBlackListed(pokemon))) {
+        if (pokemon != null && !isBanned(pokemon, builder)) {
           pokemons.add(pokemon);
         }
       }
@@ -209,7 +217,7 @@ public class PartyPcMenu {
     var lorePokemon = builder.getLorePokemon();
     var loreModifier = builder.getLoreModifier();
 
-    if (pokemon == null || (blackList != null && blackList.isBlackListed(pokemon))) {
+    if (pokemon == null || isBanned(pokemon, builder)) {
       return GooeyButton.builder()
         .display(CobbleUtils.language.getItemNoPokemon().getItemStack());
     }

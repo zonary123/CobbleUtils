@@ -28,7 +28,7 @@ import java.util.concurrent.TimeUnit;
  * @author Carlos Varas Alonso - 26/07/2024 14:14
  */
 public class PokeShout implements Command<CommandSource> {
-  private static Map<UUID, Long> cooldowns = new ConcurrentHashMap<>();
+  public static final Map<UUID, Long> cooldowns = new ConcurrentHashMap<>();
 
   public static void register(CommandDispatcher<ServerCommandSource> dispatcher,
                               LiteralArgumentBuilder<ServerCommandSource> base) {
@@ -48,13 +48,16 @@ public class PokeShout implements Command<CommandSource> {
               ServerPlayerEntity player = context.getSource().getPlayerOrThrow();
               if (player == null) return 0;
               if (pokemon == null) {
-                PlayerUtils.sendMessage(player, CobbleUtils.language.getMessageNoPokemon());
+                PlayerUtils.sendMessage(player,
+                  CobbleUtils.language.getMessageNoPokemon(),
+                  CobbleUtils.config.getPrefix(),
+                  TypeMessage.CHAT
+                );
                 return 0;
               }
-              long cooldown = cooldowns.get(player.getUuid());
+              long cooldown = cooldowns.getOrDefault(player.getUuid(), 0L);
               if (PlayerUtils.isCooldown(cooldown)) {
-                PlayerUtils.sendMessage(player,
-                  CobbleUtils.language.getMessageCooldown()
+                PlayerUtils.sendMessage(player, CobbleUtils.language.getMessageCooldown()
                     .replace("%cooldown%", String.valueOf(PlayerUtils.getCooldown(cooldown))),
                   CobbleUtils.config.getPrefix(),
                   TypeMessage.CHAT

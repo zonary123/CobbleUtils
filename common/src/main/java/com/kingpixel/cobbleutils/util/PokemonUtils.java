@@ -22,6 +22,7 @@ import net.minecraft.util.Identifier;
 
 import java.util.*;
 import java.util.function.BiConsumer;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -44,7 +45,7 @@ public class PokemonUtils {
         ? CobbleUtils.language.getLorepokemon().stream()
         .map(additionalLine -> replacePlaceholders(additionalLine, placeholders))
         : Stream.of(replacePlaceholders(s, placeholders)))
-      .toList();
+      .collect(Collectors.toCollection(ArrayList::new));
   }
 
   private static void replace(Pokemon pokemon, List<String> finalLore, String s) {
@@ -90,14 +91,15 @@ public class PokemonUtils {
     if (message == null || !message.contains("%")) return message;
     if (placeholders.isEmpty()) return message;
     for (Map.Entry<String, String> entry : placeholders.entrySet()) {
+      if (!message.contains("%")) break;
       message = message.replace(entry.getKey(), entry.getValue());
     }
     return message;
   }
 
   private static Map<String, String> buildPlaceholders(Pokemon pokemon, String indexStr) {
-    indexStr = indexStr == null ? "" : indexStr;
     Map<String, String> map = new HashMap<>();
+    indexStr = indexStr == null ? "" : indexStr;
     String finalIndexStr = indexStr;
     BiConsumer<String, String> put = (key, value) -> map.put("%" + key + finalIndexStr + "%", value != null ? value : CobbleUtils.language.getUnknown());
 
@@ -198,7 +200,7 @@ public class PokemonUtils {
     if (message == null || message.isEmpty()) return "";
     if (!message.contains("%")) return message;
 
-    Map<String, String> placeholders = buildPlaceholders(pokemon, null);
+    Map<String, String> placeholders = buildPlaceholders(pokemon, "");
 
     if (message.contains("%lorepokemon%")) {
       StringBuilder loreStringBuilder = new StringBuilder();
@@ -223,7 +225,7 @@ public class PokemonUtils {
     int size = pokemons.size();
     for (int i = 0; i < size; i++) {
       Pokemon pokemon = pokemons.get(i);
-      Map<String, String> placeholders = buildPlaceholders(pokemon, String.valueOf(size == 1 ? null : i + 1));
+      Map<String, String> placeholders = buildPlaceholders(pokemon, String.valueOf(size == 1 ? "" : i + 1));
       message = replacePlaceholders(message, placeholders);
     }
     return message;
@@ -671,13 +673,7 @@ public class PokemonUtils {
         return true;
       }
     }
-    if (CobbleUtils.config.isDebug()) {
-      CobbleUtils.LOGGER.info("Illegal ability: Pokemon: " + getTranslatedName(pokemon) + "\n Ability: " + getAbilityTranslate(pokemon.getAbility()));
-    }
-    pokemon.updateAbility(getRandomAbility(pokemon));
-    if (CobbleUtils.config.isDebug()) {
-      CobbleUtils.LOGGER.info("New ability: Pokemon: " + getTranslatedName(pokemon) + "\n Ability: " + getAbilityTranslate(pokemon.getAbility()));
-    }
+    PokemonProperties.Companion.parse("hiddenability=no").apply(pokemon);
     return false;
   }
 }

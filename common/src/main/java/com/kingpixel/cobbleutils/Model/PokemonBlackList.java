@@ -7,7 +7,9 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * @author Carlos Varas Alonso - 13/01/2025 2:17
@@ -15,28 +17,28 @@ import java.util.List;
 @Getter
 @Setter
 public class PokemonBlackList {
-  private List<String> pokemons;
-  private List<String> forms;
-  private List<String> aspects;
-  private List<String> labels;
-  private List<EggGroup> eggGroups;
-  private List<String> types;
+  private Set<String> pokemons;
+  private Set<String> forms;
+  private Set<String> aspects;
+  private Set<String> labels;
+  private Set<EggGroup> eggGroups;
+  private Set<String> types;
 
   public PokemonBlackList() {
-    this.pokemons = new ArrayList<>();
+    this.pokemons = new HashSet<>();
     pokemons.add("egg");
     pokemons.add("pokestop");
-    this.labels = new ArrayList<>();
+    this.labels = new HashSet<>();
     labels.add("legendary");
     labels.add("mythical");
     labels.add("ultra_beast");
-    this.types = new ArrayList<>();
+    this.types = new HashSet<>();
     types.add("water_Example");
-    this.forms = new ArrayList<>();
+    this.forms = new HashSet<>();
     forms.add("hisuian_Example");
-    this.aspects = new ArrayList<>();
+    this.aspects = new HashSet<>();
     aspects.add("gmax_Example");
-    this.eggGroups = new ArrayList<>();
+    this.eggGroups = new HashSet<>();
   }
 
   public boolean isBlackListed(Pokemon pokemon) {
@@ -49,7 +51,7 @@ public class PokemonBlackList {
     List<ElementalType> typeList = new ArrayList<>();
     pokemon.getTypes().forEach(typeList::add);
     if (typeList.stream().anyMatch(type -> {
-      String keyType = type.getResourceLocation().getPath();
+      String keyType = type.getName().toLowerCase();
       return this.types.contains(keyType);
     })) return true;
 

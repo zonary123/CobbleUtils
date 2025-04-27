@@ -1,5 +1,6 @@
 package com.kingpixel.cobbleutils.Model;
 
+import com.cobblemon.mod.common.api.pokemon.egg.EggGroup;
 import com.cobblemon.mod.common.pokemon.Gender;
 import com.cobblemon.mod.common.pokemon.Pokemon;
 import com.kingpixel.cobbleutils.util.PokemonUtils;
@@ -18,7 +19,7 @@ import java.util.Map;
 @Data
 public class PokemonFormula {
   private static final Map<String, Expression> expressions = new HashMap<>();
-  private String formula = "base + gender + labels + nature + ability + ivsAverage + ivsTotal + evsTotal + evsAverage";
+  private String formula = "base + gender + labels + nature + ability + ivsAverage + ivsTotal + evsTotal + evsAverage + form + ball + aspect + shiny + breedable";
   private float base = 0;
   private float shiny = 0;
   private float ability = 0;
@@ -31,6 +32,7 @@ public class PokemonFormula {
   private Map<String, Float> ball = new HashMap<>();
   private boolean accumulationLabels = false;
   private Map<String, Float> labels = new HashMap<>();
+  private Map<Boolean, Float> breedable = new HashMap<>();
 
   public PokemonFormula() {
     pokemonBase.put("example", 0f);
@@ -42,6 +44,8 @@ public class PokemonFormula {
     nature.put("example", 0f);
     ball.put("cobblemon:poke_ball", 0f);
     labels.put("legendary", 0f);
+    breedable.put(true, 0f);
+    breedable.put(false, 0f);
   }
 
   public static void removeFormula(String identifier) {
@@ -64,11 +68,15 @@ public class PokemonFormula {
     int ivsTotal = Math.max(PokemonUtils.getIvsTotal(pokemon.getIvs()), 1);
     int evsTotal = Math.max(PokemonUtils.getEvsTotal(pokemon.getEvs()), 1);
     int evsAverage = Math.max(PokemonUtils.getEvsAverage(pokemon.getEvs()), 1);
-
     expression.setVariable("ivsAverage", ivsAverage);
     expression.setVariable("ivsTotal", ivsTotal);
     expression.setVariable("evsTotal", evsTotal);
     expression.setVariable("evsAverage", evsAverage);
+
+    boolean isBreedable = PokemonUtils.isBreedable(pokemon);
+    float resultBreedable = 0;
+    if (!pokemon.getForm().getEggGroups().contains(EggGroup.UNDISCOVERED)) breedable.getOrDefault(isBreedable, 0f);
+    expression.setVariable("breedable", resultBreedable);
 
     return expression;
   }
@@ -97,6 +105,7 @@ public class PokemonFormula {
       builder.variable("ivsTotal");
       builder.variable("evsTotal");
       builder.variable("evsAverage");
+      builder.variable("breedable");
       return builder.build();
     });
   }

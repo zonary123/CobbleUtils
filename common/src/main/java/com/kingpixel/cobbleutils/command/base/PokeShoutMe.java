@@ -7,6 +7,7 @@ import com.kingpixel.cobbleutils.api.PermissionApi;
 import com.kingpixel.cobbleutils.util.AdventureTranslator;
 import com.kingpixel.cobbleutils.util.PlayerUtils;
 import com.kingpixel.cobbleutils.util.PokemonUtils;
+import com.kingpixel.cobbleutils.util.TypeMessage;
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
@@ -20,18 +21,13 @@ import net.minecraft.text.HoverEvent;
 import net.minecraft.text.Style;
 import net.minecraft.text.Text;
 
-import java.util.Date;
 import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
 /**
  * @author Carlos Varas Alonso - 26/07/2024 14:14
  */
 public class PokeShoutMe implements Command<CommandSource> {
-  private static Map<UUID, Date> cooldowns = new ConcurrentHashMap<>();
 
   public static void register(CommandDispatcher<ServerCommandSource> dispatcher,
                               LiteralArgumentBuilder<ServerCommandSource> base) {
@@ -49,23 +45,28 @@ public class PokeShoutMe implements Command<CommandSource> {
               }
               Pokemon pokemon = PartySlotArgumentType.Companion.getPokemon(context, "slot");
               ServerPlayerEntity player = context.getSource().getPlayerOrThrow();
-              Date cooldown = cooldowns.get(player.getUuid());
+              long cooldown = PokeShout.cooldowns.getOrDefault(player.getUuid(), 0L);
               if (PlayerUtils.isCooldown(cooldown)) {
-                PlayerUtils.sendMessage(player, CobbleUtils.language.getMessageCooldown()
-                  .replace("%cooldown%", String.valueOf(PlayerUtils.getCooldown(cooldown)))
-                  .replace("%prefix%", CobbleUtils.config.getPrefix())
+                PlayerUtils.sendMessage(player,
+                  CobbleUtils.language.getMessageCooldown()
+                    .replace("%cooldown%", String.valueOf(PlayerUtils.getCooldown(cooldown))),
+                  CobbleUtils.config.getPrefix(),
+                  TypeMessage.CHAT
                 );
                 return 0;
               }
-              cooldowns.put(player.getUuid(),
-                new Date(System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(CobbleUtils.config.getCooldownpokeshout())));
+              PokeShout.cooldowns.put(player.getUuid(), System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(CobbleUtils.config.getCooldownpokeshout()));
               if (pokemon != null) {
                 player.sendMessage(
                   getMessage(player, pokemon)
                 );
                 return 1;
               } else {
-                PlayerUtils.sendMessage(player, CobbleUtils.language.getMessageNoPokemon());
+                PlayerUtils.sendMessage(player,
+                  CobbleUtils.language.getMessageNoPokemon(),
+                  CobbleUtils.config.getPrefix(),
+                  TypeMessage.CHAT
+                );
                 return 0;
               }
             })));

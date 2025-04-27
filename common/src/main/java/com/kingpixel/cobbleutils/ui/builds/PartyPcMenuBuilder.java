@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 
 @Data
 public class PartyPcMenuBuilder {
@@ -28,6 +29,12 @@ public class PartyPcMenuBuilder {
   private Consumer<PokemonButtonAction> pokemonAction;
   private Function<Pokemon, ItemStack> itemStackProvider;
   private BiConsumer<Pokemon, List<String>> loreModifier;
+  private Predicate<Pokemon> customFilter;
+
+  public PartyPcMenuBuilder setCustomFilter(Predicate<Pokemon> customFilter) {
+    this.customFilter = customFilter;
+    return this;
+  }
 
   public PartyPcMenuBuilder setPlayer(ServerPlayerEntity player) {
     this.player = player;

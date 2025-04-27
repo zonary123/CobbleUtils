@@ -6,6 +6,7 @@ import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.api.PermissionApi;
 import com.kingpixel.cobbleutils.util.AdventureTranslator;
 import com.kingpixel.cobbleutils.util.PlayerUtils;
+import com.kingpixel.cobbleutils.util.TypeMessage;
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
@@ -14,18 +15,13 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
 
-import java.util.Date;
 import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
 /**
  * @author Carlos Varas Alonso - 26/07/2024 14:14
  */
 public class PokeShoutAllMe implements Command<ServerCommandSource> {
-  private static Map<UUID, Date> cooldowns = new ConcurrentHashMap<>();
 
   public static void register(CommandDispatcher<ServerCommandSource> dispatcher,
                               LiteralArgumentBuilder<ServerCommandSource> base) {
@@ -40,15 +36,16 @@ public class PokeShoutAllMe implements Command<ServerCommandSource> {
             return 0;
           }
           ServerPlayerEntity player = context.getSource().getPlayerOrThrow();
-          Date cooldown = cooldowns.get(player.getUuid());
+          long cooldown = PokeShout.cooldowns.getOrDefault(player.getUuid(), 0L);
           if (PlayerUtils.isCooldown(cooldown)) {
             PlayerUtils.sendMessage(player, CobbleUtils.language.getMessageCooldown()
-              .replace("%cooldown%", String.valueOf(PlayerUtils.getCooldown(cooldown)))
-              .replace("%prefix%", CobbleUtils.config.getPrefix())
+                .replace("%cooldown%", String.valueOf(PlayerUtils.getCooldown(cooldown))),
+              CobbleUtils.config.getPrefix(),
+              TypeMessage.CHAT
             );
             return 0;
           }
-          cooldowns.put(player.getUuid(), new Date(System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(CobbleUtils.config.getCooldownpokeshout())));
+          PokeShout.cooldowns.put(player.getUuid(), System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(CobbleUtils.config.getCooldownpokeshout()));
           PlayerPartyStore playerPartyStore = Cobblemon.INSTANCE.getStorage().getParty(player);
           if (playerPartyStore.size() == 0) {
             player.sendMessage(
