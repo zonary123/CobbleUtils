@@ -1,24 +1,41 @@
 package com.kingpixel.cobbleutils.Model;
 
+import ca.landonjw.gooeylibs2.api.UIManager;
+import ca.landonjw.gooeylibs2.api.button.ButtonAction;
+import ca.landonjw.gooeylibs2.api.button.GooeyButton;
+import ca.landonjw.gooeylibs2.api.page.GooeyPage;
+import ca.landonjw.gooeylibs2.api.template.types.ChestTemplate;
 import com.cobblemon.mod.common.api.pokemon.PokemonProperties;
 import com.cobblemon.mod.common.api.pokemon.PokemonPropertyExtractor;
 import com.cobblemon.mod.common.api.pokemon.PokemonSpecies;
 import com.cobblemon.mod.common.api.pokemon.egg.EggGroup;
 import com.cobblemon.mod.common.api.types.ElementalType;
-import com.cobblemon.mod.common.api.types.ElementalTypes;
+import com.cobblemon.mod.common.item.PokemonItem;
 import com.cobblemon.mod.common.pokemon.FormData;
 import com.cobblemon.mod.common.pokemon.Pokemon;
+import com.cobblemon.mod.common.pokemon.Species;
 import com.kingpixel.cobbleutils.CobbleUtils;
-import com.kingpixel.cobbleutils.util.PokemonUtils;
-import com.kingpixel.cobbleutils.util.Utils;
+import com.kingpixel.cobbleutils.util.*;
 import lombok.Data;
 import lombok.Getter;
+import net.minecraft.component.DataComponentTypes;
+import net.minecraft.component.type.LoreComponent;
+import net.minecraft.item.Items;
 import net.minecraft.registry.DynamicRegistryManager;
+import net.minecraft.server.network.ServerPlayerEntity;
+import org.joml.Vector4f;
 
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 
 /**
  * Improved version of FilterPokemons class
+ * Todo: Improve this system:
+ *  - Remove order and use a better system
+ *  - Remove whitelist
+ *  - Do that the cache is removed every 1h
  *
  * @author
  */
@@ -26,48 +43,35 @@ import java.util.*;
 public class FilterPokemons {
   // Cache <ModId, <Id, List<Pokemon>>>
   private static final Map<String, Map<String, List<Pokemon>>> cache = new HashMap<>();
+  private static final Vector4f tintBlack = new Vector4f(0.25f, 0.25f, 0.25f, 1.0f);
+  private static final Vector4f tintWhite = new Vector4f(1.0f, 1.0f, 1.0f, 1.0f);
 
-  // Also implemented
-  private boolean alsoImplemented;
-  // Also First Evolution
-  private boolean notEvolution;
-  // Legendarys
-  private boolean legendarys;
-  // Order
-  private Set<orderFilter> order;
 
-  public enum orderFilter {
-    LABEL,
-    POKEMON,
-    FORM,
-    RARITY,
-    TYPE
-  }
-
-  // Pokemons
-  private Set<String> whitelistPokemons;
-  private Set<String> blacklistPokemons;
-  // Types
-  private boolean allowOneTypeRequired;
-  private Set<ElementalType> whitelistTypes;
-  private Set<ElementalType> blacklistTypes;
-  // Labels
-  private Set<String> whitelistLabels;
-  private Set<String> blacklistLabels;
-  // Forms
-  private Set<String> whitelistForms;
-  private Set<String> blacklistForms;
-  // Aspects
-  private Set<String> whitelistAspects;
-  private Set<String> blacklistAspects;
-
-  // Rarity
-  private Set<String> whitelistRarity;
-  private Set<String> blacklistRarity;
-
+  // BlackList
+  public PokemonBlackList blackList;
   // Use Chances
   private boolean useChances;
   private List<AdvancedPokemonChance> pokemonsChances;
+  // Old BlackList
+  private Set<String> blacklistPokemons;
+  private Set<ElementalType> blacklistTypes;
+  private Set<String> blacklistLabels;
+  private Set<String> blacklistForms;
+  private Set<String> blacklistAspects;
+  private Set<String> blacklistRarity;
+  private Boolean notEvolution;// Also First Evolution
+  private boolean legendarys;  // Legendarys
+
+  public FilterPokemons() {
+
+    blackList = new PokemonBlackList();
+
+    // Types
+    notEvolution = null;
+    legendarys = false;
+    useChances = false;
+    pokemonsChances = AdvancedPokemonChance.defaultChances();
+  }
 
   @Getter
   private static class AdvancedPokemonChance {
@@ -120,78 +124,70 @@ public class FilterPokemons {
     }
   }
 
-  public FilterPokemons() {
-    // Order
-    order = new HashSet<>(Arrays.stream(orderFilter.values()).toList());
-
-    // Pokemons
-    whitelistPokemons = new HashSet<>();
-    blacklistPokemons = Set.of(
-      "egg",
-      "pokestop"
-    );
-
-    // Types
-    allowOneTypeRequired = true;
-    whitelistTypes = new HashSet<>(ElementalTypes.INSTANCE.all());
-    blacklistTypes = new HashSet<>();
-
-    // Labels
-    whitelistLabels = new HashSet<>();
-    blacklistLabels = Set.of(
-      "mega",
-      "gmax",
-      "fakemon",
-      "custom"
-    );
-
-    // Forms
-    whitelistForms = new HashSet<>();
-    blacklistForms = new HashSet<>();
-
-    // Aspects
-    blacklistAspects = new HashSet<>();
-
-    // Rarities
-    whitelistRarity = new HashSet<>(CobbleUtils.config.getRarity().keySet());
-    blacklistRarity = Set.of("Unknown");
-
-    alsoImplemented = true;
-    notEvolution = false;
-    legendarys = false;
-
-    useChances = false;
-    pokemonsChances = AdvancedPokemonChance.defaultChances();
-  }
 
   private void checker() {
-    if (blacklistPokemons == null || blacklistPokemons.isEmpty()) {
-      blacklistPokemons = Set.of(
-        "egg",
-        "pokestop"
-      );
-    }
-    if (!blacklistPokemons.contains("egg")) {
-      blacklistPokemons.add("egg");
-    }
-    if (!blacklistPokemons.contains("pokestop")) {
-      blacklistPokemons.add("pokestop");
+    if (blacklistPokemons != null) {
+      Iterator<String> iteratorPokemons = blacklistPokemons.iterator();
+      while (iteratorPokemons.hasNext()) {
+        String pokemon = iteratorPokemons.next();
+        blackList.getPokemons().add(pokemon);
+        iteratorPokemons.remove();
+      }
     }
 
-    if (whitelistTypes == null) {
-      whitelistTypes = new HashSet<>(ElementalTypes.INSTANCE.all());
+
+    if (blacklistLabels != null) {
+      Iterator<String> iteratorLabels = blacklistLabels.iterator();
+      while (iteratorLabels.hasNext()) {
+        String label = iteratorLabels.next();
+        blackList.getLabels().add(label);
+        iteratorLabels.remove();
+      }
+    }
+    if (blacklistForms != null) {
+      Iterator<String> iteratorForms = blacklistForms.iterator();
+      while (iteratorForms.hasNext()) {
+        String form = iteratorForms.next();
+        blackList.getForms().add(form);
+        iteratorForms.remove();
+      }
     }
 
-    if (blacklistTypes == null) {
-      blacklistTypes = new HashSet<>();
+    if (blacklistAspects != null) {
+      Iterator<String> iteratorAspects = blacklistAspects.iterator();
+      while (iteratorAspects.hasNext()) {
+        String aspect = iteratorAspects.next();
+        blackList.getAspects().add(aspect);
+        iteratorAspects.remove();
+      }
+    }
+    if (blacklistTypes != null) {
+      Iterator<ElementalType> iteratorTypes = blacklistTypes.iterator();
+      while (iteratorTypes.hasNext()) {
+        ElementalType type = iteratorTypes.next();
+        blackList.getTypes().add(type.getName().toLowerCase());
+        iteratorTypes.remove();
+      }
     }
 
-    if (whitelistTypes.contains(null)) {
-      whitelistTypes.remove(null);
+    if (blacklistRarity != null) {
+      Iterator<String> iteratorRarity = blacklistRarity.iterator();
+      while (iteratorRarity.hasNext()) {
+        String rarity = iteratorRarity.next();
+        blackList.getRarities().add(rarity);
+        iteratorRarity.remove();
+      }
     }
-    if (blacklistTypes.contains(null)) {
-      blacklistTypes.remove(null);
-    }
+
+    blacklistPokemons = null;
+    blacklistForms = null;
+    blacklistLabels = null;
+    blacklistAspects = null;
+    blacklistTypes = null;
+    blacklistRarity = null;
+    if (notEvolution != null) blackList.setAllowEvolutions(!notEvolution);
+
+    blackList.fix();
   }
 
   public static void removeCache(String modid) {
@@ -294,56 +290,62 @@ public class FilterPokemons {
   }
 
   /**
-   * Gets all the allowed pokemons
+   * Obtiene todos los Pokémon disponibles.
    *
-   * @return the list of allowed pokemons
+   * @return la lista de todos los Pokémon.
    */
-  public List<Pokemon> getAllowedPokemons() {
-    if (order == null || order.contains(null)) {
-      this.order = new HashSet<>(Arrays.stream(orderFilter.values()).toList());
-    }
-    List<Pokemon> allowedPokemons = new ArrayList<>();
-    List<String> pokemonIds = new ArrayList<>();
-    PokemonSpecies.INSTANCE.getSpecies().forEach(pokemon -> {
+  public List<Pokemon> getAllPokemons() {
+    List<Pokemon> allPokemons = new ArrayList<>();
+    Set<String> uniquePokemonIds = new HashSet<>();
+    List<Species> species = new ArrayList<>(PokemonSpecies.INSTANCE.getSpecies().stream().toList());
+    species.sort(Comparator.comparing(Species::getNationalPokedexNumber));
+
+    species.forEach(pokemon -> {
       List<FormData> forms = pokemon.getForms();
       if (forms.isEmpty()) {
         Pokemon p = pokemon.create(1);
-        if (pokemonIds.contains(p.showdownId())) return;
-        if (isAllowed(p)) {
-          pokemonIds.add(p.showdownId());
-          allowedPokemons.add(p);
+        if (uniquePokemonIds.add(p.getForm().showdownId())) {
+          allPokemons.add(p);
         }
       } else {
-        List<String> yetAspects = new ArrayList<>();
         forms.forEach(form -> {
-          Pokemon p;
           List<String> aspects = form.getAspects();
           if (aspects.isEmpty()) {
-            p = pokemon.create(1);
-          } else {
-            String aspect = aspects.get(0);
-            aspect = aspect.replace("-", "_");
-
-            int lastUnderscore = aspect.lastIndexOf("_");
-            if (lastUnderscore != -1) {
-              aspect = aspect.substring(0, lastUnderscore) + "=" + aspect.substring(lastUnderscore + 1);
+            Pokemon p = pokemon.create(1);
+            if (uniquePokemonIds.add(p.getForm().showdownId())) {
+              allPokemons.add(p);
             }
-
-            if (blacklistAspects.contains(aspect)) return;
-
-            p = PokemonProperties.Companion.parse(pokemon.showdownId() + " " + aspect).create();
-            if (yetAspects.contains(p.showdownId())) return;
-            yetAspects.add(p.showdownId());
-          }
-          if (pokemonIds.contains(p.showdownId())) return;
-          if (isAllowed(p)) {
-            allowedPokemons.add(p);
-            pokemonIds.add(p.showdownId());
+          } else {
+            aspects.forEach(aspect -> {
+              String formattedAspect = aspect.replace("-", "_");
+              int lastUnderscore = formattedAspect.lastIndexOf("_");
+              if (lastUnderscore != -1) {
+                formattedAspect = formattedAspect.substring(0, lastUnderscore) + "=" + formattedAspect.substring(lastUnderscore + 1);
+              }
+              Pokemon p = PokemonProperties.Companion.parse(pokemon.showdownId() + " " + formattedAspect).create();
+              if (uniquePokemonIds.add(p.getForm().showdownId())) {
+                allPokemons.add(p);
+              }
+            });
           }
         });
       }
     });
+    return allPokemons;
+  }
 
+  /**
+   * Obtiene todos los Pokémon permitidos.
+   *
+   * @return la lista de Pokémon permitidos.
+   */
+  public List<Pokemon> getAllowedPokemons() {
+    List<Pokemon> allPokemons = getAllPokemons();
+    List<Pokemon> allowedPokemons = new ArrayList<>();
+
+    for (Pokemon pokemon : allPokemons) {
+      if (isAllowed(pokemon)) allowedPokemons.add(pokemon);
+    }
     return allowedPokemons;
   }
 
@@ -363,60 +365,180 @@ public class FilterPokemons {
    * @return true if the pokemon is allowed
    */
   private boolean isAllowed(Pokemon pokemon) {
-    if (notEvolution && isFirstEvolution(pokemon)) return false;
-    if (alsoImplemented && !pokemon.getSpecies().getImplemented()) return false;
     if (!legendarys && pokemon.isLegendary()) return false;
-    if (order == null || order.isEmpty()) return true;
-    // Precalcular tipos
-    ElementalType primaryType = pokemon.getPrimaryType();
-    ElementalType secondaryType = pokemon.getSecondaryType();
-    String showdownId = pokemon.showdownId();
-    String rarity = PokemonUtils.getRarityS(pokemon);
-    boolean allowed = false;
+    return !blackList.isBlackListed(pokemon);
+  }
 
-    for (orderFilter filter : order) {
-      if (filter == null) continue;
-      switch (filter) {
-        case POKEMON:
-          if (blacklistPokemons.contains(showdownId) || blacklistPokemons.contains("*")) {
-            return false;
-          }
-          allowed |= whitelistPokemons.contains("*") || whitelistPokemons.contains(showdownId);
-          break;
-        case TYPE:
-          if (blacklistTypes.contains(primaryType) || blacklistTypes.contains(secondaryType)) {
-            if (allowOneTypeRequired && (whitelistTypes.contains(primaryType) || whitelistTypes.contains(secondaryType))) {
-              allowed = true;
-            } else {
-              return false;
-            }
+  /**
+   * Opens the filter pokemons
+   *
+   * @param player the player
+   */
+  public void open(ServerPlayerEntity player, String modId, String id, Consumer<ButtonAction> pokemonAction) {
+    open(player, modId, id, pokemonAction, 0, true);
+  }
+
+  public void open(ServerPlayerEntity player, String modId, String id, Consumer<ButtonAction> pokemonAction, int pos,
+                   boolean showBanneds) {
+    CompletableFuture.runAsync(() -> {
+        final int ROWS = 6;
+        final int RECTANGLE_SIZE = new Rectangle(ROWS).getTotalSlots();
+
+        ChestTemplate template = ChestTemplate.builder(ROWS).build();
+        List<GooeyButton> buttons = new ArrayList<>();
+
+        List<String> lore = new ArrayList<>(CobbleUtils.language.getLorepokemon());
+        lore.add("&fLeft Click Blacklist pokemon");
+        lore.add("&fRight Click Blacklist labels");
+        lore.add("&fShift + Left Click Blacklist forms");
+        lore.add("&fShift + Right Click Blacklist aspects");
+
+        //List<Pokemon> pokemons = getCachePokemons(modId, id);
+        List<Pokemon> pokemons;
+        if (showBanneds) {
+          pokemons = getAllPokemons();
+        } else {
+          pokemons = getAllowedPokemons();
+        }
+        int totalPokemons = pokemons.size();
+        int totalPages = (int) Math.ceil((double) totalPokemons / RECTANGLE_SIZE);
+        int currentPage = (int) Math.ceil((double) (pos + 1) / RECTANGLE_SIZE);
+
+        // Validar índices para evitar excepciones
+        int startIndex = Math.min(pos, totalPokemons);
+        int endIndex = Math.min(pos + RECTANGLE_SIZE, totalPokemons);
+        if (startIndex > endIndex) {
+          CobbleUtils.LOGGER.error("Invalid indices for pagination: startIndex > endIndex");
+          return;
+        }
+        pokemons = pokemons.subList(startIndex, endIndex);
+
+        // Crear botones para los Pokémon
+        for (Pokemon pokemon : pokemons) {
+          buttons.add(createPokemonButton(player, modId, id, pokemonAction, pokemon, lore, pos, showBanneds));
+        }
+
+        // Aplicar botones al template
+        new Rectangle(ROWS).apply(template, buttons);
+
+        // Botón "Anterior"
+        if (pos > 0) {
+          template.set(45, UIUtils.getPreviousButton(buttonAction -> open(player, modId, id, pokemonAction,
+            Math.max(pos - RECTANGLE_SIZE, 0), showBanneds)));
+        }
+
+        // Botón "Cerrar"
+        template.set(49, UIUtils.getCloseButton(buttonAction -> UIManager.closeUI(buttonAction.getPlayer())));
+
+        template.set(51, GooeyButton
+          .builder()
+          .display(Items.PAPER.getDefaultStack())
+          .with(DataComponentTypes.CUSTOM_NAME, AdventureTranslator.toNative("Show Banned: " + (showBanneds ?
+            CobbleUtils.language.getYes() : CobbleUtils.language.getNo())))
+          .onClick(action -> {
+            open(player, modId, id, pokemonAction, pos, !showBanneds);
+          })
+          .build()
+        );
+
+        // Botón "Siguiente"
+        if (totalPokemons > endIndex) {
+          template.set(53, UIUtils.getNextButton(buttonAction -> open(player, modId, id, pokemonAction, Math.min(pos + RECTANGLE_SIZE, totalPokemons), showBanneds)));
+        }
+
+        // Crear y abrir la página
+        var page = GooeyPage.builder()
+          .template(template)
+          .title(AdventureTranslator.toNative("Filter Pokemons " + currentPage + " of " + totalPages))
+          .build();
+
+        UIManager.openUIForcefully(player, page);
+      })
+      .orTimeout(30, TimeUnit.SECONDS)
+      .exceptionally(throwable -> {
+        CobbleUtils.LOGGER.error("Error opening filter pokemons -> ");
+        throwable.printStackTrace();
+        return null;
+      });
+  }
+
+  // Método auxiliar para crear botones de Pokémon
+  private GooeyButton createPokemonButton(ServerPlayerEntity player, String modId,
+                                          String id, Consumer<ButtonAction> pokemonAction, Pokemon pokemon,
+                                          List<String> lore, int pos, boolean showBanneds) {
+
+    boolean isAllowed = isAllowed(pokemon);
+    return GooeyButton.builder()
+      .display(PokemonItem.from(pokemon, 1, isAllowed ? tintWhite : tintBlack))
+      .with(DataComponentTypes.CUSTOM_NAME,
+        AdventureTranslator.toNative(pokemon.showdownId() + (isAllowed ? "" : " &c[BLACKLISTED]")))
+      .with(DataComponentTypes.LORE, new LoreComponent(AdventureTranslator.toNativeL(PokemonUtils.replace(lore, pokemon))))
+      .onClick(action -> handlePokemonClick(player, modId, id, pokemonAction, pokemon, action, pos, showBanneds))
+      .build();
+  }
+
+  private void handlePokemonClick(ServerPlayerEntity player, String modId,
+                                  String id, Consumer<ButtonAction> pokemonAction,
+                                  Pokemon pokemon, ButtonAction action, int pos, boolean showBanneds) {
+    boolean update = false;
+    List<String> modified = new ArrayList<>();
+    switch (action.getClickType()) {
+      case LEFT_CLICK -> {
+        String showdownId = pokemon.getForm().showdownId();
+        if (blackList.getPokemons().contains(showdownId)) {
+          blackList.getPokemons().remove(showdownId);
+          modified.add("&cRemoved: " + showdownId);
+        } else {
+          blackList.getPokemons().add(showdownId);
+          modified.add("&aAdded: " + showdownId);
+        }
+        update = true;
+      }
+      case RIGHT_CLICK -> {
+        for (String label : pokemon.getForm().getLabels()) {
+          if (blackList.getLabels().contains(label)) {
+            blackList.getLabels().remove(label);
+            modified.add("&cRemoved: " + label);
           } else {
-            allowed |= whitelistTypes.contains(primaryType) || whitelistTypes.contains(secondaryType);
+            blackList.getLabels().add(label);
+            modified.add("&aAdded: " + label);
           }
-          break;
-        case LABEL:
-          boolean hasBlacklistedLabel = blacklistLabels.stream().anyMatch(label -> pokemon.getForm().getLabels().contains(label));
-          if (hasBlacklistedLabel || blacklistLabels.contains("*")) {
-            return false;
+        }
+        update = true;
+      }
+      case SHIFT_LEFT_CLICK -> {
+        String formOnlyShowdownId = pokemon.getForm().formOnlyShowdownId();
+        if (!formOnlyShowdownId.equals("normal")) {
+          if (blackList.getForms().contains(formOnlyShowdownId)) {
+            blackList.getForms().remove(formOnlyShowdownId);
+            modified.add("&cRemoved: " + formOnlyShowdownId);
+          } else {
+            blackList.getForms().add(formOnlyShowdownId);
+            modified.add("&aAdded: " + formOnlyShowdownId);
           }
-          allowed |= whitelistLabels.contains("*") || whitelistLabels.stream().anyMatch(label -> pokemon.getForm().getLabels().contains(label));
-          break;
-
-        case FORM:
-          if (blacklistForms.contains(pokemon.getForm().formOnlyShowdownId()) || blacklistForms.contains("*")) {
-            return false;
+          update = true;
+        }
+      }
+      case SHIFT_RIGHT_CLICK -> {
+        var aspects = new ArrayList<>(pokemon.getAspects());
+        aspects.removeAll(List.of("male", "female", "shiny", "genderless"));
+        for (String aspect : aspects) {
+          if (blackList.getAspects().contains(aspect)) {
+            blackList.getAspects().remove(aspect);
+            modified.add("&cRemoved: " + aspect);
+          } else {
+            blackList.getAspects().add(aspect);
+            modified.add("&aAdded: " + aspect);
           }
-          allowed |= whitelistForms.contains("*") || whitelistForms.contains(pokemon.getForm().formOnlyShowdownId());
-          break;
-
-        case RARITY:
-          if (blacklistRarity.contains(rarity) || blacklistRarity.contains("*")) {
-            return false;
-          }
-          allowed |= whitelistRarity.contains("*") || whitelistRarity.contains(rarity);
-          break;
+        }
+        update = true;
       }
     }
-    return allowed;
+    if (update) {
+      PlayerUtils.sendMessage(player, "%prefix% " + String.join(", ", modified), modId, TypeMessage.CHAT);
+      pokemonAction.accept(action);
+      open(player, modId, id, pokemonAction, pos, showBanneds);
+    }
   }
+
 }

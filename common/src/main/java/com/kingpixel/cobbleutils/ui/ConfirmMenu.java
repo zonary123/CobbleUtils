@@ -37,8 +37,8 @@ public class ConfirmMenu {
       this.cancel = CobbleUtils.language.getItemCancel();
       this.close = CobbleUtils.language.getItemClose();
     } else {
-      this.confirm = new ItemModel("minecraft:green_stained_glass_pane", "&aConfirm");
-      this.cancel = new ItemModel("minecraft:red_stained_glass_pane", "&cCancel");
+      this.confirm = new ItemModel("minecraft:emerald", "&aConfirm");
+      this.cancel = new ItemModel("minecraft:redstone", "&cCancel");
       this.close = new ItemModel("minecraft:barrier", "&cClose");
     }
     confirm.setSlot(10);

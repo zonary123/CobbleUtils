@@ -12,27 +12,26 @@ import java.util.Set;
 /**
  * @author Carlos Varas Alonso - 04/08/2024 19:40
  */
-public class MinIvsPropertyType implements CustomPokemonPropertyType<MinIvsProperty> {
+public class LegendaryPropertyType implements CustomPokemonPropertyType<LegendaryProperty> {
 
-  public MinIvsPropertyType() {
+  public LegendaryPropertyType() {
   }
 
 
   @NotNull @Override public Iterable<String> getKeys() {
-    return Collections.singleton("min_ivs");
+    return Collections.singleton("legendary");
   }
 
 
-  @Nullable @Override public MinIvsProperty fromString(@Nullable String s) {
-    if (s == null) return new MinIvsProperty("0_6");
-    return new MinIvsProperty(s);
+  @Nullable @Override public LegendaryProperty fromString(@Nullable String s) {
+    if (s == null) return new LegendaryProperty("no");
+    return new LegendaryProperty(s);
   }
 
   @NotNull @Override public Collection<String> examples() {
     Set<String> examples = new HashSet<>();
-    examples.add("0_6");
-    examples.add("31_3");
-    examples.add("31_6");
+    examples.add("yes");
+    examples.add("no");
     return examples;
   }
 

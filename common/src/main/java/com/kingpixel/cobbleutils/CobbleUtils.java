@@ -1,6 +1,7 @@
 package com.kingpixel.cobbleutils;
 
 import com.cobblemon.mod.common.api.properties.CustomPokemonProperty;
+import com.kingpixel.cobbleutils.Model.properties.LegendaryPropertyType;
 import com.kingpixel.cobbleutils.Model.properties.MinIvsPropertyType;
 import com.kingpixel.cobbleutils.api.EconomyApi;
 import com.kingpixel.cobbleutils.command.CommandTree;
@@ -9,7 +10,6 @@ import com.kingpixel.cobbleutils.config.Lang;
 import com.kingpixel.cobbleutils.events.ItemRightClickEvents;
 import com.kingpixel.cobbleutils.util.CobbleUtilsBridgeGTS;
 import com.kingpixel.cobbleutils.util.SpawnRates;
-import com.kingpixel.cobbleutils.util.Utils;
 import com.kingpixel.cobbleutils.util.UtilsLogger;
 import dev.architectury.event.events.common.CommandRegistrationEvent;
 import dev.architectury.event.events.common.InteractionEvent;
@@ -90,15 +90,17 @@ public class CobbleUtils {
 
     LifecycleEvent.SERVER_STARTED.register(server -> {
       spawnRates.init();
-      CustomPokemonProperty.Companion.register(MinIvsPropertyType.getInstance());
+
       load();
     });
 
     LifecycleEvent.SERVER_STOPPED.register(server1 -> {
-      Utils.shutdownExecutor();
+      //Utils.shutdownExecutor();
     });
 
     CommandRegistrationEvent.EVENT.register((dispatcher, registry, selection) -> {
+      CustomPokemonProperty.Companion.register(new MinIvsPropertyType());
+      CustomPokemonProperty.Companion.register(new LegendaryPropertyType());
       CommandTree.register(dispatcher, registry);
       commandRegistryAccess = registry;
     });

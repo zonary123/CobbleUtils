@@ -187,8 +187,8 @@ public class ItemChance {
    */
   public static List<ItemChance> defaultItemChances() {
     List<ItemChance> itemChances = new ArrayList<>();
-    itemChances.add(new ItemChance("minecraft:dirt", 999.0));
-    itemChances.add(new ItemChance("item:1:minecraft:dirt", 1.0));
+    itemChances.add(new ItemChance("cobblemon:poke_ball", 999.0));
+    itemChances.add(new ItemChance("item:1:cobblemon:poke_ball", 1.0));
     itemChances.add(new ItemChance("item:1:minecraft:dirt#[minecraft:custom_model_data=1]", 1.0));
     itemChances.add(new ItemChance("pokemon:rattata alola", 1.0));
     itemChances.add(new ItemChance("command:lp user %player% permission set a", 1.0, "minecraft:emerald", "Give " +
@@ -310,19 +310,19 @@ public class ItemChance {
     try {
       switch (parts.length) {
         case 2:
-          money = new BigDecimal(parts[1]);
+          money = parseAmountMoney(parts[1]);
           break;
         case 3:
           currency = parts[1];
-          money = new BigDecimal(parts[2]);
+          money = parseAmountMoney(parts[2]);
           break;
         case 4:
           economyId = parts[1];
           currency = parts[2];
-          money = new BigDecimal(parts[3]);
+          money = parseAmountMoney(parts[3]);
           break;
         default:
-          money = new BigDecimal(item.replace("money:", ""));
+          money = parseAmountMoney(item.replace("money:", ""));
           break;
       }
     } catch (NumberFormatException e) {
@@ -333,7 +333,7 @@ public class ItemChance {
     PlayerUtils.sendMessage(player,
       CobbleUtils.language.getMessageReceiveMoney()
         .replace("%amount%", EconomyApi.formatMoney(money, currency, economyId)),
-      "");
+      "", TypeMessage.CHAT);
 
     return EconomyApi.addMoney(player.getUuid(), money, currency, economyId);
   }
@@ -343,8 +343,7 @@ public class ItemChance {
     String[] split = item.split("#", 2);
     String[] itemSplit = split[0].split(":");
     String iditem = itemSplit[2] + ":" + itemSplit[3];
-    itemStack = Utils.parseItemId(iditem, Integer.parseInt(itemSplit[1]));
-    itemStack.setCount(amount);
+    itemStack = Utils.parseItemId(iditem, amount);
     if (split.length < 2) return itemStack;
     String nbt = split[1];
     itemStack = ItemUtils.applyNbt(iditem, itemStack, nbt, amount);
@@ -459,16 +458,16 @@ public class ItemChance {
     try {
       switch (parts.length) {
         case 2:
-          value = new BigDecimal(parts[1]);
+          value = parseAmountMoney(parts[1]);
           break;
         case 3:
           currency = parts[1];
-          value = new BigDecimal(parts[2]);
+          value = parseAmountMoney(parts[2]);
           break;
         case 4:
           economyId = parts[1];
           currency = parts[2];
-          value = new BigDecimal(parts[3]);
+          value = parseAmountMoney(parts[3]);
           break;
         default:
           throw new IllegalArgumentException("Invalid Format: " + item);
@@ -487,6 +486,12 @@ public class ItemChance {
 
   private static int parseAmount(String amountStr) {
     try {
+      if (amountStr.contains("-")) {
+        String[] parts = amountStr.split("-");
+        int min = Integer.parseInt(parts[0]);
+        int max = Integer.parseInt(parts[1]);
+        return Utils.RANDOM.nextInt(max - min + 1) + min;
+      }
       return Integer.parseInt(amountStr);
     } catch (NumberFormatException e) {
       return 1;
@@ -533,25 +538,38 @@ public class ItemChance {
     return command;
   }
 
+  private static BigDecimal parseAmountMoney(String part) {
+    if (part.contains("-")) {
+      String[] parts = part.split("-");
+      int min = Integer.parseInt(parts[0]);
+      int max = Integer.parseInt(parts[1]);
+      return BigDecimal.valueOf(Utils.RANDOM.nextInt(max - min + 1) + min);
+    }
+    return new BigDecimal(part);
+  }
+
   private static String getMoneyTitle(String item) {
     String[] parts = item.split(":");
     BigDecimal money = BigDecimal.ZERO;
     String currency = "money";
     String economyId = "";
-
+    String moneyString = "";
     try {
       switch (parts.length) {
         case 2:
-          money = new BigDecimal(parts[1]);
+          moneyString = parts[1];
+          money = parseAmountMoney(moneyString);
           break;
         case 3:
           currency = parts[1];
-          money = new BigDecimal(parts[2]);
+          moneyString = parts[2];
+          money = parseAmountMoney(moneyString);
           break;
         case 4:
           economyId = parts[1];
           currency = parts[2];
-          money = new BigDecimal(parts[3]);
+          moneyString = parts[3];
+          money = parseAmountMoney(moneyString);
           break;
         default:
           throw new IllegalArgumentException("Formato inválido: " + item);
@@ -563,7 +581,17 @@ public class ItemChance {
 
     ItemModel itemModel = CobbleUtils.language.getItemsEconomy().getOrDefault(currency,
       new ItemModel(CobbleUtils.language.getItemMoney()));
-    return itemModel.getDisplayname().replace("%amount%", EconomyApi.formatMoney(money, currency, economyId));
+    String format;
+    if (moneyString.contains("-")) {
+      String[] split = moneyString.split("-");
+      var min = BigDecimal.valueOf(Integer.parseInt(split[0]));
+      var max = BigDecimal.valueOf(Integer.parseInt(split[1]));
+      format = EconomyApi.formatMoney(min, currency, economyId) + " &f- " +
+        EconomyApi.formatMoney(max, currency, economyId);
+    } else {
+      format = EconomyApi.formatMoney(money, currency, economyId);
+    }
+    return itemModel.getDisplayname().replace("%amount%", format);
   }
 
   private static String getItemTitle(String item) {

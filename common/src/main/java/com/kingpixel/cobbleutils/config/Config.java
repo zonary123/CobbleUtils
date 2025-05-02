@@ -79,11 +79,7 @@ public class Config {
         Gson gson = Utils.newGson();
         CobbleUtils.config = gson.fromJson(el, Config.class);
         String data = gson.toJson(CobbleUtils.config);
-        CompletableFuture<Boolean> futureWrite = Utils.writeFileAsync(CobbleUtils.PATH, "config.json",
-          data);
-        if (!futureWrite.join()) {
-          CobbleUtils.LOGGER.fatal("Could not write config.json file for " + CobbleUtils.MOD_NAME + ".");
-        }
+        Utils.writeFileAsync(CobbleUtils.PATH, "config.json", data);
       });
 
     if (!futureRead.join()) {
@@ -91,12 +87,8 @@ public class Config {
       Gson gson = Utils.newGson();
       CobbleUtils.config = this;
       String data = gson.toJson(CobbleUtils.config);
-      CompletableFuture<Boolean> futureWrite = Utils.writeFileAsync(CobbleUtils.PATH, "config.json",
+      Utils.writeFileAsync(CobbleUtils.PATH, "config.json",
         data);
-
-      if (!futureWrite.join()) {
-        CobbleUtils.LOGGER.fatal("Could not write config.json file for " + CobbleUtils.MOD_NAME + ".");
-      }
     }
 
   }

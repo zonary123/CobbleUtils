@@ -13,7 +13,7 @@ import java.util.concurrent.CompletableFuture;
  * Class for logging.
  */
 public class UtilsLogger {
-  private static Map<String, Logger> loggers = new HashMap<>();
+  private static final Map<String, Logger> loggers = new HashMap<>();
   private Logger logger; // Log for the console.
 
   /**

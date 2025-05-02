@@ -176,7 +176,7 @@ public class EconomyApi {
    *
    * @return The formatted money
    */
-  @Deprecated(forRemoval = true)
+  @Deprecated(forRemoval = false)
   public static String formatMoney(BigDecimal money, String currency, String economyId) {
     return getEconomy(economyId).format(money, currency);
   }

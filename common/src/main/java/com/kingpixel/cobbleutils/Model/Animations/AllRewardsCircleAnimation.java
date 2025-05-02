@@ -1,12 +1,8 @@
 package com.kingpixel.cobbleutils.Model.Animations;
 
 import net.minecraft.entity.EquipmentSlot;
-import net.minecraft.entity.decoration.ArmorStandEntity;
-import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.util.ActionResult;
-import net.minecraft.util.Hand;
 import net.minecraft.util.math.EulerAngle;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
@@ -39,8 +35,7 @@ public class AllRewardsCircleAnimation {
   }
 
 
-  public static class CircleEntity extends ArmorStandEntity {
-    private int ticks = 0;
+  public static class CircleEntity extends CustomArmorStandEntity {
     private final ServerPlayerEntity player;
     private final double radius;
     private final double initialAngle;
@@ -67,7 +62,7 @@ public class AllRewardsCircleAnimation {
       }
 
       Vec3d centerPosition = AnimationUtils.getPosition(player, null);
-      double angle = this.initialAngle + Math.toRadians((this.ticks * 4) % 360);
+      double angle = this.initialAngle + Math.toRadians((getTicks() * 4) % 360);
       double offsetX = this.radius * Math.cos(angle);
       double offsetZ = this.radius * Math.sin(angle);
 
@@ -77,24 +72,11 @@ public class AllRewardsCircleAnimation {
 
       this.refreshPositionAndAngles(targetX, targetY, targetZ, AnimationUtils.getYawToFacePlayer(player, this.getPos()), this.getPitch());
 
-      if (this.ticks >= 160) {
+      if (this.getTicks() >= 160) {
         this.kill();
       }
 
-      this.ticks++;
-    }
-
-    @Override public ActionResult interactAt(PlayerEntity player, Vec3d hitPos, Hand hand) {
-      return ActionResult.FAIL;
-    }
-
-    @Override public boolean canEquip(ItemStack stack) {
-      return false;
-    }
-
-    @Override
-    public boolean shouldSave() {
-      return false;
+      setTicks(getTicks() + 1);
     }
   }
 }

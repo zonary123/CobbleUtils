@@ -26,6 +26,7 @@ public class Lang {
   private String titleparty;
   private String titleconfirm;
   private String AH;
+  private String HA;
   private String confirm;
   private String cancel;
   private String close;
@@ -129,10 +130,10 @@ public class Lang {
     symbolshiny = " &e⭐";
     nocooldown = "&cNo cooldown";
     unknown = "&cUnknown";
-    AH = "&f(&bAH&f)";
+    AH = "&f(&bHA&f)";
     none = "&cNone";
     coloritem = "<gradient:#cc7435:#e3ab84>";
-    pokemonnameformat = "&e%pokemon%%shiny% %gender% &f(&b%form%&f) &f(&b%level%&f) %ah%";
+    pokemonnameformat = "&e%pokemon%%shiny% %gender% &f(&b%form%&f) &f(&b%level%&f) %ha%";
     messageHaveRewards = "%prefix% &aYou have rewards &6%amount%&a. Use &e/storage &ato claim the rewards.";
     titleLoot = "&eLoot";
     // Messages
@@ -154,7 +155,7 @@ public class Lang {
       "<#de896f>Tradeable: &f%tradeable%",
       "<#b0eb59>Breedable: &f%breedable%",
       "<#9be8c2><lang:cobblemon.ui.info.nature>: &f%nature% &f(&a↑%up%&f/&c↓%down%&f)",
-      "<#6fa7de><lang:cobblemon.ui.info.ability>: &f%ability% %ah%",
+      "<#6fa7de><lang:cobblemon.ui.info.ability>: &f%ability% %ha%",
       "<#83a7de><lang:cobblemon.ui.stats.ivs>: &e%ivs%&7/&e31",
       " <#ee8339><lang:cobblemon.ui.stats.hp>: &f%ivshp% <#e84b48><lang:cobblemon.ui.stats.atk>: &f%ivsatk% <#5d79e1><lang:cobblemon.ui.stats.def>: &f%ivsdef%",
       " <#40b5cd><lang:cobblemon.ui.stats.sp_atk>: &f%ivsspa% <#f59bc2><lang:cobblemon.ui.stats.sp_def>: &f%ivsspdef% <#69cd65><lang:cobblemon.ui.stats.speed>: &f%ivsspeed%",
@@ -259,29 +260,24 @@ public class Lang {
       el -> {
         Gson gson = Utils.newGson();
         CobbleUtils.language = gson.fromJson(el, Lang.class);
-
+        Lang lang = CobbleUtils.language;
+        if (lang.getAH() != null) {
+          lang.setHA(lang.getAH());
+          lang.setAH(null);
+        }
         if (CobbleUtils.language.getTitlemenurewards() == null)
           CobbleUtils.language.setTitlemenurewards("&eRewards Menu");
         String data = gson.toJson(CobbleUtils.language);
-        CompletableFuture<Boolean> futureWrite = Utils.writeFileAsync(CobbleUtils.PATH_LANG, CobbleUtils.config.getLang() +
-            ".json",
-          data);
-        if (!futureWrite.join()) {
-          CobbleUtils.LOGGER.fatal("Could not write lang.json file for " + CobbleUtils.MOD_NAME + ".");
-        }
+        Utils.writeFileAsync(CobbleUtils.PATH_LANG, CobbleUtils.config.getLang() + ".json", data);
       });
 
     if (!futureRead.join()) {
       CobbleUtils.LOGGER.info("No lang.json file found for" + CobbleUtils.MOD_NAME + ". Attempting to generate one.");
       Gson gson = Utils.newGson();
       String data = gson.toJson(this);
-      CompletableFuture<Boolean> futureWrite = Utils.writeFileAsync(CobbleUtils.PATH_LANG, CobbleUtils.config.getLang() +
+      Utils.writeFileAsync(CobbleUtils.PATH_LANG, CobbleUtils.config.getLang() +
           ".json",
         data);
-
-      if (!futureWrite.join()) {
-        CobbleUtils.LOGGER.fatal("Could not write lang.json file for " + CobbleUtils.MOD_NAME + ".");
-      }
     }
   }
 

@@ -45,7 +45,7 @@ public class BeEconomy extends EconomyAbstract {
   }
 
   @Override public String format(BigDecimal money, String currency) {
-    return money + " " + getSymbol(currency);
+    return money + " " + service.getCurrencySymbol(currency);
   }
 
   @Override public boolean setBalance(UUID playerUuid, BigDecimal money, String currency) {

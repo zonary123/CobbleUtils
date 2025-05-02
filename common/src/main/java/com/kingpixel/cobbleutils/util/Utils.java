@@ -76,6 +76,15 @@ public abstract class Utils {
     return gsonnotPretty;
   }
 
+  public static boolean isPlaceholder() {
+    try {
+      Class.forName("eu.pb4.placeholders.api.Placeholders");
+      return true;
+    } catch (ClassNotFoundException e) {
+      return false;
+    }
+  }
+
   private static GsonBuilder addAdapters(GsonBuilder builder) {
     return builder
       .registerTypeAdapter(ElementalType.class, ElementalTypeAdapter.INSTANCE)
@@ -89,7 +98,14 @@ public abstract class Utils {
       .registerTypeAdapter(Enchantment.class, EnchantmentsAdapter.INSTANCE);
   }
 
-  private static final ScheduledExecutorService IO_EXECUTOR = Executors.newScheduledThreadPool(4);
+  private static final ScheduledExecutorService IO_EXECUTOR = Executors.newScheduledThreadPool(
+    Math.min(Runtime.getRuntime().availableProcessors() * 2, 16),
+    r -> {
+      Thread thread = new Thread(r, "CobbleUtils IO Executor");
+      thread.setDaemon(true);
+      return thread;
+    }
+  );
 
   private static <T> CompletableFuture<T> withTimeout(CompletableFuture<T> future, long timeout, TimeUnit unit) {
     CompletableFuture<T> timeoutFuture = new CompletableFuture<>();

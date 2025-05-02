@@ -162,21 +162,21 @@ public class AdvancedItemChance {
       particle.sendParticles(player, player);
     }
     List<ItemStack> showAllRewards = getListDisplay(allRewards);
-    List<ItemStack> showRewards = getListDisplay(obtainedRewards);
+    List<ItemStack> showObtainedRewards = getListDisplay(obtainedRewards);
 
 
-    initAnimation(animation, player, showAllRewards, showRewards);
+    initAnimation(animation, player, showAllRewards, showObtainedRewards);
   }
 
 
-  public static void initAnimation(Animations animation, ServerPlayerEntity player, List<ItemStack> showAllRewards, List<ItemStack> showRewards) {
+  public static void initAnimation(Animations animation, ServerPlayerEntity player, List<ItemStack> showAllRewards, List<ItemStack> showObtainedRewards) {
     Vec3d centerPosition = AnimationUtils.getPosition(player, null);
     switch (animation) {
       case CSGO:
-        CSGOAnimation.start(player, showAllRewards, showRewards);
+        CSGOAnimation.start(player, showAllRewards, showObtainedRewards);
         break;
       case CIRCLE:
-        CircleAnimation.start(player, showRewards, centerPosition);
+        CircleAnimation.start(player, showObtainedRewards, centerPosition);
         break;
       case ALLCIRCLE:
         AllRewardsCircleAnimation.start(player, showAllRewards, centerPosition);
