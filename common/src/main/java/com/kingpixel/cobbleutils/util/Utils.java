@@ -101,7 +101,7 @@ public abstract class Utils {
   private static final ScheduledExecutorService IO_EXECUTOR = Executors.newScheduledThreadPool(
     Math.min(Runtime.getRuntime().availableProcessors() * 2, 16),
     r -> {
-      Thread thread = new Thread(r, "CobbleUtils IO Executor");
+      Thread thread = new Thread(r, "CobbleUtils IO Executor - " + r.hashCode());
       thread.setDaemon(true);
       return thread;
     }
