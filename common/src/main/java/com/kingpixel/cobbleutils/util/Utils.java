@@ -99,7 +99,7 @@ public abstract class Utils {
   }
 
   private static final ScheduledExecutorService IO_EXECUTOR = Executors.newScheduledThreadPool(
-    Math.min(Runtime.getRuntime().availableProcessors() * 2, 16),
+    Math.min(Runtime.getRuntime().availableProcessors() * 2, 4),
     r -> {
       Thread thread = new Thread(r, "CobbleUtils IO Executor - " + r.hashCode());
       thread.setDaemon(true);
@@ -114,18 +114,6 @@ public abstract class Utils {
     }, timeout, unit);
 
     return CompletableFuture.anyOf(future, timeoutFuture).thenApply(result -> (T) result);
-  }
-
-  public static void shutdownExecutor() {
-    IO_EXECUTOR.shutdown();
-    try {
-      if (!IO_EXECUTOR.awaitTermination(5, TimeUnit.SECONDS)) {
-        IO_EXECUTOR.shutdownNow();
-      }
-    } catch (InterruptedException e) {
-      IO_EXECUTOR.shutdownNow();
-      CobbleUtils.LOGGER.error("Error shutting down IO executor: " + e);
-    }
   }
 
   public static CompletableFuture<Boolean> writeFileAsync(String filePath, String filename, String data) {
@@ -233,14 +221,13 @@ public abstract class Utils {
     CompletableFuture<Boolean> writeFuture = CompletableFuture.supplyAsync(() -> {
       try {
         Files.writeString(file.toPath(), content, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
-        return true; // Indica que se escribió con éxito
+        return true;
       } catch (IOException e) {
         CobbleUtils.LOGGER.error("Error al escribir el archivo: " + file.getPath() + ". " + e);
-        return false; // Retorna false si hubo un error
+        return false;
       }
-    }, IO_EXECUTOR); // Usar un executor personalizado
+    }, IO_EXECUTOR);
 
-    // Agregar un tiempo de espera opcional
     return withTimeout(writeFuture, 10, TimeUnit.SECONDS)
       .exceptionally(e -> {
         CobbleUtils.LOGGER.error("Error or timeout occurred during file write operation. " + e);

@@ -16,25 +16,24 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Getter
 @Setter
 public class WebHookData {
-  // Thread-safe map for storing WebhookClient instances
   public static final Map<String, WebhookClient> webhooks = new ConcurrentHashMap<>();
 
-  // ThreadFactory with custom names
+
   private static final ThreadFactory WEBHOOK_THREAD_FACTORY = new ThreadFactory() {
     private final AtomicInteger count = new AtomicInteger(1);
 
     @Override
     public Thread newThread(Runnable r) {
       Thread t = new Thread(r);
-      t.setName("webhook-Cobbleutils-" + count.getAndIncrement());
-      t.setDaemon(true); // Optional: won't prevent JVM from exiting
+      t.setName("webhook-Cobbleutils-Discord-" + count.getAndIncrement());
+      t.setDaemon(true);
       return t;
     }
   };
 
   // Fixed thread pool with custom thread naming
   private static final ExecutorService EXECUTOR =
-    Executors.newFixedThreadPool(8, WEBHOOK_THREAD_FACTORY);
+    Executors.newFixedThreadPool(2, WEBHOOK_THREAD_FACTORY);
 
   // Webhook configuration
   private boolean ENABLED;
@@ -78,28 +77,12 @@ public class WebHookData {
    */
   private void runAsyncWebhook(String id, Runnable task) {
     if (!ENABLED || URL_WEBHOOK == null || URL_WEBHOOK.isEmpty()) return;
-
     CompletableFuture.runAsync(task, EXECUTOR)
       .orTimeout(5, TimeUnit.SECONDS)
       .exceptionally(e -> {
-        System.err.println("[Webhook][" + id + "] Error: " + e.getMessage());
+        System.err.println("[Webhook-CobbleUtils][" + id + "] Error: " + e.getMessage());
         e.printStackTrace();
         return null;
       });
-  }
-
-  /**
-   * Optional shutdown method for clean server shutdown.
-   */
-  public static void shutdownExecutor() {
-    EXECUTOR.shutdown();
-    try {
-      if (!EXECUTOR.awaitTermination(5, TimeUnit.SECONDS)) {
-        EXECUTOR.shutdownNow();
-      }
-    } catch (InterruptedException e) {
-      EXECUTOR.shutdownNow();
-      Thread.currentThread().interrupt();
-    }
   }
 }
