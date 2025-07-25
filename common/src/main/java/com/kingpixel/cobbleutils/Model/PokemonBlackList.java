@@ -19,7 +19,7 @@ import java.util.stream.Collectors;
 @Getter
 @Setter
 public class PokemonBlackList {
-  private boolean onlyImplemented = true;
+  private boolean onlyImplemented;
   private boolean allowEvolutions = true;
   private Set<String> pokemons;
   private Set<String> forms;
