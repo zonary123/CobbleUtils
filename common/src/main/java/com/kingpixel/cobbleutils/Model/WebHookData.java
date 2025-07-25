@@ -8,20 +8,35 @@ import lombok.Getter;
 import lombok.Setter;
 import net.minecraft.server.network.ServerPlayerEntity;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
-/**
- * @author Carlos Varas Alonso - 19/11/2024 2:16
- */
 @Getter
 @Setter
 public class WebHookData {
-  public static Map<String, WebhookClient> webhooks = new HashMap<>();
+  // Thread-safe map for storing WebhookClient instances
+  public static final Map<String, WebhookClient> webhooks = new ConcurrentHashMap<>();
 
+  // ThreadFactory with custom names
+  private static final ThreadFactory WEBHOOK_THREAD_FACTORY = new ThreadFactory() {
+    private final AtomicInteger count = new AtomicInteger(1);
+
+    @Override
+    public Thread newThread(Runnable r) {
+      Thread t = new Thread(r);
+      t.setName("webhook-Cobbleutils-" + count.getAndIncrement());
+      t.setDaemon(true); // Optional: won't prevent JVM from exiting
+      return t;
+    }
+  };
+
+  // Fixed thread pool with custom thread naming
+  private static final ExecutorService EXECUTOR =
+    Executors.newFixedThreadPool(8, WEBHOOK_THREAD_FACTORY);
+
+  // Webhook configuration
   private boolean ENABLED;
   private String URL_WEBHOOK;
   private String AVATAR_URL;
@@ -37,47 +52,54 @@ public class WebHookData {
   }
 
   /**
-   * Send a message to the webhook
-   *
-   * @param id       The id of the webhook
-   * @param struct   The struct of the message
-   * @param players  The players to send the message
-   * @param pokemons The pokemons to send the message
+   * Send a webhook with Pokemon (not entity).
    */
   public void sendWebHook(String id, WebHookStruct struct, List<ServerPlayerEntity> players,
                           List<Pokemon> pokemons) {
-    CompletableFuture.runAsync(() -> {
-        if (!ENABLED || URL_WEBHOOK.isEmpty()) return;
-        WebhookClient client = webhooks.get(id);
-        if (client == null) {
-          client = WebhookClient.withUrl(URL_WEBHOOK);
-          webhooks.put(id, client);
-        }
-        client.send(struct.getMessage(this, players, pokemons));
-      })
-      .orTimeout(5, TimeUnit.SECONDS)
-      .exceptionally(e -> {
-        e.printStackTrace();
-        return null;
-      });
+    runAsyncWebhook(id, () -> {
+      WebhookClient client = webhooks.computeIfAbsent(id, k -> WebhookClient.withUrl(URL_WEBHOOK));
+      client.send(struct.getMessage(this, players, pokemons));
+    });
   }
 
+  /**
+   * Send a webhook with PokemonEntity (in-world).
+   */
   public void sendWebHookEntity(String id, WebHookStruct struct, List<ServerPlayerEntity> players,
                                 List<PokemonEntity> pokemons) {
-    CompletableFuture.runAsync(() -> {
-        if (!ENABLED || URL_WEBHOOK.isEmpty()) return;
-        WebhookClient client = webhooks.get(id);
-        if (client == null) {
-          client = WebhookClient.withUrl(URL_WEBHOOK);
-          webhooks.put(id, client);
-        }
-        client.send(struct.getMessageEntity(this, players, pokemons));
-      })
+    runAsyncWebhook(id, () -> {
+      WebhookClient client = webhooks.computeIfAbsent(id, k -> WebhookClient.withUrl(URL_WEBHOOK));
+      client.send(struct.getMessageEntity(this, players, pokemons));
+    });
+  }
+
+  /**
+   * Runs a webhook task asynchronously with timeout and exception handling.
+   */
+  private void runAsyncWebhook(String id, Runnable task) {
+    if (!ENABLED || URL_WEBHOOK == null || URL_WEBHOOK.isEmpty()) return;
+
+    CompletableFuture.runAsync(task, EXECUTOR)
       .orTimeout(5, TimeUnit.SECONDS)
       .exceptionally(e -> {
+        System.err.println("[Webhook][" + id + "] Error: " + e.getMessage());
         e.printStackTrace();
         return null;
       });
   }
 
+  /**
+   * Optional shutdown method for clean server shutdown.
+   */
+  public static void shutdownExecutor() {
+    EXECUTOR.shutdown();
+    try {
+      if (!EXECUTOR.awaitTermination(5, TimeUnit.SECONDS)) {
+        EXECUTOR.shutdownNow();
+      }
+    } catch (InterruptedException e) {
+      EXECUTOR.shutdownNow();
+      Thread.currentThread().interrupt();
+    }
+  }
 }

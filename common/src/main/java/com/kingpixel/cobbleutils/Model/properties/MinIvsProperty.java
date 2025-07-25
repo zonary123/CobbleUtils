@@ -16,7 +16,7 @@ import java.util.List;
  * @author Carlos Varas Alonso - 04/08/2024 19:40
  */
 public class MinIvsProperty implements CustomPokemonProperty {
-  private final String value;
+  private String value;
 
   public MinIvsProperty(String value) {
     this.value = value;
@@ -71,7 +71,7 @@ public class MinIvsProperty implements CustomPokemonProperty {
   }
 
   @Override public void apply(@NotNull PokemonEntity pokemonEntity) {
-    
+
   }
 
   @Override public boolean matches(@NotNull PokemonEntity pokemonEntity) {

@@ -32,7 +32,10 @@ public class CobbleDollarsEconomy extends EconomyAbstract {
   @Override public boolean deposit(UUID playerUuid, BigDecimal money, String currency) {
     CobbleDollarsPlayer player = (CobbleDollarsPlayer) getPlayer(playerUuid);
     if (player == null) return false;
-    player.cobbleDollars$addCobbleDollars(BigInteger.valueOf(money.longValue()));
+    BigInteger depositAmount = BigInteger.valueOf(money.longValue());
+    if (depositAmount.compareTo(BigInteger.ZERO) < 0) return false;
+    BigInteger balance = player.cobbleDollars$getCobbleDollars();
+    player.cobbleDollars$setCobbleDollars(balance.add(depositAmount));
     return true;
   }
 
