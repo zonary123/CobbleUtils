@@ -12,7 +12,6 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.internal.bind.DateTypeAdapter;
 import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.Model.ItemModel;
-import com.kingpixel.cobbleutils.adapter.EnchantmentsAdapter;
 import com.kingpixel.cobbleutils.adapter.ItemStackAdapter;
 import com.kingpixel.cobbleutils.adapter.PokemonAdapter;
 import com.mojang.authlib.GameProfile;
@@ -21,7 +20,6 @@ import net.minecraft.component.DataComponentTypes;
 import net.minecraft.component.type.CustomModelDataComponent;
 import net.minecraft.component.type.LoreComponent;
 import net.minecraft.component.type.ProfileComponent;
-import net.minecraft.enchantment.Enchantment;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.nbt.NbtCompound;
@@ -94,8 +92,8 @@ public abstract class Utils {
       .registerTypeAdapter(NbtCompoundAdapter.class, NbtCompoundAdapter.INSTANCE)
       .registerTypeAdapter(DateTypeAdapter.class, new DateTypeAdapter())
       .registerTypeAdapter(Pokemon.class, PokemonAdapter.INSTANCE)
-      .registerTypeAdapter(ItemStack.class, ItemStackAdapter.INSTANCE)
-      .registerTypeAdapter(Enchantment.class, EnchantmentsAdapter.INSTANCE);
+      .registerTypeAdapter(ItemStack.class, ItemStackAdapter.INSTANCE);
+    //.registerTypeAdapter(Enchantment.class, EnchantmentsAdapter.INSTANCE);
   }
 
   private static final ScheduledExecutorService IO_EXECUTOR = Executors.newScheduledThreadPool(

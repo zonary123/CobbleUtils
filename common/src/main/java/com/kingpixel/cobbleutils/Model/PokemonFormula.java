@@ -103,7 +103,7 @@ public class PokemonFormula {
   private float getHeldItem(Pokemon pokemon) {
     ItemStack itemStack = pokemon.heldItem();
     if (itemStack.isEmpty()) return 0;
-    String heldItem = itemStack.getTranslationKey();
+    String heldItem = itemStack.getItem().toString();
     BigDecimal price = heldItemPrice.getHeldItemPrices().getOrDefault(heldItem, heldItemPrice.getDefaultPrice());
     return price.floatValue();
   }
