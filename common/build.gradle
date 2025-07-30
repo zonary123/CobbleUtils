@@ -45,6 +45,7 @@ dependencies {
     // Kyori Adventure
     api("net.kyori:adventure-text-serializer-gson:${property("kyori_version")}")
     api("net.kyori:adventure-text-minimessage:${property("kyori_version")}")
+    api("net.kyori:adventure-api:${property("kyori_version")}")
 
     //Discord
     api("club.minnced:discord-webhooks:${property("discord_webhooks_version")}")

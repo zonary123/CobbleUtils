@@ -169,6 +169,31 @@ public class EconomyApi {
   }
 
   /**
+   * Transfer money from one player to another
+   *
+   * @param fromPlayerUuid The player to transfer money from
+   * @param toPlayerUuid   The player to transfer money to
+   * @param money          The amount of money to transfer
+   * @param economy        The economy to use for the transfer
+   */
+  public static boolean transferMoney(UUID fromPlayerUuid, UUID toPlayerUuid, BigDecimal money, EconomyUse economy,
+                                      boolean needHasEnough) {
+    if (needHasEnough && !hasEnoughMoney(fromPlayerUuid, money, economy, true)) {
+      CobbleUtils.LOGGER.info("Player " + fromPlayerUuid + " does not have enough money to transfer " + money +
+        " to " + toPlayerUuid + " using " + economy.getEconomyId());
+      return false;
+    }
+    if (addMoney(toPlayerUuid, money, economy)) {
+      CobbleUtils.LOGGER.info("Transferred " + money + " from " + fromPlayerUuid + " to " + toPlayerUuid +
+        " using " + economy.getEconomyId());
+      return removeMoney(fromPlayerUuid, money, economy);
+    }
+    CobbleUtils.LOGGER.info("Failed to transfer " + money + " from " + fromPlayerUuid + " to " + toPlayerUuid +
+      " using " + economy.getEconomyId());
+    return false;
+  }
+
+  /**
    * Format the money of the player
    *
    * @param money    The amount of money
