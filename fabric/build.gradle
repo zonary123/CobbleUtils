@@ -2,7 +2,7 @@ plugins {
     // The shadow gradle plugin assists with repackaging a 3rd-party library jar within your own jar
     // In addition to ensuring that your end-users have the library available when they use your own thing,
     // it also helps avoid collisions with other things that are also using the same library.
-    // ref: https://gist.github.com/SizableShrimp/949e7c219bfc94487a45226b64ac7749
+// ref: https://gist.github.com/SizableShrimp/949e7c219bfc94487a45226b64ac7749
     //
     // Latest Test Compatibility: gradle version 8.x shadow version 8.0.0+
     // ref: https://github.com/johnrengelman/shadow
@@ -44,10 +44,10 @@ dependencies {
     shadowCommon(project(path: ":common", configuration: "transformProductionFabric"))
 
     // Kyori Adventure
-    //shadowCommon("net.kyori:adventure-text-serializer-gson:${property("kyori_version")}")
-    //shadowCommon("net.kyori:adventure-text-minimessage:${property("kyori_version")}")
+    shadowCommon("net.kyori:adventure-text-serializer-gson:${property("kyori_version")}")
+    shadowCommon("net.kyori:adventure-text-minimessage:${property("kyori_version")}")
     shadowCommon("net.kyori:adventure-api:${property("kyori_version")}")
-    //shadowCommon("net.kyori:adventure-text-serializer-legacy:${property("kyori_version")}")
+    shadowCommon("net.kyori:adventure-text-serializer-legacy:${property("kyori_version")}")
     //shadowCommon("net.kyori:adventure-platform-fabric:6.2.0")
 
     // Database
@@ -61,6 +61,10 @@ dependencies {
     shadowCommon("club.minnced:discord-webhooks:${property("discord_webhooks_version")}")
     shadowCommon("org.json:json:20210307")
     shadowCommon("net.objecthunter:exp4j:0.4.8")
+
+    // Redis
+    shadowCommon("redis.clients:jedis:5.1.0")
+    shadowCommon("org.apache.commons:commons-pool2:2.12.0")
 }
 
 processResources {
@@ -69,12 +73,14 @@ processResources {
     filesMatching("fabric.mod.json") {
         expand Map.of(
                 "mod_name", project.property("mod_name"),
+
                 "mod_id", project.property("mod_id"),
                 "mod_version", project.property("mod_version"),
                 "mod_description", project.property("mod_description"),
                 "author", project.property("author"),
                 "repository", project.property("repository"),
                 "license", project.property("license"),
+
                 "mod_icon", project.property("mod_icon"),
                 "environment", project.property("environment"),
                 "supported_minecraft_versions", project.property("supported_minecraft_versions")
@@ -88,9 +94,10 @@ shadowJar {
     exclude("com/google/gson/**/*")
     exclude("org/intellij/**/*")
     exclude("org/jetbrains/**/*")
+
     // Vault
     exclude("org/bukkit/**/*")
-    exclude("org/apache/**/*")
+
     exclude("org/yaml/**/*")
     exclude("org/junit/**/*")
     exclude("org/java_websocket/**/*")
@@ -104,7 +111,6 @@ shadowJar {
     exclude("org/sqlite/native/Solaris/**/*")
     exclude("kotlin/**")
     exclude("junit/**")
-    exclude("net/kyori/option/**/*")
     exclude("net/milkbowl/vault/chat/**/*")
     exclude("net/milkbowl/vault/permission/**/*")
     // Relocate packages
@@ -112,12 +118,19 @@ shadowJar {
         exclude("org/sqlite/native/Linux-Android/**/*")
         exclude("org/sqlite/native/Linux-Musl/**/*")
         exclude("org/sqlite/native/FreeBSD/**/*")
+
         exclude("org/sqlite/native/Mac/**/*")
         exclude("org/sqlite/native/Solaris/**/*")
     }
     //relocate("net.milkbowl.vault", "net.milkbowl.vault")
     relocate("com.mongodb", "com.kingpixel.cobbleutils.mongodb")
     relocate("org.bson", "com.kingpixel.cobbleutils.bson")
+    relocate("redis.clients.jedis", "com.kingpixel.cobbleutils.redis.clients.jedis")
+    relocate("org.apache.commons.commons-pool2", "com.kingpixel.cobbleutils.org.apache.commons.pool2")
+    relocate("net.kyori.adventure.text.serializer", "com.kingpixel.cobbleutils.kyori.adventure.serializer")
+    relocate("net.kyori.adventure.text.minimessage", "com.kingpixel.cobbleutils.kyori.adventure.minimessage")
+    relocate("net.kyori.option", "com.kingpixel.cobbleutils.kyori.option")
+
 
     // Configuración del jar sombreado
     configurations = [project.configurations.shadowCommon]
@@ -137,6 +150,7 @@ jar {
 
 sourcesJar {
     def commonSources = project(":common").sourcesJar
+
     dependsOn commonSources
     from commonSources.archiveFile.map { zipTree(it) }
 }

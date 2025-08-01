@@ -104,7 +104,7 @@ shadowJar {
     exclude("org/jetbrains/**/*")
     // Vault
     exclude("org/bukkit/**/*")
-    exclude("org/apache/**/*")
+
     exclude("org/yaml/**/*")
     exclude("org/junit/**/*")
     exclude("org/java_websocket/**/*")

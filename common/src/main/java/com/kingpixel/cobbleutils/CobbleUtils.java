@@ -8,6 +8,7 @@ import com.kingpixel.cobbleutils.command.CommandTree;
 import com.kingpixel.cobbleutils.config.Config;
 import com.kingpixel.cobbleutils.config.Lang;
 import com.kingpixel.cobbleutils.events.ItemRightClickEvents;
+import com.kingpixel.cobbleutils.util.RedisManager;
 import com.kingpixel.cobbleutils.util.CobbleUtilsBridgeGTS;
 import com.kingpixel.cobbleutils.util.SpawnRates;
 import com.kingpixel.cobbleutils.util.UtilsLogger;
@@ -46,6 +47,7 @@ public class CobbleUtils {
     files();
     sign();
     EconomyApi.setEconomyType();
+    RedisManager.init();
     try {
       if (config.isGtsSupport()) {
         new CobbleUtilsBridgeGTS();
@@ -96,6 +98,7 @@ public class CobbleUtils {
 
     LifecycleEvent.SERVER_STOPPED.register(server1 -> {
       //Utils.shutdownExecutor();
+      RedisManager.close();
     });
 
     CommandRegistrationEvent.EVENT.register((dispatcher, registry, selection) -> {

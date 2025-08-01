@@ -15,9 +15,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
-/**
- * @author Carlos Varas Alonso - 29/04/2024 0:14
- */
 @Getter
 @Data
 @ToString
@@ -39,6 +36,9 @@ public class Config {
   private PokemonBlackList shinytokenBlacklist;
   private Map<String, ItemModel> itemsCommands;
   private Map<String, Double> rarity;
+  private boolean redisMessaging;
+  private RedisConfig redis;
+
 
   public Config() {
     debug = false;
@@ -60,27 +60,29 @@ public class Config {
     pokeshoutall = "pokeshoutplusall";
     cooldownpokeshout = 60;
     shinytoken = new ItemModel("minecraft:paper", "<gradient:#e0d234:#ede69a><bold>Shiny Token", List.of("§aShiny " +
-      "Token"), 0);
+            "Token"), 0);
     shinytokenBlacklist = new PokemonBlackList();
     itemsCommands = new HashMap<>();
     itemsCommands.put("give", new ItemModel("minecraft:chest", "<gradient:#e0d234:#ede69a><bold>Item", List.of(
-      "§aThis give you a item")));
+            "§aThis give you a item")));
     rarity = new HashMap<>();
     rarity.put("common", 7.0);
     rarity.put("uncommon", 2.5);
     rarity.put("rare", 0.3);
     rarity.put("epic", 0.1);
     database = new DataBaseConfig();
+    redisMessaging = false;
+    redis = new RedisConfig();
   }
 
   public void init() {
     CompletableFuture<Boolean> futureRead = Utils.readFileAsync(CobbleUtils.PATH, "config.json",
-      el -> {
-        Gson gson = Utils.newGson();
-        CobbleUtils.config = gson.fromJson(el, Config.class);
-        String data = gson.toJson(CobbleUtils.config);
-        Utils.writeFileAsync(CobbleUtils.PATH, "config.json", data);
-      });
+            el -> {
+              Gson gson = Utils.newGson();
+              CobbleUtils.config = gson.fromJson(el, Config.class);
+              String data = gson.toJson(CobbleUtils.config);
+              Utils.writeFileAsync(CobbleUtils.PATH, "config.json", data);
+            });
 
     if (!futureRead.join()) {
       CobbleUtils.LOGGER.info("No config.json file found for" + CobbleUtils.MOD_NAME + ". Attempting to generate one.");
@@ -88,9 +90,24 @@ public class Config {
       CobbleUtils.config = this;
       String data = gson.toJson(CobbleUtils.config);
       Utils.writeFileAsync(CobbleUtils.PATH, "config.json",
-        data);
+              data);
     }
-
   }
 
+  @Getter
+  @Data
+  @ToString
+  public static class RedisConfig {
+    private String host;
+    private int port;
+    private String password;
+    private String channel;
+
+    public RedisConfig() {
+      this.host = "localhost";
+      this.port = 6379;
+      this.password = "";
+      this.channel = "cobbleutils-messaging";
+    }
+  }
 }
