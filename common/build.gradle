@@ -32,7 +32,7 @@ dependencies {
 
     // Permissions
     api("net.luckperms:api:${property("luckperms_version")}")
-    modImplementation("me.lucko:fabric-permissions-api:0.3.3")
+    modImplementation("me.lucko:fabric-permissions-api:0.3.1")
 
     // Economy
     // Economy Impactor
