@@ -51,25 +51,24 @@ public abstract class Utils {
   private static Gson gsonPretty = null;
   private static Gson gsonnotPretty = null;
 
-
   public static Gson newGson() {
     if (gsonPretty == null) {
       gsonPretty = adapters()
-        .setPrettyPrinting()
-        .create();
+              .setPrettyPrinting()
+              .create();
     }
     return gsonPretty;
   }
 
   private static GsonBuilder adapters() {
     return addAdapters(new GsonBuilder()
-      .disableHtmlEscaping());
+            .disableHtmlEscaping());
   }
 
   public static Gson newWithoutSpacingGson() {
     if (gsonnotPretty == null) {
       gsonnotPretty = adapters()
-        .create();
+              .create();
     }
     return gsonnotPretty;
   }
@@ -85,24 +84,24 @@ public abstract class Utils {
 
   private static GsonBuilder addAdapters(GsonBuilder builder) {
     return builder
-      .registerTypeAdapter(ElementalType.class, ElementalTypeAdapter.INSTANCE)
-      .registerTypeAdapter(IntRange.class, IntRangeAdapter.INSTANCE)
-      .registerTypeAdapter(NbtCompound.class, NbtCompoundAdapter.INSTANCE)
-      .registerTypeAdapter(Move.class, MoveTemplateAdapter.INSTANCE)
-      .registerTypeAdapter(NbtCompoundAdapter.class, NbtCompoundAdapter.INSTANCE)
-      .registerTypeAdapter(DateTypeAdapter.class, new DateTypeAdapter())
-      .registerTypeAdapter(Pokemon.class, PokemonAdapter.INSTANCE)
-      .registerTypeAdapter(ItemStack.class, ItemStackAdapter.INSTANCE);
+            .registerTypeAdapter(ElementalType.class, ElementalTypeAdapter.INSTANCE)
+            .registerTypeAdapter(IntRange.class, IntRangeAdapter.INSTANCE)
+            .registerTypeAdapter(NbtCompound.class, NbtCompoundAdapter.INSTANCE)
+            .registerTypeAdapter(Move.class, MoveTemplateAdapter.INSTANCE)
+            .registerTypeAdapter(NbtCompoundAdapter.class, NbtCompoundAdapter.INSTANCE)
+            .registerTypeAdapter(DateTypeAdapter.class, new DateTypeAdapter())
+            .registerTypeAdapter(Pokemon.class, PokemonAdapter.INSTANCE)
+            .registerTypeAdapter(ItemStack.class, ItemStackAdapter.INSTANCE);
     //.registerTypeAdapter(Enchantment.class, EnchantmentsAdapter.INSTANCE);
   }
 
   private static final ScheduledExecutorService IO_EXECUTOR = Executors.newScheduledThreadPool(
-    Math.min(Runtime.getRuntime().availableProcessors() * 2, 4),
-    r -> {
-      Thread thread = new Thread(r, "CobbleUtils IO Executor - " + r.hashCode());
-      thread.setDaemon(true);
-      return thread;
-    }
+          Math.min(Runtime.getRuntime().availableProcessors() * 2, 4),
+          r -> {
+            Thread thread = new Thread(r, "CobbleUtils IO Executor - " + r.hashCode());
+            thread.setDaemon(true);
+            return thread;
+          }
   );
 
   private static <T> CompletableFuture<T> withTimeout(CompletableFuture<T> future, long timeout, TimeUnit unit) {
@@ -138,10 +137,10 @@ public abstract class Utils {
     }, IO_EXECUTOR);
 
     return withTimeout(writeFuture, 10, TimeUnit.SECONDS)
-      .exceptionally(e -> {
-        CobbleUtils.LOGGER.error("Error or timeout occurred during file write operation. " + e);
-        return false;
-      });
+            .exceptionally(e -> {
+              CobbleUtils.LOGGER.error("Error or timeout occurred during file write operation. " + e);
+              return false;
+            });
   }
 
   public static boolean writeFileSync(File file, String data) {
@@ -181,10 +180,10 @@ public abstract class Utils {
 
     // Optional: Add timeout handling
     return withTimeout(readFuture, 10, TimeUnit.SECONDS)
-      .exceptionally(e -> {
-        CobbleUtils.LOGGER.error("Error or timeout occurred during file read operation. " + e);
-        return false;
-      });
+            .exceptionally(e -> {
+              CobbleUtils.LOGGER.error("Error or timeout occurred during file read operation. " + e);
+              return false;
+            });
   }
 
   public static boolean readFileSync(File file, Consumer<String> callback) {
@@ -227,27 +226,52 @@ public abstract class Utils {
     }, IO_EXECUTOR);
 
     return withTimeout(writeFuture, 10, TimeUnit.SECONDS)
-      .exceptionally(e -> {
-        CobbleUtils.LOGGER.error("Error or timeout occurred during file write operation. " + e);
-        return false;
-      });
+            .exceptionally(e -> {
+              CobbleUtils.LOGGER.error("Error or timeout occurred during file write operation. " + e);
+              return false;
+            });
   }
 
-
-  @Deprecated(forRemoval = true)
+  /**
+   * @deprecated Use {@link #broadcastMessage(Text)} instead.
+   */
+  @Deprecated
   public static void broadcastMessage(String message) {
-    MinecraftServer server = CobbleUtils.server;
-    ArrayList<ServerPlayerEntity> players = new ArrayList<>(server.getPlayerManager().getPlayerList());
-    for (ServerPlayerEntity pl : players) {
-      pl.sendMessage(AdventureTranslator.toNative(message));
+    if (CobbleUtils.config.isRedisMessaging()) {
+      RedisManager.sendMessage(message);
+    } else {
+      MinecraftServer server = CobbleUtils.server;
+      ArrayList<ServerPlayerEntity> players = new ArrayList<>(server.getPlayerManager().getPlayerList());
+      for (ServerPlayerEntity pl : players) {
+        pl.sendMessage(AdventureTranslator.toNative(message));
+      }
     }
   }
 
   public static void broadcastMessage(Text message) {
-    MinecraftServer server = CobbleUtils.server;
-    ArrayList<ServerPlayerEntity> players = new ArrayList<>(server.getPlayerManager().getPlayerList());
-    for (ServerPlayerEntity pl : players) {
-      pl.sendMessage(message);
+    if (CobbleUtils.config.isRedisMessaging()) {
+      // Convert Text to String and send via Redis
+      String textAsString = message.getString();
+      RedisManager.sendMessage(textAsString);
+    } else {
+      MinecraftServer server = CobbleUtils.server;
+      ArrayList<ServerPlayerEntity> players = new ArrayList<>(server.getPlayerManager().getPlayerList());
+      for (ServerPlayerEntity pl : players) {
+        pl.sendMessage(message);
+      }
+    }
+  }
+
+  public static void broadcastMessage(String message, String prefix) {
+    if (CobbleUtils.config.isRedisMessaging()) {
+      RedisManager.sendMessage(message, prefix);
+    } else {
+      var text = AdventureTranslator.toNative(message, prefix);
+      MinecraftServer server = CobbleUtils.server;
+      ArrayList<ServerPlayerEntity> players = new ArrayList<>(server.getPlayerManager().getPlayerList());
+      for (ServerPlayerEntity pl : players) {
+        pl.sendMessage(text);
+      }
     }
   }
 
@@ -325,21 +349,20 @@ public abstract class Utils {
         item = splitItem[0] + ":" + splitItem[1];
       }
       itemStack = ItemUtils.applyNbt(item, itemStack, itemModel.getNbt() == null || itemModel.getNbt().isEmpty() ?
-          supportNbt
-          : nbt,
-        itemStack.getCount());
+                      supportNbt
+                      : nbt,
+              itemStack.getCount());
     }
 
     itemStack.set(DataComponentTypes.CUSTOM_NAME, AdventureTranslator.toNativeWithOutPrefix(
-      itemModel.getDisplayname() != null ? itemModel.getDisplayname() : "Please set a displayname for this item"));
+            itemModel.getDisplayname() != null ? itemModel.getDisplayname() : "Please set a displayname for this item"));
 
     if (itemModel.getCustomModelData() != 0)
       itemStack.set(DataComponentTypes.CUSTOM_MODEL_DATA, new CustomModelDataComponent((int) itemModel.getCustomModelData()));
 
-
     if (itemModel.getLore() != null && !itemModel.getLore().isEmpty()) {
       itemStack.set(DataComponentTypes.LORE,
-        new LoreComponent(AdventureTranslator.toNativeL(itemModel.getLore())));
+              new LoreComponent(AdventureTranslator.toNativeL(itemModel.getLore())));
     }
     return itemStack;
   }
@@ -369,6 +392,4 @@ public abstract class Utils {
       itemStack.set(DataComponentTypes.CUSTOM_MODEL_DATA, new CustomModelDataComponent((int) customModelData));
     return itemStack;
   }
-
-
 }

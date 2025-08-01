@@ -34,7 +34,8 @@ dependencies {
     api("net.luckperms:api:${property("luckperms_version")}")
     modImplementation("me.lucko:fabric-permissions-api:0.3.1")
 
-    // Economy
+
+// Economy
     // Economy Impactor
     api(fileTree(dir: "libs", include: ["*.jar"], exclude: ["*sdm-economy*"]))
     implementation("net.impactdev.impactor.api:economy:${property("impactor_version")}")
@@ -52,6 +53,9 @@ dependencies {
 
     // Calculator API
     api("net.objecthunter:exp4j:0.4.8")
+
+    // Redis
+    implementation("redis.clients:jedis:5.1.0")
 
     // ! Tests
     testCompileOnly 'org.projectlombok:lombok:1.18.30'
@@ -77,7 +81,6 @@ test {
     useJUnitPlatform()
     // Since JDK 21
     // ref: https://stackoverflow.com/questions/77951485/getting-a-java-agent-has-been-loaded-warning-in-intellij-after-upgrading-jdk-17
+
     jvmArgs("-XX:+EnableDynamicAgentLoading")
 }
-
-
