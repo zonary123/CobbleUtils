@@ -23,46 +23,52 @@ import java.util.concurrent.TimeUnit;
  */
 public class PokeShoutAllMe implements Command<ServerCommandSource> {
 
-  public static void register(CommandDispatcher<ServerCommandSource> dispatcher,
-                              LiteralArgumentBuilder<ServerCommandSource> base) {
-    dispatcher.register(
-      base
-        .requires(source -> PermissionApi.hasPermission(source, List.of("cobbleutils.pokeshoutplusall",
-          "cobbleutils" +
-            ".user"), 2))
-        .executes(context -> {
-          if (!context.getSource().isExecutedByPlayer()) {
-            CobbleUtils.LOGGER.error("This command can only be executed by a player");
-            return 0;
-          }
-          ServerPlayerEntity player = context.getSource().getPlayerOrThrow();
-          long cooldown = PokeShout.cooldowns.getOrDefault(player.getUuid(), 0L);
-          if (PlayerUtils.isCooldown(cooldown)) {
-            PlayerUtils.sendMessage(player, CobbleUtils.language.getMessageCooldown()
-                .replace("%cooldown%", String.valueOf(PlayerUtils.getCooldown(cooldown))),
-              CobbleUtils.config.getPrefix(),
-              TypeMessage.CHAT
-            );
-            return 0;
-          }
-          PokeShout.cooldowns.put(player.getUuid(), System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(CobbleUtils.config.getCooldownpokeshout()));
-          PlayerPartyStore playerPartyStore = Cobblemon.INSTANCE.getStorage().getParty(player);
-          if (playerPartyStore.size() == 0) {
-            player.sendMessage(
-              AdventureTranslator.toNative(
-                CobbleUtils.language.getMessageNoPokemon()
-              )
-            );
-            return 0;
-          }
-          playerPartyStore.forEach(pokemon -> player.sendMessage(PokeShout.getMessage(player, pokemon)));
-          return 1;
-        }));
-  }
+    public static void register(CommandDispatcher<ServerCommandSource> dispatcher,
+                                LiteralArgumentBuilder<ServerCommandSource> base) {
+        dispatcher.register(
+                base
+                        .requires(source -> PermissionApi.hasPermission(source, List.of("cobbleutils.pokeshoutplusall",
+                                "cobbleutils" +
+                                        ".user"), 2))
+                        .executes(context -> {
+                            if (!context.getSource().isExecutedByPlayer()) {
+                                CobbleUtils.LOGGER.error("This command can only be executed by a player");
+                                return 0;
+                            }
+                            ServerPlayerEntity player = context.getSource().getPlayerOrThrow();
+                            long cooldown = PokeShout.cooldowns.getOrDefault(player.getUuid(), 0L);
+                            if (PlayerUtils.isCooldown(cooldown)) {
+                                PlayerUtils.sendMessage(player, CobbleUtils.language.getMessageCooldown()
+                                                .replace("%cooldown%", String.valueOf(PlayerUtils.getCooldown(cooldown))),
+                                        CobbleUtils.config.getPrefix(),
+                                        TypeMessage.CHAT
+                                );
+                                return 0;
+                            }
+                            PokeShout.cooldowns.put(player.getUuid(), System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(CobbleUtils.config.getCooldownpokeshout()));
+                            PlayerPartyStore playerPartyStore = Cobblemon.INSTANCE.getStorage().getParty(player);
+                            if (playerPartyStore.size() == 0) {
+                                player.sendMessage(
+                                        AdventureTranslator.toNative(
+                                                CobbleUtils.language.getMessageNoPokemon()
+                                        )
+                                );
+                                return 0;
+                            }
+                            playerPartyStore.forEach(pokemon -> {
+                                if (CobbleUtils.config.isRedisMessaging()) {
+                                    PlayerUtils.sendMessage(player, PokeShout.getMessageString(player, pokemon), "", TypeMessage.CHAT);
+                                } else {
+                                    player.sendMessage(PokeShout.getMessage(player, pokemon));
+                                }
+                            });
+                            return 1;
+                        }));
+    }
 
-  @Override
-  public int run(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
-    return 0;
-  }
+    @Override
+    public int run(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+        return 0;
+    }
 
 }
