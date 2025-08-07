@@ -3,6 +3,7 @@ package com.kingpixel.cobbleutils.Model;
 import club.minnced.discord.webhook.WebhookClient;
 import com.cobblemon.mod.common.entity.pokemon.PokemonEntity;
 import com.cobblemon.mod.common.pokemon.Pokemon;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.kingpixel.cobbleutils.Model.discord.WebHookStruct;
 import lombok.Getter;
 import lombok.Setter;
@@ -10,8 +11,10 @@ import net.minecraft.server.network.ServerPlayerEntity;
 
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 @Getter
 @Setter
@@ -19,21 +22,11 @@ public class WebHookData {
   public static final Map<String, WebhookClient> webhooks = new ConcurrentHashMap<>();
 
 
-  private static final ThreadFactory WEBHOOK_THREAD_FACTORY = new ThreadFactory() {
-    private final AtomicInteger count = new AtomicInteger(1);
-
-    @Override
-    public Thread newThread(Runnable r) {
-      Thread t = new Thread(r);
-      t.setName("webhook-Cobbleutils-Discord-" + count.getAndIncrement());
-      t.setDaemon(true);
-      return t;
-    }
-  };
-
-  // Fixed thread pool with custom thread naming
-  private static final ExecutorService EXECUTOR =
-    Executors.newFixedThreadPool(2, WEBHOOK_THREAD_FACTORY);
+  private static final ExecutorService WEBHOOK_THREAD_FACTORY = Executors.newFixedThreadPool(2,
+    new ThreadFactoryBuilder()
+      .setDaemon(true)
+      .setNameFormat("CobbleUtils Webhook - %d")
+      .build());
 
   // Webhook configuration
   private boolean ENABLED;
@@ -77,10 +70,8 @@ public class WebHookData {
    */
   private void runAsyncWebhook(String id, Runnable task) {
     if (!ENABLED || URL_WEBHOOK == null || URL_WEBHOOK.isEmpty()) return;
-    CompletableFuture.runAsync(task, EXECUTOR)
-      .orTimeout(5, TimeUnit.SECONDS)
+    CompletableFuture.runAsync(task, WEBHOOK_THREAD_FACTORY)
       .exceptionally(e -> {
-        System.err.println("[Webhook-CobbleUtils][" + id + "] Error: " + e.getMessage());
         e.printStackTrace();
         return null;
       });

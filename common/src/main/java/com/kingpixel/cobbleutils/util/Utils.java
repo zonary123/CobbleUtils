@@ -98,7 +98,7 @@ public abstract class Utils {
     //.registerTypeAdapter(Enchantment.class, EnchantmentsAdapter.INSTANCE);
   }
 
-  public static ExecutorService IO_EXECUTOR = Executors.newFixedThreadPool(4, new ThreadFactoryBuilder()
+  public static ExecutorService IO_EXECUTOR = Executors.newFixedThreadPool(8, new ThreadFactoryBuilder()
     .setDaemon(true)
     .setNameFormat("CobbleUtils IO Executor - %d")
     .build());
