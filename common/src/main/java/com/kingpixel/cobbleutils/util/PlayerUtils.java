@@ -1,6 +1,7 @@
 package com.kingpixel.cobbleutils.util;
 
 import com.cobblemon.mod.common.Cobblemon;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.kingpixel.cobbleutils.CobbleUtils;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.ParseResults;
@@ -17,11 +18,18 @@ import java.util.Date;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * @author Carlos Varas Alonso - 28/06/2024 20:44
  */
 public class PlayerUtils {
+
+  public static ExecutorService MESSAGE_EXECUTOR = Executors.newFixedThreadPool(4, new ThreadFactoryBuilder()
+    .setDaemon(true)
+    .setNameFormat("CobbleUtils Message - %d")
+    .build());
 
   public static boolean isBattle(ServerPlayerEntity player) {
     var battle = Cobblemon.INSTANCE.getBattleRegistry().getBattleByParticipatingPlayer(player);
@@ -30,23 +38,28 @@ public class PlayerUtils {
 
   public static void sendMessage(UUID playerUUID, String message, String prefix, TypeMessage typeMessage) {
     if (message.isEmpty()) return;
-    CompletableFuture.runAsync(() -> {
-      String fullMessage = message.replace("%prefix%", prefix);
 
-      if (CobbleUtils.config.isRedisMessaging()) {
-        switch (typeMessage) {
-          case CHAT -> RedisManager.sendMessage(playerUUID, fullMessage, prefix);
-          case ACTIONBAR -> RedisManager.sendActionBarMessage(playerUUID, fullMessage, prefix);
-          case ACTIONBAR_BROADCAST -> RedisManager.sendActionBarMessage(fullMessage, prefix);
-          case BROADCAST -> RedisManager.sendMessage(fullMessage, prefix);
-        }
-      } else {
-        ServerPlayerEntity player = CobbleUtils.server.getPlayerManager().getPlayer(playerUUID);
-        if (player != null) {
-          sendMessage(player, message, prefix, typeMessage);
-        }
+    String fullMessage = message.replace("%prefix%", prefix);
+
+    if (CobbleUtils.config.isRedisMessaging()) {
+      CompletableFuture.runAsync(() -> {
+          switch (typeMessage) {
+            case CHAT -> RedisManager.sendMessage(playerUUID, fullMessage, prefix);
+            case ACTIONBAR -> RedisManager.sendActionBarMessage(playerUUID, fullMessage, prefix);
+            case ACTIONBAR_BROADCAST -> RedisManager.sendActionBarMessage(fullMessage, prefix);
+            case BROADCAST -> RedisManager.sendMessage(fullMessage, prefix);
+          }
+        }, RedisManager.EXECUTOR_REDIS)
+        .exceptionally(e -> {
+          e.printStackTrace();
+          return null;
+        });
+    } else {
+      ServerPlayerEntity player = CobbleUtils.server.getPlayerManager().getPlayer(playerUUID);
+      if (player != null) {
+        sendMessage(player, message, prefix, typeMessage);
       }
-    });
+    }
   }
 
   // Comando
@@ -73,30 +86,36 @@ public class PlayerUtils {
    * @param typeMessage The type of message to send (CHAT, ACTIONBAR, ACTIONBAR_BROADCAST, BROADCAST).
    */
   public static void sendMessage(ServerPlayerEntity player, String message, String prefix, TypeMessage typeMessage) {
-    if (message.isEmpty()) return;
+    CompletableFuture.runAsync(() -> {
+        if (message.isEmpty()) return;
 
-    if (CobbleUtils.config.isRedisMessaging()) {
-      sendMessage(player.getUuid(), message, prefix, typeMessage);
-      return;
-    }
-
-    switch (typeMessage) {
-      case CHAT -> {
-        if (player == null) return;
-        sendMessage(player, message, prefix);
-      }
-      case ACTIONBAR -> {
-        if (player == null) return;
-        player.sendMessage(AdventureTranslator.toNative(message, prefix, player), true);
-      }
-      case ACTIONBAR_BROADCAST -> {
-        var text = AdventureTranslator.toNative(message, prefix);
-        for (ServerPlayerEntity serverPlayerEntity : CobbleUtils.server.getPlayerManager().getPlayerList()) {
-          serverPlayerEntity.sendMessage(text, true);
+        if (CobbleUtils.config.isRedisMessaging()) {
+          sendMessage(player.getUuid(), message, prefix, typeMessage);
+          return;
         }
-      }
-      case BROADCAST -> broadcast(message, prefix);
-    }
+
+        switch (typeMessage) {
+          case CHAT -> {
+            if (player == null) return;
+            sendMessage(player, message, prefix);
+          }
+          case ACTIONBAR -> {
+            if (player == null) return;
+            player.sendMessage(AdventureTranslator.toNative(message, prefix, player), true);
+          }
+          case ACTIONBAR_BROADCAST -> {
+            var text = AdventureTranslator.toNative(message, prefix);
+            for (ServerPlayerEntity serverPlayerEntity : CobbleUtils.server.getPlayerManager().getPlayerList()) {
+              serverPlayerEntity.sendMessage(text, true);
+            }
+          }
+          case BROADCAST -> broadcast(message, prefix);
+        }
+      }, MESSAGE_EXECUTOR)
+      .exceptionally(e -> {
+        e.printStackTrace();
+        return null;
+      });
   }
 
   @Deprecated
