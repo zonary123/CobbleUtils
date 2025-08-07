@@ -1,5 +1,6 @@
 package com.kingpixel.cobbleutils.util;
 
+import com.cobblemon.mod.common.Cobblemon;
 import com.kingpixel.cobbleutils.CobbleUtils;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.ParseResults;
@@ -15,31 +16,39 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import java.util.Date;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * @author Carlos Varas Alonso - 28/06/2024 20:44
  */
 public class PlayerUtils {
 
+  public static boolean isBattle(ServerPlayerEntity player) {
+    var battle = Cobblemon.INSTANCE.getBattleRegistry().getBattleByParticipatingPlayer(player);
+    return battle != null;
+  }
+
   public static void sendMessage(UUID playerUUID, String message, String prefix, TypeMessage typeMessage) {
     if (message.isEmpty()) return;
+    CompletableFuture.runAsync(() -> {
+      String fullMessage = message.replace("%prefix%", prefix);
 
-    String fullMessage = message.replace("%prefix%", prefix);
-
-    if (CobbleUtils.config.isRedisMessaging()) {
-      switch (typeMessage) {
-        case CHAT -> RedisManager.sendMessage(playerUUID, fullMessage, prefix);
-        case ACTIONBAR -> RedisManager.sendActionBarMessage(playerUUID, fullMessage, prefix);
-        case ACTIONBAR_BROADCAST -> RedisManager.sendActionBarMessage(fullMessage, prefix);
-        case BROADCAST -> RedisManager.sendMessage(fullMessage, prefix);
+      if (CobbleUtils.config.isRedisMessaging()) {
+        switch (typeMessage) {
+          case CHAT -> RedisManager.sendMessage(playerUUID, fullMessage, prefix);
+          case ACTIONBAR -> RedisManager.sendActionBarMessage(playerUUID, fullMessage, prefix);
+          case ACTIONBAR_BROADCAST -> RedisManager.sendActionBarMessage(fullMessage, prefix);
+          case BROADCAST -> RedisManager.sendMessage(fullMessage, prefix);
+        }
+      } else {
+        ServerPlayerEntity player = CobbleUtils.server.getPlayerManager().getPlayer(playerUUID);
+        if (player != null) {
+          sendMessage(player, message, prefix, typeMessage);
+        }
       }
-    } else {
-      ServerPlayerEntity player = CobbleUtils.server.getPlayerManager().getPlayer(playerUUID);
-      if (player != null) {
-        sendMessage(player, message, prefix, typeMessage);
-      }
-    }
+    });
   }
+
   // Comando
   @Deprecated
   public static void sendMessage(ServerPlayerEntity player, String message) {
@@ -55,7 +64,14 @@ public class PlayerUtils {
     player.sendMessage(AdventureTranslator.toNative(message, prefix, player));
   }
 
-  @Deprecated
+  /**
+   * Method to send a message to a player with a specific prefix and type of message.
+   *
+   * @param player      The player to send the message to.
+   * @param message     The message to send.
+   * @param prefix      The prefix to use in the message.
+   * @param typeMessage The type of message to send (CHAT, ACTIONBAR, ACTIONBAR_BROADCAST, BROADCAST).
+   */
   public static void sendMessage(ServerPlayerEntity player, String message, String prefix, TypeMessage typeMessage) {
     if (message.isEmpty()) return;
 
@@ -65,8 +81,14 @@ public class PlayerUtils {
     }
 
     switch (typeMessage) {
-      case CHAT -> sendMessage(player, message, prefix);
-      case ACTIONBAR -> player.sendMessage(AdventureTranslator.toNative(message, prefix, player), true);
+      case CHAT -> {
+        if (player == null) return;
+        sendMessage(player, message, prefix);
+      }
+      case ACTIONBAR -> {
+        if (player == null) return;
+        player.sendMessage(AdventureTranslator.toNative(message, prefix, player), true);
+      }
       case ACTIONBAR_BROADCAST -> {
         var text = AdventureTranslator.toNative(message, prefix);
         for (ServerPlayerEntity serverPlayerEntity : CobbleUtils.server.getPlayerManager().getPlayerList()) {
@@ -134,21 +156,21 @@ public class PlayerUtils {
     if (time <= 0) return CobbleUtils.language.getNocooldown();
 
     long[] units = {time / (1000 * 60 * 60 * 24),
-            (time / (1000 * 60 * 60)) % 24,
-            (time / (1000 * 60)) % 60,
-            (time / 1000) % 60};
+      (time / (1000 * 60 * 60)) % 24,
+      (time / (1000 * 60)) % 60,
+      (time / 1000) % 60};
 
     String[] singularLabels = {CobbleUtils.language.getDay(), CobbleUtils.language.getHour(),
-            CobbleUtils.language.getMinute(), CobbleUtils.language.getSecond()};
+      CobbleUtils.language.getMinute(), CobbleUtils.language.getSecond()};
     String[] pluralLabels = {CobbleUtils.language.getDays(), CobbleUtils.language.getHours(),
-            CobbleUtils.language.getMinutes(), CobbleUtils.language.getSeconds()};
+      CobbleUtils.language.getMinutes(), CobbleUtils.language.getSeconds()};
 
     StringBuilder result = new StringBuilder();
     for (int i = 0; i < units.length; i++) {
       if (units[i] > 0) {
         result.append(units[i] != 1
-                ? pluralLabels[i].replace("%s", Long.toString(units[i]))
-                : singularLabels[i].replace("%s", Long.toString(units[i])));
+          ? pluralLabels[i].replace("%s", Long.toString(units[i]))
+          : singularLabels[i].replace("%s", Long.toString(units[i])));
       }
     }
 

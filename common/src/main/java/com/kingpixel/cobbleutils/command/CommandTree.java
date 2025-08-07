@@ -53,6 +53,7 @@ public class CommandTree {
 
       EconomyIdCommand.register(dispatcher, base);
     }
+    ZonaryCommand.register(dispatcher);
   }
 
 

@@ -4,7 +4,7 @@ architectury {
 }
 
 loom {
-    accessWidenerPath = file("src/main/resources/minecraft_access.accesswidener")
+    accessWidenerPath = file("src/main/resources/cobbleutils.accesswidener")
 }
 
 dependencies {
@@ -55,7 +55,7 @@ dependencies {
     api("net.objecthunter:exp4j:0.4.8")
 
     // Redis
-    implementation("redis.clients:jedis:5.1.0")
+    implementation("redis.clients:jedis:${property("redis_version")}")
 
     // ! Tests
     testCompileOnly 'org.projectlombok:lombok:1.18.30'

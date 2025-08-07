@@ -7,6 +7,7 @@ import com.cobblemon.mod.common.api.types.adapters.ElementalTypeAdapter;
 import com.cobblemon.mod.common.pokemon.Pokemon;
 import com.cobblemon.mod.common.util.adapters.IntRangeAdapter;
 import com.cobblemon.mod.common.util.adapters.NbtCompoundAdapter;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.internal.bind.DateTypeAdapter;
@@ -42,7 +43,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import java.util.UUID;
-import java.util.concurrent.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 
 public abstract class Utils {
@@ -54,21 +57,21 @@ public abstract class Utils {
   public static Gson newGson() {
     if (gsonPretty == null) {
       gsonPretty = adapters()
-              .setPrettyPrinting()
-              .create();
+        .setPrettyPrinting()
+        .create();
     }
     return gsonPretty;
   }
 
   private static GsonBuilder adapters() {
     return addAdapters(new GsonBuilder()
-            .disableHtmlEscaping());
+      .disableHtmlEscaping());
   }
 
   public static Gson newWithoutSpacingGson() {
     if (gsonnotPretty == null) {
       gsonnotPretty = adapters()
-              .create();
+        .create();
     }
     return gsonnotPretty;
   }
@@ -84,34 +87,30 @@ public abstract class Utils {
 
   private static GsonBuilder addAdapters(GsonBuilder builder) {
     return builder
-            .registerTypeAdapter(ElementalType.class, ElementalTypeAdapter.INSTANCE)
-            .registerTypeAdapter(IntRange.class, IntRangeAdapter.INSTANCE)
-            .registerTypeAdapter(NbtCompound.class, NbtCompoundAdapter.INSTANCE)
-            .registerTypeAdapter(Move.class, MoveTemplateAdapter.INSTANCE)
-            .registerTypeAdapter(NbtCompoundAdapter.class, NbtCompoundAdapter.INSTANCE)
-            .registerTypeAdapter(DateTypeAdapter.class, new DateTypeAdapter())
-            .registerTypeAdapter(Pokemon.class, PokemonAdapter.INSTANCE)
-            .registerTypeAdapter(ItemStack.class, ItemStackAdapter.INSTANCE);
+      .registerTypeAdapter(ElementalType.class, ElementalTypeAdapter.INSTANCE)
+      .registerTypeAdapter(IntRange.class, IntRangeAdapter.INSTANCE)
+      .registerTypeAdapter(NbtCompound.class, NbtCompoundAdapter.INSTANCE)
+      .registerTypeAdapter(Move.class, MoveTemplateAdapter.INSTANCE)
+      .registerTypeAdapter(NbtCompoundAdapter.class, NbtCompoundAdapter.INSTANCE)
+      .registerTypeAdapter(DateTypeAdapter.class, new DateTypeAdapter())
+      .registerTypeAdapter(Pokemon.class, PokemonAdapter.INSTANCE)
+      .registerTypeAdapter(ItemStack.class, ItemStackAdapter.INSTANCE);
     //.registerTypeAdapter(Enchantment.class, EnchantmentsAdapter.INSTANCE);
   }
 
-  private static final ScheduledExecutorService IO_EXECUTOR = Executors.newScheduledThreadPool(
-          Math.min(Runtime.getRuntime().availableProcessors() * 2, 4),
-          r -> {
-            Thread thread = new Thread(r, "CobbleUtils IO Executor - " + r.hashCode());
-            thread.setDaemon(true);
-            return thread;
-          }
-  );
+  public static ExecutorService IO_EXECUTOR = Executors.newFixedThreadPool(4, new ThreadFactoryBuilder()
+    .setDaemon(true)
+    .setNameFormat("CobbleUtils IO Executor - %d")
+    .build());
 
-  private static <T> CompletableFuture<T> withTimeout(CompletableFuture<T> future, long timeout, TimeUnit unit) {
+/*  private static <T> CompletableFuture<T> withTimeout(CompletableFuture<T> future, long timeout, TimeUnit unit) {
     CompletableFuture<T> timeoutFuture = new CompletableFuture<>();
     IO_EXECUTOR.schedule(() -> {
       timeoutFuture.completeExceptionally(new TimeoutException("Operation timed out after " + timeout + " " + unit));
     }, timeout, unit);
 
     return CompletableFuture.anyOf(future, timeoutFuture).thenApply(result -> (T) result);
-  }
+  }*/
 
   public static CompletableFuture<Boolean> writeFileAsync(String filePath, String filename, String data) {
     if (filePath == null || filename == null || data == null) {
@@ -136,11 +135,7 @@ public abstract class Utils {
       }
     }, IO_EXECUTOR);
 
-    return withTimeout(writeFuture, 10, TimeUnit.SECONDS)
-            .exceptionally(e -> {
-              CobbleUtils.LOGGER.error("Error or timeout occurred during file write operation. " + e);
-              return false;
-            });
+    return writeFuture;
   }
 
   public static boolean writeFileSync(File file, String data) {
@@ -179,11 +174,7 @@ public abstract class Utils {
     }, IO_EXECUTOR);
 
     // Optional: Add timeout handling
-    return withTimeout(readFuture, 10, TimeUnit.SECONDS)
-            .exceptionally(e -> {
-              CobbleUtils.LOGGER.error("Error or timeout occurred during file read operation. " + e);
-              return false;
-            });
+    return readFuture;
   }
 
   public static boolean readFileSync(File file, Consumer<String> callback) {
@@ -225,11 +216,7 @@ public abstract class Utils {
       }
     }, IO_EXECUTOR);
 
-    return withTimeout(writeFuture, 10, TimeUnit.SECONDS)
-            .exceptionally(e -> {
-              CobbleUtils.LOGGER.error("Error or timeout occurred during file write operation. " + e);
-              return false;
-            });
+    return writeFuture;
   }
 
   /**
@@ -349,20 +336,20 @@ public abstract class Utils {
         item = splitItem[0] + ":" + splitItem[1];
       }
       itemStack = ItemUtils.applyNbt(item, itemStack, itemModel.getNbt() == null || itemModel.getNbt().isEmpty() ?
-                      supportNbt
-                      : nbt,
-              itemStack.getCount());
+          supportNbt
+          : nbt,
+        itemStack.getCount());
     }
 
     itemStack.set(DataComponentTypes.CUSTOM_NAME, AdventureTranslator.toNativeWithOutPrefix(
-            itemModel.getDisplayname() != null ? itemModel.getDisplayname() : "Please set a displayname for this item"));
+      itemModel.getDisplayname() != null ? itemModel.getDisplayname() : "Please set a displayname for this item"));
 
     if (itemModel.getCustomModelData() != 0)
       itemStack.set(DataComponentTypes.CUSTOM_MODEL_DATA, new CustomModelDataComponent((int) itemModel.getCustomModelData()));
 
     if (itemModel.getLore() != null && !itemModel.getLore().isEmpty()) {
       itemStack.set(DataComponentTypes.LORE,
-              new LoreComponent(AdventureTranslator.toNativeL(itemModel.getLore())));
+        new LoreComponent(AdventureTranslator.toNativeL(itemModel.getLore())));
     }
     return itemStack;
   }

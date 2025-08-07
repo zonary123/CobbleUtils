@@ -8,8 +8,8 @@ import com.kingpixel.cobbleutils.command.CommandTree;
 import com.kingpixel.cobbleutils.config.Config;
 import com.kingpixel.cobbleutils.config.Lang;
 import com.kingpixel.cobbleutils.events.ItemRightClickEvents;
-import com.kingpixel.cobbleutils.util.RedisManager;
 import com.kingpixel.cobbleutils.util.CobbleUtilsBridgeGTS;
+import com.kingpixel.cobbleutils.util.RedisManager;
 import com.kingpixel.cobbleutils.util.SpawnRates;
 import com.kingpixel.cobbleutils.util.UtilsLogger;
 import dev.architectury.event.events.common.CommandRegistrationEvent;
@@ -64,7 +64,7 @@ public class CobbleUtils {
   }
 
   private static void sign() {
-    info(MOD_NAME, "1.1.3", "CobbleUtils");
+    info(MOD_NAME, "1.1.4", "CobbleUtils");
     LOGGER.info("§e| §6Supported economies: Impactor, BlanketEconomy, CobbleDollars, SDMEconomy, PebbleEconomy and Vault");
     LOGGER.info("§e+-------------------------------+");
   }
@@ -85,6 +85,7 @@ public class CobbleUtils {
 
   private static void events() {
     files();
+
 
     LifecycleEvent.SERVER_LEVEL_LOAD.register(level -> {
       server = level.getServer();
