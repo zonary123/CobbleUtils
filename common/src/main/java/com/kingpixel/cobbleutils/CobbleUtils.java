@@ -1,6 +1,7 @@
 package com.kingpixel.cobbleutils;
 
 import com.cobblemon.mod.common.api.properties.CustomPokemonProperty;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.kingpixel.cobbleutils.Model.properties.LegendaryPropertyType;
 import com.kingpixel.cobbleutils.Model.properties.MinIvsPropertyType;
 import com.kingpixel.cobbleutils.api.EconomyApi;
@@ -20,6 +21,8 @@ import net.minecraft.server.MinecraftServer;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class CobbleUtils {
   public static final String MOD_ID = "cobbleutils";
@@ -36,7 +39,10 @@ public class CobbleUtils {
   // Lang
   public static Lang language = new Lang();
   public static List<String> modsInUse = new ArrayList<>();
-
+  public static ExecutorService EXECUTOR_COBBLEUTILS = Executors.newFixedThreadPool(4, new ThreadFactoryBuilder()
+    .setDaemon(true)
+    .setNameFormat("CobbleUtils General Executor-%d")
+    .build());
 
   public static void init() {
     events();
@@ -93,17 +99,13 @@ public class CobbleUtils {
 
     LifecycleEvent.SERVER_STARTED.register(server -> {
       spawnRates.init();
-
       load();
     });
 
-    LifecycleEvent.SERVER_STOPPED.register(server1 -> {
-      //Utils.shutdownExecutor();
-      RedisManager.close();
-    });
+    LifecycleEvent.SERVER_STOPPED.register(server1 -> RedisManager.close());
 
     CommandRegistrationEvent.EVENT.register((dispatcher, registry, selection) -> {
-      CustomPokemonProperty.Companion.register(new MinIvsPropertyType());
+      CustomPokemonProperty.Companion.register(MinIvsPropertyType.INSTANCE);
       CustomPokemonProperty.Companion.register(new LegendaryPropertyType());
       CommandTree.register(dispatcher, registry);
       commandRegistryAccess = registry;

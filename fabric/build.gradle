@@ -127,9 +127,11 @@ shadowJar {
     relocate("org.bson", "com.kingpixel.cobbleutils.bson")
     relocate("redis.clients.jedis", "com.kingpixel.cobbleutils.redis.clients.jedis")
     relocate("org.apache.commons.commons-pool2", "com.kingpixel.cobbleutils.org.apache.commons.pool2")
-    relocate("net.kyori.adventure.text.serializer", "com.kingpixel.cobbleutils.kyori.adventure.serializer")
-    relocate("net.kyori.adventure.text.minimessage", "com.kingpixel.cobbleutils.kyori.adventure.minimessage")
-    relocate("net.kyori.option", "com.kingpixel.cobbleutils.kyori.option")
+
+
+    //relocate("net.kyori.adventure.text.serializer", "com.kingpixel.cobbleutils.kyori.adventure.serializer")
+    //relocate("net.kyori.adventure.text.minimessage", "com.kingpixel.cobbleutils.kyori.adventure.minimessage")
+    //relocate("net.kyori.option", "com.kingpixel.cobbleutils.kyori.option")
 
 
     // Configuración del jar sombreado

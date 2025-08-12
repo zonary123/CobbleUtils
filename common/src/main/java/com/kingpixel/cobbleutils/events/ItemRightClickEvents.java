@@ -13,20 +13,28 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.util.Hand;
 
+import java.util.concurrent.CompletableFuture;
+
 /**
  * @author Carlos Varas Alonso - 25/06/2024 19:38
  */
 public class ItemRightClickEvents {
   public static CompoundEventResult register(PlayerEntity player, Hand hand) {
-    if (player.isInPose(EntityPose.CROUCHING)) return CompoundEventResult.pass();
-    ItemStack itemStack = player.getStackInHand(hand);
-    if (itemStack.isEmpty()) return CompoundEventResult.pass();
-    NbtComponent tag = itemStack.get(DataComponentTypes.CUSTOM_DATA);
-    if (tag == null) return CompoundEventResult.pass();
-    if (tag.contains("shinytoken") && itemStack.getItem() == CobbleUtils.config.getShinytoken().getItemStack().getItem()) {
-      if (!CobbleUtils.config.isActiveshinytoken()) return CompoundEventResult.pass();
-      open(PlayerUtils.castPlayer(player), itemStack);
-    }
+    CompletableFuture.runAsync(() -> {
+        if (player.isInPose(EntityPose.CROUCHING)) return;
+        ItemStack itemStack = player.getStackInHand(hand);
+        if (itemStack.isEmpty()) return;
+        NbtComponent tag = itemStack.get(DataComponentTypes.CUSTOM_DATA);
+        if (tag == null) return;
+        if (tag.contains("shinytoken") && itemStack.getItem() == CobbleUtils.config.getShinytoken().getItemStack().getItem()) {
+          if (!CobbleUtils.config.isActiveshinytoken()) return;
+          open(PlayerUtils.castPlayer(player), itemStack);
+        }
+      }, CobbleUtils.EXECUTOR_COBBLEUTILS)
+      .exceptionally(e -> {
+        e.printStackTrace();
+        return null;
+      });
     return CompoundEventResult.pass();
   }
 

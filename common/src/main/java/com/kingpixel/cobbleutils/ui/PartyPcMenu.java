@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -90,98 +91,108 @@ public class PartyPcMenu {
   }
 
   public void openPc(PartyPcMenuBuilder builder, int pos) {
-    if (isOnCooldown(builder.getPlayer())) {
-      if (CobbleUtils.config.isDebug())
-        CobbleUtils.LOGGER.warn("Player " + builder.getPlayer().getName().getString() + " is on cooldown for opening PC menu.");
-      return;
-    }
+    CompletableFuture.runAsync(() -> {
+        if (isOnCooldown(builder.getPlayer())) {
+          if (CobbleUtils.config.isDebug())
+            CobbleUtils.LOGGER.warn("Player " + builder.getPlayer().getName().getString() + " is on cooldown for opening PC menu.");
+          return;
+        }
+        long startTime = System.currentTimeMillis();
+        ChestTemplate template = ChestTemplate.builder(rowsPc).build();
+        PanelsConfig.applyConfig(template, panelsPc);
 
-    long startTime = System.currentTimeMillis();
-    ChestTemplate template = ChestTemplate.builder(rowsPc).build();
-    PanelsConfig.applyConfig(template, panelsPc);
+        var pc = Cobblemon.INSTANCE.getStorage().getPC(builder.getPlayer());
+        List<Pokemon> pokemons = new ArrayList<>();
+        for (Pokemon pokemon : pc) {
+          if (pokemon != null && !isBanned(pokemon, builder)) {
+            pokemons.add(pokemon);
+          }
+        }
 
-    var pc = Cobblemon.INSTANCE.getStorage().getPC(builder.getPlayer());
-    List<Pokemon> pokemons = new ArrayList<>();
-    for (Pokemon pokemon : pc) {
-      if (pokemon != null && !isBanned(pokemon, builder)) {
-        pokemons.add(pokemon);
-      }
-    }
+        int maxSize = pokemons.size();
+        if (maxSize == 0) return;
 
-    int maxSize = pokemons.size();
-    if (maxSize == 0) return;
+        Rectangle rectangle = rectanglePc;
+        int index = 0;
+        int currentIndex;
+        for (int row = rectangle.getStartRow(); row < rectangle.getLength() + rectangle.getStartRow(); row++) {
+          for (int column = rectangle.getStartColumn(); column < rectangle.getWidth() + rectangle.getStartColumn(); column++) {
+            currentIndex = pos + index;
+            if (currentIndex >= maxSize) break;
+            Pokemon pokemon = pokemons.get(currentIndex);
+            GooeyButton.Builder button = createPokemonButton(pokemon, builder);
+            template.set(row, column, button.build());
+            index++;
+          }
+        }
 
-    Rectangle rectangle = rectanglePc;
-    int index = 0;
-    int currentIndex;
-    for (int row = rectangle.getStartRow(); row < rectangle.getLength() + rectangle.getStartRow(); row++) {
-      for (int column = rectangle.getStartColumn(); column < rectangle.getWidth() + rectangle.getStartColumn(); column++) {
-        currentIndex = pos + index;
-        if (currentIndex >= maxSize) break;
-        Pokemon pokemon = pokemons.get(currentIndex);
-        GooeyButton.Builder button = createPokemonButton(pokemon, builder);
-        template.set(row, column, button.build());
-        index++;
-      }
-    }
+        applyPaginationButtons(template, pos, maxSize, rectangle, builder);
 
-    applyPaginationButtons(template, pos, maxSize, rectangle, builder);
+        GooeyPage page = GooeyPage.builder()
+          .title(AdventureTranslator.toNative(titlePc))
+          .template(template)
+          .build();
 
-    GooeyPage page = GooeyPage.builder()
-      .title(AdventureTranslator.toNative(titlePc))
-      .template(template)
-      .build();
-
-    UIManager.openUIForcefully(builder.getPlayer(), page);
-    long endTime = System.currentTimeMillis();
-    if (CobbleUtils.config.isDebug()) {
-      CobbleUtils.LOGGER.info("Time taken to open PC menu: " + (endTime - startTime) + "ms");
-    }
+        UIManager.openUIForcefully(builder.getPlayer(), page);
+        long endTime = System.currentTimeMillis();
+        if (CobbleUtils.config.isDebug()) {
+          CobbleUtils.LOGGER.info("Time taken to open PC menu: " + (endTime - startTime) + "ms");
+        }
+      }, CobbleUtils.EXECUTOR_COBBLEUTILS)
+      .exceptionally(e -> {
+        e.printStackTrace();
+        return null;
+      });
   }
 
   public void openParty(PartyPcMenuBuilder builder) {
-    if (isOnCooldown(builder.getPlayer())) {
-      if (CobbleUtils.config.isDebug())
-        CobbleUtils.LOGGER.warn("Player " + builder.getPlayer().getName().getString() + " is on cooldown for opening Party menu.");
-      return;
-    }
-    
-    long startTime = System.currentTimeMillis();
-    ChestTemplate template = ChestTemplate
-      .builder(rowsParty)
-      .build();
+    CompletableFuture.runAsync(() -> {
+        if (isOnCooldown(builder.getPlayer())) {
+          if (CobbleUtils.config.isDebug())
+            CobbleUtils.LOGGER.warn("Player " + builder.getPlayer().getName().getString() + " is on cooldown for opening Party menu.");
+          return;
+        }
+        long startTime = System.currentTimeMillis();
+        ChestTemplate template = ChestTemplate
+          .builder(rowsParty)
+          .build();
 
-    PanelsConfig.applyConfig(template, panelsParty);
+        PanelsConfig.applyConfig(template, panelsParty);
 
-    if (builder.getTemplateConsumer() != null) {
-      builder.getTemplateConsumer().accept(template);
-    }
+        if (builder.getTemplateConsumer() != null) {
+          builder.getTemplateConsumer().accept(template);
+        }
 
-    var party = Cobblemon.INSTANCE.getStorage().getParty(builder.getPlayer());
+        var party = Cobblemon.INSTANCE.getStorage().getParty(builder.getPlayer());
 
-    for (int i = 0; i < slotsParty.length; i++) {
-      int slot = slotsParty[i];
-      Pokemon pokemon = party.get(i);
-      GooeyButton.Builder button = createPokemonButton(pokemon, builder);
-      template.set(slot, button.build());
-    }
+        for (int i = 0; i < slotsParty.length; i++) {
+          int slot = slotsParty[i];
+          Pokemon pokemon = party.get(i);
+          GooeyButton.Builder button = createPokemonButton(pokemon, builder);
+          template.set(slot, button.build());
+        }
 
-    closeParty.applyTemplate(template, closeParty.getButton(close -> UIManager.closeUI(close.getPlayer())));
+        closeParty.applyTemplate(template, closeParty.getButton(close -> UIManager.closeUI(close.getPlayer())));
 
-    pc.applyTemplate(template, pc.getButton(action -> {
-      openPc(builder, 0);
-    }));
+        pc.applyTemplate(template, pc.getButton(action -> {
+          openPc(builder, 0);
+        }));
 
-    GooeyPage page = GooeyPage.builder()
-      .title(AdventureTranslator.toNative(titleParty))
-      .template(template)
-      .build();
+        GooeyPage page = GooeyPage.builder()
+          .title(AdventureTranslator.toNative(titleParty))
+          .template(template)
+          .build();
 
-    UIManager.openUIForcefully(builder.getPlayer(), page);
-    long endTime = System.currentTimeMillis();
-    if (CobbleUtils.config.isDebug()) {
-      CobbleUtils.LOGGER.info("Time taken to open Party menu: " + (endTime - startTime) + "ms");
-    }
+        UIManager.openUIForcefully(builder.getPlayer(), page);
+        long endTime = System.currentTimeMillis();
+        if (CobbleUtils.config.isDebug()) {
+          CobbleUtils.LOGGER.info("Time taken to open Party menu: " + (endTime - startTime) + "ms");
+        }
+      }, CobbleUtils.EXECUTOR_COBBLEUTILS)
+      .exceptionally(e -> {
+        e.printStackTrace();
+        return null;
+      });
   }
 
   private static final Map<UUID, Long> cooldowns = new ConcurrentHashMap<>();

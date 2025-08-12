@@ -15,6 +15,7 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.server.network.ServerPlayerEntity;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
 @Data
@@ -51,35 +52,41 @@ public class ConfirmMenu {
 
   public void open(ServerPlayerEntity player, ItemStack itemStack, Consumer<ButtonAction> onConfirm,
                    Consumer<ButtonAction> onCancel) {
-    ChestTemplate template = ChestTemplate.builder(rows).build();
+    CompletableFuture.runAsync(() -> {
+        ChestTemplate template = ChestTemplate.builder(rows).build();
 
-    // Aplicar paneles decorativos
-    PanelsConfig.applyConfig(template, panels);
+        // Aplicar paneles decorativos
+        PanelsConfig.applyConfig(template, panels);
 
-    // Mostrar el ítem principal en el slot correspondiente
-    template.set(slotDisplay, GooeyButton.of(itemStack));
+        // Mostrar el ítem principal en el slot correspondiente
+        template.set(slotDisplay, GooeyButton.of(itemStack));
 
-    // Botón de confirmación
-    if (confirm != null) {
-      confirm.applyTemplate(template, confirm.getButton(onConfirm));
-    }
+        // Botón de confirmación
+        if (confirm != null) {
+          confirm.applyTemplate(template, confirm.getButton(onConfirm));
+        }
 
-    // Botón de cancelación
-    if (cancel != null) {
-      cancel.applyTemplate(template, cancel.getButton(onCancel));
-    }
+        // Botón de cancelación
+        if (cancel != null) {
+          cancel.applyTemplate(template, cancel.getButton(onCancel));
+        }
 
-    // Botón de cierre
-    if (close != null) {
-      close.applyTemplate(template, close.getButton(onCancel));
-    }
+        // Botón de cierre
+        if (close != null) {
+          close.applyTemplate(template, close.getButton(onCancel));
+        }
 
-    // Crear y abrir la página del menú
-    GooeyPage page = GooeyPage.builder()
-      .title(AdventureTranslator.toNative(title))
-      .template(template)
-      .build();
+        // Crear y abrir la página del menú
+        GooeyPage page = GooeyPage.builder()
+          .title(AdventureTranslator.toNative(title))
+          .template(template)
+          .build();
 
-    UIManager.openUIForcefully(player, page);
+        UIManager.openUIForcefully(player, page);
+      }, CobbleUtils.EXECUTOR_COBBLEUTILS)
+      .exceptionally(e -> {
+        e.printStackTrace();
+        return null;
+      });
   }
 }

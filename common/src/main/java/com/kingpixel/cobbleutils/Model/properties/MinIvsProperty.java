@@ -16,7 +16,8 @@ import java.util.List;
  * @author Carlos Varas Alonso - 04/08/2024 19:40
  */
 public class MinIvsProperty implements CustomPokemonProperty {
-  private String value;
+  private static final List<Stats> stats = new ArrayList<>(Arrays.stream(Stats.values()).filter(stats1 -> stats1 != Stats.EVASION && stats1 != Stats.ACCURACY).toList());
+  private final String value;
 
   public MinIvsProperty(String value) {
     this.value = value;
@@ -36,8 +37,6 @@ public class MinIvsProperty implements CustomPokemonProperty {
   }
 
 
-  private static final List<Stats> stats = new ArrayList<>(Arrays.stream(Stats.values()).filter(stats1 -> stats1 != Stats.EVASION && stats1 != Stats.ACCURACY).toList());
-
   private void applyMinIvs(Pokemon pokemon) {
     if (this.value == null || this.value.isEmpty()) return;
 
@@ -52,14 +51,18 @@ public class MinIvsProperty implements CustomPokemonProperty {
 
       List<Stats> statsCopy = new ArrayList<>(stats);
       for (int i = 0; i < amountOfStats && !statsCopy.isEmpty(); i++) {
-        Stats selectedStat = statsCopy.remove(Utils.RANDOM.nextInt(statsCopy.size()));
+        var stat = statsCopy.get(Utils.RANDOM.nextInt(statsCopy.size()));
+        statsCopy.remove(stat);
         int iv = Utils.RANDOM.nextInt(min, 32);
 
         if (CobbleUtils.config.isDebug()) {
-          CobbleUtils.LOGGER.info("Setting IVs for " + pokemon.getSpecies().getName() + " to " + iv + " in " + selectedStat.getShowdownId());
+          CobbleUtils.LOGGER.info("Setting IVs for " + pokemon.getSpecies().getName() + " to " + iv + " in " + stat.getShowdownId());
         }
 
-        pokemon.getIvs().set(selectedStat, iv);
+        pokemon.getIvs().set(stat, iv);
+      }
+      for (Stats stats1 : statsCopy) {
+        pokemon.getIvs().set(stats1, Utils.RANDOM.nextInt(min, 32));
       }
     } catch (NumberFormatException e) {
       CobbleUtils.LOGGER.error("Invalid value format for MinIvsProperty: " + this.value);

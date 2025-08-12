@@ -33,8 +33,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 /**
@@ -69,7 +67,7 @@ public class AdvancedItemChance {
     //this.sound = "minecraft:block.note_block.harp";
     this.newSound = new Sound();
     this.particle = new Particle();
-    this.animation = Animations.CIRCLE;
+    this.animation = Animations.NONE;
     this.lootTable = new HashMap<>();
     lootTable.put("", ItemChance.defaultItemChances());
     List<ItemChance> itemChances = new ArrayList<>();
@@ -83,6 +81,7 @@ public class AdvancedItemChance {
 
   public boolean checker(ServerPlayerEntity player) {
     TypeError typeError = TypeError.NONE;
+    if (animation == null) animation = Animations.NONE;
 
     for (Map.Entry<String, Integer> entry : amountRewardsPermission.entrySet()) {
       int value = entry.getValue();
@@ -143,29 +142,26 @@ public class AdvancedItemChance {
 
   public void giveRewards(ServerPlayerEntity player) {
     if (checker(player)) return;
+    CobbleUtils.server.executeSync(() -> {
+      List<ItemChance> obtainedRewards = getList(player);
+      List<ItemChance> allRewards = obtainedRewards;
 
-    List<ItemChance> obtainedRewards = getList(player);
-    List<ItemChance> allRewards = obtainedRewards;
+      if (giveAll) {
+        ItemChance.getAllRewards(obtainedRewards, player);
+      } else {
+        obtainedRewards = ItemChance.getRewards(obtainedRewards, player, getAmountReward(player));
+      }
 
-    if (giveAll) {
-      ItemChance.getAllRewards(obtainedRewards, player);
-    } else {
-      obtainedRewards = ItemChance.getRewards(obtainedRewards, player, getAmountReward(player));
-    }
+      List<ItemStack> showAllRewards = getListDisplay(allRewards);
+      List<ItemStack> showObtainedRewards = getListDisplay(obtainedRewards);
+      if (getNewSound() != null)
+        getNewSound().start(player);
 
-    if (getNewSound() != null) {
-      //SoundUtil.playSound(sound, player);
-      getNewSound().start(player);
-    }
+      if (particle != null) particle.sendParticles(player, player);
 
-    if (particle != null) {
-      particle.sendParticles(player, player);
-    }
-    List<ItemStack> showAllRewards = getListDisplay(allRewards);
-    List<ItemStack> showObtainedRewards = getListDisplay(obtainedRewards);
+      initAnimation(animation, player, showAllRewards, showObtainedRewards);
+    });
 
-
-    initAnimation(animation, player, showAllRewards, showObtainedRewards);
   }
 
 
@@ -198,64 +194,47 @@ public class AdvancedItemChance {
 
   public void openMenu(ServerPlayerEntity player, Consumer<ChestTemplate> templateConsumer) {
     if (!showMenu) return;
-    CompletableFuture.runAsync(() -> {
-        ChestTemplate template = ChestTemplate.builder(6)
-          .build();
+    CobbleUtils.EXECUTOR_COBBLEUTILS.execute(() -> {
+      ChestTemplate template = ChestTemplate.builder(6)
+        .build();
 
-        ItemModel itemClose = CobbleUtils.language.getItemClose();
-        template.set(49, itemClose.getButton(action -> {
-          UIManager.closeUI(action.getPlayer());
-        }));
+      ItemModel itemClose = CobbleUtils.language.getItemClose();
+      template.set(49, itemClose.getButton(action -> {
+        UIManager.closeUI(action.getPlayer());
+      }));
 
-        templateConsumer.accept(template);
-        applyTemplate(player, template);
-      })
-      .orTimeout(5, TimeUnit.SECONDS)
-      .exceptionally(e -> {
-        e.printStackTrace();
-        return null;
-      });
+      templateConsumer.accept(template);
+      applyTemplate(player, template);
+    });
   }
 
   public void openMenu(ServerPlayerEntity player, Consumer<ChestTemplate> templateConsumer,
                        Consumer<ButtonAction> close) {
     if (!showMenu) return;
-    CompletableFuture.runAsync(() -> {
-        ChestTemplate template = ChestTemplate.builder(6)
-          .build();
+    CobbleUtils.EXECUTOR_COBBLEUTILS.execute(() -> {
+      ChestTemplate template = ChestTemplate.builder(6)
+        .build();
 
-        ItemModel itemClose = CobbleUtils.language.getItemClose();
-        template.set(49, itemClose.getButton(close));
+      ItemModel itemClose = CobbleUtils.language.getItemClose();
+      template.set(49, itemClose.getButton(close));
 
-        templateConsumer.accept(template);
-        applyTemplate(player, template);
-      })
-      .orTimeout(5, TimeUnit.SECONDS)
-      .exceptionally(e -> {
-        e.printStackTrace();
-        return null;
-      });
-
+      templateConsumer.accept(template);
+      applyTemplate(player, template);
+    });
   }
 
   @Deprecated
   public void openMenu(ServerPlayerEntity player) {
     if (!showMenu) return;
-    CompletableFuture.runAsync(() -> {
-        ChestTemplate template = ChestTemplate.builder(6)
-          .build();
+    CobbleUtils.EXECUTOR_COBBLEUTILS.execute(() -> {
+      ChestTemplate template = ChestTemplate.builder(6)
+        .build();
 
-        template.set(49, CobbleUtils.language.getItemClose().getButton(action -> {
-          UIManager.closeUI(action.getPlayer());
-        }));
-        applyTemplate(player, template);
-      })
-      .orTimeout(5, TimeUnit.SECONDS)
-      .exceptionally(e -> {
-        e.printStackTrace();
-        return null;
-      });
-
+      template.set(49, CobbleUtils.language.getItemClose().getButton(action -> {
+        UIManager.closeUI(action.getPlayer());
+      }));
+      applyTemplate(player, template);
+    });
   }
 
   private void applyTemplate(ServerPlayerEntity player, ChestTemplate template) {

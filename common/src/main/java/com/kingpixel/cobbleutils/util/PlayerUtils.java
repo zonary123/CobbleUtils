@@ -196,13 +196,18 @@ public class PlayerUtils {
     return result.isEmpty() ? CobbleUtils.language.getNocooldown() : result.toString().trim();
   }
 
-  public static ItemStack getHeadItem(ServerPlayerEntity player) {
-    if (player != null) {
+  public static ItemStack getHeadItem(UUID playerUUID) {
+    var userCache = CobbleUtils.server.getUserCache().getByUuid(playerUUID);
+    if (userCache.isPresent()) {
       ItemStack itemStack = Items.PLAYER_HEAD.getDefaultStack();
-      itemStack.set(DataComponentTypes.PROFILE, new ProfileComponent(player.getGameProfile()));
+      itemStack.set(DataComponentTypes.PROFILE, new ProfileComponent(userCache.get()));
       return itemStack;
     }
     return Utils.parseItemId("minecraft:player_head");
+  }
+
+  public static ItemStack getHeadItem(ServerPlayerEntity player) {
+    return getHeadItem(player.getUuid());
   }
 
   /**

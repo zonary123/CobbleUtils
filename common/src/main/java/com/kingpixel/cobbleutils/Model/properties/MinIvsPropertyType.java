@@ -13,6 +13,7 @@ import java.util.Set;
  * @author Carlos Varas Alonso - 04/08/2024 19:40
  */
 public class MinIvsPropertyType implements CustomPokemonPropertyType<MinIvsProperty> {
+  public static final MinIvsPropertyType INSTANCE = new MinIvsPropertyType();
 
   public MinIvsPropertyType() {
   }

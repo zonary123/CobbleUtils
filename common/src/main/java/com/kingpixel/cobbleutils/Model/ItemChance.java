@@ -25,7 +25,6 @@ import net.minecraft.component.type.LoreComponent;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.util.Unit;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -419,7 +418,6 @@ public class ItemChance {
     String[] parts = item.split("\\|");
     if (parts.length > 1) {
       itemStack = getRewardItemStack(parts[0], amount);
-      itemStack.set(DataComponentTypes.HIDE_ADDITIONAL_TOOLTIP, Unit.INSTANCE);
       return itemStack;
     }
     if (item.startsWith("pokemon:")) {
@@ -435,7 +433,6 @@ public class ItemChance {
     } else {
       itemStack = Utils.parseItemId(item, amount);
     }
-    itemStack.set(DataComponentTypes.HIDE_ADDITIONAL_TOOLTIP, Unit.INSTANCE);
     return itemStack;
   }
 

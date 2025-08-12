@@ -95,22 +95,12 @@ public abstract class Utils {
       .registerTypeAdapter(DateTypeAdapter.class, new DateTypeAdapter())
       .registerTypeAdapter(Pokemon.class, PokemonAdapter.INSTANCE)
       .registerTypeAdapter(ItemStack.class, ItemStackAdapter.INSTANCE);
-    //.registerTypeAdapter(Enchantment.class, EnchantmentsAdapter.INSTANCE);
   }
 
-  public static ExecutorService IO_EXECUTOR = Executors.newFixedThreadPool(8, new ThreadFactoryBuilder()
+  public static ExecutorService IO_EXECUTOR = Executors.newFixedThreadPool(16, new ThreadFactoryBuilder()
     .setDaemon(true)
-    .setNameFormat("CobbleUtils IO Executor - %d")
+    .setNameFormat("CobbleUtils IO Executor-%d")
     .build());
-
-/*  private static <T> CompletableFuture<T> withTimeout(CompletableFuture<T> future, long timeout, TimeUnit unit) {
-    CompletableFuture<T> timeoutFuture = new CompletableFuture<>();
-    IO_EXECUTOR.schedule(() -> {
-      timeoutFuture.completeExceptionally(new TimeoutException("Operation timed out after " + timeout + " " + unit));
-    }, timeout, unit);
-
-    return CompletableFuture.anyOf(future, timeoutFuture).thenApply(result -> (T) result);
-  }*/
 
   public static CompletableFuture<Boolean> writeFileAsync(String filePath, String filename, String data) {
     if (filePath == null || filename == null || data == null) {
@@ -118,7 +108,7 @@ public abstract class Utils {
       return CompletableFuture.completedFuture(false);
     }
 
-    CompletableFuture<Boolean> writeFuture = CompletableFuture.supplyAsync(() -> {
+    return CompletableFuture.supplyAsync(() -> {
       Path path = Paths.get(new File("").getAbsolutePath() + filePath, filename);
       File file = path.toFile();
 
@@ -134,8 +124,6 @@ public abstract class Utils {
         return false;
       }
     }, IO_EXECUTOR);
-
-    return writeFuture;
   }
 
   public static boolean writeFileSync(File file, String data) {
@@ -154,7 +142,8 @@ public abstract class Utils {
       return CompletableFuture.completedFuture(false);
     }
 
-    CompletableFuture<Boolean> readFuture = CompletableFuture.supplyAsync(() -> {
+    // Optional: Add timeout handling
+    return CompletableFuture.supplyAsync(() -> {
       Path path = Paths.get(new File("").getAbsolutePath() + filePath, filename);
       File file = path.toFile();
 
@@ -172,9 +161,6 @@ public abstract class Utils {
         return false;
       }
     }, IO_EXECUTOR);
-
-    // Optional: Add timeout handling
-    return readFuture;
   }
 
   public static boolean readFileSync(File file, Consumer<String> callback) {
@@ -206,7 +192,7 @@ public abstract class Utils {
       return CompletableFuture.completedFuture(false);
     }
 
-    CompletableFuture<Boolean> writeFuture = CompletableFuture.supplyAsync(() -> {
+    return CompletableFuture.supplyAsync(() -> {
       try {
         Files.writeString(file.toPath(), content, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
         return true;
@@ -215,8 +201,6 @@ public abstract class Utils {
         return false;
       }
     }, IO_EXECUTOR);
-
-    return writeFuture;
   }
 
   /**

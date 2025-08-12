@@ -134,10 +134,14 @@ public class Particle {
     int offsetY = this.getOffsetY() == null ? 0 : this.getOffsetY();
     int offsetZ = this.getOffsetZ() == null ? 0 : this.getOffsetZ();
     int speed = this.getSpeed() == null ? 0 : this.getSpeed();
+    Entity finalEntity = entity;
+    if (entity.getVehicle() != null) {
+      finalEntity = entity.getVehicle();
+    }
 
     return new ParticleS2CPacket(particleType, true,
-      entity.getX(),
-      entity.getY(), entity.getZ(), offsetX, offsetY, offsetZ, speed, this.getNumberParticles());
+      finalEntity.getX(),
+      finalEntity.getY(), finalEntity.getZ(), offsetX, offsetY, offsetZ, speed, this.getNumberParticles());
 
   }
 }

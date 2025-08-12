@@ -9,7 +9,12 @@ public class AnimationUtils {
   public static Vec3d getPosition(ServerPlayerEntity player, Vec3d position) {
     if (position == null) {
       Vec3d handOffset = new Vec3d(0, 0, 0);
-      return player.getPos().add(handOffset);
+      var vehicle = player.getVehicle();
+      if (vehicle != null) {
+        return vehicle.getPos().add(handOffset);
+      } else {
+        return player.getPos().add(handOffset);
+      }
     }
     return position;
   }
