@@ -87,7 +87,7 @@ public class PlayerUtils {
    */
   public static void sendMessage(ServerPlayerEntity player, String message, String prefix, TypeMessage typeMessage) {
     CompletableFuture.runAsync(() -> {
-        if (message.isEmpty()) return;
+        if (player == null || message.isEmpty()) return;
 
         if (CobbleUtils.config.isRedisMessaging()) {
           sendMessage(player.getUuid(), message, prefix, typeMessage);
