@@ -45,6 +45,7 @@ public class AdventureTranslator {
   public static final MiniMessage miniMessage = MiniMessage.miniMessage();
   public static LegacyComponentSerializer legacyComponentSerializer = LegacyComponentSerializer.builder()
     .character('§')
+    .character('&')
     .hexColors()
     .build();
 
@@ -103,17 +104,22 @@ public class AdventureTranslator {
 
 
   public static List<Text> toNativeL(List<String> lore) {
-    List<Text> loreString = new ArrayList<>(lore.size());
-    for (String loreLine : lore) {
+    int size = lore.size();
+    List<Text> loreString = new ArrayList<>(size);
+    for (int i = 0; i < size; i++) {
+      String loreLine = lore.get(i);
+      if (loreLine == null || loreLine.isEmpty()) continue;
       loreString.add(toNative(miniMessage.deserialize(replaceNative(loreLine)), null));
     }
-
     return loreString;
   }
 
   public static List<Text> toNativeL(List<String> lore, @Nullable ServerPlayerEntity player) {
-    List<Text> loreString = new ArrayList<>(lore.size());
-    for (String loreLine : lore) {
+    int size = lore.size();
+    List<Text> loreString = new ArrayList<>(size);
+    for (int i = 0; i < size; i++) {
+      String loreLine = lore.get(i);
+      if (loreLine == null || loreLine.isEmpty()) continue;
       loreString.add(toNative(miniMessage.deserialize(replaceNative(loreLine)), player));
     }
     return loreString;

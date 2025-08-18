@@ -179,17 +179,23 @@ public class EconomyApi {
   public static boolean transferMoney(UUID fromPlayerUuid, UUID toPlayerUuid, BigDecimal money, EconomyUse economy,
                                       boolean needHasEnough) {
     if (needHasEnough && !hasEnoughMoney(fromPlayerUuid, money, economy, true)) {
-      CobbleUtils.LOGGER.info("Player " + fromPlayerUuid + " does not have enough money to transfer " + money +
-        " to " + toPlayerUuid + " using " + economy.getEconomyId());
+      if (CobbleUtils.config.isDebug()) {
+        CobbleUtils.LOGGER.info("Player " + fromPlayerUuid + " does not have enough money to transfer " + money +
+          " to " + toPlayerUuid + " using " + economy.getEconomyId());
+      }
       return false;
     }
     if (addMoney(toPlayerUuid, money, economy)) {
-      CobbleUtils.LOGGER.info("Transferred " + money + " from " + fromPlayerUuid + " to " + toPlayerUuid +
-        " using " + economy.getEconomyId());
+      if (CobbleUtils.config.isDebug()) {
+        CobbleUtils.LOGGER.info("Transferred " + money + " from " + fromPlayerUuid + " to " + toPlayerUuid +
+          " using " + economy.getEconomyId());
+      }
       return removeMoney(fromPlayerUuid, money, economy);
     }
-    CobbleUtils.LOGGER.info("Failed to transfer " + money + " from " + fromPlayerUuid + " to " + toPlayerUuid +
-      " using " + economy.getEconomyId());
+    if (CobbleUtils.config.isDebug()) {
+      CobbleUtils.LOGGER.info("Failed to transfer " + money + " from " + fromPlayerUuid + " to " + toPlayerUuid +
+        " using " + economy.getEconomyId());
+    }
     return false;
   }
 

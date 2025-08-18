@@ -12,6 +12,8 @@ import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
 import org.intellij.lang.annotations.Subst;
 
 import java.math.BigDecimal;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -58,8 +60,16 @@ public class ImpactorEconomy extends EconomyAbstract {
     return getAccount(playerUuid, currency).set(money).successful();
   }
 
+  private final Map<String, String> symbols = new HashMap<>();
+
   @Override public String getSymbol(String currency) {
-    return GsonComponentSerializer.gson().serialize(getCurrency(currency).symbol());
+    String result = symbols.get(currency);
+    if (result == null) {
+      result = GsonComponentSerializer.gson().serialize(getCurrency(currency).symbol());
+      symbols.put(currency, result);
+      return result;
+    }
+    return result;
   }
 
   /**
@@ -75,13 +85,22 @@ public class ImpactorEconomy extends EconomyAbstract {
     return service.account(getCurrency(currency), uuid).join();
   }
 
+  private final Map<String, Currency> currencies = new HashMap<>();
+
   private Currency getCurrency(@Subst("") String currency) {
+    Currency result = currencies.get(currency);
+    if (result != null) return result;
     if (!currency.contains(":")) currency = "impactor:" + currency;
     var c = service.currencies().currency(Key.key(currency));
-    if (c.isPresent()) return c.get();
+    if (c.isPresent()) {
+      result = c.get();
+      currencies.put(currency, result);
+      return result;
+    }
     if (CobbleUtils.config.isDebug())
       CobbleUtils.LOGGER.error("Currency not found: " + currency + " using primary currency");
-    return service.currencies().primary();
+    result = service.currencies().primary();
+    return result;
   }
 
   @Override public int getDecimals(String currency) {

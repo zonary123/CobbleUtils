@@ -59,7 +59,9 @@ public class PanelsConfig {
         .with(DataComponentTypes.HIDE_ADDITIONAL_TOOLTIP, Unit.INSTANCE)
         .with(DataComponentTypes.HIDE_TOOLTIP, Unit.INSTANCE)
         .build();
-      for (Integer slot : panelsConfig.slots) {
+      int size = panelsConfig.getSlots().size();
+      for (int i = 0; i < size; i++) {
+        Integer slot = panelsConfig.getSlots().get(i);
         if (UIUtils.isInside(slot, rows))
           template.set(slot, button);
       }
