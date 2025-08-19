@@ -13,6 +13,7 @@ import org.intellij.lang.annotations.Subst;
 
 import java.math.BigDecimal;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
 
@@ -50,23 +51,57 @@ public class ImpactorEconomy extends EconomyAbstract {
     return getAccount(playerUuid, currency).balance();
   }
 
-  @Override public String format(BigDecimal money, String currency) {
-    return AdventureTranslator.legacyComponentSerializer.serialize(
+  /**
+   * Cache size for the format method.
+   * This is used to cache formatted money strings to avoid reformatting the same amount multiple times.
+   * The cache will remove the least recently used entry when it exceeds the specified size.
+   */
+  private static final int CACHE_SIZE = 1000;
+  private static final Map<String, String> formatCache = new LinkedHashMap<>(CACHE_SIZE, 0.75f, true) {
+    @Override
+    protected boolean removeEldestEntry(Map.Entry<String, String> eldest) {
+      if (CobbleUtils.config.isDebug()) {
+        CobbleUtils.LOGGER.info("Removing eldest entry from format cache: " + eldest.getKey());
+      }
+      return size() > CACHE_SIZE;
+    }
+  };
+
+  @Override
+  public String format(BigDecimal money, String currency) {
+    String key = (money.toPlainString().intern() + "|" + currency.intern()).intern();
+    String cached = formatCache.get(key);
+    if (cached != null) {
+      if (CobbleUtils.config.isDebug()) {
+        CobbleUtils.LOGGER.info("Using cached format for: " + key);
+      }
+      return cached;
+    }
+    String formatted = AdventureTranslator.legacyComponentSerializer.serialize(
       getCurrency(currency).format(money)
     );
+    if (CobbleUtils.config.isDebug()) {
+      CobbleUtils.LOGGER.info("Formatting money: " + money + " in currency: " + currency + " to: " + formatted);
+    }
+    formatCache.put(key, formatted);
+    return formatted;
   }
 
   @Override public boolean setBalance(UUID playerUuid, BigDecimal money, String currency) {
     return getAccount(playerUuid, currency).set(money).successful();
   }
 
-  private final Map<String, String> symbols = new HashMap<>();
+  /**
+   * Cache for currency symbols to avoid repeated lookups.
+   * This cache stores the serialized symbol of each currency.
+   */
+  private static final Map<String, String> SYMBOLS_CACHE = new HashMap<>();
 
   @Override public String getSymbol(String currency) {
-    String result = symbols.get(currency);
+    String result = SYMBOLS_CACHE.get(currency);
     if (result == null) {
       result = GsonComponentSerializer.gson().serialize(getCurrency(currency).symbol());
-      symbols.put(currency, result);
+      SYMBOLS_CACHE.put(currency, result);
       return result;
     }
     return result;

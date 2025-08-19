@@ -27,17 +27,14 @@ public class CSGOAnimation {
   private static final double decayFactor = 1.1; // Increases how fast it slows down the animation
 
   public static void start(ServerPlayerEntity player, List<ItemStack> showAllRewards, List<ItemStack> showRewards) {
-    // Sonido inicial en main thread
-    CobbleUtils.server.executeSync(() ->
-      player.playSoundToPlayer(SoundEvents.BLOCK_CHEST_OPEN, player.getSoundCategory(), 1.0f, 1.0f)
-    );
-
     CompletableFuture.runAsync(() -> {
+      player.playSoundToPlayer(SoundEvents.BLOCK_CHEST_OPEN, player.getSoundCategory(), 1.0f, 1.0f);
+
       try {
         ChestTemplate template = ChestTemplate.builder(3).build();
         fillGuiWithGlass(template);
 
-        List<ItemStack> rewards = showAllRewards; // no copia innecesaria
+        List<ItemStack> rewards = showAllRewards;
         ItemStack[] currentItems = new ItemStack[spinSlots.length];
         for (int i = 0; i < spinSlots.length; i++) {
           currentItems[i] = rewards.get((currentIndex + i) % rewards.size());
@@ -45,7 +42,14 @@ public class CSGOAnimation {
 
         int rewardCycle = totalCycles - 4;
         int spinSpeed = startSpinSpeed;
+        GooeyPage page = GooeyPage.builder()
+          .template(template)
+          .onClose(action -> {
+            Thread.currentThread().interrupt();
+          })
+          .build();
 
+        UIManager.openUIForcefully(player, page);
         for (int i = 0; i < totalCycles; i++) {
           double progress = (double) i / (totalCycles - 1);
           double dynamicDecayFactor = i >= totalCycles - 10 ? 1.2 : decayFactor;
@@ -63,19 +67,18 @@ public class CSGOAnimation {
 
           // Aquí solo la parte que toca MC en main thread
           ItemStack[] finalItems = currentItems.clone();
-          CobbleUtils.server.executeSync(() -> {
-            for (int j = 0; j < spinSlots.length; j++) {
-              template.set(spinSlots[j], guiButtons(finalItems[j]));
-            }
-            player.playSoundToPlayer(SoundEvents.ENTITY_EXPERIENCE_ORB_PICKUP, player.getSoundCategory(), 1.0f, 1.0f);
-            UIManager.openUIForcefully(player, GooeyPage.builder().template(template).build());
-          });
 
-          Thread.sleep(spinSpeed); // espera solo en async
+          for (int j = 0; j < spinSlots.length; j++) {
+            template.set(spinSlots[j], guiButtons(finalItems[j]));
+          }
+          player.playSoundToPlayer(SoundEvents.ENTITY_EXPERIENCE_ORB_PICKUP, player.getSoundCategory(), 1.0f, 1.0f);
+
+          Thread.sleep(spinSpeed);
         }
-
       } catch (InterruptedException e) {
-        e.printStackTrace();
+        if (CobbleUtils.config.isDebug()) {
+          e.printStackTrace();
+        }
       }
     }, CobbleUtils.EXECUTOR_COBBLEUTILS);
   }

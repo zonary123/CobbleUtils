@@ -98,7 +98,6 @@ public abstract class Utils {
   }
 
   public static ExecutorService IO_EXECUTOR = Executors.newFixedThreadPool(16, new ThreadFactoryBuilder()
-    .setDaemon(true)
     .setNameFormat("CobbleUtils IO Executor-%d")
     .build());
 

@@ -13,13 +13,16 @@ import org.jetbrains.annotations.NotNull;
 import java.math.BigDecimal;
 import java.util.EnumMap;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Author: Carlos Varas Alonso - 19/03/2025 1:37
  */
 @Data
 public class PokemonFormula {
+
   @Data
   private static class HeldItemPrice {
     private BigDecimal defaultPrice = BigDecimal.ZERO;
@@ -32,10 +35,8 @@ public class PokemonFormula {
     }
   }
 
-  private static final Map<String, Expression> expressions = new HashMap<>();
   private String formula = "base + heldItem + gender + labels + nature + ability + ivsAverage + ivsTotal + evsTotal +" +
-    " " +
-    "evsAverage + form + ball + aspect + shiny + breedable";
+    " evsAverage + form + ball + aspect + shiny + breedable";
   private float base = 0;
   private float shiny = 0;
   private float hiddenAbility = 0;
@@ -68,8 +69,31 @@ public class PokemonFormula {
     expressions.remove(identifier);
   }
 
+  private static final Map<String, Expression> expressions = new ConcurrentHashMap<>();
+  private static final Map<PokemonKey, Double> pokemonResultCache = new LinkedHashMap<>() {
+    @Override
+    protected boolean removeEldestEntry(Map.Entry<PokemonKey, Double> eldest) {
+      return size() > 1000;
+    }
+  };
+
+  public Double getPokemonValue(Pokemon pokemon, String identifier) {
+    PokemonKey key = new PokemonKey(pokemon, identifier);
+
+    if (pokemonResultCache.containsKey(key))
+      return pokemonResultCache.get(key);
+
+    Expression expression = getPokemonExpression(pokemon, identifier);
+    double result = expression.evaluate();
+
+    pokemonResultCache.put(key, result);
+    return result;
+  }
+
   public Expression getPokemonExpression(Pokemon pokemon, String identifier) {
     Expression expression = getExpression(identifier);
+
+    // Variables dinámicas
     expression.setVariable("base", getBase(pokemon));
     expression.setVariable("heldItem", getHeldItem(pokemon));
     expression.setVariable("shiny", pokemon.getShiny() ? shiny : 1.0);
@@ -81,10 +105,12 @@ public class PokemonFormula {
     expression.setVariable("ball", getBall(pokemon));
     expression.setVariable("aspect", getAspect(pokemon));
 
+    // IVs y EVs
     int ivsAverage = Math.max(PokemonUtils.getIvsAverage(pokemon.getIvs()), 1);
     int ivsTotal = Math.max(PokemonUtils.getIvsTotal(pokemon.getIvs()), 1);
     int evsTotal = Math.max(PokemonUtils.getEvsTotal(pokemon.getEvs()), 1);
     int evsAverage = Math.max(PokemonUtils.getEvsAverage(pokemon.getEvs()), 1);
+
     expression.setVariable("ivsAverage", ivsAverage);
     expression.setVariable("ivsTotal", ivsTotal);
     expression.setVariable("evsTotal", evsTotal);
@@ -100,6 +126,41 @@ public class PokemonFormula {
     return expression;
   }
 
+  private Expression getExpression(String identifier) {
+    return expressions.computeIfAbsent(identifier.intern(), id -> {
+      ExpressionBuilder builder = new ExpressionBuilder(this.formula)
+        .variable("base")
+        .variable("heldItem")
+        .variable("shiny")
+        .variable("gender")
+        .variable("labels")
+        .variable("nature")
+        .variable("ability")
+        .variable("form")
+        .variable("ball")
+        .variable("aspect")
+        .variable("ivsAverage")
+        .variable("ivsTotal")
+        .variable("evsTotal")
+        .variable("evsAverage")
+        .variable("breedable");
+      return builder.build();
+    });
+  }
+
+  // Clase clave inmutable para la caché
+  private record PokemonKey(Pokemon pokemon, String identifier) {
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) return true;
+      if (o == null || getClass() != o.getClass()) return false;
+      PokemonKey that = (PokemonKey) o;
+      return pokemon.equals(that.pokemon) && identifier.equals(that.identifier);
+    }
+
+  }
+
   private float getHeldItem(Pokemon pokemon) {
     ItemStack itemStack = pokemon.heldItem();
     if (itemStack.isEmpty()) return 0;
@@ -109,33 +170,13 @@ public class PokemonFormula {
   }
 
   private float getAspect(Pokemon pokemon) {
-    return pokemon.getAspects().stream()
-      .filter(this.aspect::containsKey)
-      .map(this.aspect::get)
-      .findFirst()
-      .orElse(0f);
-  }
-
-  private Expression getExpression(String identifier) {
-    return expressions.computeIfAbsent(identifier, id -> {
-      ExpressionBuilder builder = new ExpressionBuilder(this.formula);
-      builder.variable("base");
-      builder.variable("heldItem");
-      builder.variable("shiny");
-      builder.variable("gender");
-      builder.variable("labels");
-      builder.variable("nature");
-      builder.variable("ability");
-      builder.variable("form");
-      builder.variable("ball");
-      builder.variable("aspect");
-      builder.variable("ivsAverage");
-      builder.variable("ivsTotal");
-      builder.variable("evsTotal");
-      builder.variable("evsAverage");
-      builder.variable("breedable");
-      return builder.build();
-    });
+    var aspects = pokemon.getAspects();
+    for (String aspect : aspects) {
+      if (this.aspect.containsKey(aspect)) {
+        return this.aspect.get(aspect);
+      }
+    }
+    return 0f;
   }
 
   private float getBase(Pokemon pokemon) {
@@ -159,9 +200,16 @@ public class PokemonFormula {
   }
 
   private float getLabel(Pokemon pokemon) {
-    return pokemon.getForm().getLabels().stream()
-      .map(label -> this.labels.getOrDefault(label, 0f))
-      .reduce(0f, this.accumulationLabels ? Float::sum : Math::max);
+    float result = 0f;
+    for (String label : pokemon.getForm().getLabels()) {
+      float value = this.labels.getOrDefault(label, 0f);
+      if (this.accumulationLabels) {
+        result += value;
+      } else {
+        result = Math.max(result, value);
+      }
+    }
+    return result;
   }
 
   private float getNature(Pokemon pokemon) {

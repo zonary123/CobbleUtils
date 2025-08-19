@@ -106,7 +106,7 @@ public class CobbleUtils {
 
     CommandRegistrationEvent.EVENT.register((dispatcher, registry, selection) -> {
       CustomPokemonProperty.Companion.register(MinIvsPropertyType.INSTANCE);
-      CustomPokemonProperty.Companion.register(new LegendaryPropertyType());
+      CustomPokemonProperty.Companion.register(LegendaryPropertyType.INSTANCE);
       CommandTree.register(dispatcher, registry);
       commandRegistryAccess = registry;
     });

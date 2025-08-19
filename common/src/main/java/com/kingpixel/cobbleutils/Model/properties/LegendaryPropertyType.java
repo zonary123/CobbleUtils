@@ -14,8 +14,8 @@ import java.util.Set;
  */
 public class LegendaryPropertyType implements CustomPokemonPropertyType<LegendaryProperty> {
 
-  public LegendaryPropertyType() {
-  }
+  public static final LegendaryPropertyType INSTANCE = new
+    LegendaryPropertyType();
 
 
   @NotNull @Override public Iterable<String> getKeys() {
