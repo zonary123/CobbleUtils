@@ -44,9 +44,6 @@ public class CSGOAnimation {
         int spinSpeed = startSpinSpeed;
         GooeyPage page = GooeyPage.builder()
           .template(template)
-          .onClose(action -> {
-            Thread.currentThread().interrupt();
-          })
           .build();
 
         UIManager.openUIForcefully(player, page);
