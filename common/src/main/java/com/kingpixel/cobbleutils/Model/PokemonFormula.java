@@ -69,24 +69,35 @@ public class PokemonFormula {
     expressions.remove(identifier);
   }
 
+  // Cache for expressions to avoid re-parsing the same formula multiple times
   private static final Map<String, Expression> expressions = new ConcurrentHashMap<>();
-  private static final Map<PokemonKey, Double> pokemonResultCache = new LinkedHashMap<>() {
-    @Override
-    protected boolean removeEldestEntry(Map.Entry<PokemonKey, Double> eldest) {
-      return size() > 1000;
-    }
-  };
+  // Memoization cache for Pokémon results
+  private static final Map<String, Map<Pokemon, Double>> pokemonResultCache = new ConcurrentHashMap<>();
 
+  /**
+   * Obtains the value of a Pokémon based on the provided identifier.
+   * Uses memoization to cache results for performance.
+   *
+   * @param pokemon    The Pokémon to evaluate.
+   * @param identifier The identifier for the formula to use.
+   *
+   * @return The calculated value for the Pokémon.
+   */
   public Double getPokemonValue(Pokemon pokemon, String identifier) {
-    PokemonKey key = new PokemonKey(pokemon, identifier);
+    Map<Pokemon, Double> cache = pokemonResultCache.computeIfAbsent(identifier, k -> new LinkedHashMap<>() {
+      @Override
+      protected boolean removeEldestEntry(Map.Entry<Pokemon, Double> eldest) {
+        return size() > 5000;
+      }
+    });
 
-    if (pokemonResultCache.containsKey(key))
-      return pokemonResultCache.get(key);
+    if (cache.containsKey(pokemon))
+      return cache.get(pokemon);
 
     Expression expression = getPokemonExpression(pokemon, identifier);
     double result = expression.evaluate();
 
-    pokemonResultCache.put(key, result);
+    cache.put(pokemon, result);
     return result;
   }
 

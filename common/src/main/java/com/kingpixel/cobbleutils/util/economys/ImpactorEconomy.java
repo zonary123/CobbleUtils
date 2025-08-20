@@ -56,13 +56,10 @@ public class ImpactorEconomy extends EconomyAbstract {
    * This is used to cache formatted money strings to avoid reformatting the same amount multiple times.
    * The cache will remove the least recently used entry when it exceeds the specified size.
    */
-  private static final int CACHE_SIZE = 1000;
+  private static final int CACHE_SIZE = 5000;
   private static final Map<String, String> formatCache = new LinkedHashMap<>(CACHE_SIZE, 0.75f, true) {
     @Override
     protected boolean removeEldestEntry(Map.Entry<String, String> eldest) {
-      if (CobbleUtils.config.isDebug()) {
-        CobbleUtils.LOGGER.info("Removing eldest entry from format cache: " + eldest.getKey());
-      }
       return size() > CACHE_SIZE;
     }
   };
@@ -71,18 +68,10 @@ public class ImpactorEconomy extends EconomyAbstract {
   public String format(BigDecimal money, String currency) {
     String key = (money.toPlainString().intern() + "|" + currency.intern()).intern();
     String cached = formatCache.get(key);
-    if (cached != null) {
-      if (CobbleUtils.config.isDebug()) {
-        CobbleUtils.LOGGER.info("Using cached format for: " + key);
-      }
-      return cached;
-    }
+    if (cached != null) return cached;
     String formatted = AdventureTranslator.legacyComponentSerializer.serialize(
       getCurrency(currency).format(money)
     );
-    if (CobbleUtils.config.isDebug()) {
-      CobbleUtils.LOGGER.info("Formatting money: " + money + " in currency: " + currency + " to: " + formatted);
-    }
     formatCache.put(key, formatted);
     return formatted;
   }
