@@ -17,5 +17,4 @@ public class ItemsMod {
   public static void addItem(String modId, String itemId, ItemStack item) {
     ItemChance.addModItem(modId, itemId, item);
   }
-
 }

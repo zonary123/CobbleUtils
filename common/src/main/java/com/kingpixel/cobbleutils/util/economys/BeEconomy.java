@@ -54,6 +54,6 @@ public class BeEconomy extends EconomyAbstract {
   }
 
   @Override public int getDecimals(String currency) {
-    return 5;
+    return CobbleUtils.config.getDecimals();
   }
 }

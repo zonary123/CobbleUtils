@@ -20,8 +20,10 @@ import java.util.concurrent.CompletableFuture;
 @ToString
 public class Config {
   private boolean debug;
-  private String prefix;
   private String lang;
+  private String prefix;
+  private String server;
+  private int decimals;
   private DataBaseConfig database;
   private boolean GtsSupport;
   private EconomyUse GtsEconomyToUse;
@@ -44,6 +46,8 @@ public class Config {
     debug = false;
     prefix = "§7[§6CobbleUtils§7] ";
     lang = "en";
+    decimals = 2;
+    server = "ExampleServer";
     GtsSupport = false;
     GtsEconomyToUse = new EconomyUse(ImpactorEconomy.IDENTIFY, "");
     priorityEconomy = new ArrayList<>();
@@ -60,11 +64,11 @@ public class Config {
     pokeshoutall = "pokeshoutplusall";
     cooldownpokeshout = 60;
     shinytoken = new ItemModel("minecraft:paper", "<gradient:#e0d234:#ede69a><bold>Shiny Token", List.of("§aShiny " +
-            "Token"), 0);
+      "Token"), 0);
     shinytokenBlacklist = new PokemonBlackList();
     itemsCommands = new HashMap<>();
     itemsCommands.put("give", new ItemModel("minecraft:chest", "<gradient:#e0d234:#ede69a><bold>Item", List.of(
-            "§aThis give you a item")));
+      "§aThis give you a item")));
     rarity = new HashMap<>();
     rarity.put("common", 7.0);
     rarity.put("uncommon", 2.5);
@@ -77,12 +81,12 @@ public class Config {
 
   public void init() {
     CompletableFuture<Boolean> futureRead = Utils.readFileAsync(CobbleUtils.PATH, "config.json",
-            el -> {
-              Gson gson = Utils.newGson();
-              CobbleUtils.config = gson.fromJson(el, Config.class);
-              String data = gson.toJson(CobbleUtils.config);
-              Utils.writeFileAsync(CobbleUtils.PATH, "config.json", data);
-            });
+      el -> {
+        Gson gson = Utils.newGson();
+        CobbleUtils.config = gson.fromJson(el, Config.class);
+        String data = gson.toJson(CobbleUtils.config);
+        Utils.writeFileAsync(CobbleUtils.PATH, "config.json", data);
+      });
 
     if (!futureRead.join()) {
       CobbleUtils.LOGGER.info("No config.json file found for" + CobbleUtils.MOD_NAME + ". Attempting to generate one.");
@@ -90,7 +94,7 @@ public class Config {
       CobbleUtils.config = this;
       String data = gson.toJson(CobbleUtils.config);
       Utils.writeFileAsync(CobbleUtils.PATH, "config.json",
-              data);
+        data);
     }
   }
 

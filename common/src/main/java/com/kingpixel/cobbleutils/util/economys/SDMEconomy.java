@@ -75,6 +75,6 @@ public class SDMEconomy extends EconomyAbstract {
   }
 
   @Override public int getDecimals(String currency) {
-    return 2;
+    return CobbleUtils.config.getDecimals();
   }
 }
