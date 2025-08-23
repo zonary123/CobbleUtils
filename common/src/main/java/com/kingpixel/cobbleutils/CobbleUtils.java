@@ -103,7 +103,10 @@ public class CobbleUtils {
       load();
     });
 
-    LifecycleEvent.SERVER_STOPPED.register(server1 -> RedisManager.close());
+    LifecycleEvent.SERVER_STOPPED.register(server1 -> {
+      DataBaseFactory.close();
+      RedisManager.close();
+    });
 
     CommandRegistrationEvent.EVENT.register((dispatcher, registry, selection) -> {
       CustomPokemonProperty.Companion.register(MinIvsPropertyType.INSTANCE);

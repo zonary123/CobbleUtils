@@ -8,21 +8,25 @@ import com.kingpixel.cobbleutils.database.blocks.DataBaseBlockSQLite;
  * @author Carlos Varas Alonso - 23/08/2025 7:35
  */
 public class DataBaseFactory {
-  public static DataBaseBlock INSTANCE;
+  public static DataBaseBlock dataBaseBlock;
 
   public static void init(DataBaseConfig config) {
     initDataBaseBlock(config);
   }
 
   private static void initDataBaseBlock(DataBaseConfig config) {
-    if (INSTANCE != null) INSTANCE.disconnect();
-    INSTANCE = switch (config.getType()) {
+    if (dataBaseBlock != null) dataBaseBlock.disconnect();
+    dataBaseBlock = switch (config.getType()) {
       case JSON -> null;
       case MONGODB -> null;
       case MYSQL -> null;
       case SQLITE -> new DataBaseBlockSQLite(config);
     };
-    if (INSTANCE != null)
-      INSTANCE.connect();
+    if (dataBaseBlock != null)
+      dataBaseBlock.connect();
+  }
+
+  public static void close() {
+    if (dataBaseBlock != null) dataBaseBlock.disconnect();
   }
 }

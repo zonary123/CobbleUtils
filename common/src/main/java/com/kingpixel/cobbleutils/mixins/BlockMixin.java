@@ -27,7 +27,7 @@ public abstract class BlockMixin {
     if (placer == null) return;
     ServerPlayerEntity player = (placer instanceof ServerPlayerEntity serverPlayer) ? serverPlayer : null;
     if (player == null) return;
-    DataBaseFactory.INSTANCE.placeBlock(
+    DataBaseFactory.dataBaseBlock.placeBlock(
       world,
       pos,
       state,
@@ -41,7 +41,7 @@ public abstract class BlockMixin {
     if (playerEntity == null) return;
     ServerPlayerEntity player = (playerEntity instanceof ServerPlayerEntity serverPlayer) ? serverPlayer : null;
     if (player == null) return;
-    DataBaseFactory.INSTANCE.removeBlock(
+    DataBaseFactory.dataBaseBlock.removeBlock(
       world,
       pos,
       state,

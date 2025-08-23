@@ -10,6 +10,6 @@ import net.minecraft.world.World;
 public class BlocksApi {
 
   public static boolean isBlockPlaceByPlayer(World world, BlockPos pos) {
-    return DataBaseFactory.INSTANCE.isBlockPlaceByPlayer(world, pos);
+    return DataBaseFactory.dataBaseBlock.isBlockPlaceByPlayer(world, pos);
   }
 }

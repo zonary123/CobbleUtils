@@ -42,6 +42,22 @@ public class DataBaseBlockSQLite extends DataBaseBlock {
     }
   }
 
+  @Override
+  public void disconnect() {
+    try {
+      if (connection != null && !connection.isClosed()) {
+        insertBlocks();
+        connection.close();
+        CobbleUtils.LOGGER.info(CobbleUtils.MOD_ID, "Disconnected from the database of blocks");
+      }
+    } catch (SQLException e) {
+      CobbleUtils.LOGGER.error(CobbleUtils.MOD_ID, "Failed to close database connection" + e);
+    }
+    if (task != null) {
+      task.setExpired();
+    }
+  }
+
   @SuppressWarnings("All")
   private void createTablesAndIndexes() {
     String createWorldsTable = """
@@ -256,21 +272,6 @@ public class DataBaseBlockSQLite extends DataBaseBlock {
     return false;
   }
 
-  @Override
-  public void disconnect() {
-    try {
-      if (connection != null && !connection.isClosed()) {
-        insertBlocks();
-        connection.close();
-        CobbleUtils.LOGGER.info(CobbleUtils.MOD_ID, "Disconnected from the database of blocks");
-      }
-    } catch (SQLException e) {
-      CobbleUtils.LOGGER.error(CobbleUtils.MOD_ID, "Failed to close database connection" + e);
-    }
-    if (task != null) {
-      task.setExpired();
-    }
-  }
 
   private void startBatchUpdateTask() {
     if (task != null) {
