@@ -8,6 +8,7 @@ import com.kingpixel.cobbleutils.api.EconomyApi;
 import com.kingpixel.cobbleutils.command.CommandTree;
 import com.kingpixel.cobbleutils.config.Config;
 import com.kingpixel.cobbleutils.config.Lang;
+import com.kingpixel.cobbleutils.database.DataBaseFactory;
 import com.kingpixel.cobbleutils.events.ItemRightClickEvents;
 import com.kingpixel.cobbleutils.util.CobbleUtilsBridgeGTS;
 import com.kingpixel.cobbleutils.util.RedisManager;
@@ -40,7 +41,6 @@ public class CobbleUtils {
   public static Lang language = new Lang();
   public static List<String> modsInUse = new ArrayList<>();
   public static ExecutorService EXECUTOR_COBBLEUTILS = Executors.newFixedThreadPool(4, new ThreadFactoryBuilder()
-    .setDaemon(true)
     .setNameFormat("CobbleUtils General Executor-%d")
     .build());
 
@@ -67,6 +67,7 @@ public class CobbleUtils {
   private static void files() {
     config.init();
     language.init();
+    DataBaseFactory.init(config.getDatabase());
   }
 
   private static void sign() {
