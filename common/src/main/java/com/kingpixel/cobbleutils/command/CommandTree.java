@@ -52,6 +52,8 @@ public class CommandTree {
       PokeRename.register(dispatcher, base);
 
       EconomyIdCommand.register(dispatcher, base);
+
+      BlockCommand.register(dispatcher, base);
     }
     ZonaryCommand.register(dispatcher);
   }

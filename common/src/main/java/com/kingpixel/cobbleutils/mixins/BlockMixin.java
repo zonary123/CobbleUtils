@@ -1,5 +1,6 @@
 package com.kingpixel.cobbleutils.mixins;
 
+import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.database.DataBaseFactory;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
@@ -24,28 +25,50 @@ public abstract class BlockMixin {
   private void CobbleUtils$onPlaced(World world, BlockPos pos, BlockState state, LivingEntity placer,
                                     ItemStack itemStack,
                                     CallbackInfo ci) {
-    if (placer == null) return;
-    ServerPlayerEntity player = (placer instanceof ServerPlayerEntity serverPlayer) ? serverPlayer : null;
-    if (player == null) return;
-    DataBaseFactory.dataBaseBlock.placeBlock(
-      world,
-      pos,
-      state,
-      player
-    );
+    try {
+      if (placer == null) {
+        if (CobbleUtils.config.isDebug()) {
+          CobbleUtils.LOGGER.info("Block placed by null entity at " + pos);
+        }
+        return;
+      }
+      ServerPlayerEntity player = (placer instanceof ServerPlayerEntity serverPlayer) ? serverPlayer : null;
+      if (player == null) {
+        if (CobbleUtils.config.isDebug()) {
+          CobbleUtils.LOGGER.info("Block placed by non-player entity at " + pos);
+        }
+        return;
+      }
+      DataBaseFactory.dataBaseBlock.placeBlock(
+        world,
+        pos,
+        state,
+        player
+      );
+    } catch (Exception e) {
+      if (CobbleUtils.config.isDebug()) {
+        CobbleUtils.LOGGER.error("Error in onPlaced mixin: " + e.getMessage());
+      }
+    }
   }
 
   @Inject(method = "onBreak", at = @At("HEAD"))
   private void CobbleUtils$onBreak(World world, BlockPos pos, BlockState state, PlayerEntity playerEntity,
                                    CallbackInfoReturnable<BlockState> cir) {
-    if (playerEntity == null) return;
-    ServerPlayerEntity player = (playerEntity instanceof ServerPlayerEntity serverPlayer) ? serverPlayer : null;
-    if (player == null) return;
-    DataBaseFactory.dataBaseBlock.removeBlock(
-      world,
-      pos,
-      state,
-      player
-    );
+    try {
+      if (playerEntity == null) return;
+      ServerPlayerEntity player = (playerEntity instanceof ServerPlayerEntity serverPlayer) ? serverPlayer : null;
+      if (player == null) return;
+      DataBaseFactory.dataBaseBlock.removeBlock(
+        world,
+        pos,
+        state,
+        player
+      );
+    } catch (Exception e) {
+      if (CobbleUtils.config.isDebug()) {
+        CobbleUtils.LOGGER.error("Error in onBreak mixin: " + e.getMessage());
+      }
+    }
   }
 }

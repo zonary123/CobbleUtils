@@ -18,6 +18,7 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 
 public class DataBaseBlockSQLite extends DataBaseBlock {
   private Connection connection;
@@ -195,14 +196,18 @@ public class DataBaseBlockSQLite extends DataBaseBlock {
 
   @Override
   public void removeBlock(World world, BlockPos pos, BlockState state, ServerPlayerEntity player) {
-    if (blockCache.remove(pos) == null) {
-      // Si el bloque no está en la caché, intenta eliminarlo de la base de datos
-      removeBlockFromDatabaseAsync(world, pos);
-    }
-    if (CobbleUtils.config.isDebug()) {
-      CobbleUtils.LOGGER.info(CobbleUtils.MOD_ID, "Block removed from cache and/or database: " + pos);
-    }
+    // Introducir retraso de 50ms antes de borrar el bloque
+    CompletableFuture.delayedExecutor(50, TimeUnit.MILLISECONDS, CobbleUtils.EXECUTOR_COBBLEUTILS)
+      .execute(() -> {
+        if (blockCache.remove(pos) == null) {
+          removeBlockFromDatabaseAsync(world, pos);
+        }
+        if (CobbleUtils.config.isDebug()) {
+          CobbleUtils.LOGGER.info(CobbleUtils.MOD_ID, "Block removed (with delay) from cache and/or database: " + pos);
+        }
+      });
   }
+
 
   private void removeBlockFromDatabaseAsync(World world, BlockPos pos) {
     CompletableFuture.runAsync(() -> removeBlockFromDatabase(world, pos), CobbleUtils.EXECUTOR_COBBLEUTILS);
@@ -235,10 +240,18 @@ public class DataBaseBlockSQLite extends DataBaseBlock {
 
   @Override
   public boolean isBlockPlaceByPlayer(World world, BlockPos pos) {
-    if (blockCache.containsKey(pos)) {
+    boolean cacheContains = blockCache.containsKey(pos);
+    if (CobbleUtils.config.isDebug()) {
+      CobbleUtils.LOGGER.info(CobbleUtils.MOD_ID, "isBlockPlaceByPlayer check at " + pos + ": " + cacheContains);
+    }
+    if (cacheContains) {
       return true;
     } else {
-      return isBlockInDatabase(world, pos);
+      boolean isInDatabase = isBlockInDatabase(world, pos);
+      if (CobbleUtils.config.isDebug()) {
+        CobbleUtils.LOGGER.info(CobbleUtils.MOD_ID, "Database check for block at " + pos + ": " + isInDatabase);
+      }
+      return isInDatabase;
     }
   }
 
@@ -270,6 +283,55 @@ public class DataBaseBlockSQLite extends DataBaseBlock {
       CobbleUtils.LOGGER.error(CobbleUtils.MOD_ID, "Failed to check block in database" + e);
     }
     return false;
+  }
+
+  public void deleteWorld(World world) {
+    String worldId = world.getRegistryKey().getValue().toString();
+
+    String deleteBlocks = """
+          DELETE FROM blocks
+          WHERE chunk_id IN (
+              SELECT id FROM chunks WHERE world_id = (SELECT id FROM worlds WHERE world_id = ?)
+          );
+      """;
+
+    String deleteChunks = """
+          DELETE FROM chunks
+          WHERE world_id = (SELECT id FROM worlds WHERE world_id = ?);
+      """;
+
+    String deleteWorld = """
+          DELETE FROM worlds WHERE world_id = ?;
+      """;
+
+    try (var deleteBlocksStmt = connection.prepareStatement(deleteBlocks);
+         var deleteChunksStmt = connection.prepareStatement(deleteChunks);
+         var deleteWorldStmt = connection.prepareStatement(deleteWorld)) {
+
+      // 1. Borrar bloques
+      deleteBlocksStmt.setString(1, worldId);
+      deleteBlocksStmt.executeUpdate();
+
+      // 2. Borrar chunks
+      deleteChunksStmt.setString(1, worldId);
+      deleteChunksStmt.executeUpdate();
+
+      // 3. Borrar el mundo
+      deleteWorldStmt.setString(1, worldId);
+      deleteWorldStmt.executeUpdate();
+
+      CobbleUtils.LOGGER.info(CobbleUtils.MOD_ID, "Deleted all data for world: " + worldId);
+
+    } catch (SQLException e) {
+      CobbleUtils.LOGGER.error(CobbleUtils.MOD_ID, "Failed to delete world data " + e);
+    }
+
+    // También limpiar la cache por si acaso
+    blockCache.entrySet().removeIf(entry -> {
+      BlockPos pos = entry.getKey();
+      String cacheWorldId = world.getRegistryKey().getValue().toString();
+      return cacheWorldId.equals(worldId);
+    });
   }
 
 

@@ -116,6 +116,7 @@ public class CobbleUtils {
     });
 
     InteractionEvent.RIGHT_CLICK_ITEM.register(ItemRightClickEvents::register);
+
   }
 
 }

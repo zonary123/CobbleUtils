@@ -13,11 +13,43 @@ public abstract class DataBaseBlock {
 
   public abstract void disconnect();
 
+  /**
+   * Delete all the data of a world
+   *
+   * @param world the world to delete
+   */
+  public abstract void deleteWorld(World world);
+
+  /**
+   * Delete all the data of a player in a world
+   *
+   * @param world  the world to delete
+   * @param player the player to delete
+   */
   public abstract void placeBlock(World world, BlockPos pos, BlockState state, ServerPlayerEntity player);
 
+  /**
+   * Delete the data of a block in a world
+   *
+   * @param world  the world to delete
+   * @param pos    the position of the block to delete
+   * @param state  the state of the block to delete
+   * @param player the player who broke the block
+   */
   public abstract void removeBlock(World world, BlockPos pos, BlockState state, ServerPlayerEntity player);
 
+  /**
+   * Check if a block was placed by a player
+   *
+   * @param world the world to check
+   * @param pos   the position of the block to check
+   *
+   * @return true if the block was placed by a player, false otherwise
+   */
   public abstract boolean isBlockPlaceByPlayer(World world, BlockPos pos);
 
+  /**
+   * Insert the blocks in the database
+   */
   public abstract void insertBlocks();
 }
