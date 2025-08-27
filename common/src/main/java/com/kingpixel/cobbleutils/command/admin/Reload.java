@@ -1,6 +1,7 @@
 package com.kingpixel.cobbleutils.command.admin;
 
 import com.kingpixel.cobbleutils.CobbleUtils;
+import com.kingpixel.cobbleutils.command.suggests.CobbleUtilsSuggests;
 import com.kingpixel.cobbleutils.util.AdventureTranslator;
 import com.kingpixel.cobbleutils.util.LuckPermsUtil;
 import com.mojang.brigadier.Command;
@@ -35,6 +36,7 @@ public class Reload implements Command<ServerCommandSource> {
   @Override
   public int run(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
     try {
+      CobbleUtilsSuggests.reset();
       CobbleUtils.load();
     } catch (Exception e) {
       e.printStackTrace();

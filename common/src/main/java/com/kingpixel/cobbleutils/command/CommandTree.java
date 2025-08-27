@@ -31,7 +31,6 @@ public class CommandTree {
       PokeShoutAllMe.register(dispatcher, CommandManager.literal(CobbleUtils.config.getPokeshoutall() + "me"));
     }
 
-
     for (String literal : CobbleUtils.config.getCommmandplugin()) {
       LiteralArgumentBuilder<ServerCommandSource> base = CommandManager.literal(literal).requires(source ->
         LuckPermsUtil.checkPermission(source, 2, List.of("cobbleutils.admin")));
@@ -55,6 +54,7 @@ public class CommandTree {
 
       BlockCommand.register(dispatcher, base);
     }
+    UserInfoCommand.register(dispatcher);
     ZonaryCommand.register(dispatcher);
   }
 

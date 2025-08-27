@@ -9,6 +9,8 @@ import com.kingpixel.cobbleutils.command.CommandTree;
 import com.kingpixel.cobbleutils.config.Config;
 import com.kingpixel.cobbleutils.config.Lang;
 import com.kingpixel.cobbleutils.database.DataBaseFactory;
+import com.kingpixel.cobbleutils.database.users.DataBaseUsers;
+import com.kingpixel.cobbleutils.database.users.UserModel;
 import com.kingpixel.cobbleutils.events.ItemRightClickEvents;
 import com.kingpixel.cobbleutils.util.CobbleUtilsBridgeGTS;
 import com.kingpixel.cobbleutils.util.RedisManager;
@@ -17,11 +19,13 @@ import com.kingpixel.cobbleutils.util.UtilsLogger;
 import dev.architectury.event.events.common.CommandRegistrationEvent;
 import dev.architectury.event.events.common.InteractionEvent;
 import dev.architectury.event.events.common.LifecycleEvent;
+import dev.architectury.event.events.common.PlayerEvent;
 import net.minecraft.command.CommandRegistryAccess;
 import net.minecraft.server.MinecraftServer;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -106,6 +110,32 @@ public class CobbleUtils {
     LifecycleEvent.SERVER_STOPPED.register(server1 -> {
       DataBaseFactory.close();
       RedisManager.close();
+    });
+
+    PlayerEvent.PLAYER_JOIN.register((player) -> {
+      CompletableFuture.runAsync(() -> {
+          UserModel user = DataBaseFactory.dataBaseUsers.findUserByUUID(player.getUuid());
+          if (user == null) user = new UserModel(player);
+          user.updateData(player);
+          DataBaseFactory.dataBaseUsers.saveOrUpdateUser(user);
+          DataBaseUsers.users.put(player.getUuid(), user);
+        }, EXECUTOR_COBBLEUTILS)
+        .exceptionally(e -> {
+          e.printStackTrace();
+          return null;
+        });
+    });
+
+    PlayerEvent.PLAYER_QUIT.register((player) -> {
+      CompletableFuture.runAsync(() -> {
+          UserModel user = DataBaseFactory.dataBaseUsers.findUserByUUID(player.getUuid());
+          if (user != null) DataBaseFactory.dataBaseUsers.saveOrUpdateUser(user);
+          DataBaseFactory.dataBaseUsers.removeIfNecessary(player.getUuid());
+        }, EXECUTOR_COBBLEUTILS)
+        .exceptionally(e -> {
+          e.printStackTrace();
+          return null;
+        });
     });
 
     CommandRegistrationEvent.EVENT.register((dispatcher, registry, selection) -> {

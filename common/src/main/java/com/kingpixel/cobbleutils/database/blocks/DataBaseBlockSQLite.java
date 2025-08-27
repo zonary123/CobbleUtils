@@ -34,7 +34,7 @@ public class DataBaseBlockSQLite extends DataBaseBlock {
   public void connect() {
     try {
       if (connection == null || connection.isClosed()) {
-        connection = DriverManager.getConnection("jdbc:sqlite:cobbleutils_blocks.db");
+        connection = DriverManager.getConnection("jdbc:sqlite:./config/cobbleutils/blocks.db");
         CobbleUtils.LOGGER.info(CobbleUtils.MOD_ID, "Connected to the database of blocks");
         createTablesAndIndexes();
       }

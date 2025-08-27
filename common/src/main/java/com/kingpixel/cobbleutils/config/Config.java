@@ -24,6 +24,7 @@ public class Config {
   private String prefix;
   private String server;
   private int decimals;
+  private int timeSinceLastLoginToSuggest;
   private DataBaseConfig database;
   private boolean GtsSupport;
   private EconomyUse GtsEconomyToUse;
@@ -46,6 +47,7 @@ public class Config {
     debug = false;
     prefix = "§7[§6CobbleUtils§7] ";
     lang = "en";
+    timeSinceLastLoginToSuggest = 365;
     decimals = 2;
     server = "ExampleServer";
     GtsSupport = false;

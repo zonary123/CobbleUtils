@@ -10,19 +10,12 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * Class for logging.
+ * Class for logging with emojis 😎
  */
 public class UtilsLogger {
   private static final Map<String, Logger> loggers = new HashMap<>();
   private Logger logger; // Log for the console.
 
-  /**
-   * Get the logger for the mod.
-   *
-   * @param modId The mod id.
-   *
-   * @return The logger for the mod.
-   */
   private Logger getLogger(String modId) {
     Logger logger = loggers.get(modId);
     if (logger == null) {
@@ -32,28 +25,53 @@ public class UtilsLogger {
     return logger;
   }
 
-  /**
-   * Error log method.
-   *
-   * @param message The message to log.
-   */
-  public void warn(String message) {
-    logger.warn(message);
+  // Constructor
+  public UtilsLogger() {
+    logger = LogManager.getLogger(CobbleUtils.MOD_NAME);
   }
 
-  /**
-   * Warn log method.
-   *
-   * @param modId   The mod id.
-   * @param message The message to log.
-   */
-  public void warn(String modId, String message) {
-    getLogger(modId).warn(message);
+  public UtilsLogger(String name) {
+    logger = LogManager.getLogger(name);
   }
 
+  // 🔵 INFO
+  public void info(String message) {
+    logger.info("ℹ️ " + message);
+  }
+
+  public void info(String modId, String message) {
+    getLogger(modId).info("ℹ️ " + message);
+  }
 
   public void info(DayOfWeek dayOfWeek) {
-    logger.info(dayOfWeek);
+    logger.info("ℹ️ " + dayOfWeek);
+  }
+
+  // ⚠️ WARN
+  public void warn(String message) {
+    logger.warn("⚠️ " + message);
+  }
+
+  public void warn(String modId, String message) {
+    getLogger(modId).warn("⚠️ " + message);
+  }
+
+  // ❌ ERROR
+  public void error(String message) {
+    logger.error("❌ " + message);
+  }
+
+  public void error(String modId, String message) {
+    getLogger(modId).error("❌ " + message);
+  }
+
+  // 💀 FATAL
+  public void fatal(String message) {
+    logger.fatal("💀 " + message);
+  }
+
+  public void fatal(String modId, String message) {
+    getLogger(modId).fatal("💀 " + message);
   }
 
   // Enums used for the log file.
@@ -64,69 +82,20 @@ public class UtilsLogger {
     FATAL
   }
 
-  // Constructor that creates the logger.
-  public UtilsLogger() {
-    logger = LogManager.getLogger(CobbleUtils.MOD_NAME);
-  }
-
-  public UtilsLogger(String name) {
-    logger = LogManager.getLogger(name);
-  }
-
-  /**
-   * Info log method.
-   *
-   * @param message The message to log.
-   */
-  public void info(String message) {
-    logger.info(message);
-//		write(Level.INFO, message);
-  }
-
-  public void info(String modId, String message) {
-    getLogger(modId).info(message);
-  }
-
-  /**
-   * Error log method.
-   *
-   * @param message The message to log.
-   */
-  public void error(String message) {
-    logger.error(message);
-//		write(Level.ERROR, message);
-  }
-
-  public void error(String modId, String message) {
-    getLogger(modId).error(message);
-  }
-
-  /**
-   * Fatal log method.
-   *
-   * @param message The message to log.
-   */
-  public void fatal(String message) {
-    logger.fatal(message);
-//		write(Level.FATAL, message);
-  }
-
-  public void fatal(String modId, String message) {
-    getLogger(modId).fatal(message);
-  }
-
-  /**
-   * Write method to save the logs to file.
-   *
-   * @param level   The level that the log is (INFO, ERROR or FATAL).
-   * @param message The message to log.
-   */
+  // Write method to save logs to file (async)
   private void write(Level level, String message) {
-    // TODO Can't append to file.
+    String emoji = switch (level) {
+      case INFO -> "ℹ️";
+      case WARN -> "⚠️";
+      case ERROR -> "❌";
+      case FATAL -> "💀";
+    };
 
-    String output = "[" + level + "]: " + message;
+    String output = emoji + " [" + level + "]: " + message;
 
-    CompletableFuture<Boolean> future = Utils.writeFileAsync(CobbleUtils.PATH, "logs.txt", output);
+    CompletableFuture<Boolean> future = Utils.writeFileAsync(
+      CobbleUtils.PATH, "logs.txt", output
+    );
 
     System.out.println(": " + future.join());
   }

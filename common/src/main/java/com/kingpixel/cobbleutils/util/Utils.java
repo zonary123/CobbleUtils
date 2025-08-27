@@ -12,7 +12,10 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.internal.bind.DateTypeAdapter;
 import com.kingpixel.cobbleutils.CobbleUtils;
+import com.kingpixel.cobbleutils.Model.ItemChance;
 import com.kingpixel.cobbleutils.Model.ItemModel;
+import com.kingpixel.cobbleutils.adapter.InstantTypeAdapter;
+import com.kingpixel.cobbleutils.adapter.ItemChanceAdapter;
 import com.kingpixel.cobbleutils.adapter.ItemStackAdapter;
 import com.kingpixel.cobbleutils.adapter.PokemonAdapter;
 import com.mojang.authlib.GameProfile;
@@ -39,6 +42,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -94,7 +98,9 @@ public abstract class Utils {
       .registerTypeAdapter(NbtCompoundAdapter.class, NbtCompoundAdapter.INSTANCE)
       .registerTypeAdapter(DateTypeAdapter.class, new DateTypeAdapter())
       .registerTypeAdapter(Pokemon.class, PokemonAdapter.INSTANCE)
-      .registerTypeAdapter(ItemStack.class, ItemStackAdapter.INSTANCE);
+      .registerTypeAdapter(ItemStack.class, ItemStackAdapter.INSTANCE)
+      .registerTypeAdapter(Instant.class, InstantTypeAdapter.INSTANCE)
+      .registerTypeAdapter(ItemChance.class, ItemChanceAdapter.INSTANCE);
   }
 
   public static ExecutorService IO_EXECUTOR = Executors.newFixedThreadPool(16, new ThreadFactoryBuilder()

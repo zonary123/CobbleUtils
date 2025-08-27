@@ -16,6 +16,7 @@ import com.cobblemon.mod.common.item.PokemonItem;
 import com.cobblemon.mod.common.pokemon.Pokemon;
 import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.api.EconomyApi;
+import com.kingpixel.cobbleutils.database.DataBaseFactory;
 import com.kingpixel.cobbleutils.util.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -40,11 +41,18 @@ import java.util.regex.Pattern;
 @Setter
 @ToString
 public class ItemChance {
-  private final String item;
-  private final double chance;
-  private final String display;
-  private final String displayname;
-  public static Map<String, List<ItemMod>> modItems = new HashMap<>();
+  public static final Map<String, List<ItemMod>> modItems = new HashMap<>();
+  // Required properties
+  private String item;
+  private double chance;
+  // Optional Unique reward ID
+  private Boolean unique = null;
+  private String identifier = null;
+  private Integer amount = null; // fixed amount, if null, amount is parsed from item string
+  private Integer cooldown = null; // in seconds
+  // Optional display properties
+  private String display;
+  private String displayname;
 
   public ItemChance() {
     this("minecraft:dirt", 100);
@@ -669,12 +677,23 @@ public class ItemChance {
   public static List<ItemChance> getRewards(List<ItemChance> itemChances, ServerPlayerEntity player,
                                             int numberOfRewards) {
     List<ItemChance> rewards = new ArrayList<>();
+    List<ItemChance> finalItemChances = new ArrayList<>(itemChances);
+    finalItemChances.removeIf(itemChance -> !DataBaseFactory.dataBaseUsers.isAvailableReward(player, itemChance));
+    if (finalItemChances.isEmpty()) {
+      PlayerUtils.sendMessage(
+        player,
+        "No rewards available",
+        CobbleUtils.config.getPrefix(),
+        TypeMessage.CHAT
+      );
+      return finalItemChances;
+    }
     for (int i = 0; i < numberOfRewards; i++) {
-      double totalChance = itemChances.stream().mapToDouble(ItemChance::getChance).sum();
+      double totalChance = finalItemChances.stream().mapToDouble(ItemChance::getChance).sum();
       double randomChance = Utils.RANDOM.nextDouble(totalChance);
       double cumulativeChance = 0;
 
-      for (ItemChance itemChance : itemChances) {
+      for (ItemChance itemChance : finalItemChances) {
         cumulativeChance += itemChance.getChance();
         if (randomChance < cumulativeChance) {
           rewards.add(itemChance);
@@ -700,6 +719,7 @@ public class ItemChance {
    */
   public static void getAllRewards(List<ItemChance> itemChances, ServerPlayerEntity player) {
     for (ItemChance itemChance : itemChances) {
+      if (!DataBaseFactory.dataBaseUsers.isAvailableReward(player, itemChance)) return;
       if (CobbleUtils.config.isDebug()) {
         CobbleUtils.LOGGER.info("ItemChance: " + itemChance);
       }

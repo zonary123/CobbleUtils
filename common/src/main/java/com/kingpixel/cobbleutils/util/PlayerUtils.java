@@ -3,6 +3,7 @@ package com.kingpixel.cobbleutils.util;
 import com.cobblemon.mod.common.Cobblemon;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.kingpixel.cobbleutils.CobbleUtils;
+import com.mojang.authlib.GameProfile;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.ParseResults;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
@@ -13,7 +14,12 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
+import org.json.JSONObject;
 
+import java.io.IOException;
 import java.util.Date;
 import java.util.Map;
 import java.util.UUID;
@@ -269,5 +275,36 @@ public class PlayerUtils {
     } catch (ClassCastException e) {
       return CobbleUtils.server.getPlayerManager().getPlayer(player.getUuid());
     }
+  }
+
+  private static final OkHttpClient client = new OkHttpClient();
+
+  public static GameProfile getGameProfile(String name) {
+    Request request = new Request.Builder()
+      .url("https://api.mojang.com/users/profiles/minecraft/" + name)
+      .build();
+
+    try (Response response = client.newCall(request).execute()) {
+      if (response.isSuccessful() && response.body() != null) {
+        String jsonStr = response.body().string();
+        JSONObject json = new JSONObject(jsonStr);
+
+        if (json.has("id") && json.has("name")) {
+          String id = json.getString("id");
+          String playerName = json.getString("name");
+
+          // Convertir Mojang UUID (sin guiones) a formato estándar
+          UUID uuid = UUID.fromString(id.replaceFirst(
+            "(\\w{8})(\\w{4})(\\w{4})(\\w{4})(\\w{12})",
+            "$1-$2-$3-$4-$5"
+          ));
+
+          return new GameProfile(uuid, playerName);
+        }
+      }
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
+    return null;
   }
 }
