@@ -7,6 +7,8 @@
     "defaultRequire": 0
   },
   "mixins": [
-    "BlockMixin"
+    "BlockMixin",
+    "brewing.BrewingBlockEntityMixin",
+    "brewing.BrewingBlockMixin"
   ]
 }

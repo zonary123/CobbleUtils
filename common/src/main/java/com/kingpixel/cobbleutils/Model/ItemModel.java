@@ -2,6 +2,9 @@ package com.kingpixel.cobbleutils.Model;
 
 import ca.landonjw.gooeylibs2.api.button.ButtonAction;
 import ca.landonjw.gooeylibs2.api.button.GooeyButton;
+import ca.landonjw.gooeylibs2.api.button.RateLimitedButton;
+import ca.landonjw.gooeylibs2.api.button.linked.LinkType;
+import ca.landonjw.gooeylibs2.api.button.linked.LinkedPageButton;
 import ca.landonjw.gooeylibs2.api.template.types.ChestTemplate;
 import com.cobblemon.mod.common.api.pokemon.PokemonProperties;
 import com.cobblemon.mod.common.item.PokemonItem;
@@ -9,6 +12,7 @@ import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.util.AdventureTranslator;
 import com.kingpixel.cobbleutils.util.UIUtils;
 import com.kingpixel.cobbleutils.util.Utils;
+import com.mongodb.lang.Nullable;
 import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
@@ -21,6 +25,7 @@ import net.minecraft.util.Unit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 /**
@@ -207,8 +212,9 @@ public class ItemModel {
    *
    * @return The button of the item
    */
+  @Deprecated
   public GooeyButton getButton(Consumer<ButtonAction> action) {
-    return getButton(1, action);
+    return getButton(1, null, null, action);
   }
 
   /**
@@ -218,6 +224,7 @@ public class ItemModel {
    *
    * @return The button of the item
    */
+  @Deprecated
   public GooeyButton getButton(int amount, Consumer<ButtonAction> action) {
     return getButton(amount, null, null, action);
   }
@@ -230,6 +237,7 @@ public class ItemModel {
    *
    * @return The button of the item
    */
+  @Deprecated
   public GooeyButton getButton(int amount, String name, Consumer<ButtonAction> action) {
     return getButton(amount, name, null, action);
   }
@@ -242,33 +250,77 @@ public class ItemModel {
    *
    * @return The button of the item
    */
+  @Deprecated
   public GooeyButton getButton(int amount, String name,
                                List<String> lore, Consumer<ButtonAction> action) {
-    ItemStack itemStack = getItemStack(this, amount);
+    ItemStack itemStack = this.getItemStack(amount);
     GooeyButton.Builder builder = GooeyButton.builder()
       .display(itemStack);
-    if (name != null) {
-      builder.with(DataComponentTypes.CUSTOM_NAME, AdventureTranslator.toNative(name));
-    } else {
-      builder.with(DataComponentTypes.CUSTOM_NAME, AdventureTranslator.toNative(getDisplayname()));
-    }
 
-    if (lore != null && !lore.isEmpty()) {
-      LoreComponent loreComponent = new LoreComponent(AdventureTranslator.toNativeL(lore));
-      builder.with(DataComponentTypes.LORE, loreComponent);
-    } else {
-      LoreComponent loreComponent = new LoreComponent(AdventureTranslator.toNativeL(this.getLore()));
-      builder.with(DataComponentTypes.LORE, loreComponent);
-    }
+    String resultName = name != null ? name : getDisplayname();
+    builder.with(DataComponentTypes.CUSTOM_NAME, AdventureTranslator.toNative(resultName));
+
+    List<String> resultLore = lore != null ? lore : getLore();
+    LoreComponent loreComponent = new LoreComponent(AdventureTranslator.toNativeL(resultLore));
+    builder.with(DataComponentTypes.LORE, loreComponent);
 
     if (Boolean.TRUE.equals(tooltip)) builder.with(DataComponentTypes.HIDE_ADDITIONAL_TOOLTIP, Unit.INSTANCE);
 
-    if (action == null) {
-      return builder
-        .build();
-    }
+    if (action != null) builder.onClick(action);
     return builder
-      .onClick(action)
+      .build();
+  }
+
+
+  public RateLimitedButton getButton(Consumer<ButtonAction> action,
+                                     long delay, TimeUnit timeUnit, @Nullable Integer limit) {
+
+    GooeyButton button = getButton(1, null, null, action);
+    RateLimitedButton.Builder rateLimitedButtonBuilder = RateLimitedButton.builder()
+      .button(button)
+      .interval(delay, timeUnit);
+    if (limit != null) rateLimitedButtonBuilder.limit(limit);
+    return rateLimitedButtonBuilder.build();
+  }
+
+  public RateLimitedButton getButton(int amount, Consumer<ButtonAction> action,
+                                     long delay, TimeUnit timeUnit, @Nullable Integer limit) {
+
+    GooeyButton button = getButton(amount, null, null, action);
+    RateLimitedButton.Builder rateLimitedButtonBuilder = RateLimitedButton.builder()
+      .button(button)
+      .interval(delay, timeUnit);
+    if (limit != null) rateLimitedButtonBuilder.limit(limit);
+    return rateLimitedButtonBuilder.build();
+  }
+
+  public RateLimitedButton getButton(int amount, String name, Consumer<ButtonAction> action,
+                                     long delay, TimeUnit timeUnit, @Nullable Integer limit) {
+
+    GooeyButton button = getButton(amount, name, null, action);
+    RateLimitedButton.Builder rateLimitedButtonBuilder = RateLimitedButton.builder()
+      .button(button)
+      .interval(delay, timeUnit);
+    if (limit != null) rateLimitedButtonBuilder.limit(limit);
+    return rateLimitedButtonBuilder.build();
+  }
+
+  public RateLimitedButton getButton(int amount, String name, List<String> lore, Consumer<ButtonAction> action,
+                                     long delay, TimeUnit timeUnit, @Nullable Integer limit) {
+
+    GooeyButton button = getButton(amount, name, lore, action);
+    RateLimitedButton.Builder rateLimitedButtonBuilder = RateLimitedButton.builder()
+      .button(button)
+      .interval(delay, timeUnit);
+    if (limit != null) rateLimitedButtonBuilder.limit(limit);
+    return rateLimitedButtonBuilder.build();
+  }
+
+  public LinkedPageButton getLinkedPageButton(LinkType linkType) {
+    ItemStack itemStack = this.getItemStack();
+    return LinkedPageButton.builder()
+      .display(itemStack)
+      .linkType(linkType)
       .build();
   }
 
