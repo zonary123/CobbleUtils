@@ -114,14 +114,14 @@ shadowJar {
     exclude("net/milkbowl/vault/chat/**/*")
     exclude("net/milkbowl/vault/permission/**/*")
     // Relocate packages
-    relocate("org.sqlite", "com.kingpixel.cobbleutils.org.sqlite") {
-        exclude("org/sqlite/native/Linux-Android/**/*")
-        exclude("org/sqlite/native/Linux-Musl/**/*")
-        exclude("org/sqlite/native/FreeBSD/**/*")
-
-        exclude("org/sqlite/native/Mac/**/*")
-        exclude("org/sqlite/native/Solaris/**/*")
-    }
+    //relocate("org.sqlite", "com.kingpixel.cobbleutils.org.sqlite") {
+    //    exclude("org/sqlite/native/Linux-Android/**/*")
+    //    exclude("org/sqlite/native/Linux-Musl/**/*")
+    //    exclude("org/sqlite/native/FreeBSD/**/*")
+//
+    //    exclude("org/sqlite/native/Mac/**/*")
+    //    exclude("org/sqlite/native/Solaris/**/*")
+    //}
     //relocate("net.milkbowl.vault", "net.milkbowl.vault")
     relocate("com.mongodb", "com.kingpixel.cobbleutils.mongodb")
     relocate("org.bson", "com.kingpixel.cobbleutils.bson")

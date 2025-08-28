@@ -33,6 +33,7 @@ public class DataBaseBlockSQLite extends DataBaseBlock {
 
   public void connect() {
     try {
+      Class.forName("org.sqlite.JDBC");
       if (connection == null || connection.isClosed()) {
         connection = DriverManager.getConnection("jdbc:sqlite:./config/cobbleutils/blocks.db");
         CobbleUtils.LOGGER.info(CobbleUtils.MOD_ID, "Connected to the database of blocks");
@@ -40,6 +41,8 @@ public class DataBaseBlockSQLite extends DataBaseBlock {
       }
     } catch (SQLException e) {
       CobbleUtils.LOGGER.error(CobbleUtils.MOD_ID, "Failed to connect to database" + e);
+    } catch (ClassNotFoundException e) {
+      throw new RuntimeException(e);
     }
   }
 
