@@ -20,6 +20,9 @@ import dev.architectury.event.events.common.CommandRegistrationEvent;
 import dev.architectury.event.events.common.InteractionEvent;
 import dev.architectury.event.events.common.LifecycleEvent;
 import dev.architectury.event.events.common.PlayerEvent;
+import net.fabricmc.loader.api.FabricLoader;
+import net.fabricmc.loader.api.ModContainer;
+import net.fabricmc.loader.api.metadata.Person;
 import net.minecraft.command.CommandRegistryAccess;
 import net.minecraft.server.MinecraftServer;
 
@@ -75,17 +78,35 @@ public class CobbleUtils {
   }
 
   private static void sign() {
-    info(MOD_NAME, "1.1.4", "CobbleUtils");
+    info(MOD_ID, "1.1.4", "CobbleUtils");
     LOGGER.info("§e| §6Supported economies: Impactor, BlanketEconomy, CobbleDollars, SDMEconomy, PebbleEconomy and Vault");
     LOGGER.info("§e+-------------------------------+");
   }
 
-  public static void info(String mod, String version, String github) {
+  public static void info(String identifier, String github) {
+    info(identifier, null, github);
+  }
+
+  public static void info(String identifier, String version, String github) {
+    String finalVersion = version;
+    String finalName = identifier;
+    String authors = "Zonary123";
+    ModContainer mod = FabricLoader.getInstance().getAllMods()
+      .stream()
+      .filter(m -> m.getMetadata().getId().equals(identifier) ||
+        m.getMetadata().getName().equals(identifier))
+      .findFirst()
+      .orElse(null);
+    if (mod != null) {
+      finalVersion = mod.getMetadata().getVersion().getFriendlyString();
+      finalName = mod.getMetadata().getName();
+      authors = String.join(", ", mod.getMetadata().getAuthors().stream().map(Person::getName).toList());
+    }
     LOGGER.info("§e+-------------------------------+");
-    LOGGER.info("§e| §6" + mod);
+    LOGGER.info("§e| §6" + finalName);
     LOGGER.info("§e+-------------------------------+");
-    LOGGER.info("§e| §6Version: §e" + version);
-    LOGGER.info("§e| §6Author: §eZonary123");
+    LOGGER.info("§e| §6Version: §e" + finalVersion);
+    LOGGER.info("§e| §6Author: §e" + authors);
     LOGGER.info("§e| §6Website: §9https://github.com/Zonary123/" + github);
     LOGGER.info("§e| §6Discord: §9https://discord.com/invite/fKNc7FnXpa");
     LOGGER.info("§e| §6Support: §9https://github.com/Zonary123/" + github + "/issues");

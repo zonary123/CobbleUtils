@@ -52,14 +52,14 @@ dependencies {
 
     // Database
     shadowCommon("org.mongodb:mongodb-driver-sync:${property("mongodb_version")}") { transitive = true }
-    shadowCommon("org.xerial:sqlite-jdbc:${property("sqlite_version")}")
+    implementation include("org.xerial:sqlite-jdbc:${property("sqlite_version")}")
 
     // Economy Vault
     shadowCommon("com.github.MilkBowl:VaultAPI:${property("vault_api_version")}")
 
     // Discord
     shadowCommon("club.minnced:discord-webhooks:${property("discord_webhooks_version")}")
-    shadowCommon("org.json:json:20210307")
+    shadowCommon("org.json:json:20250517")
     shadowCommon("net.objecthunter:exp4j:0.4.8")
 
     // Redis

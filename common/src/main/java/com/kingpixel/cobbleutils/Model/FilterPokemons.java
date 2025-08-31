@@ -115,8 +115,7 @@ public class FilterPokemons {
         randomValue -= pokemonChance.getChance();
         if (randomValue <= 0) {
           int size = pokemonChance.getPokemons().size();
-          Pokemon pokemon = PokemonProperties.Companion.parse(pokemonChance.getPokemons().get(Utils.RANDOM.nextInt(size))).create();
-          return pokemon;
+          return PokemonProperties.Companion.parse(pokemonChance.getPokemons().get(Utils.RANDOM.nextInt(size))).create();
         }
       }
       // En caso de algún error inesperado, retorna el último Pokémon en la lista
@@ -453,7 +452,7 @@ public class FilterPokemons {
           .build();
 
         UIManager.openUIForcefully(player, page);
-      })
+      }, CobbleUtils.EXECUTOR_COBBLEUTILS)
       .orTimeout(30, TimeUnit.SECONDS)
       .exceptionally(throwable -> {
         CobbleUtils.LOGGER.error("Error opening filter pokemons -> ");
@@ -487,10 +486,10 @@ public class FilterPokemons {
         String showdownId = pokemon.getForm().showdownId();
         if (blackList.getPokemons().contains(showdownId)) {
           blackList.getPokemons().remove(showdownId);
-          modified.add("&cRemoved: " + showdownId);
+          modified.add("&cRemoved Blacklist showdownId: " + showdownId);
         } else {
           blackList.getPokemons().add(showdownId);
-          modified.add("&aAdded: " + showdownId);
+          modified.add("&aAdded Blacklist showdownId: " + showdownId);
         }
         update = true;
       }
@@ -498,10 +497,10 @@ public class FilterPokemons {
         for (String label : pokemon.getForm().getLabels()) {
           if (blackList.getLabels().contains(label)) {
             blackList.getLabels().remove(label);
-            modified.add("&cRemoved: " + label);
+            modified.add("&cRemoved Blacklist labels: " + label);
           } else {
             blackList.getLabels().add(label);
-            modified.add("&aAdded: " + label);
+            modified.add("&aAdded Blacklist labels: " + label);
           }
         }
         update = true;
@@ -511,10 +510,10 @@ public class FilterPokemons {
         if (!formOnlyShowdownId.equals("normal")) {
           if (blackList.getForms().contains(formOnlyShowdownId)) {
             blackList.getForms().remove(formOnlyShowdownId);
-            modified.add("&cRemoved: " + formOnlyShowdownId);
+            modified.add("&cRemoved Blacklist form: " + formOnlyShowdownId);
           } else {
             blackList.getForms().add(formOnlyShowdownId);
-            modified.add("&aAdded: " + formOnlyShowdownId);
+            modified.add("&aAdded Blacklist form: " + formOnlyShowdownId);
           }
           update = true;
         }
@@ -525,10 +524,10 @@ public class FilterPokemons {
         for (String aspect : aspects) {
           if (blackList.getAspects().contains(aspect)) {
             blackList.getAspects().remove(aspect);
-            modified.add("&cRemoved: " + aspect);
+            modified.add("&cRemoved Blacklist Aspect: " + aspect);
           } else {
             blackList.getAspects().add(aspect);
-            modified.add("&aAdded: " + aspect);
+            modified.add("&aAdded  Blacklist Aspect: " + aspect);
           }
         }
         update = true;

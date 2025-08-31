@@ -88,7 +88,7 @@ public class SpawnRates {
 
       }
 
-      // Stores the Pokemon name so we can compare the different weights after.
+      // Stores the Pokemon name so we can compare the different weights after
       pokemon.add(detail.getName().getString());
     }
 
@@ -122,7 +122,7 @@ public class SpawnRates {
           }
         }
       }
-      rarity.put(poke, highestWeight.multiply(new BigDecimal(100)).floatValue());
+      rarity.put(poke.toLowerCase(), highestWeight.multiply(BigDecimal.valueOf(100)).floatValue());
     }
   }
 
@@ -133,8 +133,8 @@ public class SpawnRates {
    */
   public float getRarity(Pokemon pokemon) {
     if (rarity.isEmpty()) init();
-    return rarity.get(pokemon.getDisplayName().getString()) == null ? -1
-      : rarity.get(pokemon.getDisplayName().getString());
+    var r = rarity.get(pokemon.getSpecies().showdownId());
+    return r == null ? -1 : r;
   }
 
   public float getRarity(Species species) {
