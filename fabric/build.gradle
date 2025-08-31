@@ -7,6 +7,7 @@ plugins {
     // Latest Test Compatibility: gradle version 8.x shadow version 8.0.0+
     // ref: https://github.com/johnrengelman/shadow
     id "com.gradleup.shadow" version "8.3.5"
+    id "xyz.kyngs.libby.plugin" version "1.2.1"
 }
 
 architectury {
@@ -43,28 +44,34 @@ dependencies {
     common(project(path: ":common", configuration: "namedElements")) { transitive false }
     shadowCommon(project(path: ":common", configuration: "transformProductionFabric"))
 
+    include(modImplementation("com.github.MemencioPerez:libby-fabric:1.0.0"))
+
     // Kyori Adventure
-    shadowCommon("net.kyori:adventure-text-serializer-gson:${property("kyori_version")}")
-    shadowCommon("net.kyori:adventure-text-minimessage:${property("kyori_version")}")
-    shadowCommon("net.kyori:adventure-api:${property("kyori_version")}")
-    shadowCommon("net.kyori:adventure-text-serializer-legacy:${property("kyori_version")}")
+    libby("net.kyori:adventure-text-serializer-gson:${property("kyori_version")}")
+    libby("net.kyori:adventure-text-minimessage:${property("kyori_version")}")
+    libby("net.kyori:adventure-api:${property("kyori_version")}")
+    libby("net.kyori:adventure-text-serializer-legacy:${property("kyori_version")}")
     //shadowCommon("net.kyori:adventure-platform-fabric:6.2.0")
 
     // Database
-    shadowCommon("org.mongodb:mongodb-driver-sync:${property("mongodb_version")}") { transitive = true }
-    implementation include("org.xerial:sqlite-jdbc:${property("sqlite_version")}")
+    libby("org.mongodb:mongodb-driver-sync:${property("mongodb_version")}") { transitive = true }
+    libby("org.xerial:sqlite-jdbc:${property("sqlite_version")}")
 
     // Economy Vault
-    shadowCommon("com.github.MilkBowl:VaultAPI:${property("vault_api_version")}")
+    shadowCommon("com.github.MilkBowl:VaultAPI:${property("vault_api_version")}") {
+        exclude group: "org.bukkit"
+        exclude group: "org.json"
+        exclude group: "org.apache.commons"
+    }
 
     // Discord
-    shadowCommon("club.minnced:discord-webhooks:${property("discord_webhooks_version")}")
-    shadowCommon("org.json:json:20250517")
-    shadowCommon("net.objecthunter:exp4j:0.4.8")
+    libby("club.minnced:discord-webhooks:${property("discord_webhooks_version")}")
+    libby("org.json:json:20250517")
+    libby("net.objecthunter:exp4j:0.4.8")
 
     // Redis
-    shadowCommon("redis.clients:jedis:5.1.0")
-    shadowCommon("org.apache.commons:commons-pool2:2.12.0")
+    libby("redis.clients:jedis:5.1.0")
+    libby("org.apache.commons:commons-pool2:2.12.0")
 }
 
 processResources {

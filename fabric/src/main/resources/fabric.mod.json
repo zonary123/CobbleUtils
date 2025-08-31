@@ -12,6 +12,9 @@
   ],
   "contact": {},
   "entrypoints": {
+    "preLaunch": [
+      "com.kingpixel.cobbleutils.fabric.CobbleUtilsFabricPreLaunch"
+    ],
     "main": [
       "com.kingpixel.cobbleutils.fabric.CobbleUtilsFabric"
     ]

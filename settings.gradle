@@ -28,6 +28,9 @@ pluginManagement {
             url "https://s01.oss.sonatype.org/content/repositories/snapshots"
             name = "Sonatype 01 Snapshots"
         }
+        maven {
+            url = "https://repo.kyngs.xyz/gradle-plugins"
+        }
     }
 }
 
