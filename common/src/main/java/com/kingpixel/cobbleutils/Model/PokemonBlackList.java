@@ -7,10 +7,7 @@ import com.kingpixel.cobbleutils.util.PokemonUtils;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -19,6 +16,8 @@ import java.util.stream.Collectors;
 @Getter
 @Setter
 public class PokemonBlackList {
+  transient
+  private final Map<String, Boolean> resultsCache = new HashMap<>();
   private boolean onlyImplemented;
   private boolean allowEvolutions = true;
   private Set<String> pokemons;
@@ -69,32 +68,43 @@ public class PokemonBlackList {
   }
 
   public boolean isBlackListed(Pokemon pokemon) {
-    if (onlyImplemented && !pokemon.getSpecies().getImplemented()) return true;
-
+    if (!aspects.isEmpty()) {
+      for (String aspect : pokemon.getAspects()) {
+        if (this.aspects.contains(aspect)) return true;
+      }
+    }
+    String pokemonShowdownId = pokemon.showdownId();
+    Boolean result = resultsCache.get(pokemonShowdownId);
+    if (result != null) return result;
+    if (onlyImplemented && !pokemon.getSpecies().getImplemented()) return cacheResult(pokemonShowdownId, true);
+    String pokemonFormShowdownId = "";
     if (!allowEvolutions) {
       Pokemon firstEvolution = PokemonUtils.getFirstEvolution(pokemon);
-      if (!firstEvolution.getForm().showdownId().equals(pokemon.getForm().showdownId())) return true;
+      pokemonFormShowdownId = pokemon.getForm().showdownId();
+      if (!firstEvolution.getForm().showdownId().equals(pokemonFormShowdownId)) return true;
     }
-    if (pokemon.getForm().getEggGroups().stream().anyMatch(eggGroups::contains)) return true;
-    if (pokemons.contains("*") || pokemons.contains(pokemon.getForm().showdownId())) {
-      return true;
-    } else {
-      if (pokemons.contains(pokemon.showdownId())) return true;
-    }
-    if (pokemon.getForm().getLabels().stream().anyMatch(labels::contains)) return true;
-    if (forms.contains(pokemon.getForm().formOnlyShowdownId())) return true;
+    if (pokemon.getForm().getEggGroups().stream().anyMatch(eggGroups::contains))
+      return cacheResult(pokemonShowdownId, true);
+    if (pokemons.contains("*") || pokemons.contains(pokemonFormShowdownId)) {
+      return cacheResult(pokemonShowdownId, true);
+    } else if (pokemons.contains(pokemonShowdownId)) return cacheResult(pokemonShowdownId, true);
+
+    if (pokemon.getForm().getLabels().stream().anyMatch(labels::contains)) return cacheResult(pokemonShowdownId, true);
+    if (forms.contains(pokemon.getForm().formOnlyShowdownId())) return cacheResult(pokemonShowdownId, true);
 
     List<ElementalType> typeList = new ArrayList<>();
     pokemon.getTypes().forEach(typeList::add);
     if (typeList.stream().anyMatch(type -> {
       String keyType = type.getName().toLowerCase();
       return this.types.contains(keyType);
-    })) return true;
+    })) return cacheResult(pokemonShowdownId, true);
 
-    for (String aspect : pokemon.getAspects()) {
-      if (this.aspects.contains(aspect)) return true;
-    }
+
     String rarity = PokemonUtils.getRarityS(pokemon);
-    return rarities.contains(rarity);
+    return cacheResult(pokemonShowdownId, rarities.contains(rarity));
+  }
+
+  public boolean cacheResult(String pokemonShowdownId, boolean result) {
+    return resultsCache.put(pokemonShowdownId, result) != null;
   }
 }

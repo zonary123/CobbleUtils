@@ -40,6 +40,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public class AdventureTranslator {
   public static final MiniMessage miniMessage = MiniMessage.miniMessage();
@@ -96,7 +97,8 @@ public class AdventureTranslator {
     }
     if (player != null && text != null) {
       if (Utils.isPlaceholder()) {
-        text = Placeholders.parseText(text, PlaceholderContext.of(player)).copy();
+        //text = Placeholders.parseText(text, PlaceholderContext.of(player)).copy();
+        return Placeholders.parseText(text, PlaceholderContext.of(player));
       }
     }
     return text;
@@ -125,39 +127,51 @@ public class AdventureTranslator {
     return loreString;
   }
 
+  private static final Map<Character, String> COLOR_CODES = Map.ofEntries(
+    Map.entry('0', "<black>"),
+    Map.entry('1', "<dark_blue>"),
+    Map.entry('2', "<dark_green>"),
+    Map.entry('3', "<dark_aqua>"),
+    Map.entry('4', "<dark_red>"),
+    Map.entry('5', "<dark_purple>"),
+    Map.entry('6', "<gold>"),
+    Map.entry('7', "<gray>"),
+    Map.entry('8', "<dark_gray>"),
+    Map.entry('9', "<blue>"),
+    Map.entry('a', "<green>"),
+    Map.entry('b', "<aqua>"),
+    Map.entry('c', "<red>"),
+    Map.entry('d', "<light_purple>"),
+    Map.entry('e', "<yellow>"),
+    Map.entry('f', "<white>"),
+    Map.entry('k', "<obfuscated>"),
+    Map.entry('l', "<bold>"),
+    Map.entry('m', "<strikethrough>"),
+    Map.entry('n', "<underline>"),
+    Map.entry('o', "<italic>"),
+    Map.entry('r', "<reset>")
+  );
+
   private static String replaceNative(String text) {
     if (text == null || text.isEmpty()) return "";
 
-    if (text.contains("§") || text.contains("&")) {
-      text = text
-        .replace("&", "§")
-        .replace("§0", "<black>")
-        .replace("§1", "<dark_blue>")
-        .replace("§2", "<dark_green>")
-        .replace("§3", "<dark_aqua>")
-        .replace("§4", "<dark_red>")
-        .replace("§5", "<dark_purple>")
-        .replace("§6", "<gold>")
-        .replace("§7", "<gray>")
-        .replace("§8", "<dark_gray>")
-        .replace("§9", "<blue>")
-        .replace("§a", "<green>")
-        .replace("§b", "<aqua>")
-        .replace("§c", "<red>")
-        .replace("§d", "<light_purple>")
-        .replace("§e", "<yellow>")
-        .replace("§f", "<white>")
-        .replace("§k", "<obfuscated>")
-        .replace("§l", "<bold>")
-        .replace("§m", "<strikethrough>")
-        .replace("§n", "<underline>")
-        .replace("§o", "<italic>")
-        .replace("§r", "<reset>");
+    StringBuilder builder = new StringBuilder(text.length());
+    for (int i = 0; i < text.length(); i++) {
+      char c = text.charAt(i);
+      if ((c == '&' || c == '§') && i + 1 < text.length()) {
+        char code = text.charAt(i + 1);
+        String tag = COLOR_CODES.get(code);
+        if (tag != null) {
+          builder.append(tag);
+          i++;
+          continue;
+        }
+      }
+      builder.append(c);
     }
-
-
-    return text;
+    return builder.toString();
   }
+
 
   public static MutableText toNativeComponent(String messageContent) {
     return Text.empty().append(AdventureTranslator.toNative(messageContent));

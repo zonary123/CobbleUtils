@@ -50,36 +50,46 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Consumer;
 
 public abstract class Utils {
+  /**
+   * @deprecated Use {@link Utils#getRandom()} instead.
+   */
+  @Deprecated
   public static final Random RANDOM = new Random();
   private static final Charset charset = StandardCharsets.UTF_8;
-  private static Gson gsonPretty = null;
-  private static Gson gsonnotPretty = null;
+
+  public static ThreadLocalRandom getRandom() {
+    return ThreadLocalRandom.current();
+  }
+
+  private static final class GsonPrettyHolder {
+    private static final Gson gsonPretty = adapters()
+      .setPrettyPrinting()
+      .create();
+  }
 
   public static Gson newGson() {
-    if (gsonPretty == null) {
-      gsonPretty = adapters()
-        .setPrettyPrinting()
-        .create();
-    }
-    return gsonPretty;
+    return GsonPrettyHolder.gsonPretty;
   }
+
+  private static final class GsonnotPrettyHolder {
+    private static final Gson gsonnotPretty = adapters()
+      .create();
+  }
+
+  public static Gson newWithoutSpacingGson() {
+    return GsonnotPrettyHolder.gsonnotPretty;
+  }
+
 
   private static GsonBuilder adapters() {
     return addAdapters(new GsonBuilder()
       .disableHtmlEscaping());
   }
-
-  public static Gson newWithoutSpacingGson() {
-    if (gsonnotPretty == null) {
-      gsonnotPretty = adapters()
-        .create();
-    }
-    return gsonnotPretty;
-  }
-
+  
   public static boolean isPlaceholder() {
     try {
       Class.forName("eu.pb4.placeholders.api.Placeholders");
@@ -170,7 +180,6 @@ public abstract class Utils {
 
   public static boolean readFileSync(File file, Consumer<String> callback) {
     if (!file.exists() || !file.isFile()) {
-      System.err.println("El archivo no existe o no es válido: " + file.getPath());
       return false;
     }
     try {

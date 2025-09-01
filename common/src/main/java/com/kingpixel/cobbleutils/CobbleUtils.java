@@ -20,6 +20,7 @@ import dev.architectury.event.events.common.CommandRegistrationEvent;
 import dev.architectury.event.events.common.InteractionEvent;
 import dev.architectury.event.events.common.LifecycleEvent;
 import dev.architectury.event.events.common.PlayerEvent;
+import dev.architectury.injectables.targets.ArchitecturyTarget;
 import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.loader.api.ModContainer;
 import net.fabricmc.loader.api.metadata.Person;
@@ -91,16 +92,18 @@ public class CobbleUtils {
     String finalVersion = version;
     String finalName = identifier;
     String authors = "Zonary123";
-    ModContainer mod = FabricLoader.getInstance().getAllMods()
-      .stream()
-      .filter(m -> m.getMetadata().getId().equals(identifier) ||
-        m.getMetadata().getName().equals(identifier))
-      .findFirst()
-      .orElse(null);
-    if (mod != null) {
-      finalVersion = mod.getMetadata().getVersion().getFriendlyString();
-      finalName = mod.getMetadata().getName();
-      authors = String.join(", ", mod.getMetadata().getAuthors().stream().map(Person::getName).toList());
+    if (ArchitecturyTarget.getCurrentTarget().equals("fabric")) {
+      ModContainer mod = FabricLoader.getInstance().getAllMods()
+        .stream()
+        .filter(m -> m.getMetadata().getId().equals(identifier) ||
+          m.getMetadata().getName().equals(identifier))
+        .findFirst()
+        .orElse(null);
+      if (mod != null) {
+        finalVersion = mod.getMetadata().getVersion().getFriendlyString();
+        finalName = mod.getMetadata().getName();
+        authors = String.join(", ", mod.getMetadata().getAuthors().stream().map(Person::getName).toList());
+      }
     }
     LOGGER.info("§e+-------------------------------+");
     LOGGER.info("§e| §6" + finalName);
@@ -110,7 +113,7 @@ public class CobbleUtils {
     LOGGER.info("§e| §6Website: §9https://github.com/Zonary123/" + github);
     LOGGER.info("§e| §6Discord: §9https://discord.com/invite/fKNc7FnXpa");
     LOGGER.info("§e| §6Support: §9https://github.com/Zonary123/" + github + "/issues");
-    LOGGER.info("§e| &dDonate: §9https://ko-fi.com/zonary123");
+    LOGGER.info("§e| §dDonate: §9https://ko-fi.com/zonary123");
     LOGGER.info("§e+-------------------------------+");
   }
 

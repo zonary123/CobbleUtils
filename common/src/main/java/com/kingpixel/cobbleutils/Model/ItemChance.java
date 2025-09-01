@@ -32,6 +32,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 
 /**
@@ -229,6 +230,33 @@ public class ItemChance {
     return giveReward(player, itemChance, 1);
   }
 
+  private static final Pattern COMMAND_SPLIT_PATTERN = Pattern.compile("(?<!<)#");
+  private static final String PREFIX_COMMAND = "command:";
+
+  // Cache for parsed items to improve performance
+  private static final Map<ItemChance, ItemStack> ITEM_CACHE = new ConcurrentHashMap<>();
+
+  // Method to get cached item or parse and cache it if not present
+  private static ItemStack getCachedItem(ItemChance itemChance, int amount) {
+    return ITEM_CACHE.computeIfAbsent(itemChance, key -> {
+      try {
+        String item = key.getItem();
+
+        if (item.startsWith("item:")) {
+          return parseItemStack(item, 1);
+        } else if (item.startsWith("mod:")) {
+          return getModItem(key);
+        } else {
+          return Utils.parseItemId(item, 1);
+        }
+      } catch (Exception e) {
+        CobbleUtils.LOGGER.error("Error caching item: " + itemChance.getItem());
+        return ItemStack.EMPTY;
+      }
+    }).copyWithCount(amount);
+  }
+
+
   /**
    * Gives a reward to the player based on the item type and amount.
    *
@@ -241,41 +269,30 @@ public class ItemChance {
     try {
       String item = itemChance.getItem();
       String[] parts = item.split("\\|");
+
       if (parts.length > 1) {
         for (String part : parts) {
           giveReward(player, new ItemChance(part, itemChance.getChance()), amount);
         }
         return true;
       }
-      ItemStack itemStack;
+
+      ItemStack itemStack = null;
 
       if (item.startsWith("pokemon:")) {
         Pokemon pokemon = getRewardPokemon(item);
         return Cobblemon.INSTANCE.getStorage().getParty(player).add(pokemon);
       } else if (item.startsWith("command:")) {
-        String regex = "(?<!" + Pattern.quote("<") + ")" + Pattern.quote("#");
-        String[] commandParts = item.split(regex);
+        String[] commandParts = COMMAND_SPLIT_PATTERN.split(item);
         for (String commandPart : commandParts) {
-          CobbleUtilities.executeCommand(player, commandPart.replace("command:", "").trim());
+          String command = commandPart.replace(PREFIX_COMMAND, "").trim();
+          if (!commandPart.isEmpty()) {
+            CobbleUtilities.executeCommand(player, command);
+          }
         }
         return true;
       } else if (item.startsWith("money:")) {
         return handleMoneyReward(player, item);
-      } else if (item.startsWith("item:")) {
-        itemStack = parseItemStack(item, parseAmount(item.split(":")[1]) * amount);
-        if (!player.getInventory().insertStack(itemStack)) {
-          player.dropItem(itemStack, true);
-        }
-        return true;
-      } else if (item.startsWith("mod:")) {
-        itemStack = getModItem(itemChance);
-        if (!player.getInventory().insertStack(itemStack)) {
-          player.dropItem(itemStack, true);
-        }
-        return true;
-      } else if (item.startsWith("polymer:")) {
-        CobbleUtils.LOGGER.info("Polymer not supported yet");
-        return false;
       } else if (item.startsWith("message:")) {
         String message = item.replace("message:", "");
         PlayerUtils.sendMessage(
@@ -285,19 +302,23 @@ public class ItemChance {
           TypeMessage.CHAT
         );
         return true;
+
       } else {
-        itemStack = Utils.parseItemId(item, amount);
-        if (!player.getInventory().insertStack(itemStack)) {
-          player.dropItem(itemStack, false);
-        }
-        return true;
+        itemStack = getCachedItem(itemChance, parseAmount(item.split(":")[1]) * amount).copy();
       }
+      if (itemStack == null || itemStack.isEmpty()) {
+        CobbleUtils.LOGGER.error("Error giving reward, item not found: " + item);
+        return false;
+      }
+      ItemStack finalItemStack = itemStack;
+      CobbleUtils.server.executeSync(() -> player.getInventory().offerOrDrop(finalItemStack));
+      return true;
     } catch (Exception e) {
       CobbleUtils.LOGGER.error("Error giving reward: " + e.getMessage());
-      e.printStackTrace();
       return false;
     }
   }
+
 
   private static Pokemon getRewardPokemon(String item) {
     String p = item.replace("pokemon:", "");
@@ -412,6 +433,8 @@ public class ItemChance {
       .build();
   }
 
+  private static final ConcurrentHashMap<String, ItemStack> REWARD_ITEM_STACK = new ConcurrentHashMap<>();
+
   /**
    * Gets the ItemStack of the reward based on its type.
    *
@@ -420,28 +443,38 @@ public class ItemChance {
    *
    * @return The ItemStack of the reward.
    */
+  // Cache para memoization
   private static ItemStack getRewardItemStack(String item, int amount) {
     if (item == null || item.isEmpty()) return ItemStack.EMPTY;
-    ItemStack itemStack;
-    String[] parts = item.split("\\|");
-    if (parts.length > 1) {
-      itemStack = getRewardItemStack(parts[0], amount);
+
+    // Cache key based on item and amount
+    String cacheKey = item + "|" + amount;
+
+    // Memoization: improve performance for frequently requested items
+    return REWARD_ITEM_STACK.computeIfAbsent(cacheKey, key -> {
+      ItemStack itemStack;
+
+      String[] parts = item.split("\\|");
+      if (parts.length > 1) {
+        itemStack = getRewardItemStack(parts[0], amount);
+        return itemStack;
+      }
+      if (item.startsWith("pokemon:")) {
+        itemStack = PokemonItem.from(getRewardPokemon(item));
+      } else if (item.startsWith("command:")) {
+        itemStack = parseCommandItem(item);
+      } else if (item.startsWith("money:")) {
+        itemStack = parseMoneyItem(item);
+      } else if (item.startsWith("item:")) {
+        itemStack = parseItemStack(item, parseAmount(item.split(":")[1]) * amount);
+      } else if (item.startsWith("mod:")) {
+        itemStack = getModItem(new ItemChance(item, 100));
+      } else {
+        itemStack = Utils.parseItemId(item, amount);
+      }
+
       return itemStack;
-    }
-    if (item.startsWith("pokemon:")) {
-      itemStack = PokemonItem.from(getRewardPokemon(item));
-    } else if (item.startsWith("command:")) {
-      itemStack = parseCommandItem(item);
-    } else if (item.startsWith("money:")) {
-      itemStack = parseMoneyItem(item);
-    } else if (item.startsWith("item:")) {
-      itemStack = parseItemStack(item, parseAmount(item.split(":")[1]) * amount);
-    } else if (item.startsWith("mod:")) {
-      itemStack = getModItem(new ItemChance(item, 100));
-    } else {
-      itemStack = Utils.parseItemId(item, amount);
-    }
-    return itemStack;
+    }).copy(); // Return copy to avoid modifying cached instance
   }
 
   private static ItemStack parseCommandItem(String item) {
@@ -495,7 +528,7 @@ public class ItemChance {
         String[] parts = amountStr.split("-");
         int min = Integer.parseInt(parts[0]);
         int max = Integer.parseInt(parts[1]);
-        return Utils.RANDOM.nextInt(max - min + 1) + min;
+        return Utils.getRandom().nextInt(max - min + 1) + min;
       }
       return Integer.parseInt(amountStr);
     } catch (NumberFormatException e) {
@@ -548,7 +581,7 @@ public class ItemChance {
       String[] parts = part.split("-");
       int min = Integer.parseInt(parts[0]);
       int max = Integer.parseInt(parts[1]);
-      return BigDecimal.valueOf(Utils.RANDOM.nextInt(max - min + 1) + min);
+      return BigDecimal.valueOf(Utils.getRandom().nextInt(max - min + 1) + min);
     }
     return new BigDecimal(part);
   }
@@ -623,7 +656,7 @@ public class ItemChance {
     }
 
     double totalChance = itemChances.stream().mapToDouble(ItemChance::getChance).sum();
-    double randomChance = Utils.RANDOM.nextDouble(totalChance);
+    double randomChance = Utils.getRandom().nextDouble(totalChance);
     double cumulativeChance = 0;
 
     for (ItemChance itemChance : itemChances) {
@@ -690,7 +723,7 @@ public class ItemChance {
     }
     for (int i = 0; i < numberOfRewards; i++) {
       double totalChance = finalItemChances.stream().mapToDouble(ItemChance::getChance).sum();
-      double randomChance = Utils.RANDOM.nextDouble(totalChance);
+      double randomChance = Utils.getRandom().nextDouble(totalChance);
       double cumulativeChance = 0;
 
       for (ItemChance itemChance : finalItemChances) {

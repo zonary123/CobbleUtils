@@ -1,5 +1,6 @@
 package com.kingpixel.cobbleutils.Model.Animations;
 
+import com.kingpixel.cobbleutils.CobbleUtils;
 import net.minecraft.entity.EquipmentSlot;
 import net.minecraft.item.ItemStack;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -30,7 +31,7 @@ public class AllRewardsCircleAnimation {
       CircleEntity circleEntity = new CircleEntity(player.getServerWorld(), entityPosition.x, entityPosition.y, entityPosition.z, reward, player, angle);
       circleEntity.setYaw(yaw);
 
-      player.getServerWorld().spawnEntity(circleEntity);
+      CobbleUtils.server.executeSync(() -> player.getServerWorld().spawnEntity(circleEntity));
     }
   }
 

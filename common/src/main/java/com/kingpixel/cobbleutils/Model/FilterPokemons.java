@@ -110,15 +110,15 @@ public class FilterPokemons {
 
     public static Pokemon getPokemon(List<AdvancedPokemonChance> pokemonChances) {
       double totalChance = pokemonChances.stream().mapToDouble(pokemon -> pokemon.chance).sum();
-      double randomValue = Utils.RANDOM.nextDouble() * totalChance;
+      double randomValue = Utils.getRandom().nextDouble() * totalChance;
       for (AdvancedPokemonChance pokemonChance : pokemonChances) {
         randomValue -= pokemonChance.getChance();
         if (randomValue <= 0) {
           int size = pokemonChance.getPokemons().size();
-          return PokemonProperties.Companion.parse(pokemonChance.getPokemons().get(Utils.RANDOM.nextInt(size))).create();
+          return PokemonProperties.Companion.parse(pokemonChance.getPokemons().get(Utils.getRandom().nextInt(size))).create();
         }
       }
-      // En caso de algún error inesperado, retorna el último Pokémon en la lista
+
       return PokemonProperties.Companion.parse("rattata").create();
     }
   }
@@ -255,9 +255,8 @@ public class FilterPokemons {
       return getPokemon(AdvancedPokemonChance.getPokemon(getPokemonsChances()));
     } else {
       List<Pokemon> allowedPokemons = getCachePokemons(modId, id);
-      return getPokemon(allowedPokemons.get(Utils.RANDOM.nextInt(allowedPokemons.size())));
+      return getPokemon(allowedPokemons.get(Utils.getRandom().nextInt(allowedPokemons.size())));
     }
-
   }
 
 
@@ -282,7 +281,7 @@ public class FilterPokemons {
 
       List<Pokemon> pokemons = new ArrayList<>();
       for (int i = 0; i < size; i++) {
-        pokemons.add(getPokemon(allowedPokemons.get(Utils.RANDOM.nextInt(allowedPokemons.size()))));
+        pokemons.add(getPokemon(allowedPokemons.get(Utils.getRandom().nextInt(allowedPokemons.size()))));
       }
       return pokemons;
     }

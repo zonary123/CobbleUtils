@@ -23,6 +23,7 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.util.Unit;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -176,6 +177,8 @@ public class ItemModel {
     return getItemStack(itemModel, 1);
   }
 
+  private static final Map<ItemModel, ItemStack> itemCache = new HashMap<>();
+
   /**
    * Get the itemstack of the item
    *
@@ -185,24 +188,29 @@ public class ItemModel {
    * @return The itemstack of the item
    */
   public static ItemStack getItemStack(ItemModel itemModel, int amount) {
+    ItemStack itemStack = itemCache.get(itemModel);
+    if (itemStack != null) return itemStack;
     if (itemModel.getItem().startsWith("pokemon:")) {
-      return Utils.addThingsItemStack(PokemonItem.from(PokemonProperties.Companion.parse(itemModel.getItem().replace(
-        "pokemon:", ""))), itemModel, null);
+      itemStack = PokemonItem.from(PokemonProperties.Companion.parse(itemModel.getItem().replace(
+        "pokemon:", "")));
     } else if (itemModel.getItem().startsWith("command:")) {
       String command = itemModel.getItem().replace("command:", "");
       for (Map.Entry<String, ItemModel> entry : CobbleUtils.config.getItemsCommands().entrySet()) {
         if (command.startsWith(entry.getKey())) {
-          return Utils.parseItemId(entry.getValue().getItem(), amount, entry.getValue().getCustomModelData());
+          itemStack = Utils.parseItemId(entry.getValue().getItem(), amount, entry.getValue().getCustomModelData());
+          break;
         }
       }
-      return Utils.parseItemId("minecraft:command_block", amount);
+      if (itemStack == null) return Utils.parseItemId("minecraft:command_block", amount);
     } else if (itemModel.getItem().startsWith("head:")) {
-      return Utils.getHead(itemModel.getItem().replace("head:", ""), amount);
+      itemStack = Utils.getHead(itemModel.getItem().replace("head:", ""), amount);
     } else if (itemModel.getItem().startsWith("money:")) {
-      return new ItemChance(itemModel.getItem(), 0).getIcon();
+      itemStack = new ItemChance(itemModel.getItem(), 0).getIcon();
     } else {
-      return Utils.parseItemModel(itemModel, amount);
+      itemStack = Utils.parseItemModel(itemModel, amount);
     }
+    itemCache.put(itemModel, itemStack);
+    return itemStack;
   }
 
   /**
@@ -325,6 +333,17 @@ public class ItemModel {
   }
 
   public void applyTemplate(ChestTemplate template, GooeyButton button) {
+    int rows = template.getRows();
+    if (UIUtils.isInside(slot, rows)) template.set(slot, button);
+    if (slots != null) {
+      for (Integer slot : slots) {
+        if (UIUtils.isInside(slot, rows)) template.set(slot, button);
+      }
+    }
+  }
+
+
+  public void applyTemplate(ChestTemplate template, RateLimitedButton button) {
     int rows = template.getRows();
     if (UIUtils.isInside(slot, rows)) template.set(slot, button);
     if (slots != null) {

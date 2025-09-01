@@ -1,11 +1,13 @@
 package com.kingpixel.cobbleutils.util;
 
 import com.kingpixel.cobbleutils.CobbleUtils;
+import dev.ftb.mods.ftbranks.api.FTBRanksAPI;
 import me.lucko.fabric.api.permissions.v0.Permissions;
 import net.luckperms.api.LuckPerms;
 import net.luckperms.api.LuckPermsProvider;
 import net.luckperms.api.model.user.User;
 import net.luckperms.api.model.user.UserManager;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
 import org.bukkit.Bukkit;
@@ -23,6 +25,7 @@ public abstract class LuckPermsUtil {
     LUCKPERMS,
     BUKKIT_PERMISSION_API,
     FABRIC_PERMISSIONS_API,
+    FTB_RANKS,
     NONE
   }
 
@@ -37,9 +40,21 @@ public abstract class LuckPermsUtil {
     } else if (getLuckPermsApi() != null) {
       PERMISSION_TYPE = Permission.LUCKPERMS;
       CobbleUtils.LOGGER.info("LuckPerms detected");
+    } else if (haveFTBRanksApi()) {
+      PERMISSION_TYPE = Permission.FTB_RANKS;
+      CobbleUtils.LOGGER.info("FTB Ranks detected");
     } else {
       CobbleUtils.LOGGER.error("No permission system detected");
       PERMISSION_TYPE = Permission.NONE;
+    }
+  }
+
+  private static boolean haveFTBRanksApi() {
+    try {
+      return FTBRanksAPI.getInstance() != null;
+    } catch (IllegalStateException | NullPointerException | NoClassDefFoundError | NoSuchMethodError e) {
+      CobbleUtils.LOGGER.error("Error while trying to get FTB Ranks class");
+      return false;
     }
   }
 
@@ -89,6 +104,11 @@ public abstract class LuckPermsUtil {
     return switch (PERMISSION_TYPE) {
       case LUCKPERMS, BUKKIT_PERMISSION_API -> checkLuckPermsPermission(source, permissions, level);
       case FABRIC_PERMISSIONS_API -> checkFabricPermissions(source, level, permissions);
+      case FTB_RANKS -> {
+        PlayerEntity player = source.getPlayer();
+        if (player == null) yield false;
+        yield source.hasPermissionLevel(level == 4 ? 2 : level);
+      }
       default -> source.hasPermissionLevel(level);
     };
   }

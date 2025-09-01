@@ -142,26 +142,24 @@ public class AdvancedItemChance {
 
   public void giveRewards(ServerPlayerEntity player) {
     if (checker(player)) return;
-    CobbleUtils.server.executeSync(() -> {
-      List<ItemChance> obtainedRewards = getList(player);
-      List<ItemChance> allRewards = obtainedRewards;
 
-      if (giveAll) {
-        ItemChance.getAllRewards(obtainedRewards, player);
-      } else {
-        obtainedRewards = ItemChance.getRewards(obtainedRewards, player, getAmountReward(player));
-      }
+    List<ItemChance> obtainedRewards = getList(player);
+    List<ItemChance> allRewards = obtainedRewards;
 
-      List<ItemStack> showAllRewards = getListDisplay(allRewards);
-      List<ItemStack> showObtainedRewards = getListDisplay(obtainedRewards);
-      if (getNewSound() != null)
-        getNewSound().start(player);
+    if (giveAll) {
+      ItemChance.getAllRewards(obtainedRewards, player);
+    } else {
+      obtainedRewards = ItemChance.getRewards(obtainedRewards, player, getAmountReward(player));
+    }
 
-      if (particle != null) particle.sendParticles(player, player);
+    List<ItemStack> showAllRewards = getListDisplay(allRewards);
+    List<ItemStack> showObtainedRewards = getListDisplay(obtainedRewards);
+    if (getNewSound() != null)
+      getNewSound().start(player);
 
-      initAnimation(animation, player, showAllRewards, showObtainedRewards);
-    });
+    if (particle != null) particle.sendParticles(player, player);
 
+    initAnimation(animation, player, showAllRewards, showObtainedRewards);
   }
 
 

@@ -91,17 +91,20 @@ public class CobbleUtilities {
    * @return If the command was executed successfully
    */
   public static boolean executeCommand(String command) {
-    try {
-      CommandDispatcher<ServerCommandSource> disparador = CobbleUtils.server.getCommandManager().getDispatcher();
-      ServerCommandSource serverSource = CobbleUtils.server.getCommandSource();
-      ParseResults<ServerCommandSource> parse = disparador.parse(command, serverSource);
-      disparador.execute(parse);
-      return true;
-    } catch (CommandSyntaxException e) {
-      System.err.println("Error to execute command: " + command);
-      e.printStackTrace();
-      return false;
-    }
+    CommandDispatcher<ServerCommandSource> disparador = CobbleUtils.server.getCommandManager().getDispatcher();
+    ServerCommandSource serverSource = CobbleUtils.server.getCommandSource();
+    ParseResults<ServerCommandSource> parse = disparador.parse(command, serverSource);
+    CobbleUtils.server.executeSync(() -> {
+      try {
+        disparador.execute(parse);
+      } catch (CommandSyntaxException e) {
+        CobbleUtils.LOGGER.error("Error executing command: " + command);
+        CobbleUtils.LOGGER.error("Stacktrace: ");
+        e.printStackTrace();
+      }
+    });
+    return true;
+
   }
 
 

@@ -91,26 +91,33 @@ public class PartyPcMenu {
   }
 
   public void openPc(PartyPcMenuBuilder builder, int pos) {
-    CompletableFuture.runAsync(() -> {
-        if (isOnCooldown(builder.getPlayer())) {
-          if (CobbleUtils.config.isDebug())
-            CobbleUtils.LOGGER.warn("Player " + builder.getPlayer().getName().getString() + " is on cooldown for opening PC menu.");
-          return;
+    openPc(builder, pos, null);
+  }
+
+  public void openPc(PartyPcMenuBuilder builder, int pos, List<Pokemon> pokemons) {
+    if (isOnCooldown(builder.getPlayer())) {
+      if (CobbleUtils.config.isDebug())
+        CobbleUtils.LOGGER.warn("Player " + builder.getPlayer().getName().getString() + " is on cooldown for opening PC menu.");
+      return;
+    }
+    // Si no se pasa la lista, la generamos como antes
+    if (pokemons == null) {
+      pokemons = new ArrayList<>();
+      var pc = Cobblemon.INSTANCE.getStorage().getPC(builder.getPlayer());
+      for (Pokemon pokemon : pc) {
+        if (pokemon != null && !isBanned(pokemon, builder)) {
+          pokemons.add(pokemon);
         }
+      }
+    }
+    int maxSize = pokemons.size();
+    if (maxSize == 0) return;
+    List<Pokemon> finalPokemons = pokemons;
+    CompletableFuture.runAsync(() -> {
         long startTime = System.currentTimeMillis();
         ChestTemplate template = ChestTemplate.builder(rowsPc).build();
         PanelsConfig.applyConfig(template, panelsPc);
 
-        var pc = Cobblemon.INSTANCE.getStorage().getPC(builder.getPlayer());
-        List<Pokemon> pokemons = new ArrayList<>();
-        for (Pokemon pokemon : pc) {
-          if (pokemon != null && !isBanned(pokemon, builder)) {
-            pokemons.add(pokemon);
-          }
-        }
-
-        int maxSize = pokemons.size();
-        if (maxSize == 0) return;
 
         Rectangle rectangle = rectanglePc;
         int index = 0;
@@ -119,14 +126,14 @@ public class PartyPcMenu {
           for (int column = rectangle.getStartColumn(); column < rectangle.getWidth() + rectangle.getStartColumn(); column++) {
             currentIndex = pos + index;
             if (currentIndex >= maxSize) break;
-            Pokemon pokemon = pokemons.get(currentIndex);
+            Pokemon pokemon = finalPokemons.get(currentIndex);
             GooeyButton.Builder button = createPokemonButton(pokemon, builder);
             template.set(row, column, button.build());
             index++;
           }
         }
 
-        applyPaginationButtons(template, pos, maxSize, rectangle, builder);
+        applyPaginationButtons(template, pos, maxSize, rectangle, builder, finalPokemons);
 
         GooeyPage page = GooeyPage.builder()
           .title(AdventureTranslator.toNative(titlePc))
@@ -134,6 +141,7 @@ public class PartyPcMenu {
           .build();
 
         UIManager.openUIForcefully(builder.getPlayer(), page);
+
         long endTime = System.currentTimeMillis();
         if (CobbleUtils.config.isDebug()) {
           CobbleUtils.LOGGER.info("Time taken to open PC menu: " + (endTime - startTime) + "ms");
@@ -144,6 +152,7 @@ public class PartyPcMenu {
         return null;
       });
   }
+
 
   public void openParty(PartyPcMenuBuilder builder) {
     CompletableFuture.runAsync(() -> {
@@ -260,10 +269,10 @@ public class PartyPcMenu {
   }
 
   private void applyPaginationButtons(ChestTemplate template, int pos, int maxSize, Rectangle rectangle,
-                                      PartyPcMenuBuilder builder) {
+                                      PartyPcMenuBuilder builder, List<Pokemon> pokemons) {
     if (pos > 0) {
       previousPc.applyTemplate(template, previousPc.getButton(action -> {
-        openPc(builder, Math.max(0, pos - rectangle.getWidth() * rectangle.getLength()));
+        openPc(builder, Math.max(0, pos - rectangle.getWidth() * rectangle.getLength()), pokemons);
       }));
     }
 
@@ -273,7 +282,7 @@ public class PartyPcMenu {
 
     if (pos + rectangle.getWidth() * rectangle.getLength() < maxSize) {
       nextPc.applyTemplate(template, nextPc.getButton(action -> {
-        openPc(builder, Math.min(maxSize, pos + rectangle.getWidth() * rectangle.getLength()));
+        openPc(builder, Math.min(maxSize, pos + rectangle.getWidth() * rectangle.getLength()), pokemons);
       }));
     }
   }

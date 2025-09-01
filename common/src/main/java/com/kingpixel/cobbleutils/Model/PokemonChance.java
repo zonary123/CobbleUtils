@@ -49,7 +49,7 @@ public class PokemonChance {
     if (totalChance <= 0) return null; // Manejo de caso cuando la suma de probabilidades es 0
 
     // Genera un valor aleatorio entre 0 y el total de probabilidades
-    double randomValue = Utils.RANDOM.nextDouble() * totalChance;
+    double randomValue = Utils.getRandom().nextDouble() * totalChance;
 
     // Recorre la lista de Pokémon especiales y selecciona uno basado en el valor aleatorio
     double cumulativeChance = 0.0;

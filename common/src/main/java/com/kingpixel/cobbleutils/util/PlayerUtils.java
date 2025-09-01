@@ -101,17 +101,12 @@ public class PlayerUtils {
         }
 
         switch (typeMessage) {
-          case CHAT -> {
-            if (player == null) return;
-            sendMessage(player, message, prefix);
-          }
-          case ACTIONBAR -> {
-            if (player == null) return;
-            player.sendMessage(AdventureTranslator.toNative(message, prefix, player), true);
-          }
+          case CHAT -> sendMessage(player, message, prefix);
+          case ACTIONBAR -> player.sendMessage(AdventureTranslator.toNative(message, prefix, player), true);
           case ACTIONBAR_BROADCAST -> {
             var text = AdventureTranslator.toNative(message, prefix);
-            for (ServerPlayerEntity serverPlayerEntity : CobbleUtils.server.getPlayerManager().getPlayerList()) {
+            var playerList = CobbleUtils.server.getPlayerManager().getPlayerList();
+            for (ServerPlayerEntity serverPlayerEntity : playerList) {
               serverPlayerEntity.sendMessage(text, true);
             }
           }
@@ -130,7 +125,8 @@ public class PlayerUtils {
       if (CobbleUtils.config.isRedisMessaging()) {
         RedisManager.sendMessage(message);
       } else {
-        CobbleUtils.server.getPlayerManager().getPlayerList().forEach(player -> sendMessage(player, message));
+        var playerList = CobbleUtils.server.getPlayerManager().getPlayerList();
+        playerList.forEach(player -> sendMessage(player, message));
       }
     }
   }
@@ -142,9 +138,8 @@ public class PlayerUtils {
         RedisManager.sendMessage(message, prefix);
       } else {
         var text = AdventureTranslator.toNative(message, prefix);
-        CobbleUtils.server.getPlayerManager().getPlayerList().forEach(player -> {
-          player.sendMessage(text);
-        });
+        var playerList = CobbleUtils.server.getPlayerManager().getPlayerList();
+        playerList.forEach(player -> player.sendMessage(text));
       }
     }
   }
@@ -180,27 +175,24 @@ public class PlayerUtils {
     long time = timestamp - System.currentTimeMillis();
     if (time <= 0) return CobbleUtils.language.getNocooldown();
 
-    long[] units = {time / (1000 * 60 * 60 * 24),
-      (time / (1000 * 60 * 60)) % 24,
-      (time / (1000 * 60)) % 60,
-      (time / 1000) % 60};
-
-    String[] singularLabels = {CobbleUtils.language.getDay(), CobbleUtils.language.getHour(),
-      CobbleUtils.language.getMinute(), CobbleUtils.language.getSecond()};
-    String[] pluralLabels = {CobbleUtils.language.getDays(), CobbleUtils.language.getHours(),
-      CobbleUtils.language.getMinutes(), CobbleUtils.language.getSeconds()};
+    long days = time / (1000L * 60 * 60 * 24);
+    long hours = (time / (1000L * 60 * 60)) % 24;
+    long minutes = (time / (1000L * 60)) % 60;
+    long seconds = (time / 1000L) % 60;
 
     StringBuilder result = new StringBuilder();
-    for (int i = 0; i < units.length; i++) {
-      if (units[i] > 0) {
-        result.append(units[i] != 1
-          ? pluralLabels[i].replace("%s", Long.toString(units[i]))
-          : singularLabels[i].replace("%s", Long.toString(units[i])));
-      }
-    }
+    if (days > 0)
+      result.append((days == 1 ? CobbleUtils.language.getDay() : CobbleUtils.language.getDays()).replace("%s", Long.toString(days)));
+    if (hours > 0)
+      result.append((hours == 1 ? CobbleUtils.language.getHour() : CobbleUtils.language.getHours()).replace("%s", Long.toString(hours)));
+    if (minutes > 0)
+      result.append((minutes == 1 ? CobbleUtils.language.getMinute() : CobbleUtils.language.getMinutes()).replace("%s", Long.toString(minutes)));
+    if (seconds > 0)
+      result.append((seconds == 1 ? CobbleUtils.language.getSecond() : CobbleUtils.language.getSeconds()).replace("%s", Long.toString(seconds)));
 
     return result.isEmpty() ? CobbleUtils.language.getNocooldown() : result.toString().trim();
   }
+
 
   public static ItemStack getHeadItem(UUID playerUUID) {
     var userCache = CobbleUtils.server.getUserCache().getByUuid(playerUUID);
@@ -250,16 +242,19 @@ public class PlayerUtils {
   public static boolean executeCommand(String command, ServerPlayerEntity player) {
     command = command.replace("%player%", player.getGameProfile().getName());
     CommandDispatcher<ServerCommandSource> disparador = CobbleUtils.server.getCommandManager().getDispatcher();
-    try {
-      ServerCommandSource serverSource = CobbleUtils.server.getCommandSource();
-      ParseResults<ServerCommandSource> parse = disparador.parse(command, serverSource);
-      disparador.execute(parse);
-      return true;
-    } catch (CommandSyntaxException e) {
-      System.err.println("Error to execute command: " + command);
-      e.printStackTrace();
-      return false;
-    }
+    ServerCommandSource serverSource = CobbleUtils.server.getCommandSource();
+    ParseResults<ServerCommandSource> parse = disparador.parse(command, serverSource);
+    String finalCommand = command;
+    return CobbleUtils.server.submit(() -> {
+      try {
+        disparador.execute(parse);
+        return true;
+      } catch (CommandSyntaxException e) {
+        System.err.println("Error to execute command: " + finalCommand);
+        e.printStackTrace();
+        return false;
+      }
+    }).join();
   }
 
   /**

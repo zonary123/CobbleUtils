@@ -51,11 +51,11 @@ public class MinIvsProperty implements CustomPokemonProperty {
 
       List<Stats> statsCopy = new ArrayList<>(stats);
       for (int i = 0; i < amountOfStats; i++) {
-        var stat = statsCopy.get(Utils.RANDOM.nextInt(statsCopy.size()));
+        var stat = statsCopy.get(Utils.getRandom().nextInt(statsCopy.size()));
         if (stat == null) continue;
 
         statsCopy.remove(stat);
-        int iv = Utils.RANDOM.nextInt(min, 32);
+        int iv = Utils.getRandom().nextInt(min, 32);
 
         if (CobbleUtils.config.isDebug()) {
           CobbleUtils.LOGGER.info("Setting IVs for " + pokemon.getSpecies().getName() + " to " + iv + " in " + stat.getShowdownId());
@@ -64,7 +64,7 @@ public class MinIvsProperty implements CustomPokemonProperty {
         pokemon.getIvs().set(stat, iv);
       }
       for (Stats stats1 : statsCopy) {
-        pokemon.getIvs().set(stats1, Utils.RANDOM.nextInt(0, 32));
+        pokemon.getIvs().set(stats1, Utils.getRandom().nextInt(0, 32));
       }
     } catch (NumberFormatException e) {
       CobbleUtils.LOGGER.error("Invalid value format for MinIvsProperty: " + this.value);
