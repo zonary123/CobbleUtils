@@ -16,6 +16,7 @@ import com.cobblemon.mod.common.item.PokemonItem;
 import com.cobblemon.mod.common.pokemon.Pokemon;
 import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.api.EconomyApi;
+import com.kingpixel.cobbleutils.api.RewardsApi;
 import com.kingpixel.cobbleutils.database.DataBaseFactory;
 import com.kingpixel.cobbleutils.util.*;
 import lombok.Getter;
@@ -50,7 +51,7 @@ public class ItemChance {
   private Boolean unique = null;
   private String identifier = null;
   private Integer amount = null; // fixed amount, if null, amount is parsed from item string
-  private Integer cooldown = null; // in seconds
+  private DurationValue cooldown = null;
   // Optional display properties
   private String display;
   private String displayname;
@@ -268,6 +269,13 @@ public class ItemChance {
   public static boolean giveReward(ServerPlayerEntity player, ItemChance itemChance, int amount) {
     try {
       String item = itemChance.getItem();
+      if (item.startsWith("id:")) {
+        String id = item.replace("id:", "");
+        ItemChance ic = RewardsApi.getReward(id);
+        if (ic != null) {
+          return giveReward(player, ic, amount);
+        } else return false;
+      }
       String[] parts = item.split("\\|");
 
       if (parts.length > 1) {
@@ -453,12 +461,20 @@ public class ItemChance {
     // Memoization: improve performance for frequently requested items
     return REWARD_ITEM_STACK.computeIfAbsent(cacheKey, key -> {
       ItemStack itemStack;
+      if (item.startsWith("id:")) {
+        String id = item.replace("id:", "");
+        ItemChance ic = RewardsApi.getReward(id);
+        if (ic != null) {
+          return getRewardItemStack(ic.getItem(), amount);
+        } else return ItemStack.EMPTY;
+      }
 
       String[] parts = item.split("\\|");
       if (parts.length > 1) {
         itemStack = getRewardItemStack(parts[0], amount);
         return itemStack;
       }
+
       if (item.startsWith("pokemon:")) {
         itemStack = PokemonItem.from(getRewardPokemon(item));
       } else if (item.startsWith("command:")) {

@@ -1,5 +1,7 @@
 package com.kingpixel.cobbleutils.util.economys;
 
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.util.AdventureTranslator;
 import lombok.Data;
@@ -13,7 +15,6 @@ import org.intellij.lang.annotations.Subst;
 
 import java.math.BigDecimal;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
 
@@ -57,23 +58,20 @@ public class ImpactorEconomy extends EconomyAbstract {
    * The cache will remove the least recently used entry when it exceeds the specified size.
    */
   private static final int CACHE_SIZE = 5000;
-  private static final Map<String, String> formatCache = new LinkedHashMap<>(CACHE_SIZE, 0.75f, true) {
-    @Override
-    protected boolean removeEldestEntry(Map.Entry<String, String> eldest) {
-      return size() > CACHE_SIZE;
-    }
-  };
+  private static final Cache<String, String> formatCache = Caffeine.newBuilder()
+    .maximumSize(CACHE_SIZE)
+    .removalListener((key, value, cause) -> {
+      if (CobbleUtils.config.isDebug())
+        CobbleUtils.LOGGER.info("Removed key from formatCache: " + key + ", cause: " + cause);
+    })
+    .build();
 
   @Override
   public String format(BigDecimal money, String currency) {
-    String key = (money.toPlainString().intern() + "|" + currency.intern()).intern();
-    String cached = formatCache.get(key);
-    if (cached != null) return cached;
-    String formatted = AdventureTranslator.legacyComponentSerializer.serialize(
+    String key = money.toPlainString() + "|" + currency;
+    return formatCache.get(key, k -> AdventureTranslator.legacyComponentSerializer.serialize(
       getCurrency(currency).format(money)
-    );
-    formatCache.put(key, formatted);
-    return formatted;
+    ));
   }
 
   @Override public boolean setBalance(UUID playerUuid, BigDecimal money, String currency) {

@@ -7,7 +7,6 @@ import net.luckperms.api.LuckPerms;
 import net.luckperms.api.LuckPermsProvider;
 import net.luckperms.api.model.user.User;
 import net.luckperms.api.model.user.UserManager;
-import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
 import org.bukkit.Bukkit;
@@ -105,8 +104,14 @@ public abstract class LuckPermsUtil {
       case LUCKPERMS, BUKKIT_PERMISSION_API -> checkLuckPermsPermission(source, permissions, level);
       case FABRIC_PERMISSIONS_API -> checkFabricPermissions(source, level, permissions);
       case FTB_RANKS -> {
-        PlayerEntity player = source.getPlayer();
+        ServerPlayerEntity player = source.getPlayer();
         if (player == null) yield false;
+        for (String permission : permissions) {
+          if (permission == null || permission.isEmpty()) yield true;
+          if (FTBRanksAPI.getPermissionValue(player, permission).asBooleanOrFalse()) {
+            yield true;
+          }
+        }
         yield source.hasPermissionLevel(level == 4 ? 2 : level);
       }
       default -> source.hasPermissionLevel(level);
@@ -166,6 +171,39 @@ public abstract class LuckPermsUtil {
         checkLuckPermsPermission(player.getCommandSource(), List.of(permission), 2);
       case FABRIC_PERMISSIONS_API -> Permissions.require(permission, 2).test(player.getCommandSource());
       default -> player.hasPermissionLevel(2);
+    };
+  }
+
+  public static Object getMetaData(ServerPlayerEntity player, String permission) {
+    return switch (PERMISSION_TYPE) {
+      case LUCKPERMS, BUKKIT_PERMISSION_API -> {
+        if (luckPermsApi == null) {
+          CobbleUtils.LOGGER.error("LuckPerms not found");
+          yield 0; // Esto se convierte en Integer por autoboxing
+        }
+        UserManager userManager = luckPermsApi.getUserManager();
+        User user = userManager.getUser(player.getUuid());
+        if (user == null) {
+          CobbleUtils.LOGGER.error("User not found in LuckPerms");
+          yield 0;
+        }
+
+        var metaData = user.getCachedData().getMetaData().getMetaValue(permission);
+
+        if (metaData == null) yield null;
+
+        // Intentar detectar tipo
+        try {
+          if (metaData.contains(".")) {
+            yield Double.parseDouble(metaData); // retorna Double
+          } else {
+            yield Integer.parseInt(metaData); // retorna Integer
+          }
+        } catch (NumberFormatException e) {
+          yield metaData; // retorna String si no es un número
+        }
+      }
+      default -> null;
     };
   }
 }

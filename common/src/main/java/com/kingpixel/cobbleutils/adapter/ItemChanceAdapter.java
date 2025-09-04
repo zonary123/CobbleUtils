@@ -1,6 +1,7 @@
 package com.kingpixel.cobbleutils.adapter;
 
 import com.google.gson.*;
+import com.kingpixel.cobbleutils.Model.DurationValue;
 import com.kingpixel.cobbleutils.Model.ItemChance;
 
 import java.lang.reflect.Type;
@@ -24,11 +25,11 @@ public class ItemChanceAdapter implements JsonSerializer<ItemChance>, JsonDeseri
     if (unique) {
       String identifier = src.getIdentifier() != null ? src.getIdentifier() : UUID.randomUUID().toString();
       int amount = src.getAmount() != null ? src.getAmount() : 1;
-      int cooldown = src.getCooldown() != null ? src.getCooldown() : 60;
+      DurationValue cooldown = src.getCooldown() != null ? src.getCooldown() : DurationValue.parse("60m");
 
       obj.addProperty("identifier", identifier);
       obj.addProperty("amount", amount);
-      obj.addProperty("cooldown", cooldown);
+      obj.addProperty("cooldown", cooldown.toString()); // <-- aquí el fix
 
       // Guardar los valores por defecto en el objeto también
       src.setIdentifier(identifier);
@@ -38,6 +39,7 @@ public class ItemChanceAdapter implements JsonSerializer<ItemChance>, JsonDeseri
 
     return obj;
   }
+
 
   @Override
   public ItemChance deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context)
@@ -58,7 +60,25 @@ public class ItemChanceAdapter implements JsonSerializer<ItemChance>, JsonDeseri
     if (unique) {
       if (obj.has("identifier")) itemChance.setIdentifier(obj.get("identifier").getAsString());
       itemChance.setAmount(obj.has("amount") ? obj.get("amount").getAsInt() : 1);
-      itemChance.setCooldown(obj.has("cooldown") ? obj.get("cooldown").getAsInt() : 60);
+      if (obj.has("cooldown")) {
+        JsonElement cd = obj.get("cooldown");
+
+        if (cd.isJsonPrimitive()) {
+          JsonPrimitive primitive = cd.getAsJsonPrimitive();
+          if (primitive.isNumber()) {
+            itemChance.setCooldown(DurationValue.parse(primitive.getAsLong() + "m"));
+          } else if (primitive.isString()) {
+            itemChance.setCooldown(DurationValue.parse(primitive.getAsString()));
+          } else {
+            throw new JsonParseException("Cooldown inválido: " + cd);
+          }
+        } else {
+          throw new JsonParseException("Cooldown inválido (se esperaba número o string): " + cd);
+        }
+      } else {
+        itemChance.setCooldown(DurationValue.parse("60m")); // default
+      }
+
     }
 
     return itemChance;

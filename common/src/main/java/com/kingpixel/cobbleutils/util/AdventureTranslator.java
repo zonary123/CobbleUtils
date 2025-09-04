@@ -24,6 +24,9 @@ package com.kingpixel.cobbleutils.util;
  * THE SOFTWARE.
  */
 
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.RemovalCause;
 import com.kingpixel.cobbleutils.CobbleUtils;
 import eu.pb4.placeholders.api.PlaceholderContext;
 import eu.pb4.placeholders.api.Placeholders;
@@ -41,6 +44,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 public class AdventureTranslator {
   public static final MiniMessage miniMessage = MiniMessage.miniMessage();
@@ -58,32 +62,58 @@ public class AdventureTranslator {
     }
   }
 
+  // Memoization of MiniMessage deserialization con Caffeine
+  private static final Cache<String, Text> cache = Caffeine.newBuilder()
+    .maximumSize(50000) // Max 50,000 entries
+    .expireAfterAccess(15, TimeUnit.MINUTES) // Expire after 15 minute of inactivity
+    .removalListener((String key, Text value, RemovalCause cause) -> {
+      if (CobbleUtils.config.isDebug()) CobbleUtils.LOGGER.info("Removed key from cache: " + key + ", cause: " + cause);
+    })
+    .build();
+
+  /**
+   * Internal method to handle prefix and player placeholders
+   *
+   * @param text   The text to convert
+   * @param prefix Optional prefix
+   * @param player Optional player
+   *
+   * @return The converted text
+   */
+  private static Text toNativeInternal(String text, @Nullable String prefix, @Nullable ServerPlayerEntity player) {
+    String replaced = text.replace("%prefix%", prefix == null ? "" : prefix);
+
+    if (player == null) {
+      return cache.get(replaced, e -> {
+        Component component = miniMessage.deserialize(replaceNative(e));
+        return toNative(component, null);
+      });
+    }
+
+    return toNative(miniMessage.deserialize(replaceNative(replaced)), player);
+  }
+
+  // Sobrecargas públicas
   public static Text toNativeWithOutPrefix(String text) {
-    return toNative(miniMessage.deserialize(replaceNative(text)
-      .replace("%prefix%", "")
-      .replace("%partyprefix%", "")), null);
+    return toNativeInternal(text, null, null);
   }
 
   public static Text toNativeWithOutPrefix(String text, @Nullable ServerPlayerEntity player) {
-    return toNative(miniMessage.deserialize(replaceNative(text)
-      .replace("%prefix%", "")
-      .replace("%partyprefix%", "")), player);
+    return toNativeInternal(text, null, player);
   }
 
   public static Text toNative(String text) {
-    return toNative(miniMessage.deserialize(replaceNative(text
-      .replace("%prefix%", CobbleUtils.config.getPrefix()))), null);
+    return toNativeInternal(text, null, null);
   }
 
   public static Text toNative(String text, @Nullable String prefix) {
-    return toNative(miniMessage.deserialize(replaceNative(text
-      .replace("%prefix%", prefix == null ? "" : prefix))), null);
+    return toNativeInternal(text, prefix, null);
   }
 
   public static Text toNative(String text, @Nullable String prefix, @Nullable ServerPlayerEntity player) {
-    return toNative(miniMessage.deserialize(replaceNative(text
-      .replace("%prefix%", prefix == null ? "" : prefix))), player);
+    return toNativeInternal(text, prefix, player);
   }
+
 
   public static Text toNative(Component component, @Nullable ServerPlayerEntity player) {
     component = component.decoration(TextDecoration.ITALIC, false);
@@ -111,7 +141,7 @@ public class AdventureTranslator {
     for (int i = 0; i < size; i++) {
       String loreLine = lore.get(i);
       if (loreLine == null || loreLine.isEmpty()) continue;
-      loreString.add(toNative(miniMessage.deserialize(replaceNative(loreLine)), null));
+      loreString.add(toNativeInternal(loreLine, null, null));
     }
     return loreString;
   }
@@ -122,7 +152,7 @@ public class AdventureTranslator {
     for (int i = 0; i < size; i++) {
       String loreLine = lore.get(i);
       if (loreLine == null || loreLine.isEmpty()) continue;
-      loreString.add(toNative(miniMessage.deserialize(replaceNative(loreLine)), player));
+      loreString.add(toNativeInternal(loreLine, null, player));
     }
     return loreString;
   }

@@ -68,6 +68,7 @@ public class PokemonBlackList {
   }
 
   public boolean isBlackListed(Pokemon pokemon) {
+    if (pokemons.contains("*")) return true;
     if (!aspects.isEmpty()) {
       for (String aspect : pokemon.getAspects()) {
         if (this.aspects.contains(aspect)) return true;

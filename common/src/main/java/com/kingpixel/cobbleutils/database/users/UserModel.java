@@ -1,6 +1,7 @@
 package com.kingpixel.cobbleutils.database.users;
 
 import com.kingpixel.cobbleutils.CobbleUtils;
+import com.kingpixel.cobbleutils.Model.DurationValue;
 import com.kingpixel.cobbleutils.Model.ItemChance;
 import com.kingpixel.cobbleutils.database.DataBaseFactory;
 import com.kingpixel.cobbleutils.util.PlayerUtils;
@@ -115,19 +116,19 @@ public class UserModel {
     }
 
     public boolean isOnCooldown(ItemChance itemChance) {
-      Integer cooldown = itemChance.getCooldown();
+      DurationValue cooldown = itemChance.getCooldown();
       // Si cooldown es null o negativo, consideramos que es infinito
       if (lastClaimed == null || cooldown == null) return false;
-      if (cooldown < 0) return true; // Cooldown infinito
-      Instant nextAvailable = lastClaimed.plus(cooldown, ChronoUnit.MINUTES);
+      if (cooldown.toMillis() <= 0) return true; // Cooldown infinito
+      Instant nextAvailable = lastClaimed.plus(cooldown.toMillis(), ChronoUnit.MILLIS);
       return Instant.now().isBefore(nextAvailable);
     }
 
     public long getRemainingCooldown(ItemChance itemChance) {
-      Integer cooldown = itemChance.getCooldown();
+      DurationValue cooldown = itemChance.getCooldown();
       if (lastClaimed == null || cooldown == null) return 0;
-      if (cooldown < 0) return Long.MAX_VALUE; // Representa cooldown infinito
-      Instant nextAvailable = lastClaimed.plus(cooldown, ChronoUnit.MINUTES);
+      if (cooldown.toMillis() <= 0) return Long.MAX_VALUE; // Representa cooldown infinito
+      Instant nextAvailable = lastClaimed.plus(cooldown.toMillis(), ChronoUnit.MILLIS);
       long remaining = nextAvailable.getEpochSecond() - Instant.now().getEpochSecond();
       return Math.max(0, remaining);
     }

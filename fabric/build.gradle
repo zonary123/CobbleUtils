@@ -46,6 +46,8 @@ dependencies {
 
     include(modImplementation("com.github.MemencioPerez:libby-fabric:1.0.0"))
 
+    // Caffeine
+    libby("com.github.ben-manes.caffeine:caffeine:${property("caffeine_version")}")
     // Kyori Adventure
     libby("net.kyori:adventure-text-serializer-gson:${property("kyori_version")}")
     libby("net.kyori:adventure-text-minimessage:${property("kyori_version")}")

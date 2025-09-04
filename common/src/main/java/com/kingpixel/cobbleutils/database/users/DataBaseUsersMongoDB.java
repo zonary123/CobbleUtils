@@ -2,6 +2,8 @@ package com.kingpixel.cobbleutils.database.users;
 
 import com.kingpixel.cobbleutils.Model.DataBaseConfig;
 import com.kingpixel.cobbleutils.util.Utils;
+import com.mongodb.ConnectionString;
+import com.mongodb.MongoClientSettings;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoCollection;
@@ -27,14 +29,22 @@ public class DataBaseUsersMongoDB extends DataBaseUsers {
   private MongoDatabase database;
   private MongoCollection<Document> collectionUser;
 
-  @Override public void connect(DataBaseConfig config) {
-    mongoClient = MongoClients.create(config.getUrl());
+  @Override
+  public void connect(DataBaseConfig config) {
+    MongoClientSettings settings = MongoClientSettings.builder()
+      .applyConnectionString(new ConnectionString(config.getUrl()))
+      .applicationName("CobbleUtils-Users")
+      .build();
+
+    mongoClient = MongoClients.create(settings);
     database = mongoClient.getDatabase(config.getDatabase());
     collectionUser = database.getCollection("users");
   }
 
   @Override public void disconnect() {
-
+    if (mongoClient != null) {
+      mongoClient.close();
+    }
   }
 
   @Override public @Nullable UserModel findUserByUUID(@NotNull UUID uuid) {

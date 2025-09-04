@@ -8,6 +8,7 @@ import com.kingpixel.cobbleutils.api.EconomyApi;
 import com.kingpixel.cobbleutils.command.CommandTree;
 import com.kingpixel.cobbleutils.config.Config;
 import com.kingpixel.cobbleutils.config.Lang;
+import com.kingpixel.cobbleutils.config.RewardsC;
 import com.kingpixel.cobbleutils.database.DataBaseFactory;
 import com.kingpixel.cobbleutils.database.users.DataBaseUsers;
 import com.kingpixel.cobbleutils.database.users.UserModel;
@@ -44,6 +45,7 @@ public class CobbleUtils {
   public static CommandRegistryAccess commandRegistryAccess;
   public static MinecraftServer server;
   public static Config config = new Config();
+  public static RewardsC rewardsC = new RewardsC();
   public static SpawnRates spawnRates = new SpawnRates();
   // Lang
   public static Lang language = new Lang();
@@ -75,6 +77,7 @@ public class CobbleUtils {
   private static void files() {
     config.init();
     language.init();
+    rewardsC.init();
     DataBaseFactory.init(config.getDatabase());
   }
 

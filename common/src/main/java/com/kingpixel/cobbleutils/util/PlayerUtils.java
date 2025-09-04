@@ -1,8 +1,12 @@
 package com.kingpixel.cobbleutils.util;
 
 import com.cobblemon.mod.common.Cobblemon;
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.kingpixel.cobbleutils.CobbleUtils;
+import com.kingpixel.cobbleutils.Model.DurationValue;
+import com.kingpixel.cobbleutils.util.manager.CooldownManager;
 import com.mojang.authlib.GameProfile;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.ParseResults;
@@ -26,6 +30,7 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author Carlos Varas Alonso - 28/06/2024 20:44
@@ -37,11 +42,48 @@ public class PlayerUtils {
     .setNameFormat("CobbleUtils Message - %d")
     .build());
 
+  /**
+   * Method to check if a player is in a battle.
+   *
+   * @param player The player to check.
+   *
+   * @return true if the player is in a battle.
+   */
   public static boolean isBattle(ServerPlayerEntity player) {
     var battle = Cobblemon.INSTANCE.getBattleRegistry().getBattleByParticipatingPlayer(player);
-    return battle != null;
+    if (battle != null) {
+      PlayerUtils.sendMessage(
+        player,
+        CobbleUtils.language.getMessagearebattle(),
+        CobbleUtils.config.getPrefix(),
+        TypeMessage.CHAT
+      );
+      return true;
+    }
+    return false;
   }
 
+  /**
+   * Method to check if a player has a cooldown for a specific menu.
+   *
+   * @param player        The player to check.
+   * @param menu          The menu to check.
+   * @param durationValue The duration value to check.
+   *
+   * @return true if the player has a cooldown for the specific menu.
+   */
+  public static boolean isCooldownMenu(ServerPlayerEntity player, String menu, DurationValue durationValue) {
+    return CooldownManager.isCooldownMenu(player, menu, durationValue);
+  }
+
+  /**
+   * Method to send a message to a player by UUID with a specific prefix and type of message.
+   *
+   * @param playerUUID  The UUID of the player to send the message to.
+   * @param message     The message to send.
+   * @param prefix      The prefix to use in the message.
+   * @param typeMessage The type of message to send (CHAT, ACTIONBAR, ACTIONBAR_BROADCAST, BROADCAST).
+   */
   public static void sendMessage(UUID playerUUID, String message, String prefix, TypeMessage typeMessage) {
     if (message.isEmpty()) return;
 
@@ -68,7 +110,12 @@ public class PlayerUtils {
     }
   }
 
-  // Comando
+  /**
+   * Method to send a message to a player without a prefix.
+   *
+   * @param player  The player to send the message to.
+   * @param message The message to send.
+   */
   @Deprecated
   public static void sendMessage(ServerPlayerEntity player, String message) {
     if (message.isEmpty()) return;
@@ -76,6 +123,13 @@ public class PlayerUtils {
     player.sendMessage(AdventureTranslator.toNativeWithOutPrefix(message, player));
   }
 
+  /**
+   * Method to send a message to a player with a specific prefix.
+   *
+   * @param player  The player to send the message to.
+   * @param message The message to send.
+   * @param prefix  The prefix to use in the message.
+   */
   @Deprecated
   public static void sendMessage(ServerPlayerEntity player, String message, String prefix) {
     if (message.isEmpty()) return;
@@ -92,9 +146,8 @@ public class PlayerUtils {
    * @param typeMessage The type of message to send (CHAT, ACTIONBAR, ACTIONBAR_BROADCAST, BROADCAST).
    */
   public static void sendMessage(ServerPlayerEntity player, String message, String prefix, TypeMessage typeMessage) {
+    if (player == null || message.isEmpty()) return;
     CompletableFuture.runAsync(() -> {
-        if (player == null || message.isEmpty()) return;
-
         if (CobbleUtils.config.isRedisMessaging()) {
           sendMessage(player.getUuid(), message, prefix, typeMessage);
           return;
@@ -171,29 +224,58 @@ public class PlayerUtils {
     return getCooldown(date.getTime());
   }
 
+  private static final Cache<Long, String> cooldownCache = Caffeine.newBuilder()
+    .maximumSize(10000)
+    .expireAfterAccess(5, TimeUnit.MINUTES)
+    .removalListener((key, value, cause) -> {
+      if (CobbleUtils.config.isDebug())
+        CobbleUtils.LOGGER.info("Removed key from cooldownCache: Key: " + key + ", Value: " + value + ", cause: " + cause);
+    })
+    .build();
+
+  /**
+   * Method to get the cooldown in a human-readable format.
+   *
+   * @param timestamp The timestamp to check.
+   *
+   * @return The cooldown in a human-readable format.
+   */
   public static String getCooldown(long timestamp) {
-    long time = timestamp - System.currentTimeMillis();
-    if (time <= 0) return CobbleUtils.language.getNocooldown();
+    long timeMillis = timestamp - System.currentTimeMillis();
+    if (timeMillis <= 0) return CobbleUtils.language.getNocooldown();
 
-    long days = time / (1000L * 60 * 60 * 24);
-    long hours = (time / (1000L * 60 * 60)) % 24;
-    long minutes = (time / (1000L * 60)) % 60;
-    long seconds = (time / 1000L) % 60;
+    long timeSeconds = timeMillis / 1000;
+    return cooldownCache.get(timeSeconds, t -> {
+      long days = t / (60 * 60 * 24);
+      long hours = (t / (60 * 60)) % 24;
+      long minutes = (t / 60) % 60;
+      long seconds = t % 60;
 
-    StringBuilder result = new StringBuilder();
-    if (days > 0)
-      result.append((days == 1 ? CobbleUtils.language.getDay() : CobbleUtils.language.getDays()).replace("%s", Long.toString(days)));
-    if (hours > 0)
-      result.append((hours == 1 ? CobbleUtils.language.getHour() : CobbleUtils.language.getHours()).replace("%s", Long.toString(hours)));
-    if (minutes > 0)
-      result.append((minutes == 1 ? CobbleUtils.language.getMinute() : CobbleUtils.language.getMinutes()).replace("%s", Long.toString(minutes)));
-    if (seconds > 0)
-      result.append((seconds == 1 ? CobbleUtils.language.getSecond() : CobbleUtils.language.getSeconds()).replace("%s", Long.toString(seconds)));
+      StringBuilder result = new StringBuilder();
+      if (days > 0)
+        result.append((days == 1 ? CobbleUtils.language.getDay() : CobbleUtils.language.getDays())
+          .replace("%s", Long.toString(days)));
+      if (hours > 0)
+        result.append((hours == 1 ? CobbleUtils.language.getHour() : CobbleUtils.language.getHours())
+          .replace("%s", Long.toString(hours)));
+      if (minutes > 0)
+        result.append((minutes == 1 ? CobbleUtils.language.getMinute() : CobbleUtils.language.getMinutes())
+          .replace("%s", Long.toString(minutes)));
+      if (seconds > 0)
+        result.append((seconds == 1 ? CobbleUtils.language.getSecond() : CobbleUtils.language.getSeconds())
+          .replace("%s", Long.toString(seconds)));
 
-    return result.isEmpty() ? CobbleUtils.language.getNocooldown() : result.toString().trim();
+      return result.isEmpty() ? CobbleUtils.language.getNocooldown() : result.toString().trim();
+    });
   }
 
-
+  /**
+   * Method to get the head item of a player by UUID.
+   *
+   * @param playerUUID The UUID of the player.
+   *
+   * @return The head item of the player.
+   */
   public static ItemStack getHeadItem(UUID playerUUID) {
     var userCache = CobbleUtils.server.getUserCache().getByUuid(playerUUID);
     if (userCache.isPresent()) {
@@ -204,6 +286,13 @@ public class PlayerUtils {
     return Utils.parseItemId("minecraft:player_head");
   }
 
+  /**
+   * Method to get the head item of a player.
+   *
+   * @param player The player.
+   *
+   * @return The head item of the player.
+   */
   public static ItemStack getHeadItem(ServerPlayerEntity player) {
     return getHeadItem(player.getUuid());
   }
@@ -274,6 +363,13 @@ public class PlayerUtils {
 
   private static final OkHttpClient client = new OkHttpClient();
 
+  /**
+   * Method to get the GameProfile of a player by name using Mojang API.
+   *
+   * @param name The name of the player.
+   *
+   * @return The GameProfile of the player or null if not found.
+   */
   public static GameProfile getGameProfile(String name) {
     Request request = new Request.Builder()
       .url("https://api.mojang.com/users/profiles/minecraft/" + name)

@@ -52,9 +52,8 @@ public class Lang {
   private String messageReceiveReward;
   private String messageReceiveMoney;
   private String messagePokeShout;
-  private String messageBought;
-  private String messageNotHaveMoney;
   private String messageCooldown;
+  private String messageCooldownMenu;
   private String coloritem;
   private List<String> lorepokemon;
   private List<String> lorechance;
@@ -138,11 +137,12 @@ public class Lang {
     titleLoot = "&eLoot";
     // Messages
     messagerandomitem = "&aYou get a &e%type% &arandomitem &f%item% &6%amount%&a!";
-    messagearebattle = "&aYou need to be in a battle to use this command.";
+    messagearebattle = "&aYou need to be out of battle to do this.";
     messagefossiltime = "&aYou need to wait %cooldown% &ato get a new fossil.";
     messagefossilcomplete = "&aYou have completed the fossil.";
     messageThisPokemonIsShiny = "&aThis Pokemon is shiny!";
     messageNoPokemon = "&cNo Pokemon";
+    messageCooldownMenu = "&cYou have cooldown to open this menu.";
     messageReceiveReward = "&aYou receive a reward!";
     messageReceiveMoney = "&aYou receive %amount%$!";
     messagePokeShout = "§e[PokeShout] &6%player% &ashouted &e%pokemon% %gender% &f(&b%form%&f) &f(&b%level%&f) &a!";
@@ -159,7 +159,6 @@ public class Lang {
       "<#83a7de><lang:cobblemon.ui.stats.ivs>: &e%ivs%&7/&e31",
       " <#ee8339><lang:cobblemon.ui.stats.hp>: &f%ivshp% <#e84b48><lang:cobblemon.ui.stats.atk>: &f%ivsatk% <#5d79e1><lang:cobblemon.ui.stats.def>: &f%ivsdef%",
       " <#40b5cd><lang:cobblemon.ui.stats.sp_atk>: &f%ivsspa% <#f59bc2><lang:cobblemon.ui.stats.sp_def>: &f%ivsspdef% <#69cd65><lang:cobblemon.ui.stats.speed>: &f%ivsspeed%",
-      "<#d3e38d>Pokerus: %pokerus%",
       "<#de8397><lang:cobblemon.ui.stats.evs>: &e%evs%&7/&e510",
       " <#ee8339><lang:cobblemon.ui.stats.hp>: &f%evshp% <#e84b48><lang:cobblemon.ui.stats.atk>: &f%evsatk% <#5d79e1><lang:cobblemon.ui.stats.def>: &f%evsdef%",
       " <#40b5cd><lang:cobblemon.ui.stats.sp_atk>: &f%evsspa% <#f59bc2><lang:cobblemon.ui.stats.sp_def>: &f%evsspdef% <#69cd65><lang:cobblemon.ui.stats.speed>: &f%evsspeed%",

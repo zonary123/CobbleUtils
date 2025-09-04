@@ -66,4 +66,16 @@ public class PermissionApi {
     if (source == null) return false;
     return LuckPermsUtil.checkPermission(source, level, permissions);
   }
+
+  /**
+   * Get the data of the player
+   *
+   * @param player     The player to get the data
+   * @param permission The permission to get the data
+   *
+   * @return The data of the player
+   */
+  public static Object getMetaData(ServerPlayerEntity player, String permission) {
+    return LuckPermsUtil.getMetaData(player, permission);
+  }
 }

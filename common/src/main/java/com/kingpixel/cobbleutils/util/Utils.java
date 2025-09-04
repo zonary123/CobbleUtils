@@ -12,6 +12,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.internal.bind.DateTypeAdapter;
 import com.kingpixel.cobbleutils.CobbleUtils;
+import com.kingpixel.cobbleutils.Model.DurationValue;
 import com.kingpixel.cobbleutils.Model.ItemChance;
 import com.kingpixel.cobbleutils.Model.ItemModel;
 import com.kingpixel.cobbleutils.adapter.InstantTypeAdapter;
@@ -89,7 +90,7 @@ public abstract class Utils {
     return addAdapters(new GsonBuilder()
       .disableHtmlEscaping());
   }
-  
+
   public static boolean isPlaceholder() {
     try {
       Class.forName("eu.pb4.placeholders.api.Placeholders");
@@ -110,7 +111,8 @@ public abstract class Utils {
       .registerTypeAdapter(Pokemon.class, PokemonAdapter.INSTANCE)
       .registerTypeAdapter(ItemStack.class, ItemStackAdapter.INSTANCE)
       .registerTypeAdapter(Instant.class, InstantTypeAdapter.INSTANCE)
-      .registerTypeAdapter(ItemChance.class, ItemChanceAdapter.INSTANCE);
+      .registerTypeAdapter(ItemChance.class, ItemChanceAdapter.INSTANCE)
+      .registerTypeAdapter(DurationValue.class, DurationValue.INSTANCE);
   }
 
   public static ExecutorService IO_EXECUTOR = Executors.newFixedThreadPool(16, new ThreadFactoryBuilder()
@@ -270,6 +272,25 @@ public abstract class Utils {
 
   public static File getAbsolutePath(String directoryPath) {
     return new File(Paths.get(new File("").getAbsolutePath()) + directoryPath);
+  }
+
+  public static List<File> getFiles(File directory) {
+    List<File> fileList = new ArrayList<>();
+    if (directory.exists() && directory.isDirectory()) {
+      File[] files = directory.listFiles();
+      if (files != null) {
+        for (File file : files) {
+          if (file.isFile()) {
+            fileList.add(file);
+          } else if (file.isDirectory()) {
+            fileList.addAll(getFiles(file));
+          }
+        }
+      }
+    } else {
+      CobbleUtils.LOGGER.info("Directory " + directory.getPath() + " does not exist or is not a directory.");
+    }
+    return fileList;
   }
 
   public static void removeFiles(String directoryPath) {
