@@ -41,5 +41,6 @@ public class DataBaseFactory {
   public static void close() {
     if (dataBaseBlock != null) dataBaseBlock.disconnect();
     if (dataBaseUsers != null) dataBaseUsers.disconnect();
+
   }
 }

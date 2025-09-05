@@ -82,7 +82,8 @@ public class PokemonBlackList {
     if (!allowEvolutions) {
       Pokemon firstEvolution = PokemonUtils.getFirstEvolution(pokemon);
       pokemonFormShowdownId = pokemon.getForm().showdownId();
-      if (!firstEvolution.getForm().showdownId().equals(pokemonFormShowdownId)) return true;
+      if (!firstEvolution.getForm().showdownId().equals(pokemonFormShowdownId))
+        return cacheResult(pokemonShowdownId, true);
     }
     if (pokemon.getForm().getEggGroups().stream().anyMatch(eggGroups::contains))
       return cacheResult(pokemonShowdownId, true);
@@ -106,6 +107,7 @@ public class PokemonBlackList {
   }
 
   public boolean cacheResult(String pokemonShowdownId, boolean result) {
-    return resultsCache.put(pokemonShowdownId, result) != null;
+    resultsCache.putIfAbsent(pokemonShowdownId, result);
+    return result;
   }
 }

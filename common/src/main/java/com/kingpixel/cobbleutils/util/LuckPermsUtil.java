@@ -170,6 +170,12 @@ public abstract class LuckPermsUtil {
       case LUCKPERMS, BUKKIT_PERMISSION_API ->
         checkLuckPermsPermission(player.getCommandSource(), List.of(permission), 2);
       case FABRIC_PERMISSIONS_API -> Permissions.require(permission, 2).test(player.getCommandSource());
+      case FTB_RANKS -> {
+        if (FTBRanksAPI.getPermissionValue(player, permission).asBooleanOrFalse()) {
+          yield true;
+        }
+        yield player.hasPermissionLevel(2);
+      }
       default -> player.hasPermissionLevel(2);
     };
   }
@@ -191,6 +197,10 @@ public abstract class LuckPermsUtil {
         var metaData = user.getCachedData().getMetaData().getMetaValue(permission);
 
         if (metaData == null) yield null;
+
+        if (CobbleUtils.config.isDebug()) {
+          CobbleUtils.LOGGER.info("MetaData for permission " + permission + " is " + metaData);
+        }
 
         // Intentar detectar tipo
         try {

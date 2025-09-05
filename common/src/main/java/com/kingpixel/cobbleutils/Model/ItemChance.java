@@ -725,9 +725,11 @@ public class ItemChance {
    */
   public static List<ItemChance> getRewards(List<ItemChance> itemChances, ServerPlayerEntity player,
                                             int numberOfRewards) {
-    List<ItemChance> rewards = new ArrayList<>();
+    List<ItemChance> rewards = new ArrayList<>(numberOfRewards);
     List<ItemChance> finalItemChances = new ArrayList<>(itemChances);
+
     finalItemChances.removeIf(itemChance -> !DataBaseFactory.dataBaseUsers.isAvailableReward(player, itemChance));
+
     if (finalItemChances.isEmpty()) {
       PlayerUtils.sendMessage(
         player,
@@ -737,8 +739,10 @@ public class ItemChance {
       );
       return finalItemChances;
     }
+
+    double totalChance = finalItemChances.stream().mapToDouble(ItemChance::getChance).sum();
+
     for (int i = 0; i < numberOfRewards; i++) {
-      double totalChance = finalItemChances.stream().mapToDouble(ItemChance::getChance).sum();
       double randomChance = Utils.getRandom().nextDouble(totalChance);
       double cumulativeChance = 0;
 
@@ -750,6 +754,7 @@ public class ItemChance {
         }
       }
     }
+
     rewards.forEach(itemChance -> {
       try {
         giveReward(player, itemChance);
@@ -757,6 +762,7 @@ public class ItemChance {
         e.printStackTrace();
       }
     });
+
     return rewards;
   }
 
