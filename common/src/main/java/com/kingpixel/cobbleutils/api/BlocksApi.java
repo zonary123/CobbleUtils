@@ -99,7 +99,7 @@ public class BlocksApi {
   /**
    * Devuelve el ID del bloque.
    */
-  public String getBlockId(Block block) {
+  public static String getBlockId(Block block) {
     return Registries.BLOCK.getId(block).toString();
   }
 
@@ -108,7 +108,7 @@ public class BlocksApi {
    * - Columnas: cuenta todos los bloques iguales hacia arriba.
    * - Cultivos: solo devuelve 1 si están maduros.
    */
-  public int getAmount(Block block, BlockPos pos, World world) {
+  public static int getAmount(Block block, BlockPos pos, World world) {
     int amount = 0;
 
     if (isColumnBlock(block)) {

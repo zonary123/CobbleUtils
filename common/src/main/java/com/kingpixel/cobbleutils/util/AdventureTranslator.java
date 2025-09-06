@@ -62,10 +62,10 @@ public class AdventureTranslator {
     }
   }
 
-  // Memoization of MiniMessage deserialization con Caffeine
+  // Memoization with Caffeine
   private static final Cache<String, Text> cache = Caffeine.newBuilder()
-    .maximumSize(50000) // Max 50,000 entries
-    .expireAfterAccess(15, TimeUnit.MINUTES) // Expire after 15 minute of inactivity
+    .maximumSize(100000) // Max 100,000 entries
+    .expireAfterAccess(5, TimeUnit.MINUTES) // Expire after 15 minute of inactivity
     .removalListener((String key, Text value, RemovalCause cause) -> {
       if (CobbleUtils.config.isDebug()) CobbleUtils.LOGGER.info("Removed key from cache: " + key + ", cause: " + cause);
     })

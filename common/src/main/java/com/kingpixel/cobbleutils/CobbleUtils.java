@@ -56,14 +56,12 @@ public class CobbleUtils {
 
   public static void init() {
     events();
-    modsInUse.add(MOD_ID);
   }
 
   public static void load() {
     files();
     sign();
     EconomyApi.setEconomyType();
-    RedisManager.init();
     try {
       if (config.isGtsSupport()) {
         new CobbleUtilsBridgeGTS();
@@ -123,7 +121,7 @@ public class CobbleUtils {
 
   private static void events() {
     files();
-
+    RedisManager.init();
 
     LifecycleEvent.SERVER_LEVEL_LOAD.register(level -> {
       server = level.getServer();
