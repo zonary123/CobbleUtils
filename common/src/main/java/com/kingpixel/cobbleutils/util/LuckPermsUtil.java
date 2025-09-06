@@ -13,6 +13,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.plugin.RegisteredServiceProvider;
 
 import java.util.List;
+import java.util.Optional;
 
 public abstract class LuckPermsUtil {
 
@@ -45,6 +46,9 @@ public abstract class LuckPermsUtil {
     } else {
       CobbleUtils.LOGGER.error("No permission system detected");
       PERMISSION_TYPE = Permission.NONE;
+    }
+    if (PERMISSION_TYPE == null) {
+      CobbleUtils.LOGGER.fatal("No permission system detected, defaulting to NONE");
     }
   }
 
@@ -108,9 +112,11 @@ public abstract class LuckPermsUtil {
         if (player == null) yield false;
         for (String permission : permissions) {
           if (permission == null || permission.isEmpty()) yield true;
-          if (FTBRanksAPI.getPermissionValue(player, permission).asBooleanOrFalse()) {
-            yield true;
-          }
+          var value = FTBRanksAPI.getPermissionValue(player, permission);
+          if (value.asBoolean().orElse(false)) yield true;
+
+          Optional<Number> num = value.asNumber();
+          if (num.isPresent() && num.get().doubleValue() > 0) yield true;
         }
         yield source.hasPermissionLevel(level == 4 ? 2 : level);
       }
@@ -171,10 +177,11 @@ public abstract class LuckPermsUtil {
         checkLuckPermsPermission(player.getCommandSource(), List.of(permission), 2);
       case FABRIC_PERMISSIONS_API -> Permissions.require(permission, 2).test(player.getCommandSource());
       case FTB_RANKS -> {
-        if (FTBRanksAPI.getPermissionValue(player, permission).asBooleanOrFalse()) {
-          yield true;
-        }
-        yield player.hasPermissionLevel(2);
+        if (player == null) yield false;
+        var value = FTBRanksAPI.getPermissionValue(player, permission);
+        if (value.asBoolean().orElse(false)) yield true;
+        Optional<Number> num = value.asNumber();
+        yield num.isPresent() && num.get().doubleValue() > 0;
       }
       default -> player.hasPermissionLevel(2);
     };
