@@ -31,7 +31,10 @@ public abstract class LuckPermsUtil {
 
   private static void setup() {
     if (PERMISSION_TYPE != null) return;
-    if (haveFabricPermissionsApi()) {
+    if (haveFTBRanksApi()) {
+      PERMISSION_TYPE = Permission.FTB_RANKS;
+      CobbleUtils.LOGGER.info("FTB Ranks detected");
+    } else if (haveFabricPermissionsApi()) {
       PERMISSION_TYPE = Permission.FABRIC_PERMISSIONS_API;
       CobbleUtils.LOGGER.info("Fabric permissions detected");
     } else if (haveBukkitPermissionApi()) {
@@ -40,9 +43,6 @@ public abstract class LuckPermsUtil {
     } else if (getLuckPermsApi() != null) {
       PERMISSION_TYPE = Permission.LUCKPERMS;
       CobbleUtils.LOGGER.info("LuckPerms detected");
-    } else if (haveFTBRanksApi()) {
-      PERMISSION_TYPE = Permission.FTB_RANKS;
-      CobbleUtils.LOGGER.info("FTB Ranks detected");
     } else {
       CobbleUtils.LOGGER.error("No permission system detected");
       PERMISSION_TYPE = Permission.NONE;
