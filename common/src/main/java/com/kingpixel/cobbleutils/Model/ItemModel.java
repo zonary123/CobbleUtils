@@ -189,7 +189,7 @@ public class ItemModel {
    */
   public static ItemStack getItemStack(ItemModel itemModel, int amount) {
     ItemStack itemStack = itemCache.get(itemModel);
-    if (itemStack != null) return itemStack.copyWithCount(amount == 0 ? 1 : amount);
+    if (itemStack != null && itemStack.getCount() > 0) return itemStack.copyWithCount(amount == 0 ? 1 : amount);
     if (itemModel.getItem().startsWith("pokemon:")) {
       itemStack = PokemonItem.from(PokemonProperties.Companion.parse(itemModel.getItem().replace(
         "pokemon:", "")));

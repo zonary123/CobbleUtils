@@ -60,6 +60,7 @@ public abstract class Utils {
    */
   @Deprecated
   public static final Random RANDOM = new Random();
+
   private static final Charset charset = StandardCharsets.UTF_8;
 
   public static ThreadLocalRandom getRandom() {
@@ -76,13 +77,13 @@ public abstract class Utils {
     return GsonPrettyHolder.gsonPretty;
   }
 
-  private static final class GsonnotPrettyHolder {
-    private static final Gson gsonnotPretty = adapters()
+  private static final class GsonNotPrettyHolder {
+    private static final Gson gsonNotPretty = adapters()
       .create();
   }
 
   public static Gson newWithoutSpacingGson() {
-    return GsonnotPrettyHolder.gsonnotPretty;
+    return GsonNotPrettyHolder.gsonNotPretty;
   }
 
 

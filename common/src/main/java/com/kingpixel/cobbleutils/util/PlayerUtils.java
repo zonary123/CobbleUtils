@@ -37,7 +37,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class PlayerUtils {
 
-  public static ExecutorService MESSAGE_EXECUTOR = Executors.newFixedThreadPool(4, new ThreadFactoryBuilder()
+  private static final ExecutorService MESSAGE_EXECUTOR = Executors.newFixedThreadPool(4, new ThreadFactoryBuilder()
     .setDaemon(true)
     .setNameFormat("CobbleUtils Message - %d")
     .build());
@@ -208,9 +208,10 @@ public class PlayerUtils {
    */
   public static int getCooldown(Map<String, Integer> cooldowns, int defaultCooldown, ServerPlayerEntity player) {
     int cooldown = defaultCooldown;
-    for (Map.Entry<String, Integer> entry : cooldowns.entrySet()) {
-      if (player != null && LuckPermsUtil.checkPermission(player, entry.getKey())) {
-        if (entry.getValue() < cooldown) {
+    var entries = cooldowns.entrySet();
+    for (Map.Entry<String, Integer> entry : entries) {
+      if (entry.getValue() < cooldown) {
+        if (player != null && LuckPermsUtil.checkPermission(player, entry.getKey())) {
           cooldown = entry.getValue();
         }
       }

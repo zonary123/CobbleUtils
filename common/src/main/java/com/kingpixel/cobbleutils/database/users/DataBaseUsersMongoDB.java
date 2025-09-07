@@ -112,8 +112,8 @@ public class DataBaseUsersMongoDB extends DataBaseUsers {
   }
 
   @Override
-  public List<UserModel> getUsersInactiveSince(long days) {
-    Instant thresholdInstant = Instant.now().minus(days, ChronoUnit.DAYS);
+  public List<UserModel> getUsersInactiveSince(long millis) {
+    Instant thresholdInstant = Instant.now().minus(millis, ChronoUnit.MILLIS);
     String thresholdIso = DateTimeFormatter.ISO_INSTANT.format(thresholdInstant); // Ej: "2025-08-20T15:30:00Z"
 
     List<UserModel> inactiveUsers = new ArrayList<>();

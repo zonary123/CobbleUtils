@@ -40,7 +40,7 @@ public abstract class DataBaseUsers {
 
   public abstract List<UserModel> getAllUsers();
 
-  public abstract List<UserModel> getUsersInactiveSince(long days);
+  public abstract List<UserModel> getUsersInactiveSince(long millis);
 
   @Nullable public ServerPlayerEntity getPlayerOfflineOrOnline(String playerName) {
     ServerPlayerEntity player = CobbleUtils.server.getPlayerManager().getPlayer(playerName);
@@ -112,4 +112,5 @@ public abstract class DataBaseUsers {
   public void removeIfNecessary(UUID uuid) {
     users.remove(uuid);
   }
+  
 }

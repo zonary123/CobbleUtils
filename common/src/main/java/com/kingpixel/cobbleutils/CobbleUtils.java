@@ -142,6 +142,7 @@ public class CobbleUtils {
           UserModel user = DataBaseFactory.dataBaseUsers.findUserByUUID(player.getUuid());
           if (user == null) user = new UserModel(player);
           user.updateData(player);
+          user.fix();
           DataBaseFactory.dataBaseUsers.saveOrUpdateUser(user);
           DataBaseUsers.users.put(player.getUuid(), user);
         }, EXECUTOR_COBBLEUTILS)

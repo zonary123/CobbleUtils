@@ -1,29 +1,5 @@
 package com.kingpixel.cobbleutils.util;
 
-/*
- * This file is part of Impactor, licensed under the MIT License (MIT).
- *
- * Copyright (c) 2018-2022 NickImpact
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- */
-
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.RemovalCause;
@@ -46,43 +22,57 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * Utility class to convert Adventure Components and MiniMessage text into Minecraft-native Text objects.
+ * Optimized for multithreading using ThreadLocal for GsonComponentSerializer instances.
+ */
 public class AdventureTranslator {
+
+
+  // MiniMessage instance for parsing MiniMessage strings
   public static final MiniMessage miniMessage = MiniMessage.miniMessage();
-  public static LegacyComponentSerializer legacyComponentSerializer = LegacyComponentSerializer.builder()
+
+  // Legacy serializer supporting '&' and '§' color codes
+  public static final LegacyComponentSerializer legacyComponentSerializer = LegacyComponentSerializer.builder()
     .character('§')
     .character('&')
     .hexColors()
     .build();
 
-  private static RegistryWrapper.WrapperLookup getWrapper() {
-    if (CobbleUtils.server != null) {
-      return CobbleUtils.server.getRegistryManager();
-    } else {
-      return null;
-    }
-  }
+  // Thread-local GsonComponentSerializer to avoid contention in multi-threaded environments
+  private static final ThreadLocal<GsonComponentSerializer> threadLocalGson = ThreadLocal.withInitial(GsonComponentSerializer::gson);
 
-  // Memoization with Caffeine
+  // Caffeine cache for repeated text conversions
   private static final Cache<String, Text> cache = Caffeine.newBuilder()
-    .maximumSize(100000) // Max 100,000 entries
-    .expireAfterAccess(5, TimeUnit.MINUTES) // Expire after 15 minute of inactivity
+    .maximumSize(100_000)
+    .expireAfterAccess(5, TimeUnit.MINUTES)
     .removalListener((String key, Text value, RemovalCause cause) -> {
-      if (CobbleUtils.config.isDebug()) CobbleUtils.LOGGER.info("Removed key from cache: " + key + ", cause: " + cause);
+      if (CobbleUtils.config.isDebug()) {
+        CobbleUtils.LOGGER.info("Removed key from cache: " + key + ", cause: " + cause);
+      }
     })
     .build();
 
+  // Mapping Minecraft color codes to MiniMessage tags
+  private static final Map<Character, String> COLOR_CODES = Map.ofEntries(
+    Map.entry('0', "<black>"), Map.entry('1', "<dark_blue>"), Map.entry('2', "<dark_green>"),
+    Map.entry('3', "<dark_aqua>"), Map.entry('4', "<dark_red>"), Map.entry('5', "<dark_purple>"),
+    Map.entry('6', "<gold>"), Map.entry('7', "<gray>"), Map.entry('8', "<dark_gray>"),
+    Map.entry('9', "<blue>"), Map.entry('a', "<green>"), Map.entry('b', "<aqua>"),
+    Map.entry('c', "<red>"), Map.entry('d', "<light_purple>"), Map.entry('e', "<yellow>"),
+    Map.entry('f', "<white>"), Map.entry('k', "<obfuscated>"), Map.entry('l', "<bold>"),
+    Map.entry('m', "<strikethrough>"), Map.entry('n', "<underline>"), Map.entry('o', "<italic>"),
+    Map.entry('r', "<reset>")
+  );
+
   /**
-   * Internal method to handle prefix and player placeholders
-   *
-   * @param text   The text to convert
-   * @param prefix Optional prefix
-   * @param player Optional player
-   *
-   * @return The converted text
+   * Converts MiniMessage or legacy-formatted text to native Minecraft Text object.
+   * Handles optional prefixes and player-specific placeholders.
    */
   private static Text toNativeInternal(String text, @Nullable String prefix, @Nullable ServerPlayerEntity player) {
     String replaced = text.replace("%prefix%", prefix == null ? "" : prefix);
 
+    // If no player is provided, cache the conversion
     if (player == null) {
       return cache.get(replaced, e -> {
         Component component = miniMessage.deserialize(replaceNative(e));
@@ -90,10 +80,13 @@ public class AdventureTranslator {
       });
     }
 
+    // Parse placeholders for specific player
     return toNative(miniMessage.deserialize(replaceNative(replaced)), player);
   }
 
-  // Sobrecargas públicas
+  // ===========================
+  // Public convenience methods
+  // ===========================
   public static Text toNativeWithOutPrefix(String text) {
     return toNativeInternal(text, null, null);
   }
@@ -114,32 +107,36 @@ public class AdventureTranslator {
     return toNativeInternal(text, prefix, player);
   }
 
-
+  /**
+   * Converts Adventure Component into Minecraft Text, optionally parsing placeholders for a player.
+   */
   public static Text toNative(Component component, @Nullable ServerPlayerEntity player) {
     component = component.decoration(TextDecoration.ITALIC, false);
     RegistryWrapper.WrapperLookup wrapper = getWrapper();
     MutableText text;
+
+    // Use thread-local GsonComponentSerializer to avoid multi-thread contention
+    GsonComponentSerializer gsonSerializer = threadLocalGson.get();
+
     if (wrapper != null) {
-      text = Text.Serialization.fromJson(GsonComponentSerializer.gson().serialize(component),
-        wrapper);
+      text = Text.Serialization.fromJson(gsonSerializer.serialize(component), wrapper);
     } else {
-      text = Text.literal(GsonComponentSerializer.gson().serialize(component));
+      text = Text.literal(gsonSerializer.serialize(component));
     }
-    if (player != null && text != null) {
-      if (Utils.isPlaceholder()) {
-        //text = Placeholders.parseText(text, PlaceholderContext.of(player)).copy();
-        return Placeholders.parseText(text, PlaceholderContext.of(player));
-      }
+
+    if (player != null && text != null && Utils.isPlaceholder()) {
+      return Placeholders.parseText(text, PlaceholderContext.of(player));
     }
+
     return text;
   }
 
-
+  /**
+   * Converts a list of strings to a list of Minecraft Text objects.
+   */
   public static List<Text> toNativeL(List<String> lore) {
-    int size = lore.size();
-    List<Text> loreString = new ArrayList<>(size);
-    for (int i = 0; i < size; i++) {
-      String loreLine = lore.get(i);
+    List<Text> loreString = new ArrayList<>(lore.size());
+    for (String loreLine : lore) {
       if (loreLine == null || loreLine.isEmpty()) continue;
       loreString.add(toNativeInternal(loreLine, null, null));
     }
@@ -147,44 +144,19 @@ public class AdventureTranslator {
   }
 
   public static List<Text> toNativeL(List<String> lore, @Nullable ServerPlayerEntity player) {
-    int size = lore.size();
-    List<Text> loreString = new ArrayList<>(size);
-    for (int i = 0; i < size; i++) {
-      String loreLine = lore.get(i);
+    List<Text> loreString = new ArrayList<>(lore.size());
+    for (String loreLine : lore) {
       if (loreLine == null || loreLine.isEmpty()) continue;
       loreString.add(toNativeInternal(loreLine, null, player));
     }
     return loreString;
   }
 
-  private static final Map<Character, String> COLOR_CODES = Map.ofEntries(
-    Map.entry('0', "<black>"),
-    Map.entry('1', "<dark_blue>"),
-    Map.entry('2', "<dark_green>"),
-    Map.entry('3', "<dark_aqua>"),
-    Map.entry('4', "<dark_red>"),
-    Map.entry('5', "<dark_purple>"),
-    Map.entry('6', "<gold>"),
-    Map.entry('7', "<gray>"),
-    Map.entry('8', "<dark_gray>"),
-    Map.entry('9', "<blue>"),
-    Map.entry('a', "<green>"),
-    Map.entry('b', "<aqua>"),
-    Map.entry('c', "<red>"),
-    Map.entry('d', "<light_purple>"),
-    Map.entry('e', "<yellow>"),
-    Map.entry('f', "<white>"),
-    Map.entry('k', "<obfuscated>"),
-    Map.entry('l', "<bold>"),
-    Map.entry('m', "<strikethrough>"),
-    Map.entry('n', "<underline>"),
-    Map.entry('o', "<italic>"),
-    Map.entry('r', "<reset>")
-  );
-
+  /**
+   * Converts legacy color codes (&/§) to MiniMessage tags
+   */
   private static String replaceNative(String text) {
     if (text == null || text.isEmpty()) return "";
-
     StringBuilder builder = new StringBuilder(text.length());
     for (int i = 0; i < text.length(); i++) {
       char c = text.charAt(i);
@@ -202,8 +174,16 @@ public class AdventureTranslator {
     return builder.toString();
   }
 
-
   public static MutableText toNativeComponent(String messageContent) {
-    return Text.empty().append(AdventureTranslator.toNative(messageContent));
+    return Text.empty().append(toNative(messageContent));
+  }
+
+  // Helper to get server registry wrapper
+  private static RegistryWrapper.WrapperLookup getWrapper() {
+    if (CobbleUtils.server != null) {
+      return CobbleUtils.server.getRegistryManager();
+    } else {
+      return null;
+    }
   }
 }

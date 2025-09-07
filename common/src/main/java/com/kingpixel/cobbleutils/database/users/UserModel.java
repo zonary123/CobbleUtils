@@ -8,15 +8,13 @@ import com.kingpixel.cobbleutils.util.PlayerUtils;
 import lombok.Data;
 import net.minecraft.server.network.ServerPlayerEntity;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
 import java.time.temporal.ChronoUnit;
-import java.util.HashMap;
-import java.util.Locale;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 /**
  * User model for CobbleUtils
@@ -36,6 +34,13 @@ public class UserModel {
   public UserModel(ServerPlayerEntity player) {
     this.playerUUID = player.getUuid();
     updateData(player);
+  }
+
+  public UserModel(UUID uuid, String playerName) {
+    this.playerUUID = uuid;
+    this.playerName = playerName;
+    this.lastLogin = null;
+    this.ip = null;
   }
 
   public void updateData(ServerPlayerEntity player) {
@@ -86,12 +91,35 @@ public class UserModel {
 
     // Set cooldown if max reached
     if (rewardInfo.getTimesClaimed() == maxClaims && itemChance.getCooldown() != null) {
-      rewardInfo.setLastClaimed(Instant.now());
+      rewardInfo.setFinishCooldown(Instant.now().plus(itemChance.getCooldown().toMillis(), ChronoUnit.MILLIS));
     }
 
     DataBaseFactory.dataBaseUsers.saveOrUpdateUser(this);
     return true;
   }
+
+  public boolean fix() {
+    boolean changed = false;
+    Iterator<Map.Entry<String, RewardInfo>> it = rewardsClaimed.entrySet().iterator();
+
+    Instant now = Instant.now();
+
+    while (it.hasNext()) {
+      Map.Entry<String, RewardInfo> entry = it.next();
+      RewardInfo info = entry.getValue();
+
+      if (info.finishCooldown != null) {
+        // Si lastClaimed en realidad ya es la fecha de expiración:
+        if (now.isAfter(info.finishCooldown)) {
+          it.remove(); // remover del map
+          changed = true;
+        }
+      }
+    }
+
+    return changed;
+  }
+
 
   /**
    * Stores information about claimed rewards for a user.
@@ -99,11 +127,11 @@ public class UserModel {
   @Data
   private static class RewardInfo {
     private int timesClaimed;
-    private Instant lastClaimed;
+    private Instant finishCooldown;
 
     public RewardInfo() {
       this.timesClaimed = 0;
-      this.lastClaimed = null; // Start null to avoid premature cooldown
+      this.finishCooldown = null; // Start null to avoid premature cooldown
     }
 
     public void addTimesClaimed() {
@@ -112,26 +140,28 @@ public class UserModel {
 
     public void reset() {
       this.timesClaimed = 0;
-      this.lastClaimed = null;
+      this.finishCooldown = null;
     }
 
     public boolean isOnCooldown(ItemChance itemChance) {
       DurationValue cooldown = itemChance.getCooldown();
-      // Si cooldown es null o negativo, consideramos que es infinito
-      if (lastClaimed == null || cooldown == null) return false;
-      if (cooldown.toMillis() <= 0) return true; // Cooldown infinito
-      Instant nextAvailable = lastClaimed.plus(cooldown.toMillis(), ChronoUnit.MILLIS);
+      if (finishCooldown == null || cooldown == null) return false;
+      if (cooldown.toMillis() <= 0) return true;
+      Instant nextAvailable = finishCooldown.plusMillis(cooldown.toMillis());
       return Instant.now().isBefore(nextAvailable);
     }
 
     public long getRemainingCooldown(ItemChance itemChance) {
       DurationValue cooldown = itemChance.getCooldown();
-      if (lastClaimed == null || cooldown == null) return 0;
-      if (cooldown.toMillis() <= 0) return Long.MAX_VALUE; // Representa cooldown infinito
-      Instant nextAvailable = lastClaimed.plus(cooldown.toMillis(), ChronoUnit.MILLIS);
-      long remaining = nextAvailable.getEpochSecond() - Instant.now().getEpochSecond();
+      if (finishCooldown == null || cooldown == null) return 0;
+      if (cooldown.toMillis() <= 0) return Long.MAX_VALUE; // Cooldown infinito
+
+      Instant nextAvailable = finishCooldown.plusMillis(cooldown.toMillis());
+      long remaining = Duration.between(Instant.now(), nextAvailable).toMillis();
+
       return Math.max(0, remaining);
     }
+
 
   }
 }

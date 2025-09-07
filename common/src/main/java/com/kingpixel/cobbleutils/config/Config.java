@@ -24,7 +24,7 @@ public class Config {
   private String prefix;
   private String server;
   private int decimals;
-  private int timeSinceLastLoginToSuggest;
+  private DurationValue timeSinceLastLoginToSuggest;
   private DataBaseConfig database;
   private boolean GtsSupport;
   private EconomyUse GtsEconomyToUse;
@@ -32,7 +32,7 @@ public class Config {
   private boolean activeshinytoken;
   private String pokeshout;
   private String pokeshoutall;
-  private int cooldownpokeshout;
+  private DurationValue cooldownpokeshout;
   private String fill;
   private List<String> commmandplugin;
   private ItemModel shinytoken;
@@ -47,7 +47,7 @@ public class Config {
     debug = false;
     prefix = "§7[§6CobbleUtils§7] ";
     lang = "en";
-    timeSinceLastLoginToSuggest = 365;
+    timeSinceLastLoginToSuggest = DurationValue.parse("1y");
     decimals = 2;
     server = "ExampleServer";
     GtsSupport = false;
@@ -64,7 +64,7 @@ public class Config {
     activeshinytoken = true;
     pokeshout = "pokeshoutplus";
     pokeshoutall = "pokeshoutplusall";
-    cooldownpokeshout = 60;
+    cooldownpokeshout = DurationValue.parse("60s");
     shinytoken = new ItemModel("minecraft:paper", "<gradient:#e0d234:#ede69a><bold>Shiny Token", List.of("§aShiny " +
       "Token"), 0);
     shinytokenBlacklist = new PokemonBlackList();

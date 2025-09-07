@@ -1,6 +1,5 @@
 package com.kingpixel.cobbleutils.command.admin;
 
-import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.api.PermissionApi;
 import com.kingpixel.cobbleutils.command.suggests.CobbleUtilsSuggests;
 import com.kingpixel.cobbleutils.database.DataBaseFactory;
@@ -11,7 +10,6 @@ import com.mojang.brigadier.context.CommandContext;
 import net.minecraft.command.argument.UuidArgumentType;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
-import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
 
 import java.util.List;
@@ -61,20 +59,22 @@ public class UserInfoCommand {
                 .suggestPlayerName("target", List.of("cobbleutils.admin", "cobbleutils.command.userinfo"), 2)
                 .executes(context -> {
                   String target = StringArgumentType.getString(context, "target");
-                  ServerPlayerEntity preTarget = CobbleUtils.server.getPlayerManager().getPlayer(target);
-                  ServerPlayerEntity player = DataBaseFactory.dataBaseUsers.getPlayerOfflineOrOnline(target);
-                  if (player == null) {
+                  var optional = CobbleUtilsSuggests.SUGGESTS_PLAYER_OFFLINE_AND_ONLINE.getPlayerFromContext(context,
+                    "target");
+                  var data = optional.orElse(null);
+                  if (data == null) {
                     context.getSource().sendMessage(
                       Text.literal("The player " + target + " is not online or does not exist.")
                     );
                     return 0;
-                  } else if (preTarget != null) {
+                  } else if (data.isOnline()) {
                     context.getSource().sendMessage(
-                      Text.literal("The player " + target + " is online.")
+                      Text.literal("The player " + target + " is online, cannot create fake user.")
                     );
+                    return 0;
                   } else {
                     context.getSource().sendMessage(
-                      Text.literal("The player " + target + " is offline.")
+                      Text.literal("The player " + target + " is online.")
                     );
                   }
                   return 1;

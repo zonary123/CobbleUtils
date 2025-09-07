@@ -12,7 +12,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
-import java.util.concurrent.TimeUnit;
 
 /**
  * @author Carlos Varas Alonso - 27/08/2025 15:11
@@ -77,18 +76,17 @@ public class DataBaseUsersJson extends DataBaseUsers {
   }
 
   @Override
-  public List<UserModel> getUsersInactiveSince(long days) {
+  public List<UserModel> getUsersInactiveSince(long millis) {
     File folder = Utils.getAbsolutePath(PATH_USERS);
     File[] files = folder.listFiles((dir, name) -> name.endsWith(".json")); // solo JSON
     if (files == null || files.length == 0) return List.of();
 
     long currentTime = System.currentTimeMillis();
-    long threshold = TimeUnit.DAYS.toMillis(days);
 
     return Arrays.stream(files)
       .parallel()
       .map(this::readUserFile)
-      .filter(user -> isInactive(user, currentTime, threshold))
+      .filter(user -> isInactive(user, currentTime, millis))
       .toList();
   }
 

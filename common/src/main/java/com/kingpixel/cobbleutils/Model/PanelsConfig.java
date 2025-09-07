@@ -49,13 +49,14 @@ public class PanelsConfig {
   }
 
   public static void applyConfig(ChestTemplate template, List<PanelsConfig> panelsConfigs) {
-    applyConfig(template, panelsConfigs, 6);
+    applyConfig(template, panelsConfigs, template.getRows());
   }
 
   public static void applyConfig(ChestTemplate template, List<PanelsConfig> panelsConfigs, int rows) {
     for (PanelsConfig panelsConfig : panelsConfigs) {
+      var itemStack = panelsConfig.getFill().getItemStack();
       GooeyButton button = GooeyButton.builder()
-        .display(panelsConfig.getFill().getItemStack())
+        .display(itemStack)
         .with(DataComponentTypes.HIDE_ADDITIONAL_TOOLTIP, Unit.INSTANCE)
         .with(DataComponentTypes.HIDE_TOOLTIP, Unit.INSTANCE)
         .build();
