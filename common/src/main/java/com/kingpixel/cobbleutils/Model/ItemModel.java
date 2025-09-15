@@ -272,7 +272,10 @@ public class ItemModel {
     LoreComponent loreComponent = new LoreComponent(AdventureTranslator.toNativeL(resultLore));
     builder.with(DataComponentTypes.LORE, loreComponent);
 
-    if (Boolean.TRUE.equals(tooltip)) builder.with(DataComponentTypes.HIDE_ADDITIONAL_TOOLTIP, Unit.INSTANCE);
+    if (Boolean.TRUE.equals(tooltip)) {
+      builder.with(DataComponentTypes.HIDE_ADDITIONAL_TOOLTIP, Unit.INSTANCE);
+      builder.with(DataComponentTypes.HIDE_TOOLTIP, Unit.INSTANCE);
+    }
 
     if (action != null) builder.onClick(action);
     return builder

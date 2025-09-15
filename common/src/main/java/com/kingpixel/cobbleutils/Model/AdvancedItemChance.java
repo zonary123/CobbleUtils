@@ -141,25 +141,41 @@ public class AdvancedItemChance {
   }
 
   public void giveRewards(ServerPlayerEntity player) {
-    if (checker(player)) return;
+    try {
+      if (checker(player)) return;
 
-    List<ItemChance> obtainedRewards = getList(player);
-    List<ItemChance> allRewards = obtainedRewards;
+      List<ItemChance> obtainedRewards = getList(player);
+      List<ItemChance> allRewards = obtainedRewards;
 
-    if (giveAll) {
-      ItemChance.getAllRewards(obtainedRewards, player);
-    } else {
-      obtainedRewards = ItemChance.getRewards(obtainedRewards, player, getAmountReward(player));
+      if (giveAll) {
+        ItemChance.getAllRewards(obtainedRewards, player);
+      } else {
+        obtainedRewards = ItemChance.getRewards(obtainedRewards, player, getAmountReward(player));
+      }
+
+      if (obtainedRewards.isEmpty()) {
+        PlayerUtils.sendMessage(player,
+          "%prefix% &cYou have not obtained any rewards, please try again",
+          "&7[&cERROR&7]",
+          TypeMessage.CHAT);
+        return;
+      }
+
+      List<ItemStack> showAllRewards = getListDisplay(allRewards);
+      List<ItemStack> showObtainedRewards = getListDisplay(obtainedRewards);
+      if (getNewSound() != null)
+        getNewSound().start(player);
+
+      if (particle != null) particle.sendParticles(player, player);
+
+      initAnimation(animation, player, showAllRewards, showObtainedRewards);
+    } catch (Exception e) {
+      e.printStackTrace();
+      PlayerUtils.sendMessage(player,
+        "%prefix% &cAn error occurred while trying to give you the rewards, please notify the administrator of the error",
+        "&7[&cERROR&7]",
+        TypeMessage.CHAT);
     }
-
-    List<ItemStack> showAllRewards = getListDisplay(allRewards);
-    List<ItemStack> showObtainedRewards = getListDisplay(obtainedRewards);
-    if (getNewSound() != null)
-      getNewSound().start(player);
-
-    if (particle != null) particle.sendParticles(player, player);
-
-    initAnimation(animation, player, showAllRewards, showObtainedRewards);
   }
 
 

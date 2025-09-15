@@ -183,6 +183,8 @@ public class ImpactorEconomy extends EconomyAbstract {
     return result;
   }
 
+  private Map<String, Cache<UUID, Account>> accountCacheBuilder = new HashMap<>();
+
   /**
    * Retrieves an account from the Impactor API, creating a new account if necessary.
    *
@@ -192,6 +194,17 @@ public class ImpactorEconomy extends EconomyAbstract {
    * @return The account associated with the UUID and currency.
    */
   private Account getAccount(UUID uuid, String currency) {
+    // Use a nested cache to store accounts by currency and UUID. ! Problems: Inconsistence money if changed outside.
+    /*var currencyCache = accountCacheBuilder.computeIfAbsent(currency, k -> Caffeine.newBuilder()
+      .expireAfterAccess(1, TimeUnit.MINUTES)
+      .maximumSize(1_000)
+      .build());
+    return currencyCache.get(uuid, k -> {
+      if (!service.hasAccount(uuid).join()) {
+        return service.account(uuid).join();
+      }
+      return service.account(getCurrency(currency), uuid).join();
+    });*/
     if (!service.hasAccount(uuid).join()) return service.account(uuid).join();
     return service.account(getCurrency(currency), uuid).join();
   }
