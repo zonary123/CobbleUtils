@@ -332,7 +332,11 @@ public class AdvancedItemChance {
     }
 
     List<String> lore = new ArrayList<>(CobbleUtils.language.getLorechance());
-    lore.replaceAll(s -> s.replace("%chance%", String.format("%.2f", percentage)));
+    if (giveAll) {
+      lore.removeIf(s -> s.contains("%chance%"));
+    } else {
+      lore.replaceAll(s -> s.replace("%chance%", String.format("%.2f", percentage)));
+    }
     if (!havePermission) {
       lore.add(CobbleUtils.language.getMessagePermissionRewards()
         .replace("%permission%", permission));

@@ -7,6 +7,7 @@ import org.beconomy.api.BEconomy;
 import org.beconomy.api.EconomyAPI;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.UUID;
 
 /**
@@ -45,7 +46,7 @@ public class BeEconomy extends EconomyAbstract {
   }
 
   @Override public String format(BigDecimal money, String currency) {
-    return money + " " + service.getCurrencySymbol(currency);
+    return money.setScale(getDecimals(currency), RoundingMode.UNNECESSARY) + " " + service.getCurrencySymbol(currency);
   }
 
   @Override public boolean setBalance(UUID playerUuid, BigDecimal money, String currency) {

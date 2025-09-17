@@ -6,6 +6,7 @@ import lombok.EqualsAndHashCode;
 import tech.sethi.pebbleseconomy.PebblesEconomyInitializer;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.UUID;
 
 /**
@@ -42,7 +43,7 @@ public class PebbleEconomy extends EconomyAbstract {
   }
 
   @Override public String format(BigDecimal money, String currency) {
-    return CobbleUtils.language.getDefaultSymbol() + " " + money;
+    return CobbleUtils.language.getDefaultSymbol() + " " + money.setScale(getDecimals(currency), RoundingMode.UNNECESSARY);
   }
 
   @Override public boolean setBalance(UUID playerUuid, BigDecimal money, String currency) {
