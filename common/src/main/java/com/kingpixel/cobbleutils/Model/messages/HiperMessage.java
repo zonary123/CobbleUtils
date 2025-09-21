@@ -42,35 +42,35 @@ public class HiperMessage implements JsonSerializer<HiperMessage>, JsonDeseriali
 
   public void sendMessage(UUID playerUUID, boolean cache) {
     if (rawMessage == null || rawMessage.isEmpty()) return;
-    CompletableFuture.runAsync(() -> {
-        if (rawMessage.hashCode() != hash) {
-          String[] parts = rawMessage.split(":", 2);
-          if (parts.length < 2) return;
+    sendMessage(playerUUID, cache, false);
+  }
 
-          type = MessageType.fromString(parts[0]);
-          content = parts[1];
-          hash = rawMessage.hashCode();
-          if (type == null) {
-            type = MessageType.CHAT;
-            System.out.println("[HiperMessage] Unknown message type in rawMessage: " + rawMessage + ". Defaulting to CHAT." +
-              " Valid types are: " + MessageType.defaults());
-          }
+  public void sendMessage(UUID playerUUID, boolean cache, boolean receivedForRedis) {
+    CompletableFuture.runAsync(() -> {
+      if (rawMessage.hashCode() != hash) {
+        String[] parts = rawMessage.split(":", 2);
+        if (parts.length < 2) return;
+
+        type = MessageType.fromString(parts[0]);
+        content = parts[1];
+        hash = rawMessage.hashCode();
+        if (type == null) {
+          type = MessageType.CHAT;
+          System.out.println("[HiperMessage] Unknown message type in rawMessage: " + rawMessage + ". Defaulting to CHAT." +
+            " Valid types are: " + MessageType.defaults());
         }
-        switch (type) {
-          case CHAT -> sendChat(playerUUID, content, cache);
-          case BROADCAST -> sendBroadcast(content, cache);
-          case ACTIONBAR -> sendActionBar(playerUUID, content, cache);
-          case ACTIONBAR_BROADCAST -> sendActionBarBroadcast(content, cache);
-          case BOSSBAR -> sendBossBar(playerUUID, content, cache);
-          case BOSSBAR_BROADCAST -> sendBossBarBroadcast(content, cache);
-          case TITLE_SUBTITLE -> sendTitleSubtitle(playerUUID, content, cache);
-          case TITLE_SUBTITLE_BROADCAST -> sendTitleSubtitleBroadcast(content, cache);
-        }
-      }, CobbleUtils.EXECUTOR_COBBLEUTILS)
-      .exceptionally(e -> {
-        e.printStackTrace();
-        return null;
-      });
+      }
+      switch (type) {
+        case CHAT -> sendChat(playerUUID, content, cache);
+        case BROADCAST -> sendBroadcast(content, cache);
+        case ACTIONBAR -> sendActionBar(playerUUID, content, cache);
+        case ACTIONBAR_BROADCAST -> sendActionBarBroadcast(content, cache);
+        case BOSSBAR -> sendBossBar(playerUUID, content, cache);
+        case BOSSBAR_BROADCAST -> sendBossBarBroadcast(content, cache);
+        case TITLE_SUBTITLE -> sendTitleSubtitle(playerUUID, content, cache);
+        case TITLE_SUBTITLE_BROADCAST -> sendTitleSubtitleBroadcast(content, cache);
+      }
+    }, CobbleUtils.EXECUTOR_COBBLEUTILS);
   }
 
   private ServerPlayerEntity getPlayer(UUID playerUUID) {
