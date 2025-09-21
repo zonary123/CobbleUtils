@@ -43,7 +43,7 @@ public class HiperMessage implements JsonSerializer<HiperMessage>, JsonDeseriali
    * @param cache  whether to cache the message or not
    */
   public void sendMessage(ServerPlayerEntity player, boolean cache) {
-    sendMessage(player.getUuid(), cache);
+    sendMessage(player.getUuid(), cache, false);
   }
 
   /**
@@ -53,7 +53,6 @@ public class HiperMessage implements JsonSerializer<HiperMessage>, JsonDeseriali
    * @param cache      whether to cache the message or not
    */
   public void sendMessage(UUID playerUUID, boolean cache) {
-    if (rawMessage == null || rawMessage.isEmpty()) return;
     sendMessage(playerUUID, cache, false);
   }
 
@@ -65,6 +64,10 @@ public class HiperMessage implements JsonSerializer<HiperMessage>, JsonDeseriali
    * @param receivedForRedis whether the message was received from Redis or not
    */
   public void sendMessage(UUID playerUUID, boolean cache, boolean receivedForRedis) {
+    if (rawMessage == null || rawMessage.isEmpty()) {
+      CobbleUtils.LOGGER.warn("HiperMessage: rawMessage is null or empty. Skipping message send.");
+      return;
+    }
     CompletableFuture.runAsync(() -> {
         if (rawMessage.hashCode() != hash) {
           String[] parts = rawMessage.split(":", 2);
@@ -176,7 +179,7 @@ public class HiperMessage implements JsonSerializer<HiperMessage>, JsonDeseriali
    * @param cache   whether to cache the message or not
    */
   private void sendBossBar(UUID player, String content, boolean cache) {
-
+    CobbleUtils.LOGGER.info("Boss bar message not implemented yet.");
   }
 
   /**
@@ -186,7 +189,7 @@ public class HiperMessage implements JsonSerializer<HiperMessage>, JsonDeseriali
    * @param cache   whether to cache the message or not
    */
   private void sendBossBarBroadcast(String content, boolean cache) {
-
+    CobbleUtils.LOGGER.info("Boss bar broadcast not implemented yet.");
   }
 
   //==========================================================================//
