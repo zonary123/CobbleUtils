@@ -42,8 +42,8 @@ public class HiperMessage implements JsonSerializer<HiperMessage>, JsonDeseriali
    * @param player the player to send the message to
    * @param cache  whether to cache the message or not
    */
-  public void sendMessage(ServerPlayerEntity player, boolean cache) {
-    sendMessage(player.getUuid(), cache, false);
+  public void sendMessage(ServerPlayerEntity player, String prefix, boolean cache) {
+    sendMessage(player.getUuid(), prefix, cache, false);
   }
 
   /**
@@ -52,8 +52,8 @@ public class HiperMessage implements JsonSerializer<HiperMessage>, JsonDeseriali
    * @param playerUUID the UUID of the player to send the message to
    * @param cache      whether to cache the message or not
    */
-  public void sendMessage(UUID playerUUID, boolean cache) {
-    sendMessage(playerUUID, cache, false);
+  public void sendMessage(UUID playerUUID, String prefix, boolean cache) {
+    sendMessage(playerUUID, prefix, cache, false);
   }
 
   /**
@@ -63,7 +63,7 @@ public class HiperMessage implements JsonSerializer<HiperMessage>, JsonDeseriali
    * @param cache            whether to cache the message or not
    * @param receivedForRedis whether the message was received from Redis or not
    */
-  public void sendMessage(UUID playerUUID, boolean cache, boolean receivedForRedis) {
+  public void sendMessage(UUID playerUUID, String prefix, boolean cache, boolean receivedForRedis) {
     if (rawMessage == null || rawMessage.isEmpty()) {
       CobbleUtils.LOGGER.warn("HiperMessage: rawMessage is null or empty. Skipping message send.");
       return;
@@ -83,14 +83,14 @@ public class HiperMessage implements JsonSerializer<HiperMessage>, JsonDeseriali
           }
         }
         switch (type) {
-          case CHAT -> sendChat(playerUUID, content, cache);
-          case BROADCAST -> sendBroadcast(content, cache);
-          case ACTIONBAR -> sendActionBar(playerUUID, content, cache);
-          case ACTIONBAR_BROADCAST -> sendActionBarBroadcast(content, cache);
-          case BOSSBAR -> sendBossBar(playerUUID, content, cache);
-          case BOSSBAR_BROADCAST -> sendBossBarBroadcast(content, cache);
-          case TITLE_SUBTITLE -> sendTitleSubtitle(playerUUID, content, cache);
-          case TITLE_SUBTITLE_BROADCAST -> sendTitleSubtitleBroadcast(content, cache);
+          case CHAT -> sendChat(playerUUID, content, prefix, cache);
+          case BROADCAST -> sendBroadcast(content, prefix, cache);
+          case ACTIONBAR -> sendActionBar(playerUUID, content, prefix, cache);
+          case ACTIONBAR_BROADCAST -> sendActionBarBroadcast(content, prefix, cache);
+          case BOSSBAR -> sendBossBar(playerUUID, content, prefix, cache);
+          case BOSSBAR_BROADCAST -> sendBossBarBroadcast(content, prefix, cache);
+          case TITLE_SUBTITLE -> sendTitleSubtitle(playerUUID, content, prefix, cache);
+          case TITLE_SUBTITLE_BROADCAST -> sendTitleSubtitleBroadcast(content, prefix, cache);
         }
       }, CobbleUtils.EXECUTOR_COBBLEUTILS)
       .exceptionally(e -> {
@@ -119,12 +119,13 @@ public class HiperMessage implements JsonSerializer<HiperMessage>, JsonDeseriali
    *
    * @param playerUUID the UUID of the player to send the message to
    * @param content    the content of the message
+   * @param prefix
    * @param cache      whether to cache the message or not
    */
-  private void sendChat(UUID playerUUID, String content, boolean cache) {
+  private void sendChat(UUID playerUUID, String content, String prefix, boolean cache) {
     ServerPlayerEntity player = getPlayer(playerUUID);
     if (player == null) return;
-    Text message = AdventureTranslator.toNative(content);
+    Text message = AdventureTranslator.toNative(content, prefix);
     player.sendMessage(message, false);
   }
 
@@ -132,10 +133,11 @@ public class HiperMessage implements JsonSerializer<HiperMessage>, JsonDeseriali
    * Broadcast a chat message to all players.
    *
    * @param content the content of the message
+   * @param prefix
    * @param cache   whether to cache the message or not
    */
-  private void sendBroadcast(String content, boolean cache) {
-    Text message = AdventureTranslator.toNative(content);
+  private void sendBroadcast(String content, String prefix, boolean cache) {
+    Text message = AdventureTranslator.toNative(content, prefix);
     CobbleUtils.server.getPlayerManager().broadcast(message, false);
   }
 
@@ -148,12 +150,13 @@ public class HiperMessage implements JsonSerializer<HiperMessage>, JsonDeseriali
    *
    * @param playerUUID the UUID of the playerUUID to send the message to
    * @param content    the content of the message
+   * @param prefix
    * @param cache      whether to cache the message or not
    */
-  private void sendActionBar(UUID playerUUID, String content, boolean cache) {
+  private void sendActionBar(UUID playerUUID, String content, String prefix, boolean cache) {
     ServerPlayerEntity p = getPlayer(playerUUID);
     if (p == null) return;
-    Text message = AdventureTranslator.toNative(content);
+    Text message = AdventureTranslator.toNative(content, prefix);
     p.sendMessage(message, true);
   }
 
@@ -161,10 +164,11 @@ public class HiperMessage implements JsonSerializer<HiperMessage>, JsonDeseriali
    * Broadcast an action bar message to all players.
    *
    * @param content the content of the message
+   * @param prefix
    * @param cache   whether to cache the message or not
    */
-  private void sendActionBarBroadcast(String content, boolean cache) {
-    CobbleUtils.server.getPlayerManager().broadcast(AdventureTranslator.toNative(content), true);
+  private void sendActionBarBroadcast(String content, String prefix, boolean cache) {
+    CobbleUtils.server.getPlayerManager().broadcast(AdventureTranslator.toNative(content, prefix), true);
   }
 
   //==========================================================================//
@@ -176,9 +180,10 @@ public class HiperMessage implements JsonSerializer<HiperMessage>, JsonDeseriali
    *
    * @param player  UUID
    * @param content the content of the message
+   * @param prefix
    * @param cache   whether to cache the message or not
    */
-  private void sendBossBar(UUID player, String content, boolean cache) {
+  private void sendBossBar(UUID player, String content, String prefix, boolean cache) {
     CobbleUtils.LOGGER.info("Boss bar message not implemented yet.");
   }
 
@@ -186,9 +191,10 @@ public class HiperMessage implements JsonSerializer<HiperMessage>, JsonDeseriali
    * Broadcast a boss bar message to all players.
    *
    * @param content the content of the message
+   * @param prefix
    * @param cache   whether to cache the message or not
    */
-  private void sendBossBarBroadcast(String content, boolean cache) {
+  private void sendBossBarBroadcast(String content, String prefix, boolean cache) {
     CobbleUtils.LOGGER.info("Boss bar broadcast not implemented yet.");
   }
 
@@ -225,8 +231,8 @@ public class HiperMessage implements JsonSerializer<HiperMessage>, JsonDeseriali
      *
      * @return the TitleS2CPacket instance
      */
-    public TitleS2CPacket getTitlePacker() {
-      return titlePacketCache.get(title, t -> new TitleS2CPacket(AdventureTranslator.toNative(t)));
+    public TitleS2CPacket getTitlePacker(String prefix) {
+      return titlePacketCache.get(title, t -> new TitleS2CPacket(AdventureTranslator.toNative(t, prefix)));
     }
 
     /**
@@ -234,8 +240,8 @@ public class HiperMessage implements JsonSerializer<HiperMessage>, JsonDeseriali
      *
      * @return the SubtitleS2CPacket instance
      */
-    public SubtitleS2CPacket getSubtitlePacker() {
-      return subtitlePacketCache.get(subtitle, s -> new SubtitleS2CPacket(AdventureTranslator.toNative(s)));
+    public SubtitleS2CPacket getSubtitlePacker(String prefix) {
+      return subtitlePacketCache.get(subtitle, s -> new SubtitleS2CPacket(AdventureTranslator.toNative(s, prefix)));
     }
 
     /**
@@ -243,12 +249,12 @@ public class HiperMessage implements JsonSerializer<HiperMessage>, JsonDeseriali
      *
      * @param player the player to send the title and subtitle to
      */
-    public void sendTo(ServerPlayerEntity player) {
+    public void sendTo(ServerPlayerEntity player, String prefix) {
       if (title != null && !title.isEmpty()) {
-        player.networkHandler.sendPacket(getTitlePacker());
+        player.networkHandler.sendPacket(getTitlePacker(prefix));
       }
       if (subtitle != null && !subtitle.isEmpty()) {
-        player.networkHandler.sendPacket(getSubtitlePacker());
+        player.networkHandler.sendPacket(getSubtitlePacker(prefix));
       }
     }
 
@@ -282,26 +288,28 @@ public class HiperMessage implements JsonSerializer<HiperMessage>, JsonDeseriali
    *
    * @param player  UUID
    * @param content the content of the message
+   * @param prefix
    * @param cache   whether to cache the message or not
    */
-  private void sendTitleSubtitle(UUID player, String content, boolean cache) {
+  private void sendTitleSubtitle(UUID player, String content, String prefix, boolean cache) {
     TitleSubtitle titleSubtitle = parseTitleSubtitle(content);
     ServerPlayerEntity p = getPlayer(player);
     if (p == null) return;
-    titleSubtitle.sendTo(p);
+    titleSubtitle.sendTo(p, prefix);
   }
 
   /**
    * Broadcast a title and subtitle message to all players.
    *
    * @param content the content of the message
+   * @param prefix
    * @param cache   whether to cache the message or not
    */
-  private void sendTitleSubtitleBroadcast(String content, boolean cache) {
+  private void sendTitleSubtitleBroadcast(String content, String prefix, boolean cache) {
     TitleSubtitle titleSubtitle = parseTitleSubtitle(content);
     var players = CobbleUtils.server.getPlayerManager().getPlayerList();
     for (ServerPlayerEntity player : players) {
-      titleSubtitle.sendTo(player);
+      titleSubtitle.sendTo(player, prefix);
     }
   }
 
