@@ -405,41 +405,58 @@ public class HiperMessage implements JsonSerializer<HiperMessage>, JsonDeseriali
     if (content == null || content.isEmpty()) return content;
 
     Matcher matcher = SOUND_PATTERN.matcher(content);
+    StringBuilder cleaned = new StringBuilder();
 
-    // Reproducir todos los sonidos encontrados
     while (matcher.find()) {
-      String soundName = matcher.group("sound").trim();
+      String soundName = matcher.group("sound");
+      if (soundName == null || soundName.isEmpty()) continue;
+
       float volume = 1.0f;
       float pitch = 1.0f;
 
-      if (matcher.group("volume") != null) {
+      String volumeGroup = matcher.group("volume");
+      if (volumeGroup != null) {
         try {
-          volume = Float.parseFloat(matcher.group("volume").trim());
+          volume = Float.parseFloat(volumeGroup);
         } catch (NumberFormatException ignored) {
         }
       }
 
-      if (matcher.group("pitch") != null) {
+      String pitchGroup = matcher.group("pitch");
+      if (pitchGroup != null) {
         try {
-          pitch = Float.parseFloat(matcher.group("pitch").trim());
+          pitch = Float.parseFloat(pitchGroup);
         } catch (NumberFormatException ignored) {
         }
       }
 
-      SoundEvent soundEvent = soundCache.get(soundName, name -> SoundEvent.of(Identifier.tryParse(name)));
+      // Clamp de valores
+      float finalVolume = Math.min(Math.max(volume, 0.0f), 3.0f);
+      float finalPitch = Math.min(Math.max(pitch, 0.5f), 2.0f);
 
+      SoundEvent soundEvent = soundCache.get(soundName,
+        name -> SoundEvent.of(Identifier.tryParse(name)));
+
+      // Reproducción: un jugador o broadcast
       if (player == null) {
         var players = CobbleUtils.server.getPlayerManager().getPlayerList();
         for (ServerPlayerEntity p : players) {
-          p.playSoundToPlayer(soundEvent, SoundCategory.PLAYERS, volume, pitch);
+          if (p == null) continue;
+          CobbleUtils.server.execute(() ->
+            p.playSoundToPlayer(soundEvent, SoundCategory.PLAYERS, finalVolume, finalPitch));
         }
       } else {
-        player.playSoundToPlayer(soundEvent, SoundCategory.PLAYERS, volume, pitch);
+        CobbleUtils.server.execute(() ->
+          player.playSoundToPlayer(soundEvent, SoundCategory.PLAYERS, finalVolume, finalPitch));
       }
+
+      // Reemplazar la coincidencia con nada → limpieza del mensaje
+      matcher.appendReplacement(cleaned, "");
     }
 
-    // Remover todas las partes de 'sound:...' del mensaje
-    return SOUND_PATTERN.matcher(content).replaceAll("").trim();
+    matcher.appendTail(cleaned);
+
+    return cleaned.toString().trim();
   }
 
 
