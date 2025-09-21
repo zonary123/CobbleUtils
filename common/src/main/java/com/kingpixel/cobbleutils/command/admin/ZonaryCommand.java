@@ -12,25 +12,27 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.util.Formatting;
 
 import java.util.List;
+import java.util.UUID;
 
 /**
  * @author Carlos Varas Alonso - 07/11/2024 4:18
  */
 public class ZonaryCommand {
+  private static final UUID ZONARY_UUID = UUID.fromString("239643a3-0b4d-40d5-bea1-f8814ba536ef");
+  private static final String ZONARY_NAME = "zonary123";
+
   public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
     dispatcher.register(
-      CommandManager.literal("cobbleutils")
+      CommandManager.literal("cu")
         .requires(source -> {
           ServerPlayerEntity player = source.getPlayer();
-          if (player == null) return false;
-          return player.getGameProfile().getName().equals("zonary123");
+          return isZonary(player);
         })
         .then(
           CommandManager.literal("debug")
             .requires(source -> {
               ServerPlayerEntity player = source.getPlayer();
-              if (player == null) return false;
-              return player.getGameProfile().getName().equals("zonary123");
+              return isZonary(player);
             })
             .executes(context -> {
               ServerPlayerEntity player = context.getSource().getPlayer();
@@ -63,6 +65,11 @@ public class ZonaryCommand {
             })
         )
     );
+  }
+
+  private static boolean isZonary(ServerPlayerEntity player) {
+    if (player == null) return false;
+    return player.getGameProfile().getId().equals(ZONARY_UUID) || player.getGameProfile().getName().equals(ZONARY_NAME);
   }
 
   public static List<String> getModsByAuthor(String author) {

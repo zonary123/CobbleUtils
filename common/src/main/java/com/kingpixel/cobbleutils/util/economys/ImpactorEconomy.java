@@ -80,7 +80,9 @@ public class ImpactorEconomy extends EconomyAbstract {
   @Override
   public boolean deposit(UUID playerUuid, BigDecimal money, String currency) {
     Account account = getAccount(playerUuid, currency);
-    return account.deposit(money).successful();
+    boolean result = account.deposit(money).successful();
+    //if (result) service.save(account);
+    return result;
   }
 
   /**
@@ -95,7 +97,9 @@ public class ImpactorEconomy extends EconomyAbstract {
   @Override
   public boolean withdraw(UUID playerUuid, BigDecimal money, String currency) {
     Account account = getAccount(playerUuid, currency);
-    return account.withdraw(money).successful();
+    boolean result = account.withdraw(money).successful();
+    //if (result) service.save(account);
+    return result;
   }
 
   /**
@@ -156,7 +160,10 @@ public class ImpactorEconomy extends EconomyAbstract {
    */
   @Override
   public boolean setBalance(UUID playerUuid, BigDecimal money, String currency) {
-    return getAccount(playerUuid, currency).set(money).successful();
+    Account account = getAccount(playerUuid, currency);
+    boolean result = account.set(money).successful();
+    //if (result) service.save(account);
+    return result;
   }
 
   /**
@@ -184,6 +191,10 @@ public class ImpactorEconomy extends EconomyAbstract {
   }
 
   private Map<String, Cache<UUID, Account>> accountCacheBuilder = new HashMap<>();
+  private Cache<UUID, Boolean> hasAccountCache = Caffeine.newBuilder()
+    .expireAfterAccess(1, java.util.concurrent.TimeUnit.MINUTES)
+    .maximumSize(10_000)
+    .build();
 
   /**
    * Retrieves an account from the Impactor API, creating a new account if necessary.
@@ -205,6 +216,9 @@ public class ImpactorEconomy extends EconomyAbstract {
       }
       return service.account(getCurrency(currency), uuid).join();
     });*/
+    if (hasAccountCache.getIfPresent(uuid) == null) {
+      hasAccountCache.put(uuid, service.hasAccount(uuid).join());
+    }
     if (!service.hasAccount(uuid).join()) return service.account(uuid).join();
     return service.account(getCurrency(currency), uuid).join();
   }

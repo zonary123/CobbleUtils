@@ -382,13 +382,10 @@ public class RedisManager {
           }
           UUID playerUUID = UUID.fromString(json.get("uuid").getAsString());
           ServerPlayerEntity player = CobbleUtils.server.getPlayerManager().getPlayer(playerUUID);
-          if (player != null) {
-            player.sendMessage(formattedMessage);
-            if (CobbleUtils.config.isDebug()) {
-              CobbleUtils.LOGGER.info("Sent message to player: " + player.getGameProfile().getName());
-            }
-          } else {
-            CobbleUtils.LOGGER.warn("Player not found for UUID: " + playerUUID);
+          if (player == null) return;
+          player.sendMessage(formattedMessage);
+          if (CobbleUtils.config.isDebug()) {
+            CobbleUtils.LOGGER.info("Sent message to player: " + player.getGameProfile().getName());
           }
           break;
 
@@ -408,13 +405,10 @@ public class RedisManager {
           }
           UUID actionbarPlayerUUID = UUID.fromString(json.get("uuid").getAsString());
           ServerPlayerEntity actionbarPlayer = CobbleUtils.server.getPlayerManager().getPlayer(actionbarPlayerUUID);
-          if (actionbarPlayer != null) {
-            actionbarPlayer.sendMessage(formattedMessage, true);
-            if (CobbleUtils.config.isDebug()) {
-              CobbleUtils.LOGGER.info("Sent actionbar message to player: " + actionbarPlayer.getGameProfile().getName());
-            }
-          } else {
-            CobbleUtils.LOGGER.warn("Player not found for actionbar UUID: " + actionbarPlayerUUID);
+          if (actionbarPlayer == null) return;
+          actionbarPlayer.sendMessage(formattedMessage, true);
+          if (CobbleUtils.config.isDebug()) {
+            CobbleUtils.LOGGER.info("Sent actionbar message to player: " + actionbarPlayer.getGameProfile().getName());
           }
           break;
 
