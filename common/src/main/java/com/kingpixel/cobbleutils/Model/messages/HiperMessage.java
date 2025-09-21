@@ -12,6 +12,7 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
 
 import java.lang.reflect.Type;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
@@ -40,21 +41,78 @@ public class HiperMessage implements JsonSerializer<HiperMessage>, JsonDeseriali
    * Sends the message to the specified player.
    *
    * @param player the player to send the message to
+   * @param prefix Prefix to add before the message
    * @param cache  whether to cache the message or not
    */
   public void sendMessage(ServerPlayerEntity player, String prefix, boolean cache) {
-    sendMessage(player.getUuid(), prefix, cache, false);
+    sendMessage(player.getUuid(), prefix, cache, false, null);
   }
 
   /**
    * Sends the message to the specified player.
    *
+   * @param player       the player to send the message to
+   * @param prefix       Prefix to add before the message
+   * @param cache        whether to cache the message or not
+   * @param placeholders Map of placeholders to replace in the message (Save the Map in a variable to avoid creating a new one each time)
+   */
+  public void sendMessage(ServerPlayerEntity player, String prefix, boolean cache, Map<String, String> placeholders) {
+    sendMessage(player.getUuid(), prefix, cache, false, placeholders);
+  }
+
+
+  /**
+   * Sends the message to the specified player.
+   *
    * @param playerUUID the UUID of the player to send the message to
+   * @param prefix     Prefix to add before the message
    * @param cache      whether to cache the message or not
    */
   public void sendMessage(UUID playerUUID, String prefix, boolean cache) {
-    sendMessage(playerUUID, prefix, cache, false);
+    sendMessage(playerUUID, prefix, cache, false, null);
   }
+
+  /**
+   * Sends the message to the specified player.
+   *
+   * @param playerUUID   the UUID of the player to send the message to
+   * @param prefix       Prefix to add before the message
+   * @param cache        whether to cache the message or not
+   * @param placeholders Map of placeholders to replace in the message (Save the Map in a variable to avoid creating a new one each time)
+   */
+  public void sendMessage(UUID playerUUID, String prefix, boolean cache, Map<String, String> placeholders) {
+    sendMessage(playerUUID, prefix, cache, false, null);
+  }
+
+  /**
+   * Replaces placeholders in the content string with their corresponding values from the placeholders map.
+   *
+   * @param content      the original content string containing placeholders
+   * @param placeholders a map of placeholders and their corresponding replacement values
+   *
+   * @return the content string with all placeholders replaced by their values
+   */
+  private String replacePlaceholders(String content, Map<String, String> placeholders) {
+    if (content == null || content.isEmpty() || placeholders == null || placeholders.isEmpty()) {
+      return content;
+    }
+
+    StringBuilder sb = new StringBuilder(content);
+
+    for (var entry : placeholders.entrySet()) {
+      String key = entry.getKey();
+      String value = entry.getValue() != null ? entry.getValue() : "";
+      int index = sb.indexOf(key);
+
+      while (index != -1) {
+        sb.replace(index, index + key.length(), value);
+        index = sb.indexOf(key, index + value.length());
+      }
+    }
+
+    return sb.toString();
+  }
+
 
   /**
    * Sends the message to the specified player.
@@ -63,11 +121,14 @@ public class HiperMessage implements JsonSerializer<HiperMessage>, JsonDeseriali
    * @param cache            whether to cache the message or not
    * @param receivedForRedis whether the message was received from Redis or not
    */
-  public void sendMessage(UUID playerUUID, String prefix, boolean cache, boolean receivedForRedis) {
+  public void sendMessage(UUID playerUUID, String prefix, boolean cache, boolean receivedForRedis,
+                          Map<String, String> placeholders) {
+
     if (rawMessage == null || rawMessage.isEmpty()) {
       CobbleUtils.LOGGER.warn("HiperMessage: rawMessage is null or empty. Skipping message send.");
       return;
     }
+
     CompletableFuture.runAsync(() -> {
         if (rawMessage.hashCode() != hash) {
           String[] parts = rawMessage.split(":", 2);
@@ -82,15 +143,20 @@ public class HiperMessage implements JsonSerializer<HiperMessage>, JsonDeseriali
               " Valid types are: " + MessageType.defaults());
           }
         }
+
+        String finalContent = placeholders != null && !placeholders.isEmpty()
+          ? replacePlaceholders(content, placeholders)
+          : content;
+
         switch (type) {
-          case CHAT -> sendChat(playerUUID, content, prefix, cache);
-          case BROADCAST -> sendBroadcast(content, prefix, cache);
-          case ACTIONBAR -> sendActionBar(playerUUID, content, prefix, cache);
-          case ACTIONBAR_BROADCAST -> sendActionBarBroadcast(content, prefix, cache);
-          case BOSSBAR -> sendBossBar(playerUUID, content, prefix, cache);
-          case BOSSBAR_BROADCAST -> sendBossBarBroadcast(content, prefix, cache);
-          case TITLE_SUBTITLE -> sendTitleSubtitle(playerUUID, content, prefix, cache);
-          case TITLE_SUBTITLE_BROADCAST -> sendTitleSubtitleBroadcast(content, prefix, cache);
+          case CHAT -> sendChat(playerUUID, finalContent, prefix, cache);
+          case BROADCAST -> sendBroadcast(finalContent, prefix, cache);
+          case ACTIONBAR -> sendActionBar(playerUUID, finalContent, prefix, cache);
+          case ACTIONBAR_BROADCAST -> sendActionBarBroadcast(finalContent, prefix, cache);
+          case BOSSBAR -> sendBossBar(playerUUID, finalContent, prefix, cache);
+          case BOSSBAR_BROADCAST -> sendBossBarBroadcast(finalContent, prefix, cache);
+          case TITLE_SUBTITLE -> sendTitleSubtitle(playerUUID, finalContent, prefix, cache);
+          case TITLE_SUBTITLE_BROADCAST -> sendTitleSubtitleBroadcast(finalContent, prefix, cache);
         }
       }, CobbleUtils.EXECUTOR_COBBLEUTILS)
       .exceptionally(e -> {
@@ -98,6 +164,7 @@ public class HiperMessage implements JsonSerializer<HiperMessage>, JsonDeseriali
         return null;
       });
   }
+
 
   /**
    * Gets the player entity from the server using the player's UUID.
