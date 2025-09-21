@@ -15,6 +15,7 @@ import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.Model.DurationValue;
 import com.kingpixel.cobbleutils.Model.ItemChance;
 import com.kingpixel.cobbleutils.Model.ItemModel;
+import com.kingpixel.cobbleutils.Model.messages.HiperMessage;
 import com.kingpixel.cobbleutils.adapter.InstantTypeAdapter;
 import com.kingpixel.cobbleutils.adapter.ItemChanceAdapter;
 import com.kingpixel.cobbleutils.adapter.ItemStackAdapter;
@@ -113,7 +114,8 @@ public abstract class Utils {
       .registerTypeAdapter(ItemStack.class, ItemStackAdapter.INSTANCE)
       .registerTypeAdapter(Instant.class, InstantTypeAdapter.INSTANCE)
       .registerTypeAdapter(ItemChance.class, ItemChanceAdapter.INSTANCE)
-      .registerTypeAdapter(DurationValue.class, DurationValue.INSTANCE);
+      .registerTypeAdapter(DurationValue.class, DurationValue.INSTANCE)
+      .registerTypeAdapter(HiperMessage.class, HiperMessage.EMPTY);
   }
 
   public static ExecutorService IO_EXECUTOR = Executors.newFixedThreadPool(16, new ThreadFactoryBuilder()
