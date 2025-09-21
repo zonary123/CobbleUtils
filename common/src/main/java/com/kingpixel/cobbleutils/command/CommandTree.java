@@ -53,6 +53,7 @@ public class CommandTree {
       EconomyIdCommand.register(dispatcher, base);
 
       BlockCommand.register(dispatcher, base);
+      HipperMessageCommand.register(dispatcher, base);
     }
     UserInfoCommand.register(dispatcher);
     ZonaryCommand.register(dispatcher);

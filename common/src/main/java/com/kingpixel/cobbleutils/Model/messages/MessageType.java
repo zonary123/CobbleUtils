@@ -28,10 +28,10 @@ public enum MessageType {
       case "broadcast" -> BROADCAST;
       case "actionbar" -> ACTIONBAR;
       case "actionbar_broadcast" -> ACTIONBAR_BROADCAST;
-      case "bossBar" -> BOSSBAR;
-      case "bossbarbroadcast" -> BOSSBAR_BROADCAST;
+      case "bossbar" -> BOSSBAR;
+      case "bossbar_broadcast" -> BOSSBAR_BROADCAST;
       case "titlesubtitle" -> TITLE_SUBTITLE;
-      case "titlesubtitlebroadcast" -> TITLE_SUBTITLE_BROADCAST;
+      case "titlesubtitle_broadcast" -> TITLE_SUBTITLE_BROADCAST;
       default -> null;
     };
   }

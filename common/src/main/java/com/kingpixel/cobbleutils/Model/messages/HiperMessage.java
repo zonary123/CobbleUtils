@@ -9,7 +9,9 @@ import lombok.Data;
 import net.minecraft.network.packet.s2c.play.SubtitleS2CPacket;
 import net.minecraft.network.packet.s2c.play.TitleS2CPacket;
 import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.text.Text;
+import net.minecraft.sound.SoundCategory;
+import net.minecraft.sound.SoundEvent;
+import net.minecraft.util.Identifier;
 
 import java.lang.reflect.Type;
 import java.util.Map;
@@ -28,13 +30,10 @@ public class HiperMessage implements JsonSerializer<HiperMessage>, JsonDeseriali
   private String content;
   transient
   private MessageType type;
-  transient
-  private long hash;
 
   public HiperMessage(String message, MessageType defaultType) {
     this.rawMessage = message;
     this.type = defaultType;
-    this.hash = 0;
   }
 
   /**
@@ -96,10 +95,10 @@ public class HiperMessage implements JsonSerializer<HiperMessage>, JsonDeseriali
     if (content == null || content.isEmpty() || placeholders == null || placeholders.isEmpty()) {
       return content;
     }
-
     StringBuilder sb = new StringBuilder(content);
 
-    for (var entry : placeholders.entrySet()) {
+    var entries = placeholders.entrySet();
+    for (var entry : entries) {
       String key = entry.getKey();
       String value = entry.getValue() != null ? entry.getValue() : "";
       int index = sb.indexOf(key);
@@ -130,13 +129,13 @@ public class HiperMessage implements JsonSerializer<HiperMessage>, JsonDeseriali
     }
 
     CompletableFuture.runAsync(() -> {
-        if (rawMessage.hashCode() != hash) {
+
+        if (content == null || content.isEmpty()) {
           String[] parts = rawMessage.split(":", 2);
           if (parts.length < 2) return;
 
           type = MessageType.fromString(parts[0]);
           content = parts[1];
-          hash = rawMessage.hashCode();
           if (type == null) {
             type = MessageType.CHAT;
             System.out.println("[HiperMessage] Unknown message type in rawMessage: " + rawMessage + ". Defaulting to CHAT." +
@@ -192,8 +191,8 @@ public class HiperMessage implements JsonSerializer<HiperMessage>, JsonDeseriali
   private void sendChat(UUID playerUUID, String content, String prefix, boolean cache) {
     ServerPlayerEntity player = getPlayer(playerUUID);
     if (player == null) return;
-    Text message = AdventureTranslator.toNative(content, prefix);
-    player.sendMessage(message, false);
+    player.sendMessage(AdventureTranslator.toNative(playSound(player, content), prefix, player), false);
+    ;
   }
 
   /**
@@ -204,8 +203,12 @@ public class HiperMessage implements JsonSerializer<HiperMessage>, JsonDeseriali
    * @param cache   whether to cache the message or not
    */
   private void sendBroadcast(String content, String prefix, boolean cache) {
-    Text message = AdventureTranslator.toNative(content, prefix);
-    CobbleUtils.server.getPlayerManager().broadcast(message, false);
+    var players = CobbleUtils.server.getPlayerManager().getPlayerList();
+    String s = playSound(null, content);
+    for (ServerPlayerEntity player : players) {
+      player.sendMessage(AdventureTranslator.toNative(s, prefix, player), false);
+
+    }
   }
 
   //==========================================================================//
@@ -221,10 +224,9 @@ public class HiperMessage implements JsonSerializer<HiperMessage>, JsonDeseriali
    * @param cache      whether to cache the message or not
    */
   private void sendActionBar(UUID playerUUID, String content, String prefix, boolean cache) {
-    ServerPlayerEntity p = getPlayer(playerUUID);
-    if (p == null) return;
-    Text message = AdventureTranslator.toNative(content, prefix);
-    p.sendMessage(message, true);
+    ServerPlayerEntity player = getPlayer(playerUUID);
+    if (player == null) return;
+    player.sendMessage(AdventureTranslator.toNative(playSound(player, content), prefix, player), true);
   }
 
   /**
@@ -235,7 +237,10 @@ public class HiperMessage implements JsonSerializer<HiperMessage>, JsonDeseriali
    * @param cache   whether to cache the message or not
    */
   private void sendActionBarBroadcast(String content, String prefix, boolean cache) {
-    CobbleUtils.server.getPlayerManager().broadcast(AdventureTranslator.toNative(content, prefix), true);
+    var players = CobbleUtils.server.getPlayerManager().getPlayerList();
+    for (ServerPlayerEntity player : players) {
+      player.sendMessage(AdventureTranslator.toNative(playSound(player, content), prefix, player), true);
+    }
   }
 
   //==========================================================================//
@@ -298,8 +303,8 @@ public class HiperMessage implements JsonSerializer<HiperMessage>, JsonDeseriali
      *
      * @return the TitleS2CPacket instance
      */
-    public TitleS2CPacket getTitlePacker(String prefix) {
-      return titlePacketCache.get(title, t -> new TitleS2CPacket(AdventureTranslator.toNative(t, prefix)));
+    public TitleS2CPacket getTitlePacker(ServerPlayerEntity player, String prefix) {
+      return titlePacketCache.get(title, t -> new TitleS2CPacket(AdventureTranslator.toNative(t, prefix, player)));
     }
 
     /**
@@ -307,8 +312,9 @@ public class HiperMessage implements JsonSerializer<HiperMessage>, JsonDeseriali
      *
      * @return the SubtitleS2CPacket instance
      */
-    public SubtitleS2CPacket getSubtitlePacker(String prefix) {
-      return subtitlePacketCache.get(subtitle, s -> new SubtitleS2CPacket(AdventureTranslator.toNative(s, prefix)));
+    public SubtitleS2CPacket getSubtitlePacker(ServerPlayerEntity player, String prefix) {
+      return subtitlePacketCache.get(subtitle, s -> new SubtitleS2CPacket(AdventureTranslator.toNative(s, prefix,
+        player)));
     }
 
     /**
@@ -318,10 +324,10 @@ public class HiperMessage implements JsonSerializer<HiperMessage>, JsonDeseriali
      */
     public void sendTo(ServerPlayerEntity player, String prefix) {
       if (title != null && !title.isEmpty()) {
-        player.networkHandler.sendPacket(getTitlePacker(prefix));
+        player.networkHandler.sendPacket(getTitlePacker(player, prefix));
       }
       if (subtitle != null && !subtitle.isEmpty()) {
-        player.networkHandler.sendPacket(getSubtitlePacker(prefix));
+        player.networkHandler.sendPacket(getSubtitlePacker(player, prefix));
       }
     }
 
@@ -353,16 +359,16 @@ public class HiperMessage implements JsonSerializer<HiperMessage>, JsonDeseriali
   /**
    * Send a title and subtitle message to a player.
    *
-   * @param player  UUID
-   * @param content the content of the message
-   * @param prefix
-   * @param cache   whether to cache the message or not
+   * @param playerUUID UUID
+   * @param content    the content of the message
+   * @param prefix     Prefix
+   * @param cache      whether to cache the message or not
    */
-  private void sendTitleSubtitle(UUID player, String content, String prefix, boolean cache) {
-    TitleSubtitle titleSubtitle = parseTitleSubtitle(content);
-    ServerPlayerEntity p = getPlayer(player);
-    if (p == null) return;
-    titleSubtitle.sendTo(p, prefix);
+  private void sendTitleSubtitle(UUID playerUUID, String content, String prefix, boolean cache) {
+    ServerPlayerEntity player = getPlayer(playerUUID);
+    if (player == null) return;
+    TitleSubtitle titleSubtitle = parseTitleSubtitle(playSound(player, content));
+    titleSubtitle.sendTo(player, prefix);
   }
 
   /**
@@ -373,12 +379,69 @@ public class HiperMessage implements JsonSerializer<HiperMessage>, JsonDeseriali
    * @param cache   whether to cache the message or not
    */
   private void sendTitleSubtitleBroadcast(String content, String prefix, boolean cache) {
-    TitleSubtitle titleSubtitle = parseTitleSubtitle(content);
+    TitleSubtitle titleSubtitle = parseTitleSubtitle(playSound(null, content));
     var players = CobbleUtils.server.getPlayerManager().getPlayerList();
     for (ServerPlayerEntity player : players) {
       titleSubtitle.sendTo(player, prefix);
     }
   }
+
+  //==========================================================================//
+  //                               SOUND
+  //==========================================================================//
+
+  private static final Cache<String, SoundEvent> soundCache = Caffeine.newBuilder()
+    .maximumSize(1_000)
+    .expireAfterAccess(10, TimeUnit.MINUTES)
+    .build();
+
+  private static final Pattern SOUND_PATTERN =
+    Pattern.compile(
+      "sound:(?<sound>\\S+)(?:\\s*volume:(?<volume>\\d+(?:\\.\\d+)?))?(?:\\s*pitch:(?<pitch>\\d+(?:\\.\\d+)?))?",
+      Pattern.CASE_INSENSITIVE
+    );
+
+  private String playSound(ServerPlayerEntity player, String content) {
+    if (content == null || content.isEmpty()) return content;
+
+    Matcher matcher = SOUND_PATTERN.matcher(content);
+
+    // Reproducir todos los sonidos encontrados
+    while (matcher.find()) {
+      String soundName = matcher.group("sound").trim();
+      float volume = 1.0f;
+      float pitch = 1.0f;
+
+      if (matcher.group("volume") != null) {
+        try {
+          volume = Float.parseFloat(matcher.group("volume").trim());
+        } catch (NumberFormatException ignored) {
+        }
+      }
+
+      if (matcher.group("pitch") != null) {
+        try {
+          pitch = Float.parseFloat(matcher.group("pitch").trim());
+        } catch (NumberFormatException ignored) {
+        }
+      }
+
+      SoundEvent soundEvent = soundCache.get(soundName, name -> SoundEvent.of(Identifier.tryParse(name)));
+
+      if (player == null) {
+        var players = CobbleUtils.server.getPlayerManager().getPlayerList();
+        for (ServerPlayerEntity p : players) {
+          p.playSoundToPlayer(soundEvent, SoundCategory.PLAYERS, volume, pitch);
+        }
+      } else {
+        player.playSoundToPlayer(soundEvent, SoundCategory.PLAYERS, volume, pitch);
+      }
+    }
+
+    // Remover todas las partes de 'sound:...' del mensaje
+    return SOUND_PATTERN.matcher(content).replaceAll("").trim();
+  }
+
 
   //==========================================================================//
   //                           GSON SERIALIZER/ DESERIALIZER
