@@ -40,7 +40,7 @@ public class HipperMessageCommand {
                   player = context.getSource().getPlayer();
                 }
                 new HiperMessage(message, null).sendMessage(player == null ? null : player.getUuid(),
-                  CobbleUtils.config.getPrefix(), false);
+                  CobbleUtils.config.getPrefix(), false, false, null);
                 return 1;
               })
           )

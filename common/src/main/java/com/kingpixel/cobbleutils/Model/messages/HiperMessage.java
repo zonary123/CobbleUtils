@@ -5,6 +5,7 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.gson.*;
 import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.util.AdventureTranslator;
+import com.kingpixel.cobbleutils.util.RedisManager;
 import lombok.Data;
 import net.minecraft.network.packet.s2c.play.SubtitleS2CPacket;
 import net.minecraft.network.packet.s2c.play.TitleS2CPacket;
@@ -80,7 +81,7 @@ public class HiperMessage implements JsonSerializer<HiperMessage>, JsonDeseriali
    * @param placeholders Map of placeholders to replace in the message (Save the Map in a variable to avoid creating a new one each time)
    */
   public void sendMessage(UUID playerUUID, String prefix, boolean cache, Map<String, String> placeholders) {
-    sendMessage(playerUUID, prefix, cache, false, null);
+    sendMessage(playerUUID, prefix, cache, false, placeholders);
   }
 
   /**
@@ -118,9 +119,9 @@ public class HiperMessage implements JsonSerializer<HiperMessage>, JsonDeseriali
    *
    * @param playerUUID       the UUID of the player to send the message to
    * @param cache            whether to cache the message or not
-   * @param receivedForRedis whether the message was received from Redis or not
+   * @param receivedFromRedis whether the message was received from Redis or not
    */
-  public void sendMessage(UUID playerUUID, String prefix, boolean cache, boolean receivedForRedis,
+  public void sendMessage(UUID playerUUID, String prefix, boolean cache, boolean receivedFromRedis,
                           Map<String, String> placeholders) {
 
     if (rawMessage == null || rawMessage.isEmpty()) {
@@ -148,14 +149,15 @@ public class HiperMessage implements JsonSerializer<HiperMessage>, JsonDeseriali
           : content;
 
         switch (type) {
-          case CHAT -> sendChat(playerUUID, finalContent, prefix, cache);
-          case BROADCAST -> sendBroadcast(finalContent, prefix, cache);
-          case ACTIONBAR -> sendActionBar(playerUUID, finalContent, prefix, cache);
-          case ACTIONBAR_BROADCAST -> sendActionBarBroadcast(finalContent, prefix, cache);
-          case BOSSBAR -> sendBossBar(playerUUID, finalContent, prefix, cache);
-          case BOSSBAR_BROADCAST -> sendBossBarBroadcast(finalContent, prefix, cache);
-          case TITLE_SUBTITLE -> sendTitleSubtitle(playerUUID, finalContent, prefix, cache);
-          case TITLE_SUBTITLE_BROADCAST -> sendTitleSubtitleBroadcast(finalContent, prefix, cache);
+          case CHAT -> sendChat(playerUUID, finalContent, prefix, cache, receivedFromRedis);
+          case CHAT_BROADCAST -> sendBroadcast(finalContent, prefix, cache, receivedFromRedis);
+          case BROADCAST -> sendBroadcast(finalContent, prefix, cache, receivedFromRedis);
+          case ACTIONBAR -> sendActionBar(playerUUID, finalContent, prefix, cache, receivedFromRedis);
+          case ACTIONBAR_BROADCAST -> sendActionBarBroadcast(finalContent, prefix, cache, receivedFromRedis);
+          case BOSSBAR -> sendBossBar(playerUUID, finalContent, prefix, cache, receivedFromRedis);
+          case BOSSBAR_BROADCAST -> sendBossBarBroadcast(finalContent, prefix, cache, receivedFromRedis);
+          case TITLE_SUBTITLE -> sendTitleSubtitle(playerUUID, finalContent, prefix, cache, receivedFromRedis);
+          case TITLE_SUBTITLE_BROADCAST -> sendTitleSubtitleBroadcast(finalContent, prefix, cache, receivedFromRedis);
         }
       }, CobbleUtils.EXECUTOR_COBBLEUTILS)
       .exceptionally(e -> {
@@ -187,12 +189,12 @@ public class HiperMessage implements JsonSerializer<HiperMessage>, JsonDeseriali
    * @param content    the content of the message
    * @param prefix
    * @param cache      whether to cache the message or not
+   * @param receivedFromRedis whether the message was received from Redis or not
    */
-  private void sendChat(UUID playerUUID, String content, String prefix, boolean cache) {
+  private void sendChat(UUID playerUUID, String content, String prefix, boolean cache, boolean receivedFromRedis) {
     ServerPlayerEntity player = getPlayer(playerUUID);
     if (player == null) return;
     player.sendMessage(AdventureTranslator.toNative(playSound(player, content), prefix, player), false);
-    ;
   }
 
   /**
@@ -201,13 +203,20 @@ public class HiperMessage implements JsonSerializer<HiperMessage>, JsonDeseriali
    * @param content the content of the message
    * @param prefix
    * @param cache   whether to cache the message or not
+   * @param receivedFromRedis whether the message was received from Redis or not
    */
-  private void sendBroadcast(String content, String prefix, boolean cache) {
+  private void sendBroadcast(String content, String prefix, boolean cache, boolean receivedFromRedis) {
+    // Si no fue recibido de Redis y Redis está habilitado, enviar por Redis
+    if (!receivedFromRedis && CobbleUtils.config.isRedisMessaging()) {
+      sendToRedis("BROADCAST", content, prefix, null, null);
+      return;
+    }
+
+    // Enviar localmente
     var players = CobbleUtils.server.getPlayerManager().getPlayerList();
     String s = playSound(null, content);
     for (ServerPlayerEntity player : players) {
       player.sendMessage(AdventureTranslator.toNative(s, prefix, player), false);
-
     }
   }
 
@@ -222,8 +231,9 @@ public class HiperMessage implements JsonSerializer<HiperMessage>, JsonDeseriali
    * @param content    the content of the message
    * @param prefix
    * @param cache      whether to cache the message or not
+   * @param receivedFromRedis whether the message was received from Redis or not
    */
-  private void sendActionBar(UUID playerUUID, String content, String prefix, boolean cache) {
+  private void sendActionBar(UUID playerUUID, String content, String prefix, boolean cache, boolean receivedFromRedis) {
     ServerPlayerEntity player = getPlayer(playerUUID);
     if (player == null) return;
     player.sendMessage(AdventureTranslator.toNative(playSound(player, content), prefix, player), true);
@@ -235,8 +245,16 @@ public class HiperMessage implements JsonSerializer<HiperMessage>, JsonDeseriali
    * @param content the content of the message
    * @param prefix
    * @param cache   whether to cache the message or not
+   * @param receivedFromRedis whether the message was received from Redis or not
    */
-  private void sendActionBarBroadcast(String content, String prefix, boolean cache) {
+  private void sendActionBarBroadcast(String content, String prefix, boolean cache, boolean receivedFromRedis) {
+    // Si no fue recibido de Redis y Redis está habilitado, enviar por Redis
+    if (!receivedFromRedis && CobbleUtils.config.isRedisMessaging()) {
+      sendToRedis("ACTIONBAR_BROADCAST", content, prefix, null, null);
+      return;
+    }
+
+    // Enviar localmente
     var players = CobbleUtils.server.getPlayerManager().getPlayerList();
     for (ServerPlayerEntity player : players) {
       player.sendMessage(AdventureTranslator.toNative(playSound(player, content), prefix, player), true);
@@ -254,8 +272,9 @@ public class HiperMessage implements JsonSerializer<HiperMessage>, JsonDeseriali
    * @param content the content of the message
    * @param prefix
    * @param cache   whether to cache the message or not
+   * @param receivedFromRedis whether the message was received from Redis or not
    */
-  private void sendBossBar(UUID player, String content, String prefix, boolean cache) {
+  private void sendBossBar(UUID player, String content, String prefix, boolean cache, boolean receivedFromRedis) {
     CobbleUtils.LOGGER.info("Boss bar message not implemented yet.");
   }
 
@@ -265,8 +284,15 @@ public class HiperMessage implements JsonSerializer<HiperMessage>, JsonDeseriali
    * @param content the content of the message
    * @param prefix
    * @param cache   whether to cache the message or not
+   * @param receivedFromRedis whether the message was received from Redis or not
    */
-  private void sendBossBarBroadcast(String content, String prefix, boolean cache) {
+  private void sendBossBarBroadcast(String content, String prefix, boolean cache, boolean receivedFromRedis) {
+    // Si no fue recibido de Redis y Redis está habilitado, enviar por Redis
+    if (!receivedFromRedis && CobbleUtils.config.isRedisMessaging()) {
+      sendToRedis("BOSSBAR_BROADCAST", content, prefix, null, null);
+      return;
+    }
+
     CobbleUtils.LOGGER.info("Boss bar broadcast not implemented yet.");
   }
 
@@ -363,8 +389,9 @@ public class HiperMessage implements JsonSerializer<HiperMessage>, JsonDeseriali
    * @param content    the content of the message
    * @param prefix     Prefix
    * @param cache      whether to cache the message or not
+   * @param receivedFromRedis whether the message was received from Redis or not
    */
-  private void sendTitleSubtitle(UUID playerUUID, String content, String prefix, boolean cache) {
+  private void sendTitleSubtitle(UUID playerUUID, String content, String prefix, boolean cache, boolean receivedFromRedis) {
     ServerPlayerEntity player = getPlayer(playerUUID);
     if (player == null) return;
     TitleSubtitle titleSubtitle = parseTitleSubtitle(playSound(player, content));
@@ -377,8 +404,16 @@ public class HiperMessage implements JsonSerializer<HiperMessage>, JsonDeseriali
    * @param content the content of the message
    * @param prefix
    * @param cache   whether to cache the message or not
+   * @param receivedFromRedis whether the message was received from Redis or not
    */
-  private void sendTitleSubtitleBroadcast(String content, String prefix, boolean cache) {
+  private void sendTitleSubtitleBroadcast(String content, String prefix, boolean cache, boolean receivedFromRedis) {
+    // Si no fue recibido de Redis y Redis está habilitado, enviar por Redis
+    if (!receivedFromRedis && CobbleUtils.config.isRedisMessaging()) {
+      sendToRedis("TITLE_SUBTITLE_BROADCAST", content, prefix, null, null);
+      return;
+    }
+
+    // Enviar localmente
     TitleSubtitle titleSubtitle = parseTitleSubtitle(playSound(null, content));
     var players = CobbleUtils.server.getPlayerManager().getPlayerList();
     for (ServerPlayerEntity player : players) {
@@ -459,6 +494,89 @@ public class HiperMessage implements JsonSerializer<HiperMessage>, JsonDeseriali
     return cleaned.toString().trim();
   }
 
+
+  /**
+   * Sends a HiperMessage through Redis for cross-server broadcasting.
+   *
+   * @param messageType the type of message (BROADCAST, ACTIONBAR_BROADCAST, etc.)
+   * @param content     the message content
+   * @param prefix      the message prefix
+   * @param playerUUID  the player UUID (null for broadcasts)
+   * @param placeholders the placeholders map
+   */
+  private void sendToRedis(String messageType, String content, String prefix, UUID playerUUID, Map<String, String> placeholders) {
+    try {
+      JsonObject redisMessage = new JsonObject();
+      redisMessage.addProperty("type", "hipermessage");
+      redisMessage.addProperty("messageType", messageType);
+      redisMessage.addProperty("rawMessage", this.rawMessage);
+      redisMessage.addProperty("content", content);
+
+      if (prefix != null && !prefix.isEmpty()) {
+        redisMessage.addProperty("prefix", prefix);
+      }
+
+      if (playerUUID != null) {
+        redisMessage.addProperty("playerUUID", playerUUID.toString());
+      }
+
+      if (placeholders != null && !placeholders.isEmpty()) {
+        JsonObject placeholdersJson = new JsonObject();
+        for (Map.Entry<String, String> entry : placeholders.entrySet()) {
+          placeholdersJson.addProperty(entry.getKey(), entry.getValue());
+        }
+        redisMessage.add("placeholders", placeholdersJson);
+      }
+
+      CompletableFuture.runAsync(() -> {
+        try {
+          RedisManager.publish(CobbleUtils.config.getRedis().getChannel(), redisMessage.toString());
+        } catch (Exception e) {
+          CobbleUtils.LOGGER.error("Failed to send HiperMessage through Redis: " + e.getMessage());
+        }
+      }, RedisManager.EXECUTOR_REDIS);
+
+    } catch (Exception e) {
+      CobbleUtils.LOGGER.error("Error creating Redis message for HiperMessage: " + e.getMessage());
+      e.printStackTrace();
+    }
+  }
+
+  /**
+   * Handles incoming Redis messages for HiperMessage.
+   *
+   * @param redisMessage the JSON message received from Redis
+   */
+  public static void handleRedisMessage(JsonObject redisMessage) {
+    try {
+      String messageType = redisMessage.get("messageType").getAsString();
+      String rawMessage = redisMessage.get("rawMessage").getAsString();
+      String content = redisMessage.get("content").getAsString();
+      String prefix = redisMessage.has("prefix") ? redisMessage.get("prefix").getAsString() : "";
+
+      UUID playerUUID = null;
+      if (redisMessage.has("playerUUID")) {
+        playerUUID = UUID.fromString(redisMessage.get("playerUUID").getAsString());
+      }
+
+      Map<String, String> placeholders = null;
+      if (redisMessage.has("placeholders")) {
+        placeholders = new java.util.HashMap<>();
+        JsonObject placeholdersJson = redisMessage.getAsJsonObject("placeholders");
+        for (Map.Entry<String, JsonElement> entry : placeholdersJson.entrySet()) {
+          placeholders.put(entry.getKey(), entry.getValue().getAsString());
+        }
+      }
+
+      // Crear nueva instancia de HiperMessage y enviarlo marcando que viene de Redis
+      HiperMessage hiperMessage = new HiperMessage(rawMessage, null);
+      hiperMessage.sendMessage(playerUUID, prefix, false, true, placeholders);
+
+    } catch (Exception e) {
+      CobbleUtils.LOGGER.error("Error handling Redis HiperMessage: " + e.getMessage());
+      e.printStackTrace();
+    }
+  }
 
   //==========================================================================//
   //                           GSON SERIALIZER/ DESERIALIZER

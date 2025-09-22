@@ -6,6 +6,7 @@ package com.kingpixel.cobbleutils.Model.messages;
 
 public enum MessageType {
   CHAT("chat"),
+  CHAT_BROADCAST("chat_broadcast"),
   BROADCAST("broadcast"),
   ACTIONBAR("actionbar"),
   ACTIONBAR_BROADCAST("actionbar_broadcast"),
@@ -25,6 +26,7 @@ public enum MessageType {
     if (raw == null) return null;
     return switch (raw.trim().toLowerCase()) {
       case "chat" -> CHAT;
+      case "chat_broadcast" -> CHAT_BROADCAST;
       case "broadcast" -> BROADCAST;
       case "actionbar" -> ACTIONBAR;
       case "actionbar_broadcast" -> ACTIONBAR_BROADCAST;
