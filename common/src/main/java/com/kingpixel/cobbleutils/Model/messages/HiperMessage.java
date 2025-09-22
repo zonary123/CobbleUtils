@@ -14,6 +14,7 @@ import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvent;
 import net.minecraft.util.Identifier;
 
+import javax.annotation.Nullable;
 import java.lang.reflect.Type;
 import java.util.Map;
 import java.util.UUID;
@@ -32,7 +33,7 @@ public class HiperMessage implements JsonSerializer<HiperMessage>, JsonDeseriali
   transient
   private MessageType type;
 
-  public HiperMessage(String message, MessageType defaultType) {
+  public HiperMessage(String message, @Nullable MessageType defaultType) {
     this.rawMessage = message;
     this.type = defaultType;
   }
@@ -117,18 +118,13 @@ public class HiperMessage implements JsonSerializer<HiperMessage>, JsonDeseriali
   /**
    * Sends the message to the specified player.
    *
-   * @param playerUUID       the UUID of the player to send the message to
-   * @param cache            whether to cache the message or not
+   * @param playerUUID        the UUID of the player to send the message to
+   * @param cache             whether to cache the message or not
    * @param receivedFromRedis whether the message was received from Redis or not
    */
   public void sendMessage(UUID playerUUID, String prefix, boolean cache, boolean receivedFromRedis,
                           Map<String, String> placeholders) {
-
-    if (rawMessage == null || rawMessage.isEmpty()) {
-      CobbleUtils.LOGGER.warn("HiperMessage: rawMessage is null or empty. Skipping message send.");
-      return;
-    }
-
+    if (rawMessage == null || rawMessage.isEmpty()) return;
     CompletableFuture.runAsync(() -> {
 
         if (content == null || content.isEmpty()) {
@@ -185,10 +181,10 @@ public class HiperMessage implements JsonSerializer<HiperMessage>, JsonDeseriali
   /**
    * Send a chat message to a player.
    *
-   * @param playerUUID the UUID of the player to send the message to
-   * @param content    the content of the message
+   * @param playerUUID        the UUID of the player to send the message to
+   * @param content           the content of the message
    * @param prefix
-   * @param cache      whether to cache the message or not
+   * @param cache             whether to cache the message or not
    * @param receivedFromRedis whether the message was received from Redis or not
    */
   private void sendChat(UUID playerUUID, String content, String prefix, boolean cache, boolean receivedFromRedis) {
@@ -200,9 +196,9 @@ public class HiperMessage implements JsonSerializer<HiperMessage>, JsonDeseriali
   /**
    * Broadcast a chat message to all players.
    *
-   * @param content the content of the message
+   * @param content           the content of the message
    * @param prefix
-   * @param cache   whether to cache the message or not
+   * @param cache             whether to cache the message or not
    * @param receivedFromRedis whether the message was received from Redis or not
    */
   private void sendBroadcast(String content, String prefix, boolean cache, boolean receivedFromRedis) {
@@ -227,10 +223,10 @@ public class HiperMessage implements JsonSerializer<HiperMessage>, JsonDeseriali
   /**
    * Send an action bar message to a player.
    *
-   * @param playerUUID the UUID of the playerUUID to send the message to
-   * @param content    the content of the message
+   * @param playerUUID        the UUID of the playerUUID to send the message to
+   * @param content           the content of the message
    * @param prefix
-   * @param cache      whether to cache the message or not
+   * @param cache             whether to cache the message or not
    * @param receivedFromRedis whether the message was received from Redis or not
    */
   private void sendActionBar(UUID playerUUID, String content, String prefix, boolean cache, boolean receivedFromRedis) {
@@ -242,9 +238,9 @@ public class HiperMessage implements JsonSerializer<HiperMessage>, JsonDeseriali
   /**
    * Broadcast an action bar message to all players.
    *
-   * @param content the content of the message
+   * @param content           the content of the message
    * @param prefix
-   * @param cache   whether to cache the message or not
+   * @param cache             whether to cache the message or not
    * @param receivedFromRedis whether the message was received from Redis or not
    */
   private void sendActionBarBroadcast(String content, String prefix, boolean cache, boolean receivedFromRedis) {
@@ -268,10 +264,10 @@ public class HiperMessage implements JsonSerializer<HiperMessage>, JsonDeseriali
   /**
    * Send a boss bar message to a player.
    *
-   * @param player  UUID
-   * @param content the content of the message
+   * @param player            UUID
+   * @param content           the content of the message
    * @param prefix
-   * @param cache   whether to cache the message or not
+   * @param cache             whether to cache the message or not
    * @param receivedFromRedis whether the message was received from Redis or not
    */
   private void sendBossBar(UUID player, String content, String prefix, boolean cache, boolean receivedFromRedis) {
@@ -281,9 +277,9 @@ public class HiperMessage implements JsonSerializer<HiperMessage>, JsonDeseriali
   /**
    * Broadcast a boss bar message to all players.
    *
-   * @param content the content of the message
+   * @param content           the content of the message
    * @param prefix
-   * @param cache   whether to cache the message or not
+   * @param cache             whether to cache the message or not
    * @param receivedFromRedis whether the message was received from Redis or not
    */
   private void sendBossBarBroadcast(String content, String prefix, boolean cache, boolean receivedFromRedis) {
@@ -385,10 +381,10 @@ public class HiperMessage implements JsonSerializer<HiperMessage>, JsonDeseriali
   /**
    * Send a title and subtitle message to a player.
    *
-   * @param playerUUID UUID
-   * @param content    the content of the message
-   * @param prefix     Prefix
-   * @param cache      whether to cache the message or not
+   * @param playerUUID        UUID
+   * @param content           the content of the message
+   * @param prefix            Prefix
+   * @param cache             whether to cache the message or not
    * @param receivedFromRedis whether the message was received from Redis or not
    */
   private void sendTitleSubtitle(UUID playerUUID, String content, String prefix, boolean cache, boolean receivedFromRedis) {
@@ -401,9 +397,9 @@ public class HiperMessage implements JsonSerializer<HiperMessage>, JsonDeseriali
   /**
    * Broadcast a title and subtitle message to all players.
    *
-   * @param content the content of the message
+   * @param content           the content of the message
    * @param prefix
-   * @param cache   whether to cache the message or not
+   * @param cache             whether to cache the message or not
    * @param receivedFromRedis whether the message was received from Redis or not
    */
   private void sendTitleSubtitleBroadcast(String content, String prefix, boolean cache, boolean receivedFromRedis) {
@@ -498,10 +494,10 @@ public class HiperMessage implements JsonSerializer<HiperMessage>, JsonDeseriali
   /**
    * Sends a HiperMessage through Redis for cross-server broadcasting.
    *
-   * @param messageType the type of message (BROADCAST, ACTIONBAR_BROADCAST, etc.)
-   * @param content     the message content
-   * @param prefix      the message prefix
-   * @param playerUUID  the player UUID (null for broadcasts)
+   * @param messageType  the type of message (BROADCAST, ACTIONBAR_BROADCAST, etc.)
+   * @param content      the message content
+   * @param prefix       the message prefix
+   * @param playerUUID   the player UUID (null for broadcasts)
    * @param placeholders the placeholders map
    */
   private void sendToRedis(String messageType, String content, String prefix, UUID playerUUID, Map<String, String> placeholders) {
