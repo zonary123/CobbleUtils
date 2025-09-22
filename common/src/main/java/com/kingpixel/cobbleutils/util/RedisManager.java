@@ -4,6 +4,7 @@ import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.kingpixel.cobbleutils.CobbleUtils;
+import com.kingpixel.cobbleutils.Model.messages.HiperMessage;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
 import redis.clients.jedis.Jedis;
@@ -358,6 +359,13 @@ public class RedisManager {
 
       JsonObject json = JsonParser.parseString(message).getAsJsonObject();
       String type = json.get("type").getAsString();
+
+      // Manejar mensajes de HiperMessage
+      if ("hipermessage".equals(type)) {
+        HiperMessage.handleRedisMessage(json);
+        return;
+      }
+
       String content = json.get("content").getAsString();
 
       String prefix = json.has("prefix") ? json.get("prefix").getAsString() : "";
@@ -445,6 +453,36 @@ public class RedisManager {
 
   public static void sendActionBarMessage(UUID playerUUID, String message, String prefix) {
     publish("actionbar_player", message, playerUUID, prefix);
+  }
+
+  // Método público para enviar mensajes personalizados
+  public static void publish(String channel, String message) {
+    if (!isConnected.get()) {
+      CobbleUtils.LOGGER.warn("Redis publisher is not connected, cannot send message to channel: " + channel);
+      return;
+    }
+
+    if (jedisPool == null || jedisPool.isClosed()) {
+      CobbleUtils.LOGGER.warn("Redis pool is not available, cannot send message to channel: " + channel);
+      isConnected.set(false);
+      return;
+    }
+
+    try (Jedis jedis = jedisPool.getResource()) {
+      long result = jedis.publish(channel, message);
+      messagesSent.incrementAndGet();
+
+      if (CobbleUtils.config.isDebug()) {
+        CobbleUtils.LOGGER.info("Published message to " + result + " subscribers on channel: " + channel);
+      }
+
+    } catch (JedisException e) {
+      CobbleUtils.LOGGER.error("Failed to publish Redis message to channel " + channel + " (Redis error): " + e.getMessage());
+      isConnected.set(false);
+    } catch (Exception e) {
+      CobbleUtils.LOGGER.error("Failed to publish Redis message to channel " + channel + " (Unexpected error): " + e.getMessage());
+      e.printStackTrace();
+    }
   }
 
   private static void publish(String type, String message, UUID uuid, String prefix) {
