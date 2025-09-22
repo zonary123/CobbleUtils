@@ -25,15 +25,15 @@ public enum MessageType {
   public static MessageType fromString(String raw) {
     if (raw == null) return null;
     return switch (raw.trim().toLowerCase()) {
-      case "chat" -> CHAT;
-      case "chat_broadcast" -> CHAT_BROADCAST;
-      case "broadcast" -> BROADCAST;
-      case "actionbar" -> ACTIONBAR;
-      case "actionbar_broadcast" -> ACTIONBAR_BROADCAST;
-      case "bossbar" -> BOSSBAR;
-      case "bossbar_broadcast" -> BOSSBAR_BROADCAST;
-      case "titlesubtitle" -> TITLE_SUBTITLE;
-      case "titlesubtitle_broadcast" -> TITLE_SUBTITLE_BROADCAST;
+      case "chat", "c" -> CHAT;
+      case "chat_broadcast", "cb" -> CHAT_BROADCAST;
+      case "broadcast", "bc" -> BROADCAST;
+      case "actionbar", "ab" -> ACTIONBAR;
+      case "actionbar_broadcast", "abb" -> ACTIONBAR_BROADCAST;
+      case "bossbar", "bb" -> BOSSBAR;
+      case "bossbar_broadcast", "bbb" -> BOSSBAR_BROADCAST;
+      case "titlesubtitle", "ts" -> TITLE_SUBTITLE;
+      case "titlesubtitle_broadcast", "tsb" -> TITLE_SUBTITLE_BROADCAST;
       default -> null;
     };
   }

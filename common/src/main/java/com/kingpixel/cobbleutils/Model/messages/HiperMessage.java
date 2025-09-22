@@ -16,6 +16,7 @@ import net.minecraft.util.Identifier;
 
 import javax.annotation.Nullable;
 import java.lang.reflect.Type;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -46,7 +47,7 @@ public class HiperMessage implements JsonSerializer<HiperMessage>, JsonDeseriali
    * @param cache  whether to cache the message or not
    */
   public void sendMessage(ServerPlayerEntity player, String prefix, boolean cache) {
-    sendMessage(player.getUuid(), prefix, cache, false, null);
+    sendMessage(player == null ? null : player.getUuid(), prefix, cache, false, null, null);
   }
 
   /**
@@ -58,7 +59,11 @@ public class HiperMessage implements JsonSerializer<HiperMessage>, JsonDeseriali
    * @param placeholders Map of placeholders to replace in the message (Save the Map in a variable to avoid creating a new one each time)
    */
   public void sendMessage(ServerPlayerEntity player, String prefix, boolean cache, Map<String, String> placeholders) {
-    sendMessage(player.getUuid(), prefix, cache, false, placeholders);
+    sendMessage(player == null ? null : player.getUuid(), prefix, cache, false, placeholders, null);
+  }
+
+  public void sendMessage(ServerPlayerEntity player, String modifiedContent, String prefix, boolean cache) {
+    sendMessage(player == null ? null : player.getUuid(), prefix, cache, false, null, modifiedContent);
   }
 
 
@@ -70,7 +75,7 @@ public class HiperMessage implements JsonSerializer<HiperMessage>, JsonDeseriali
    * @param cache      whether to cache the message or not
    */
   public void sendMessage(UUID playerUUID, String prefix, boolean cache) {
-    sendMessage(playerUUID, prefix, cache, false, null);
+    sendMessage(playerUUID, prefix, cache, false, null, null);
   }
 
   /**
@@ -82,7 +87,7 @@ public class HiperMessage implements JsonSerializer<HiperMessage>, JsonDeseriali
    * @param placeholders Map of placeholders to replace in the message (Save the Map in a variable to avoid creating a new one each time)
    */
   public void sendMessage(UUID playerUUID, String prefix, boolean cache, Map<String, String> placeholders) {
-    sendMessage(playerUUID, prefix, cache, false, placeholders);
+    sendMessage(playerUUID, prefix, cache, false, placeholders, null);
   }
 
   /**
@@ -123,12 +128,17 @@ public class HiperMessage implements JsonSerializer<HiperMessage>, JsonDeseriali
    * @param receivedFromRedis whether the message was received from Redis or not
    */
   public void sendMessage(UUID playerUUID, String prefix, boolean cache, boolean receivedFromRedis,
-                          Map<String, String> placeholders) {
+                          Map<String, String> placeholders, String modifiedContent) {
     if (rawMessage == null || rawMessage.isEmpty()) return;
     CompletableFuture.runAsync(() -> {
 
-        if (content == null || content.isEmpty()) {
-          String[] parts = rawMessage.split(":", 2);
+        if (content == null || content.isEmpty() || modifiedContent != null || type == null) {
+          String[] parts;
+          if (modifiedContent != null) {
+            parts = modifiedContent.split(":", 2);
+          } else {
+            parts = rawMessage.split(":", 2);
+          }
           if (parts.length < 2) return;
 
           type = MessageType.fromString(parts[0]);
@@ -146,14 +156,14 @@ public class HiperMessage implements JsonSerializer<HiperMessage>, JsonDeseriali
 
         switch (type) {
           case CHAT -> sendChat(playerUUID, finalContent, prefix, cache, receivedFromRedis);
-          case CHAT_BROADCAST -> sendBroadcast(finalContent, prefix, cache, receivedFromRedis);
-          case BROADCAST -> sendBroadcast(finalContent, prefix, cache, receivedFromRedis);
+          case CHAT_BROADCAST, BROADCAST -> sendBroadcast(finalContent, prefix, cache, receivedFromRedis);
           case ACTIONBAR -> sendActionBar(playerUUID, finalContent, prefix, cache, receivedFromRedis);
           case ACTIONBAR_BROADCAST -> sendActionBarBroadcast(finalContent, prefix, cache, receivedFromRedis);
           case BOSSBAR -> sendBossBar(playerUUID, finalContent, prefix, cache, receivedFromRedis);
           case BOSSBAR_BROADCAST -> sendBossBarBroadcast(finalContent, prefix, cache, receivedFromRedis);
           case TITLE_SUBTITLE -> sendTitleSubtitle(playerUUID, finalContent, prefix, cache, receivedFromRedis);
           case TITLE_SUBTITLE_BROADCAST -> sendTitleSubtitleBroadcast(finalContent, prefix, cache, receivedFromRedis);
+          default -> CobbleUtils.LOGGER.warn("Unknown message type: " + type);
         }
       }, CobbleUtils.EXECUTOR_COBBLEUTILS)
       .exceptionally(e -> {
@@ -171,6 +181,7 @@ public class HiperMessage implements JsonSerializer<HiperMessage>, JsonDeseriali
    * @return the player entity, or null if the player is not online
    */
   private ServerPlayerEntity getPlayer(UUID playerUUID) {
+    if (playerUUID == null) return null;
     return CobbleUtils.server.getPlayerManager().getPlayer(playerUUID);
   }
 
@@ -502,35 +513,39 @@ public class HiperMessage implements JsonSerializer<HiperMessage>, JsonDeseriali
    */
   private void sendToRedis(String messageType, String content, String prefix, UUID playerUUID, Map<String, String> placeholders) {
     try {
-      JsonObject redisMessage = new JsonObject();
-      redisMessage.addProperty("type", "hipermessage");
-      redisMessage.addProperty("messageType", messageType);
-      redisMessage.addProperty("rawMessage", this.rawMessage);
-      redisMessage.addProperty("content", content);
-
-      if (prefix != null && !prefix.isEmpty()) {
-        redisMessage.addProperty("prefix", prefix);
-      }
-
-      if (playerUUID != null) {
-        redisMessage.addProperty("playerUUID", playerUUID.toString());
-      }
-
-      if (placeholders != null && !placeholders.isEmpty()) {
-        JsonObject placeholdersJson = new JsonObject();
-        for (Map.Entry<String, String> entry : placeholders.entrySet()) {
-          placeholdersJson.addProperty(entry.getKey(), entry.getValue());
-        }
-        redisMessage.add("placeholders", placeholdersJson);
-      }
-
       CompletableFuture.runAsync(() -> {
-        try {
-          RedisManager.publish(CobbleUtils.config.getRedis().getChannel(), redisMessage.toString());
-        } catch (Exception e) {
-          CobbleUtils.LOGGER.error("Failed to send HiperMessage through Redis: " + e.getMessage());
-        }
-      }, RedisManager.EXECUTOR_REDIS);
+          JsonObject redisMessage = new JsonObject();
+          redisMessage.addProperty("type", "hipermessage");
+          redisMessage.addProperty("messageType", messageType);
+          redisMessage.addProperty("rawMessage", content);
+          redisMessage.addProperty("content", content);
+
+          if (prefix != null && !prefix.isEmpty()) {
+            redisMessage.addProperty("prefix", prefix);
+          }
+
+
+          if (playerUUID != null) {
+            redisMessage.addProperty("playerUUID", playerUUID.toString());
+          }
+
+          if (placeholders != null && !placeholders.isEmpty()) {
+            JsonObject placeholdersJson = new JsonObject();
+            for (Map.Entry<String, String> entry : placeholders.entrySet()) {
+              placeholdersJson.addProperty(entry.getKey(), entry.getValue());
+            }
+            redisMessage.add("placeholders", placeholdersJson);
+          }
+          try {
+            RedisManager.publish(CobbleUtils.config.getRedis().getChannel(), redisMessage.toString());
+          } catch (Exception e) {
+            CobbleUtils.LOGGER.error("Failed to send HiperMessage through Redis: " + e.getMessage());
+          }
+        }, RedisManager.EXECUTOR_REDIS)
+        .exceptionally(e -> {
+          e.printStackTrace();
+          return null;
+        });
 
     } catch (Exception e) {
       CobbleUtils.LOGGER.error("Error creating Redis message for HiperMessage: " + e.getMessage());
@@ -557,7 +572,7 @@ public class HiperMessage implements JsonSerializer<HiperMessage>, JsonDeseriali
 
       Map<String, String> placeholders = null;
       if (redisMessage.has("placeholders")) {
-        placeholders = new java.util.HashMap<>();
+        placeholders = new HashMap<>();
         JsonObject placeholdersJson = redisMessage.getAsJsonObject("placeholders");
         for (Map.Entry<String, JsonElement> entry : placeholdersJson.entrySet()) {
           placeholders.put(entry.getKey(), entry.getValue().getAsString());
@@ -566,7 +581,7 @@ public class HiperMessage implements JsonSerializer<HiperMessage>, JsonDeseriali
 
       // Crear nueva instancia de HiperMessage y enviarlo marcando que viene de Redis
       HiperMessage hiperMessage = new HiperMessage(rawMessage, null);
-      hiperMessage.sendMessage(playerUUID, prefix, false, true, placeholders);
+      hiperMessage.sendMessage(playerUUID, prefix, false, true, placeholders, content);
 
     } catch (Exception e) {
       CobbleUtils.LOGGER.error("Error handling Redis HiperMessage: " + e.getMessage());
