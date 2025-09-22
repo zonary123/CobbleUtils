@@ -24,7 +24,7 @@ public class HipperMessageCommand {
             CommandManager.argument("message", StringArgumentType.greedyString())
               .suggests(((context, builder) -> CommandSource.suggestMatching(new String[]{
                 "chat: Hello %player:name%!",
-                "chat_broadcast: Hello everyone!",
+                "broadcast: Hello everyone!",
                 "actionbar: Hello %player:name%!",
                 "actionbar_broadcast: Hello everyone!",
                 "titlesubtitle:title: Hello %player:name%! subtitle: This is a subtitle example.",
