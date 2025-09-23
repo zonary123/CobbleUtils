@@ -18,6 +18,7 @@ import javax.annotation.Nullable;
 import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
@@ -120,6 +121,9 @@ public class HiperMessage implements JsonSerializer<HiperMessage>, JsonDeseriali
   }
 
 
+  transient
+  private String modifiedContent;
+
   /**
    * Sends the message to the specified player.
    *
@@ -130,8 +134,8 @@ public class HiperMessage implements JsonSerializer<HiperMessage>, JsonDeseriali
   public void sendMessage(UUID playerUUID, String prefix, boolean cache, boolean receivedFromRedis,
                           Map<String, String> placeholders, String modifiedContent) {
     if (rawMessage == null || rawMessage.isEmpty()) return;
+    this.modifiedContent = Objects.requireNonNullElseGet(modifiedContent, () -> rawMessage);
     CompletableFuture.runAsync(() -> {
-
         if (content == null || content.isEmpty() || modifiedContent != null || type == null) {
           String[] parts;
           if (modifiedContent != null) {
@@ -165,6 +169,7 @@ public class HiperMessage implements JsonSerializer<HiperMessage>, JsonDeseriali
           case TITLE_SUBTITLE_BROADCAST -> sendTitleSubtitleBroadcast(finalContent, prefix, cache, receivedFromRedis);
           default -> CobbleUtils.LOGGER.warn("Unknown message type: " + type);
         }
+        this.modifiedContent = null;
       }, CobbleUtils.EXECUTOR_COBBLEUTILS)
       .exceptionally(e -> {
         e.printStackTrace();
@@ -215,7 +220,7 @@ public class HiperMessage implements JsonSerializer<HiperMessage>, JsonDeseriali
   private void sendBroadcast(String content, String prefix, boolean cache, boolean receivedFromRedis) {
     // Si no fue recibido de Redis y Redis está habilitado, enviar por Redis
     if (!receivedFromRedis && CobbleUtils.config.isRedisMessaging()) {
-      sendToRedis("BROADCAST", content, prefix, null, null);
+      sendToRedis("BROADCAST", this.modifiedContent, prefix, null, null);
       return;
     }
 
@@ -257,7 +262,7 @@ public class HiperMessage implements JsonSerializer<HiperMessage>, JsonDeseriali
   private void sendActionBarBroadcast(String content, String prefix, boolean cache, boolean receivedFromRedis) {
     // Si no fue recibido de Redis y Redis está habilitado, enviar por Redis
     if (!receivedFromRedis && CobbleUtils.config.isRedisMessaging()) {
-      sendToRedis("ACTIONBAR_BROADCAST", content, prefix, null, null);
+      sendToRedis("ACTIONBAR_BROADCAST", this.modifiedContent, prefix, null, null);
       return;
     }
 
@@ -296,7 +301,7 @@ public class HiperMessage implements JsonSerializer<HiperMessage>, JsonDeseriali
   private void sendBossBarBroadcast(String content, String prefix, boolean cache, boolean receivedFromRedis) {
     // Si no fue recibido de Redis y Redis está habilitado, enviar por Redis
     if (!receivedFromRedis && CobbleUtils.config.isRedisMessaging()) {
-      sendToRedis("BOSSBAR_BROADCAST", content, prefix, null, null);
+      sendToRedis("BOSSBAR_BROADCAST", this.modifiedContent, prefix, null, null);
       return;
     }
 
@@ -416,7 +421,7 @@ public class HiperMessage implements JsonSerializer<HiperMessage>, JsonDeseriali
   private void sendTitleSubtitleBroadcast(String content, String prefix, boolean cache, boolean receivedFromRedis) {
     // Si no fue recibido de Redis y Redis está habilitado, enviar por Redis
     if (!receivedFromRedis && CobbleUtils.config.isRedisMessaging()) {
-      sendToRedis("TITLE_SUBTITLE_BROADCAST", content, prefix, null, null);
+      sendToRedis("TITLE_SUBTITLE_BROADCAST", this.modifiedContent, prefix, null, null);
       return;
     }
 

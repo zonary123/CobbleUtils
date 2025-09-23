@@ -13,10 +13,7 @@ import com.kingpixel.cobbleutils.database.DataBaseFactory;
 import com.kingpixel.cobbleutils.database.users.DataBaseUsers;
 import com.kingpixel.cobbleutils.database.users.UserModel;
 import com.kingpixel.cobbleutils.events.ItemRightClickEvents;
-import com.kingpixel.cobbleutils.util.CobbleUtilsBridgeGTS;
-import com.kingpixel.cobbleutils.util.RedisManager;
-import com.kingpixel.cobbleutils.util.SpawnRates;
-import com.kingpixel.cobbleutils.util.UtilsLogger;
+import com.kingpixel.cobbleutils.util.*;
 import dev.architectury.event.events.common.CommandRegistrationEvent;
 import dev.architectury.event.events.common.InteractionEvent;
 import dev.architectury.event.events.common.LifecycleEvent;
@@ -33,7 +30,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 public class CobbleUtils {
   public static final String MOD_ID = "cobbleutils";
@@ -51,12 +48,17 @@ public class CobbleUtils {
   // Lang
   public static Lang language = new Lang();
   public static List<String> modsInUse = new ArrayList<>();
-  public static ExecutorService EXECUTOR_COBBLEUTILS = Executors.newFixedThreadPool(4, new ThreadFactoryBuilder()
+  public static final ExecutorService EXECUTOR_COBBLEUTILS = Executors.newFixedThreadPool(4, new ThreadFactoryBuilder()
     .setNameFormat("CobbleUtils General Executor-%d")
     .build());
 
 
   public static void init() {
+    try {
+      Class.forName("org.bson.conversions.Bson");
+    } catch (ClassNotFoundException e) {
+      e.printStackTrace();
+    }
     events();
   }
 
@@ -137,6 +139,9 @@ public class CobbleUtils {
     LifecycleEvent.SERVER_STOPPED.register(server1 -> {
       DataBaseFactory.close();
       RedisManager.close();
+      shutdownAndAwait(EXECUTOR_COBBLEUTILS);
+      shutdownAndAwait(Utils.IO_EXECUTOR);
+      shutdownAndAwait(RedisManager.EXECUTOR_REDIS);
     });
 
     PlayerEvent.PLAYER_JOIN.register((player) -> {
@@ -174,7 +179,20 @@ public class CobbleUtils {
     });
 
     InteractionEvent.RIGHT_CLICK_ITEM.register(ItemRightClickEvents::register);
+  }
 
+  public static void shutdownAndAwait(ExecutorService executorService) {
+    executorService.shutdown();
+    try {
+      if (!executorService.awaitTermination(1, TimeUnit.MINUTES)) {
+        executorService.shutdownNow();
+        if (executorService.awaitTermination(1, TimeUnit.MINUTES)) {
+          LOGGER.info("CobbleUtils executor was force shutdown");
+        }
+      }
+    } catch (InterruptedException e) {
+      executorService.shutdownNow();
+    }
   }
 
 }

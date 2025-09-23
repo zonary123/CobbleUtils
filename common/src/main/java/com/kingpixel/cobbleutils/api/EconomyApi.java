@@ -19,6 +19,7 @@ public class EconomyApi {
   @Getter private static Set<EconomyAbstract> economys = new HashSet<>();
 
   public static void setEconomyType() {
+    economys.clear();
     economys.add(new ImpactorEconomy());
     economys.add(new CobbleDollarsEconomy());
     economys.add(new BeEconomy());
@@ -106,7 +107,7 @@ public class EconomyApi {
    *
    * @return If the money was added
    */
-  @Deprecated(forRemoval = true)
+  @Deprecated
   public static boolean addMoney(UUID playerUuid, BigDecimal money, String currency,
                                  String economyId) {
     return getEconomy(economyId).deposit(playerUuid, money, currency);

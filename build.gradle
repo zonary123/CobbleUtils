@@ -2,6 +2,7 @@ plugins {
     id "architectury-plugin" version "3.4-SNAPSHOT"
     id "dev.architectury.loom" version "1.9-SNAPSHOT" apply false
     id 'com.palantir.git-version' version '3.0.0'
+    id 'maven-publish'
 }
 
 def git = versionDetails()

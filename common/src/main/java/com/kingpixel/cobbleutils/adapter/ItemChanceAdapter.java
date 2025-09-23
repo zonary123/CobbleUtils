@@ -19,6 +19,7 @@ public class ItemChanceAdapter implements JsonSerializer<ItemChance>, JsonDeseri
     obj.addProperty("display", src.getDisplay());
     obj.addProperty("displayname", src.getDisplayname());
 
+
     boolean unique = src.getUnique() != null && src.getUnique();
     obj.addProperty("unique", unique);
 

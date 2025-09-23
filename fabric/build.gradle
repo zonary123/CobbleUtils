@@ -47,6 +47,7 @@ dependencies {
     include(modImplementation("com.github.MemencioPerez:libby-fabric:1.0.0"))
 
     // Caffeine
+    api("com.github.ben-manes.caffeine:caffeine:${property("caffeine_version")}")
     libby("com.github.ben-manes.caffeine:caffeine:${property("caffeine_version")}")
     // Kyori Adventure
     libby("net.kyori:adventure-text-serializer-gson:${property("kyori_version")}")
@@ -56,7 +57,8 @@ dependencies {
     //shadowCommon("net.kyori:adventure-platform-fabric:6.2.0")
 
     // Database
-    libby("org.mongodb:mongodb-driver-sync:${property("mongodb_version")}") { transitive = true }
+    libby("org.mongodb:mongodb-driver-sync:${property("mongodb_version")}") //{ transitive = true }
+    libby("org.mongodb:bson:${property("mongodb_version")}")
     libby("org.xerial:sqlite-jdbc:${property("sqlite_version")}")
 
     // Economy Vault
@@ -73,7 +75,7 @@ dependencies {
 
     // Redis
     libby("redis.clients:jedis:5.1.0")
-    libby("org.apache.commons:commons-pool2:2.12.0")
+    //libby("org.apache.commons:commons-pool2:2.12.0")
 }
 
 processResources {
@@ -134,8 +136,8 @@ shadowJar {
     //relocate("net.milkbowl.vault", "net.milkbowl.vault")
     relocate("com.mongodb", "com.kingpixel.cobbleutils.mongodb")
     relocate("org.bson", "com.kingpixel.cobbleutils.bson")
-    relocate("redis.clients.jedis", "com.kingpixel.cobbleutils.redis.clients.jedis")
-    relocate("org.apache.commons.commons-pool2", "com.kingpixel.cobbleutils.org.apache.commons.pool2")
+    //relocate("redis.clients.jedis", "com.kingpixel.cobbleutils.redis.clients.jedis")
+    //relocate("org.apache.commons.commons-pool2", "com.kingpixel.cobbleutils.org.apache.commons.pool2")
 
 
     //relocate("net.kyori.adventure.text.serializer", "com.kingpixel.cobbleutils.kyori.adventure.serializer")

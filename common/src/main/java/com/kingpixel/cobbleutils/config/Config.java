@@ -23,9 +23,11 @@ public class Config {
   private String lang;
   private String prefix;
   private String server;
+  private boolean redisMessaging;
+  private RedisConfig redis;
+  private DataBaseConfig database;
   private int decimals;
   private DurationValue timeSinceLastLoginToSuggest;
-  private DataBaseConfig database;
   private boolean GtsSupport;
   private EconomyUse GtsEconomyToUse;
   private List<PriorityEconomy> priorityEconomy;
@@ -39,8 +41,6 @@ public class Config {
   private PokemonBlackList shinytokenBlacklist;
   private Map<String, ItemModel> itemsCommands;
   private Map<String, Double> rarity;
-  private boolean redisMessaging;
-  private RedisConfig redis;
 
 
   public Config() {

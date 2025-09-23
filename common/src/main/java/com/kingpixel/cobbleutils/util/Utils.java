@@ -45,10 +45,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -118,7 +115,7 @@ public abstract class Utils {
       .registerTypeAdapter(HiperMessage.class, HiperMessage.EMPTY);
   }
 
-  public static ExecutorService IO_EXECUTOR = Executors.newFixedThreadPool(16, new ThreadFactoryBuilder()
+  public static final ExecutorService IO_EXECUTOR = Executors.newFixedThreadPool(16, new ThreadFactoryBuilder()
     .setNameFormat("CobbleUtils IO Executor-%d")
     .build());
 
@@ -400,5 +397,19 @@ public abstract class Utils {
     if (customModelData != 0)
       itemStack.set(DataComponentTypes.CUSTOM_MODEL_DATA, new CustomModelDataComponent((int) customModelData));
     return itemStack;
+  }
+
+  public static StringBuilder replaceStringBuilder(StringBuilder sb, Map<String, String> placeholders) {
+    for (Map.Entry<String, String> entry : placeholders.entrySet()) {
+      String placeholder = entry.getKey();
+      String value = entry.getValue();
+      int index = sb.indexOf(placeholder);
+      while (index != -1) {
+        sb.replace(index, index + placeholder.length(), value);
+        index += value.length(); // Move to the end of the replaced value
+        index = sb.indexOf(placeholder, index);
+      }
+    }
+    return sb;
   }
 }
