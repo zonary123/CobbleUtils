@@ -464,9 +464,15 @@ public class ItemChance {
       if (item.startsWith("id:")) {
         String id = item.replace("id:", "");
         ItemChance ic = RewardsApi.getReward(id);
+      
         if (ic != null) {
-          return getRewardItemStack(ic.getItem(), amount);
-        } else return ItemStack.EMPTY;
+          String nestedItem = ic.getItem();
+          if (nestedItem.equals(item)) {
+            // Stop infinite Cycle
+            return ItemStack.EMPTY;
+          }
+          return getRewardItemStack(nestedItem, amount);
+        }
       }
 
       String[] parts = item.split("\\|");
