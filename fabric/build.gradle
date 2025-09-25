@@ -75,7 +75,7 @@ dependencies {
 
     // Redis
     libby("redis.clients:jedis:5.1.0")
-    //libby("org.apache.commons:commons-pool2:2.12.0")
+    libby("org.apache.commons:commons-pool2:2.12.0")
 }
 
 processResources {
@@ -136,8 +136,8 @@ shadowJar {
     //relocate("net.milkbowl.vault", "net.milkbowl.vault")
     relocate("com.mongodb", "com.kingpixel.cobbleutils.mongodb")
     relocate("org.bson", "com.kingpixel.cobbleutils.bson")
-    //relocate("redis.clients.jedis", "com.kingpixel.cobbleutils.redis.clients.jedis")
-    //relocate("org.apache.commons.commons-pool2", "com.kingpixel.cobbleutils.org.apache.commons.pool2")
+    relocate("redis.clients.jedis", "com.kingpixel.cobbleutils.redis.clients.jedis")
+    relocate("org.apache.commons.commons-pool2", "com.kingpixel.cobbleutils.org.apache.commons.pool2")
 
 
     //relocate("net.kyori.adventure.text.serializer", "com.kingpixel.cobbleutils.kyori.adventure.serializer")

@@ -12,14 +12,12 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.internal.bind.DateTypeAdapter;
 import com.kingpixel.cobbleutils.CobbleUtils;
+import com.kingpixel.cobbleutils.Model.DataBaseType;
 import com.kingpixel.cobbleutils.Model.DurationValue;
 import com.kingpixel.cobbleutils.Model.ItemChance;
 import com.kingpixel.cobbleutils.Model.ItemModel;
 import com.kingpixel.cobbleutils.Model.messages.HiperMessage;
-import com.kingpixel.cobbleutils.adapter.InstantTypeAdapter;
-import com.kingpixel.cobbleutils.adapter.ItemChanceAdapter;
-import com.kingpixel.cobbleutils.adapter.ItemStackAdapter;
-import com.kingpixel.cobbleutils.adapter.PokemonAdapter;
+import com.kingpixel.cobbleutils.adapter.*;
 import com.mojang.authlib.GameProfile;
 import kotlin.ranges.IntRange;
 import net.minecraft.component.DataComponentTypes;
@@ -112,6 +110,7 @@ public abstract class Utils {
       .registerTypeAdapter(Instant.class, InstantTypeAdapter.INSTANCE)
       .registerTypeAdapter(ItemChance.class, ItemChanceAdapter.INSTANCE)
       .registerTypeAdapter(DurationValue.class, DurationValue.INSTANCE)
+      .registerTypeAdapter(DataBaseType.class, DataBaseTypeAdapter.INSTANCE)
       .registerTypeAdapter(HiperMessage.class, HiperMessage.EMPTY);
   }
 

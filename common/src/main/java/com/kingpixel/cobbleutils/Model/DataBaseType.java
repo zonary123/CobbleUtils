@@ -7,5 +7,6 @@ public enum DataBaseType {
   JSON,
   MONGODB,
   MYSQL,
-  SQLITE
+  SQLITE,
+  MARIADB,
 }
