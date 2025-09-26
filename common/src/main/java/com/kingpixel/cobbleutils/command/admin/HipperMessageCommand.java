@@ -10,10 +10,24 @@ import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
 
+import java.util.List;
+
 /**
  * @author Carlos Varas Alonso - 07/11/2024 4:18
  */
 public class HipperMessageCommand {
+  private static List<String> messages = List.of(
+    "chat: Hello %player:name%!",
+    "broadcast: Hello everyone!",
+    "actionbar: Hello %player:name%!",
+    "actionbar_broadcast: Hello everyone!",
+    "titlesubtitle:title: Hello %player:name%! subtitle: This is a subtitle example.",
+    "titlesubtitle_broadcast:title: Hello everyone! subtitle: This is a subtitle example.",
+    "bossbar: Hello %player:name%!",
+    "bossbar_broadcast: Hello everyone!",
+    "chat: Hello %player:name%! sound:entity.experience_orb.pickup volume:1.0 pitch:1.0 potion:minecraft:strength " +
+      "duration:2000 particle:minecraft:happy_villager count:10"
+  );
 
   public static void register(CommandDispatcher<ServerCommandSource> dispatcher, LiteralArgumentBuilder<ServerCommandSource> base) {
     dispatcher.register(
@@ -22,17 +36,7 @@ public class HipperMessageCommand {
           .requires(source -> source.hasPermissionLevel(2))
           .then(
             CommandManager.argument("message", StringArgumentType.greedyString())
-              .suggests(((context, builder) -> CommandSource.suggestMatching(new String[]{
-                "chat: Hello %player:name%!",
-                "broadcast: Hello everyone!",
-                "actionbar: Hello %player:name%!",
-                "actionbar_broadcast: Hello everyone!",
-                "titlesubtitle:title: Hello %player:name%! subtitle: This is a subtitle example.",
-                "titlesubtitle_broadcast:title: Hello everyone! subtitle: This is a subtitle example.",
-                "bossbar: Hello %player:name%!",
-                "bossbar_broadcast: Hello everyone!",
-                "chat: Hello %player:name%! sound:entity.experience_orb.pickup volume:1.0 pitch:1.0",
-              }, builder)))
+              .suggests(((context, builder) -> CommandSource.suggestMatching(messages, builder)))
               .executes(context -> {
                 String message = StringArgumentType.getString(context, "message");
                 ServerPlayerEntity player = null;
