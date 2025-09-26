@@ -6,6 +6,7 @@ import com.kingpixel.cobbleutils.Model.properties.LegendaryPropertyType;
 import com.kingpixel.cobbleutils.Model.properties.MinIvsPropertyType;
 import com.kingpixel.cobbleutils.api.EconomyApi;
 import com.kingpixel.cobbleutils.command.CommandTree;
+import com.kingpixel.cobbleutils.command.suggests.CobbleUtilsSuggests;
 import com.kingpixel.cobbleutils.config.Config;
 import com.kingpixel.cobbleutils.config.Lang;
 import com.kingpixel.cobbleutils.config.RewardsC;
@@ -134,6 +135,7 @@ public class CobbleUtils {
     LifecycleEvent.SERVER_STARTED.register(server -> {
       spawnRates.init();
       load();
+      CobbleUtilsSuggests.SUGGESTS_PLAYER_OFFLINE_AND_ONLINE.refreshIfNeeded();
     });
 
     LifecycleEvent.SERVER_STOPPED.register(server1 -> {

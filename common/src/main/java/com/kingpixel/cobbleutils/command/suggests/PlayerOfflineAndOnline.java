@@ -4,6 +4,8 @@ import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.api.PermissionApi;
 import com.kingpixel.cobbleutils.database.DataBaseFactory;
 import com.kingpixel.cobbleutils.database.users.UserModel;
+import com.kingpixel.cobbleutils.mixins.UserCacheMixin;
+import com.mojang.authlib.GameProfile;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.RequiredArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
@@ -13,11 +15,10 @@ import net.minecraft.command.argument.UuidArgumentType;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.util.UserCache;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import javax.annotation.Nullable;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
@@ -27,17 +28,28 @@ import java.util.concurrent.TimeUnit;
  */
 @Data
 public class PlayerOfflineAndOnline {
-
   private long lastUpdate = 0;
   private final long updateInterval = TimeUnit.MINUTES.toMillis(5);
   private final List<String> playerNames = new CopyOnWriteArrayList<>();
   private final List<UUID> playerUUIDs = new CopyOnWriteArrayList<>();
+  private final List<String> playerUUIDsString = new CopyOnWriteArrayList<>();
+
   private CompletableFuture<Void> currentLoad = CompletableFuture.completedFuture(null);
+
+  private List<String> getPlayerUUIDsAsString() {
+    if (playerUUIDsString.size() != playerUUIDs.size()) {
+      playerUUIDsString.clear();
+      for (UUID uuid : playerUUIDs) {
+        playerUUIDsString.add(uuid.toString());
+      }
+    }
+    return playerUUIDsString;
+  }
 
   /**
    * Obtiene los nombres cacheados de los jugadores.
    */
-  private List<String> getPlayerNames() {
+  public List<String> getPlayerNames() {
     refreshIfNeeded();
     return playerNames;
   }
@@ -45,15 +57,34 @@ public class PlayerOfflineAndOnline {
   /**
    * Obtiene los UUID cacheados de los jugadores.
    */
-  private List<UUID> getPlayerUUIDs() {
+  public List<UUID> getPlayerUUIDs() {
     refreshIfNeeded();
     return playerUUIDs;
+  }
+
+
+  /**
+   * Obtain the player UUIDs from the UserCache.
+   */
+  public Set<UUID> getPlayerUUIDsUserCache() {
+    UserCache userCache = CobbleUtils.server.getUserCache();
+    if (userCache == null) return Collections.emptySet();
+    return ((UserCacheMixin) userCache).byUuid().keySet();
+  }
+
+  /**
+   * Obtain the player names from the UserCache.
+   */
+  public Set<String> getPlayerNamesUserCache() {
+    UserCache userCache = CobbleUtils.server.getUserCache();
+    if (userCache == null) return Collections.emptySet();
+    return ((UserCacheMixin) userCache).byName().keySet();
   }
 
   /**
    * Verifica si hace falta refrescar la lista de jugadores.
    */
-  private void refreshIfNeeded() {
+  public void refreshIfNeeded() {
     long currentTime = System.currentTimeMillis();
     if (currentTime - lastUpdate > updateInterval) {
       lastUpdate = currentTime;
@@ -108,10 +139,7 @@ public class PlayerOfflineAndOnline {
     String literal, List<String> permissions, int level) {
     return CommandManager.argument(literal, UuidArgumentType.uuid())
       .requires(source -> PermissionApi.hasPermission(source, permissions, level))
-      .suggests((context, builder) -> CommandSource.suggestMatching(
-        getPlayerUUIDs().stream().map(UUID::toString).toList(),
-        builder
-      ));
+      .suggests((context, builder) -> CommandSource.suggestMatching(getPlayerUUIDsAsString(), builder));
   }
 
   /**
@@ -155,6 +183,44 @@ public class PlayerOfflineAndOnline {
   public Optional<DataResultPlayer> getPlayerFromContext(CommandContext<ServerCommandSource> context, String argumentName) {
     String playerName = StringArgumentType.getString(context, argumentName);
     return getPlayer(playerName);
+  }
+
+  /**
+   * Obtiene el UUID de un jugador (online u offline) a partir de su nombre.
+   */
+  public @Nullable UUID getPlayerUUIDWithName(String playerName) {
+    UserCache userCache = CobbleUtils.server.getUserCache();
+    UUID uuid;
+    if (userCache != null) {
+      var optional = userCache.findByName(playerName);
+      uuid = optional.map(GameProfile::getId).orElse(null);
+    } else {
+      uuid = null;
+    }
+    if (uuid == null) {
+      var userModel = DataBaseFactory.dataBaseUsers.findUserByName(playerName);
+      uuid = userModel != null ? userModel.getPlayerUUID() : null;
+    }
+    return uuid;
+  }
+
+  /**
+   * Obtiene el nombre de un jugador (online u offline) a partir de su UUID.
+   */
+  public @Nullable String getPlayerNameWithUUID(UUID uuid) {
+    UserCache userCache = CobbleUtils.server.getUserCache();
+    String name;
+    if (userCache != null) {
+      var optional = userCache.getByUuid(uuid);
+      name = optional.map(GameProfile::getName).orElse(null);
+    } else {
+      name = null;
+    }
+    if (name == null) {
+      var userModel = DataBaseFactory.dataBaseUsers.findUserByUUID(uuid);
+      name = userModel != null ? userModel.getPlayerName() : null;
+    }
+    return name;
   }
 
   /**

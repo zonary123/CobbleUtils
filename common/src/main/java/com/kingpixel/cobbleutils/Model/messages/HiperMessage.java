@@ -7,8 +7,14 @@ import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.util.AdventureTranslator;
 import com.kingpixel.cobbleutils.util.RedisManager;
 import lombok.Data;
+import net.minecraft.entity.effect.StatusEffect;
+import net.minecraft.entity.effect.StatusEffectInstance;
+import net.minecraft.network.packet.s2c.play.ParticleS2CPacket;
 import net.minecraft.network.packet.s2c.play.SubtitleS2CPacket;
 import net.minecraft.network.packet.s2c.play.TitleS2CPacket;
+import net.minecraft.particle.ParticleEffect;
+import net.minecraft.registry.Registries;
+import net.minecraft.registry.entry.RegistryEntry;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvent;
@@ -205,8 +211,12 @@ public class HiperMessage implements JsonSerializer<HiperMessage>, JsonDeseriali
    */
   private void sendChat(UUID playerUUID, String content, String prefix, boolean cache, boolean receivedFromRedis) {
     ServerPlayerEntity player = getPlayer(playerUUID);
+    if (player == null && !receivedFromRedis && CobbleUtils.config.isRedisMessaging()) {
+      sendToRedis(MessageType.CHAT.name(), this.modifiedContent, prefix, playerUUID, null);
+      return;
+    }
     if (player == null) return;
-    player.sendMessage(AdventureTranslator.toNative(playSound(player, content), prefix, player), false);
+    player.sendMessage(AdventureTranslator.toNative(playThings(player, content), prefix, player), false);
   }
 
   /**
@@ -226,7 +236,7 @@ public class HiperMessage implements JsonSerializer<HiperMessage>, JsonDeseriali
 
     // Enviar localmente
     var players = CobbleUtils.server.getPlayerManager().getPlayerList();
-    String s = playSound(null, content);
+    String s = playThings(null, content);
     for (ServerPlayerEntity player : players) {
       player.sendMessage(AdventureTranslator.toNative(s, prefix, player), false);
     }
@@ -247,8 +257,12 @@ public class HiperMessage implements JsonSerializer<HiperMessage>, JsonDeseriali
    */
   private void sendActionBar(UUID playerUUID, String content, String prefix, boolean cache, boolean receivedFromRedis) {
     ServerPlayerEntity player = getPlayer(playerUUID);
+    if (player == null && !receivedFromRedis && CobbleUtils.config.isRedisMessaging()) {
+      sendToRedis(MessageType.ACTIONBAR.name(), this.modifiedContent, prefix, playerUUID, null);
+      return;
+    }
     if (player == null) return;
-    player.sendMessage(AdventureTranslator.toNative(playSound(player, content), prefix, player), true);
+    player.sendMessage(AdventureTranslator.toNative(playThings(player, content), prefix, player), true);
   }
 
   /**
@@ -269,7 +283,7 @@ public class HiperMessage implements JsonSerializer<HiperMessage>, JsonDeseriali
     // Enviar localmente
     var players = CobbleUtils.server.getPlayerManager().getPlayerList();
     for (ServerPlayerEntity player : players) {
-      player.sendMessage(AdventureTranslator.toNative(playSound(player, content), prefix, player), true);
+      player.sendMessage(AdventureTranslator.toNative(playThings(player, content), prefix, player), true);
     }
   }
 
@@ -361,6 +375,7 @@ public class HiperMessage implements JsonSerializer<HiperMessage>, JsonDeseriali
      * @param player the player to send the title and subtitle to
      */
     public void sendTo(ServerPlayerEntity player, String prefix) {
+      if (player == null) return;
       if (title != null && !title.isEmpty()) {
         player.networkHandler.sendPacket(getTitlePacker(player, prefix));
       }
@@ -405,8 +420,12 @@ public class HiperMessage implements JsonSerializer<HiperMessage>, JsonDeseriali
    */
   private void sendTitleSubtitle(UUID playerUUID, String content, String prefix, boolean cache, boolean receivedFromRedis) {
     ServerPlayerEntity player = getPlayer(playerUUID);
-    if (player == null) return;
-    TitleSubtitle titleSubtitle = parseTitleSubtitle(playSound(player, content));
+    if (player == null && !receivedFromRedis && CobbleUtils.config.isRedisMessaging()) {
+      sendToRedis(MessageType.TITLE_SUBTITLE.name(), this.modifiedContent, prefix, playerUUID, null);
+      return;
+    }
+
+    TitleSubtitle titleSubtitle = parseTitleSubtitle(playThings(player, content));
     titleSubtitle.sendTo(player, prefix);
   }
 
@@ -426,7 +445,7 @@ public class HiperMessage implements JsonSerializer<HiperMessage>, JsonDeseriali
     }
 
     // Enviar localmente
-    TitleSubtitle titleSubtitle = parseTitleSubtitle(playSound(null, content));
+    TitleSubtitle titleSubtitle = parseTitleSubtitle(playThings(null, content));
     var players = CobbleUtils.server.getPlayerManager().getPlayerList();
     for (ServerPlayerEntity player : players) {
       titleSubtitle.sendTo(player, prefix);
@@ -442,68 +461,113 @@ public class HiperMessage implements JsonSerializer<HiperMessage>, JsonDeseriali
     .expireAfterAccess(10, TimeUnit.MINUTES)
     .build();
 
-  private static final Pattern SOUND_PATTERN =
-    Pattern.compile(
-      "sound:(?<sound>\\S+)(?:\\s*volume:(?<volume>\\d+(?:\\.\\d+)?))?(?:\\s*pitch:(?<pitch>\\d+(?:\\.\\d+)?))?",
-      Pattern.CASE_INSENSITIVE
-    );
+  private static final Pattern EFFECT_PATTERN = Pattern.compile(
+    "(?:" +
+      "sound:(?<sound>\\S+)" +
+      "(?:\\s*volume:(?<volume>\\d+(?:\\.\\d+)?))?" +
+      "(?:\\s*pitch:(?<pitch>\\d+(?:\\.\\d+)?))?" +
+      "|" +
+      "potion:(?<potion>\\S+)" +
+      "(?:\\s*duration:(?<duration>\\d+))?" +
+      "(?:\\s*amplifier:(?<amplifier>\\d+))?" +
+      "|" +
+      "particle:(?<particle>\\S+)" +
+      "(?:\\s*count:(?<count>\\d+))?" +
+      ")",
+    Pattern.CASE_INSENSITIVE
+  );
 
-  private String playSound(ServerPlayerEntity player, String content) {
+  public String playThings(ServerPlayerEntity player, String content) {
     if (content == null || content.isEmpty()) return content;
 
-    Matcher matcher = SOUND_PATTERN.matcher(content);
+    Matcher matcher = EFFECT_PATTERN.matcher(content);
     StringBuilder cleaned = new StringBuilder();
 
     while (matcher.find()) {
-      String soundName = matcher.group("sound");
-      if (soundName == null || soundName.isEmpty()) continue;
+      // ---------------- SONIDOS ----------------
+      if (matcher.group("sound") != null) {
+        float volume = parseOrDefault(matcher.group("volume"), 1.0f);
+        float pitch = parseOrDefault(matcher.group("pitch"), 1.0f);
 
-      float volume = 1.0f;
-      float pitch = 1.0f;
+        float finalVolume = Math.min(Math.max(volume, 0.0f), 3.0f);
+        float finalPitch = Math.min(Math.max(pitch, 0.5f), 2.0f);
 
-      String volumeGroup = matcher.group("volume");
-      if (volumeGroup != null) {
-        try {
-          volume = Float.parseFloat(volumeGroup);
-        } catch (NumberFormatException ignored) {
-        }
-      }
+        SoundEvent soundEvent = soundCache.get(matcher.group("sound"),
+          name -> SoundEvent.of(Identifier.tryParse(name)));
 
-      String pitchGroup = matcher.group("pitch");
-      if (pitchGroup != null) {
-        try {
-          pitch = Float.parseFloat(pitchGroup);
-        } catch (NumberFormatException ignored) {
-        }
-      }
-
-      // Clamp de valores
-      float finalVolume = Math.min(Math.max(volume, 0.0f), 3.0f);
-      float finalPitch = Math.min(Math.max(pitch, 0.5f), 2.0f);
-
-      SoundEvent soundEvent = soundCache.get(soundName,
-        name -> SoundEvent.of(Identifier.tryParse(name)));
-
-      // Reproducción: un jugador o broadcast
-      if (player == null) {
-        var players = CobbleUtils.server.getPlayerManager().getPlayerList();
-        for (ServerPlayerEntity p : players) {
-          if (p == null) continue;
+        if (player == null) {
+          for (ServerPlayerEntity p : CobbleUtils.server.getPlayerManager().getPlayerList()) {
+            if (p == null) continue;
+            CobbleUtils.server.execute(() ->
+              p.playSoundToPlayer(soundEvent, SoundCategory.PLAYERS, finalVolume, finalPitch));
+          }
+        } else {
           CobbleUtils.server.execute(() ->
-            p.playSoundToPlayer(soundEvent, SoundCategory.PLAYERS, finalVolume, finalPitch));
+            player.playSoundToPlayer(soundEvent, SoundCategory.PLAYERS, finalVolume, finalPitch));
         }
-      } else {
-        CobbleUtils.server.execute(() ->
-          player.playSoundToPlayer(soundEvent, SoundCategory.PLAYERS, finalVolume, finalPitch));
       }
 
-      // Reemplazar la coincidencia con nada → limpieza del mensaje
+      // ---------------- POCIONES ----------------
+      else if (matcher.group("potion") != null) {
+        StatusEffect effect = Registries.STATUS_EFFECT.get(Identifier.tryParse(matcher.group("potion")));
+        if (effect != null) {
+          int duration = (int) parseOrDefault(matcher.group("duration"), 200f);
+          int amplifier = (int) parseOrDefault(matcher.group("amplifier"), 0f);
+          CobbleUtils.server.execute(() -> {
+            var status = new StatusEffectInstance(RegistryEntry.of(effect), duration, amplifier);
+            if (player == null) {
+              for (ServerPlayerEntity p : CobbleUtils.server.getPlayerManager().getPlayerList()) {
+                if (p == null) continue;
+                p.addStatusEffect(status);
+              }
+              return;
+            }
+            player.addStatusEffect(status);
+          });
+        }
+      }
+
+      // ---------------- PARTÍCULAS ----------------
+      else if (matcher.group("particle") != null) {
+        ParticleEffect particle = (ParticleEffect) Registries.PARTICLE_TYPE
+          .get(Identifier.tryParse(matcher.group("particle")));
+
+        if (particle != null) {
+          int count = (int) parseOrDefault(matcher.group("count"), 20f);
+          CobbleUtils.server.execute(() -> {
+            ParticleS2CPacket packet;
+            if (player == null) {
+              for (ServerPlayerEntity p : CobbleUtils.server.getPlayerManager().getPlayerList()) {
+                if (p == null) continue;
+                packet = new ParticleS2CPacket(particle, true,
+                  (float) p.getX(), (float) p.getY() + 1, (float) p.getZ(),
+                  0.5f, 0.5f, 0.5f, 0.1f, count);
+                p.networkHandler.sendPacket(packet);
+              }
+              return;
+            }
+            packet = new ParticleS2CPacket(particle, true,
+              (float) player.getX(), (float) player.getY() + 1, (float) player.getZ(),
+              0.5f, 0.5f, 0.5f, 0.1f, count);
+            player.networkHandler.sendPacket(packet);
+          });
+        }
+      }
+
       matcher.appendReplacement(cleaned, "");
     }
 
     matcher.appendTail(cleaned);
-
     return cleaned.toString().trim();
+  }
+
+  private float parseOrDefault(String input, float def) {
+    if (input == null) return def;
+    try {
+      return Float.parseFloat(input);
+    } catch (NumberFormatException e) {
+      return def;
+    }
   }
 
 

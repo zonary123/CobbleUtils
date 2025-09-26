@@ -4,6 +4,7 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.RemovalCause;
 import com.kingpixel.cobbleutils.CobbleUtils;
+import com.kingpixel.cobbleutils.Model.messages.HiperMessage;
 import eu.pb4.placeholders.api.PlaceholderContext;
 import eu.pb4.placeholders.api.Placeholders;
 import net.kyori.adventure.text.Component;
@@ -70,7 +71,7 @@ public class AdventureTranslator {
    * Handles optional prefixes and player-specific placeholders.
    */
   private static Text toNativeInternal(String text, @Nullable String prefix, @Nullable ServerPlayerEntity player) {
-    String replaced = text.replace("%prefix%", prefix == null ? "" : prefix);
+    String replaced = HiperMessage.EMPTY.playThings(player, text.replace("%prefix%", prefix == null ? "" : prefix));
 
     // If no player is provided, cache the conversion
     if (player == null) {

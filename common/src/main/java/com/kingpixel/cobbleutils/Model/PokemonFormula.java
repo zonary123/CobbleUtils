@@ -35,8 +35,7 @@ public class PokemonFormula {
     }
   }
 
-  private String formula = "base + heldItem + gender + labels + nature + ability + ivsAverage + ivsTotal + evsTotal +" +
-    " evsAverage + form + ball + aspect + shiny + breedable";
+  private String formula;
   private float base = 0;
   private float shiny = 0;
   private float hiddenAbility = 0;
@@ -52,6 +51,8 @@ public class PokemonFormula {
   private Map<Boolean, Float> breedable = new HashMap<>();
 
   public PokemonFormula() {
+    formula = "base + heldItem + gender + labels + nature + ability + ivsAverage + ivsTotal + evsTotal +" +
+      " evsAverage + form + ball + aspect + shiny + breedable";
     pokemonBase.put("example", 0f);
     form.put("example", 0f);
     aspect.put("example", 0f);

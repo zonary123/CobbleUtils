@@ -9,4 +9,5 @@ public enum DataBaseType {
   MYSQL,
   SQLITE,
   MARIADB,
+  H2
 }

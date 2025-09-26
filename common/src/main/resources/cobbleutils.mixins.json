@@ -8,6 +8,7 @@
   },
   "mixins": [
     "BlockMixin",
+    "UserCacheMixin",
     "brewing.BrewingBlockEntityMixin",
     "brewing.BrewingBlockMixin"
   ]
