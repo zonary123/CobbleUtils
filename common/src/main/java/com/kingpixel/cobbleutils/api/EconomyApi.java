@@ -20,6 +20,7 @@ public class EconomyApi {
 
   public static void setEconomyType() {
     economys.clear();
+    economys.add(new UltraEEconomy());
     economys.add(new ImpactorEconomy());
     economys.add(new CobbleDollarsEconomy());
     economys.add(new BeEconomy());

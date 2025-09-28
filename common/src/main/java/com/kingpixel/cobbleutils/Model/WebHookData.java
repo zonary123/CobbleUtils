@@ -22,18 +22,17 @@ public class WebHookData {
   public static final Map<String, WebhookClient> webhooks = new ConcurrentHashMap<>();
 
 
-  private static final ExecutorService WEBHOOK_THREAD_FACTORY = Executors.newFixedThreadPool(2,
-    new ThreadFactoryBuilder()
-      .setDaemon(true)
-      .setNameFormat("CobbleUtils Webhook - %d")
-      .build());
+  private static final ExecutorService WEBHOOK_THREAD_FACTORY = Executors.newFixedThreadPool(2, new ThreadFactoryBuilder()
+    .setDaemon(true)
+    .setNameFormat("CobbleUtils Webhook - %d")
+    .build());
 
   // Webhook configuration
-  private boolean ENABLED;
-  private String URL_WEBHOOK;
-  private String AVATAR_URL;
-  private String USERNAME;
-  private String COLOR;
+  private final boolean ENABLED;
+  private final String URL_WEBHOOK;
+  private final String AVATAR_URL;
+  private final String USERNAME;
+  private final String COLOR;
 
   public WebHookData(String URL_WEBHOOK, String AVATAR_URL, String USERNAME) {
     this.ENABLED = false;
@@ -49,10 +48,11 @@ public class WebHookData {
   public void sendWebHook(String id, WebHookStruct struct, List<ServerPlayerEntity> players,
                           List<Pokemon> pokemons) {
     runAsyncWebhook(id, () -> {
-      WebhookClient client = webhooks.computeIfAbsent(id, k -> WebhookClient.withUrl(URL_WEBHOOK));
+      WebhookClient client = webhooks.computeIfAbsent(URL_WEBHOOK, k -> WebhookClient.withUrl(URL_WEBHOOK));
       client.send(struct.getMessage(this, players, pokemons));
     });
   }
+
 
   /**
    * Send a webhook with PokemonEntity (in-world).
@@ -60,7 +60,7 @@ public class WebHookData {
   public void sendWebHookEntity(String id, WebHookStruct struct, List<ServerPlayerEntity> players,
                                 List<PokemonEntity> pokemons) {
     runAsyncWebhook(id, () -> {
-      WebhookClient client = webhooks.computeIfAbsent(id, k -> WebhookClient.withUrl(URL_WEBHOOK));
+      WebhookClient client = webhooks.computeIfAbsent(URL_WEBHOOK, k -> WebhookClient.withUrl(URL_WEBHOOK));
       client.send(struct.getMessageEntity(this, players, pokemons));
     });
   }

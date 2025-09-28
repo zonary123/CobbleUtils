@@ -22,10 +22,7 @@ import net.minecraft.util.Identifier;
 
 import javax.annotation.Nullable;
 import java.lang.reflect.Type;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
@@ -58,6 +55,33 @@ public class HiperMessage implements JsonSerializer<HiperMessage>, JsonDeseriali
   }
 
   /**
+   * Sends the message to the specified list of players.
+   *
+   * @param players List of UUIDs of players to send the message to
+   * @param prefix  Prefix to add before the message
+   * @param cache   whether to cache the message or not
+   */
+  public void sendMessage(List<UUID> players, String prefix, boolean cache) {
+    for (UUID player : players) {
+      sendMessage(player, prefix, cache, false, null, null);
+    }
+  }
+
+  /**
+   * Sends the message to the specified list of players.
+   *
+   * @param players         List of UUIDs of players to send the message to
+   * @param prefix          Prefix to add before the message
+   * @param cache           whether to cache the message or not
+   * @param modifiedContent Modified content to send instead of the original one (after placeholder replacement)
+   */
+  public void sendMessage(List<UUID> players, String prefix, boolean cache, String modifiedContent) {
+    for (UUID player : players) {
+      sendMessage(player, prefix, cache, false, null, modifiedContent);
+    }
+  }
+
+  /**
    * Sends the message to the specified player.
    *
    * @param player       the player to send the message to
@@ -69,10 +93,29 @@ public class HiperMessage implements JsonSerializer<HiperMessage>, JsonDeseriali
     sendMessage(player == null ? null : player.getUuid(), prefix, cache, false, placeholders, null);
   }
 
+  /**
+   * Sends the message to the specified player.
+   *
+   * @param player          the player to send the message to
+   * @param modifiedContent Modified content to send instead of the original one (after placeholder replacement)
+   * @param prefix          Prefix to add before the message
+   * @param cache           whether to cache the message or not
+   */
   public void sendMessage(ServerPlayerEntity player, String modifiedContent, String prefix, boolean cache) {
     sendMessage(player == null ? null : player.getUuid(), prefix, cache, false, null, modifiedContent);
   }
 
+  /**
+   * Sends the message to the specified player.
+   *
+   * @param playerUUID      the UUID of the player to send the message to
+   * @param modifiedContent Modified content to send instead of the original one (after placeholder replacement)
+   * @param prefix          Prefix to add before the message
+   * @param cache           whether to cache the message or not
+   */
+  public void sendMessage(UUID playerUUID, String modifiedContent, String prefix, boolean cache) {
+    sendMessage(playerUUID, prefix, cache, false, null, modifiedContent);
+  }
 
   /**
    * Sends the message to the specified player.
@@ -494,7 +537,7 @@ public class HiperMessage implements JsonSerializer<HiperMessage>, JsonDeseriali
 
         SoundEvent soundEvent = soundCache.get(matcher.group("sound"),
           name -> SoundEvent.of(Identifier.tryParse(name)));
-
+        if (soundEvent == null) continue;
         if (player == null) {
           for (ServerPlayerEntity p : CobbleUtils.server.getPlayerManager().getPlayerList()) {
             if (p == null) continue;

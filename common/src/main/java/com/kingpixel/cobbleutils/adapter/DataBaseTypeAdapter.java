@@ -7,6 +7,7 @@ package com.kingpixel.cobbleutils.adapter;
 import com.google.gson.TypeAdapter;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
+import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.Model.DataBaseType;
 
 import java.io.IOException;
@@ -17,12 +18,21 @@ public class DataBaseTypeAdapter extends TypeAdapter<DataBaseType> {
 
   @Override
   public void write(JsonWriter out, DataBaseType value) throws IOException {
+    if (value == null) {
+      CobbleUtils.LOGGER.fatal("Database type is null, defaulting to JSON");
+      out.value(DataBaseType.JSON.name());
+      return;
+    }
     out.value(value.name());
   }
 
   @Override
   public DataBaseType read(JsonReader in) throws IOException {
     String value = in.nextString();
+    if (value == null) {
+      CobbleUtils.LOGGER.fatal("Database type is null, defaulting to JSON");
+      return DataBaseType.JSON;
+    }
     for (DataBaseType type : DataBaseType.values()) {
       if (type.name().equalsIgnoreCase(value)) {
         return type;
