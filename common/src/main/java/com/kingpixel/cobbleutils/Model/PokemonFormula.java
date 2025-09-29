@@ -2,6 +2,7 @@ package com.kingpixel.cobbleutils.Model;
 
 import com.cobblemon.mod.common.api.pokemon.egg.EggGroup;
 import com.cobblemon.mod.common.pokemon.Gender;
+import com.cobblemon.mod.common.pokemon.Nature;
 import com.cobblemon.mod.common.pokemon.Pokemon;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
@@ -40,15 +41,16 @@ public class PokemonFormula {
 
   private Map<String, Float> pokemonBase = new HashMap<>();
   private Map<String, Float> form = new HashMap<>();
-  private Map<String, Float> aspect = new HashMap<>();
   private Map<Gender, Float> gender = new EnumMap<>(Gender.class);
   private Map<String, Float> nature = new HashMap<>();
   private Map<String, Float> ball = new HashMap<>();
+  private boolean accumulationAspects = false;
+  private Map<String, Float> aspect = new HashMap<>();
+  private boolean accumulationLabels = false;
   private Map<String, Float> labels = new HashMap<>();
   private Map<Boolean, Float> breedable = new HashMap<>();
 
   private HeldItemPrice heldItemPrice = new HeldItemPrice();
-  private boolean accumulationLabels = false;
 
   // Dynamic variable resolvers: register any formula variable with a function
   transient
@@ -116,6 +118,8 @@ public class PokemonFormula {
     variableResolvers.put("evsTotal", p -> (float) Math.max(PokemonUtils.getEvsTotal(p.getEvs()), 1));
     variableResolvers.put("evsAverage", p -> (float) Math.max(PokemonUtils.getEvsAverage(p.getEvs()), 1));
     variableResolvers.put("breedable", this::getBreedable);
+    variableResolvers.put("friendship", p -> (float) Math.max(p.getFriendship(), 1));
+    variableResolvers.put("level", p -> (float) Math.max(p.getLevel(), 1));
 
     if (CobbleUtils.config.isDebug()) {
       CobbleUtils.LOGGER.info("[DEBUG] Variable resolvers registered: " + variableResolvers.keySet());
@@ -190,9 +194,18 @@ public class PokemonFormula {
   }
 
   private float getAspect(Pokemon pokemon) {
-    return pokemon.getAspects().stream()
-      .map(a -> aspect.getOrDefault(a, 0f))
-      .findFirst().orElse(0f);
+    float value = 0f;
+    float aspectValue;
+    for (String pokemonAspect : pokemon.getAspects()) {
+      if (accumulationAspects) {
+        aspectValue = aspect.getOrDefault(pokemonAspect, 0f);
+        value += aspectValue;
+      } else {
+        aspectValue = aspect.getOrDefault(pokemonAspect, 0f);
+        value = Math.max(value, aspectValue);
+      }
+    }
+    return value;
   }
 
   private float getBase(Pokemon pokemon) {
@@ -204,6 +217,10 @@ public class PokemonFormula {
   }
 
   private float getBall(Pokemon pokemon) {
+    var caughtBall = pokemon.getCaughtBall();
+    String identifier = caughtBall.item().toString();
+    float value = ball.getOrDefault(identifier, 0f);
+    if(value != 0f) return value;
     return ball.getOrDefault(pokemon.getCaughtBall().getName().toTranslationKey(), 0f);
   }
 
@@ -229,6 +246,10 @@ public class PokemonFormula {
   }
 
   private float getNature(Pokemon pokemon) {
+    Nature pokemonNature = pokemon.getNature();
+    String identifier = pokemonNature.getName().toString();
+    float value = nature.getOrDefault(identifier, 0f);
+    if(value != 0f) return value;
     return nature.getOrDefault(pokemon.getNature().getDisplayName(), 0f);
   }
 
