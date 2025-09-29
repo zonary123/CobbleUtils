@@ -30,7 +30,7 @@ import java.util.function.Function;
  */
 @Data
 public class PokemonFormula {
-
+  private boolean showVariablesInConsole = false;
   private String formula;
   private Expression expression;
 
@@ -91,10 +91,6 @@ public class PokemonFormula {
     labels.put("legendary", 0f);
     breedable.put(true, 0f);
     breedable.put(false, 0f);
-
-    if (CobbleUtils.config.isDebug()) {
-      CobbleUtils.LOGGER.info("[DEBUG] Default values initialized for PokemonFormula.");
-    }
   }
 
   /**
@@ -121,8 +117,8 @@ public class PokemonFormula {
     variableResolvers.put("friendship", p -> (float) Math.max(p.getFriendship(), 1));
     variableResolvers.put("level", p -> (float) Math.max(p.getLevel(), 1));
 
-    if (CobbleUtils.config.isDebug()) {
-      CobbleUtils.LOGGER.info("[DEBUG] Variable resolvers registered: " + variableResolvers.keySet());
+    if (CobbleUtils.config.isDebug() || showVariablesInConsole) {
+      CobbleUtils.LOGGER.info("[DEBUG] Pokemon formula available variables: " + variableResolvers.keySet());
     }
   }
 
@@ -146,7 +142,7 @@ public class PokemonFormula {
    */
   public Expression getPokemonExpression(Pokemon pokemon) {
     Expression expr = getExpression();
-    if (CobbleUtils.config.isDebug()) {
+    if (CobbleUtils.config.isDebug() || showVariablesInConsole) {
       CobbleUtils.LOGGER.info("[DEBUG] Evaluating Pokemon: " + pokemon.getDisplayName().getString() +
         " | ID: " + pokemon.showdownId() + " | Hash: " + System.identityHashCode(pokemon));
     }
@@ -154,7 +150,7 @@ public class PokemonFormula {
       float value = resolver.apply(pokemon);
       expr.setVariable(name, value);
 
-      if (CobbleUtils.config.isDebug()) {
+      if (CobbleUtils.config.isDebug() || showVariablesInConsole) {
         CobbleUtils.LOGGER.info("[DEBUG] Variable set: " + name + " = " + value);
       }
     });
@@ -173,7 +169,7 @@ public class PokemonFormula {
     variableResolvers.keySet().forEach(builder::variable);
     expression = builder.build();
 
-    if (CobbleUtils.config.isDebug()) {
+    if (CobbleUtils.config.isDebug() || showVariablesInConsole) {
       CobbleUtils.LOGGER.info("[DEBUG] Expression built with formula: " + formula);
     }
     return expression;
@@ -186,10 +182,6 @@ public class PokemonFormula {
     if (itemStack.isEmpty()) return 0f;
     String heldItem = itemStack.getItem().toString();
     BigDecimal price = heldItemPrice.getHeldItemPrices().getOrDefault(heldItem, heldItemPrice.getDefaultPrice());
-
-    if (CobbleUtils.config.isDebug()) {
-      CobbleUtils.LOGGER.info("[DEBUG] Held item: " + heldItem + " | Price: " + price);
-    }
     return price.floatValue();
   }
 
