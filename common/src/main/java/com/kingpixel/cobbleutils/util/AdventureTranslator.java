@@ -4,7 +4,6 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.RemovalCause;
 import com.kingpixel.cobbleutils.CobbleUtils;
-import com.kingpixel.cobbleutils.Model.messages.HiperMessage;
 import eu.pb4.placeholders.api.PlaceholderContext;
 import eu.pb4.placeholders.api.Placeholders;
 import net.kyori.adventure.text.Component;
@@ -45,8 +44,8 @@ public class AdventureTranslator {
 
   // Caffeine cache for repeated text conversions
   private static final Cache<String, Text> cache = Caffeine.newBuilder()
-    .maximumSize(100_000)
-    .expireAfterAccess(5, TimeUnit.MINUTES)
+    .maximumSize(250_000)
+    .expireAfterAccess(1, TimeUnit.MINUTES)
     .removalListener((String key, Text value, RemovalCause cause) -> {
       if (CobbleUtils.config.isDebug()) {
         CobbleUtils.LOGGER.info("Removed key from cache: " + key + ", cause: " + cause);
@@ -66,12 +65,15 @@ public class AdventureTranslator {
     Map.entry('r', "<reset>")
   );
 
+  private static final Text EMPTY = Text.literal(" ");
+
   /**
    * Converts MiniMessage or legacy-formatted text to native Minecraft Text object.
    * Handles optional prefixes and player-specific placeholders.
    */
   private static Text toNativeInternal(String text, @Nullable String prefix, @Nullable ServerPlayerEntity player) {
-    String replaced = HiperMessage.EMPTY.playThings(player, text.replace("%prefix%", prefix == null ? "" : prefix));
+    if (text == null || text.isBlank()) return EMPTY;
+    String replaced = text.replace("%prefix%", prefix == null ? "" : prefix);
 
     // If no player is provided, cache the conversion
     if (player == null) {
@@ -138,7 +140,6 @@ public class AdventureTranslator {
   public static List<Text> toNativeL(List<String> lore) {
     List<Text> loreString = new ArrayList<>(lore.size());
     for (String loreLine : lore) {
-      if (loreLine == null || loreLine.isEmpty()) continue;
       loreString.add(toNativeInternal(loreLine, null, null));
     }
     return loreString;
@@ -147,7 +148,6 @@ public class AdventureTranslator {
   public static List<Text> toNativeL(List<String> lore, @Nullable ServerPlayerEntity player) {
     List<Text> loreString = new ArrayList<>(lore.size());
     for (String loreLine : lore) {
-      if (loreLine == null || loreLine.isEmpty()) continue;
       loreString.add(toNativeInternal(loreLine, null, player));
     }
     return loreString;

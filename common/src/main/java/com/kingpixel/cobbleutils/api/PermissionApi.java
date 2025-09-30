@@ -22,7 +22,7 @@ public class PermissionApi {
    */
   public static boolean hasPermission(ServerPlayerEntity player, String permission, int level) {
     if (player == null) return false;
-    return LuckPermsUtil.checkPermission(player.getCommandSource(), level, permission);
+    return LuckPermsUtil.checkPermission(player, level, permission);
   }
 
   /**
@@ -36,7 +36,7 @@ public class PermissionApi {
    */
   public static boolean hasPermission(ServerPlayerEntity player, List<String> permissions, int level) {
     if (player == null) return false;
-    return LuckPermsUtil.checkPermission(player.getCommandSource(), level, permissions);
+    return LuckPermsUtil.checkPermission(player, level, permissions);
   }
 
   /**

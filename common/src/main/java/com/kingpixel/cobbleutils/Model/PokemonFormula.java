@@ -10,6 +10,8 @@ import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.util.PokemonUtils;
 import lombok.Data;
 import net.minecraft.item.ItemStack;
+import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.text.Text;
 import net.objecthunter.exp4j.Expression;
 import net.objecthunter.exp4j.ExpressionBuilder;
 import org.checkerframework.checker.nullness.qual.Nullable;
@@ -32,6 +34,7 @@ import java.util.function.Function;
 public class PokemonFormula {
   private boolean showVariablesInConsole = false;
   private String formula;
+  transient
   private Expression expression;
 
   // Base configurations
@@ -141,17 +144,27 @@ public class PokemonFormula {
    * @return Expression ready to evaluate.
    */
   public Expression getPokemonExpression(Pokemon pokemon) {
+    ServerPlayerEntity player = pokemon.getOwnerPlayer();
     Expression expr = getExpression();
     if (CobbleUtils.config.isDebug() || showVariablesInConsole) {
-      CobbleUtils.LOGGER.info("[DEBUG] Evaluating Pokemon: " + pokemon.getDisplayName().getString() +
-        " | ID: " + pokemon.showdownId() + " | Hash: " + System.identityHashCode(pokemon));
+      StringBuilder sb = new StringBuilder();
+      sb.append("[DEBUG] Evaluating Pokemon: ").append(pokemon.getDisplayName().getString()).append(" | ID: ").append(pokemon.showdownId()).append(" | Hash: ").append(System.identityHashCode(pokemon));
+      CobbleUtils.LOGGER.info(sb.toString());
+      if (player != null) {
+        player.sendMessage(Text.literal(sb.toString()));
+      }
     }
     variableResolvers.forEach((name, resolver) -> {
       float value = resolver.apply(pokemon);
       expr.setVariable(name, value);
 
       if (CobbleUtils.config.isDebug() || showVariablesInConsole) {
-        CobbleUtils.LOGGER.info("[DEBUG] Variable set: " + name + " = " + value);
+        StringBuilder sb = new StringBuilder();
+        sb.append("[DEBUG] Variable set: ").append(name).append(" = ").append(value);
+        CobbleUtils.LOGGER.info(sb.toString());
+        if (player != null) {
+          player.sendMessage(Text.literal(sb.toString()));
+        }
       }
     });
     return expr;
@@ -212,7 +225,7 @@ public class PokemonFormula {
     var caughtBall = pokemon.getCaughtBall();
     String identifier = caughtBall.item().toString();
     float value = ball.getOrDefault(identifier, 0f);
-    if(value != 0f) return value;
+    if (value != 0f) return value;
     return ball.getOrDefault(pokemon.getCaughtBall().getName().toTranslationKey(), 0f);
   }
 
@@ -241,7 +254,7 @@ public class PokemonFormula {
     Nature pokemonNature = pokemon.getNature();
     String identifier = pokemonNature.getName().toString();
     float value = nature.getOrDefault(identifier, 0f);
-    if(value != 0f) return value;
+    if (value != 0f) return value;
     return nature.getOrDefault(pokemon.getNature().getDisplayName(), 0f);
   }
 

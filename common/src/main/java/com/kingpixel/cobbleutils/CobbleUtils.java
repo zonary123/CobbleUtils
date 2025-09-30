@@ -60,10 +60,16 @@ public class CobbleUtils {
     } catch (ClassNotFoundException e) {
       e.printStackTrace();
     }
+    try {
+      server = (MinecraftServer) FabricLoader.getInstance().getGameInstance();
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
     events();
   }
 
   public static void load() {
+
     files();
     sign();
     EconomyApi.setEconomyType();

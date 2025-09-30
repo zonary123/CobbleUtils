@@ -60,6 +60,7 @@ dependencies {
     libby("org.mongodb:mongodb-driver-sync:${property("mongodb_version")}") //{ transitive = true }
     libby("org.mongodb:bson:${property("mongodb_version")}")
     libby("org.xerial:sqlite-jdbc:${property("sqlite_version")}")
+    libby("com.zaxxer:HikariCP:${property("hikaricp_version")}")
 
     // Economy Vault
     shadowCommon("com.github.MilkBowl:VaultAPI:${property("vault_api_version")}") {

@@ -1,7 +1,10 @@
 package com.kingpixel.cobbleutils.util;
 
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import com.kingpixel.cobbleutils.CobbleUtils;
 import dev.ftb.mods.ftbranks.api.FTBRanksAPI;
+import lombok.Data;
 import me.lucko.fabric.api.permissions.v0.Permissions;
 import net.luckperms.api.LuckPerms;
 import net.luckperms.api.LuckPermsProvider;
@@ -14,12 +17,19 @@ import org.bukkit.plugin.RegisteredServiceProvider;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
+@Data
 public abstract class LuckPermsUtil {
+  private static final Cache<UUID, ServerCommandSource> commandSourceCache = Caffeine.newBuilder()
+    .maximumSize(1000)
+    .expireAfterAccess(java.time.Duration.ofMinutes(1))
+    .build();
 
   private static Permission PERMISSION_TYPE;
 
   private static LuckPerms luckPermsApi;
+
 
   private enum Permission {
     LUCKPERMS,
@@ -34,15 +44,15 @@ public abstract class LuckPermsUtil {
     if (haveFTBRanksApi()) {
       PERMISSION_TYPE = Permission.FTB_RANKS;
       CobbleUtils.LOGGER.info("FTB Ranks detected");
-    } else if (haveFabricPermissionsApi()) {
-      PERMISSION_TYPE = Permission.FABRIC_PERMISSIONS_API;
-      CobbleUtils.LOGGER.info("Fabric permissions detected");
-    } else if (haveBukkitPermissionApi()) {
-      PERMISSION_TYPE = Permission.BUKKIT_PERMISSION_API;
-      CobbleUtils.LOGGER.info("Bukkit permissions detected");
     } else if (getLuckPermsApi() != null) {
       PERMISSION_TYPE = Permission.LUCKPERMS;
       CobbleUtils.LOGGER.info("LuckPerms detected");
+    } else if (haveBukkitPermissionApi()) {
+      PERMISSION_TYPE = Permission.BUKKIT_PERMISSION_API;
+      CobbleUtils.LOGGER.info("Bukkit permissions detected");
+    } else if (haveFabricPermissionsApi()) {
+      PERMISSION_TYPE = Permission.FABRIC_PERMISSIONS_API;
+      CobbleUtils.LOGGER.info("Fabric permissions detected");
     } else {
       CobbleUtils.LOGGER.error("No permission system detected");
       PERMISSION_TYPE = Permission.NONE;
@@ -221,6 +231,66 @@ public abstract class LuckPermsUtil {
         }
       }
       default -> null;
+    };
+  }
+
+  public static boolean checkPermission(ServerPlayerEntity player, int level, String permission) {
+    if (permission == null || permission.isEmpty()) return true;
+    return checkPermission(player, level, List.of(permission));
+  }
+
+  public static boolean checkPermission(ServerPlayerEntity player, int level, List<String> permissions) {
+    setup();
+    return switch (PERMISSION_TYPE) {
+      case LUCKPERMS, BUKKIT_PERMISSION_API -> {
+        setup();
+        if (luckPermsApi == null) {
+          CobbleUtils.LOGGER.error("LuckPerms not found");
+          yield false;
+        }
+        UserManager userManager = luckPermsApi.getUserManager();
+
+        User user = userManager.getUser(player.getUuid());
+        if (user == null) {
+          CobbleUtils.LOGGER.error("User not found in LuckPerms");
+          yield false;
+        }
+        boolean hasPermission = false;
+        for (String permission : permissions) {
+          if (permission == null || permission.isEmpty()) yield true;
+          if (user.getCachedData().getPermissionData().checkPermission(permission).asBoolean()) {
+            hasPermission = true;
+            break;
+          }
+        }
+        if (hasPermission) yield true;
+        yield player.hasPermissionLevel(level == 4 ? 2 : level);
+      }
+      case FABRIC_PERMISSIONS_API -> {
+        if (permissions == null || permissions.isEmpty()) yield true;
+        boolean hasPermission = false;
+        for (String permission : permissions) {
+          if (permission == null || permission.isEmpty()) yield true;
+          if (Permissions.require(permission, level).test(commandSourceCache.get(player.getUuid(), uuid -> player.getCommandSource()))) {
+            hasPermission = true;
+            break;
+          }
+        }
+        yield hasPermission;
+      }
+      case FTB_RANKS -> {
+        if (player == null) yield false;
+        for (String permission : permissions) {
+          if (permission == null || permission.isEmpty()) yield true;
+          var value = FTBRanksAPI.getPermissionValue(player, permission);
+          if (value.asBoolean().orElse(false)) yield true;
+
+          Optional<Number> num = value.asNumber();
+          if (num.isPresent() && num.get().doubleValue() > 0) yield true;
+        }
+        yield player.hasPermissionLevel(level == 4 ? 2 : level);
+      }
+      default -> player.hasPermissionLevel(level);
     };
   }
 }
