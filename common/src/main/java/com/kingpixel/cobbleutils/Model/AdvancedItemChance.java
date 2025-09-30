@@ -351,10 +351,7 @@ public class AdvancedItemChance {
   }
 
   private ItemStack getDisplay(ItemChance itemChance) {
-    ItemStack display = itemChance.getItemStack();
-    if (itemChance.getDisplay() != null && !itemChance.getDisplay().isEmpty())
-      display = new ItemChance(itemChance.getDisplay(), 100).getItemStack();
-    return display;
+    return itemChance.getIcon();
   }
 
   private List<ItemStack> getListDisplay(List<ItemChance> itemChances) {

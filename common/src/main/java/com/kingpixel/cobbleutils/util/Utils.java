@@ -37,6 +37,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.nio.charset.MalformedInputException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -169,7 +170,7 @@ public abstract class Utils {
       }
 
       try {
-        String content = Files.readString(path, StandardCharsets.UTF_8);
+        String content = Files.readString(path, charset);
         callback.accept(content);
         return true;
       } catch (IOException e) {
@@ -184,21 +185,34 @@ public abstract class Utils {
       return false;
     }
     try {
+      // Always try UTF-8 first
       List<String> lines = Files.readAllLines(file.toPath(), StandardCharsets.UTF_8);
-      String content = String.join("\n", lines); // Mantiene los saltos de línea
+      String content = String.join("\n", lines);
       callback.accept(content);
       return true;
+    } catch (MalformedInputException mie) {
+      System.err.println("[CobbleUtils] File is not UTF-8 encoded, trying ISO-8859-1: " + file.getName());
+      try {
+        List<String> lines = Files.readAllLines(file.toPath(), StandardCharsets.ISO_8859_1);
+        String content = String.join("\n", lines);
+        callback.accept(content);
+        return true;
+      } catch (IOException ex) {
+        ex.printStackTrace();
+        return false;
+      }
     } catch (IOException e) {
       e.printStackTrace();
       return false;
     }
   }
 
+
   public static String readFileSync(File file) throws IOException {
     if (!file.exists() || !file.isFile()) {
       throw new IllegalArgumentException("El archivo no existe o no es válido: " + file.getPath());
     }
-    return Files.readString(file.toPath(), StandardCharsets.UTF_8);
+    return Files.readString(file.toPath(), charset);
   }
 
   public static CompletableFuture<Boolean> writeFileAsync(File file, String content) {

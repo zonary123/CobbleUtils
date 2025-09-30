@@ -464,7 +464,7 @@ public class ItemChance {
       if (item.startsWith("id:")) {
         String id = item.replace("id:", "");
         ItemChance ic = RewardsApi.getReward(id);
-      
+
         if (ic != null) {
           String nestedItem = ic.getItem();
           if (nestedItem.equals(item)) {
@@ -821,13 +821,13 @@ public class ItemChance {
   }
 
   public ItemStack getIcon(String title, List<String> lore) {
-    if (title == null) title = getTitle();
-    if (lore == null) lore = getLore();
+    if (title == null) title = this.getTitle();
+    if (lore == null) lore = this.getLore();
     ItemStack itemStack;
-    if (getDisplay() == null) {
-      itemStack = getItemStack();
+    if (this.getDisplay() != null && !this.getDisplay().isEmpty()) {
+      itemStack = getRewardItemStack(this.getDisplay(), 1);
     } else {
-      itemStack = Utils.parseItemId(getDisplay());
+      itemStack = getItemStack();
     }
     return itemStack;
   }
