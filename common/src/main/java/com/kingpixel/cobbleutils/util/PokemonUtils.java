@@ -14,12 +14,16 @@ import com.cobblemon.mod.common.api.types.ElementalType;
 import com.cobblemon.mod.common.pokeball.PokeBall;
 import com.cobblemon.mod.common.pokemon.*;
 import com.cobblemon.mod.common.pokemon.abilities.HiddenAbilityType;
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.Model.CobbleUtilsTags;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -110,7 +114,7 @@ public class PokemonUtils {
     if (message == null || !message.contains("%") || placeholders.isEmpty()) return message;
 
     Matcher matcher = PLACEHOLDER_PATTERN.matcher(message);
-    StringBuffer sb = new StringBuffer();
+    StringBuilder sb = new StringBuilder();
 
     while (matcher.find()) {
       String key = "%" + matcher.group(1) + "%";
@@ -121,78 +125,84 @@ public class PokemonUtils {
     return sb.toString();
   }
 
+  private static final String UNKNOWN = CobbleUtils.language.getUnknown();
+  private static final String NONE = CobbleUtils.language.getNone();
+  private static final String EMPTY = "";
+
+  // Helper para evitar ternarios repetidos
+  private static String safe(Pokemon p, Function<Pokemon, String> func) {
+    return p != null ? func.apply(p) : UNKNOWN;
+  }
 
   private static final Map<String, Function<Pokemon, String>> PLACEHOLDER_FUNCTIONS = Map.ofEntries(
-    Map.entry("%showdownid%", (p) -> p != null ? p.showdownId() : CobbleUtils.language.getUnknown()),
-    Map.entry("%level%", (p) -> p != null ? String.valueOf(p.getLevel()) : CobbleUtils.language.getUnknown()),
-    Map.entry("%nature%", (p) -> p != null ? getNatureTranslate(p.getNature()) : CobbleUtils.language.getUnknown()),
-    Map.entry("%pokemon%", (p) -> p != null ? (isEgg(p) ? p.getPersistentData().getString("pokemon") : getTranslatedName(p)) : CobbleUtils.language.getUnknown()),
-    Map.entry("%shiny%", (p) -> p != null ? (p.getShiny() ? CobbleUtils.language.getSymbolshiny() : "") : ""),
-    Map.entry("%ability%", (p) -> p != null ? (isEgg(p) ? "<lang:cobblemon.ability." + p.getPersistentData().getString("ability") + ">" : getAbilityTranslate(p.getAbility())) : CobbleUtils.language.getUnknown()),
-    Map.entry("%tradeable%", (p) -> p != null ? (p.getTradeable() ? CobbleUtils.language.getYes() : CobbleUtils.language.getNo()) : CobbleUtils.language.getUnknown()),
+    Map.entry("%showdownid%", p -> safe(p, Pokemon::showdownId)),
+    Map.entry("%level%", p -> safe(p, poke -> String.valueOf(poke.getLevel()))),
+    Map.entry("%nature%", p -> safe(p, poke -> getNatureTranslate(poke.getNature()))),
+    Map.entry("%pokemon%", p -> safe(p, poke -> isEgg(poke) ? poke.getPersistentData().getString("pokemon") : getTranslatedName(poke))),
+    Map.entry("%shiny%", p -> safe(p, poke -> poke.getShiny() ? CobbleUtils.language.getSymbolshiny() : EMPTY)),
+    Map.entry("%ability%", p -> safe(p, poke -> isEgg(poke) ? "<lang:cobblemon.ability." + poke.getPersistentData().getString("ability") + ">" : getAbilityTranslate(poke.getAbility()))),
+    Map.entry("%tradeable%", p -> safe(p, poke -> poke.getTradeable() ? CobbleUtils.language.getYes() : CobbleUtils.language.getNo())),
     // IVs
-    Map.entry("%ivshp%", (p) -> p != null ? String.valueOf(p.getIvs().get(Stats.HP)) : "0"),
-    Map.entry("%ivsatk%", (p) -> p != null ? String.valueOf(p.getIvs().get(Stats.ATTACK)) : "0"),
-    Map.entry("%ivsdef%", (p) -> p != null ? String.valueOf(p.getIvs().get(Stats.DEFENCE)) : "0"),
-    Map.entry("%ivsspa%", (p) -> p != null ? String.valueOf(p.getIvs().get(Stats.SPECIAL_ATTACK)) : "0"),
-    Map.entry("%ivsspdef%", (p) -> p != null ? String.valueOf(p.getIvs().get(Stats.SPECIAL_DEFENCE)) : "0"),
-    Map.entry("%ivsspeed%", (p) -> p != null ? String.valueOf(p.getIvs().get(Stats.SPEED)) : "0"),
+    Map.entry("%ivshp%", p -> safe(p, poke -> String.valueOf(poke.getIvs().get(Stats.HP)))),
+    Map.entry("%ivsatk%", p -> safe(p, poke -> String.valueOf(poke.getIvs().get(Stats.ATTACK)))),
+    Map.entry("%ivsdef%", p -> safe(p, poke -> String.valueOf(poke.getIvs().get(Stats.DEFENCE)))),
+    Map.entry("%ivsspa%", p -> safe(p, poke -> String.valueOf(poke.getIvs().get(Stats.SPECIAL_ATTACK)))),
+    Map.entry("%ivsspdef%", p -> safe(p, poke -> String.valueOf(poke.getIvs().get(Stats.SPECIAL_DEFENCE)))),
+    Map.entry("%ivsspeed%", p -> safe(p, poke -> String.valueOf(poke.getIvs().get(Stats.SPEED)))),
     // EVs
-    Map.entry("%evshp%", (p) -> p != null ? String.valueOf(p.getEvs().get(Stats.HP)) : "0"),
-    Map.entry("%evsatk%", (p) -> p != null ? String.valueOf(p.getEvs().get(Stats.ATTACK)) : "0"),
-    Map.entry("%evsdef%", (p) -> p != null ? String.valueOf(p.getEvs().get(Stats.DEFENCE)) : "0"),
-    Map.entry("%evsspa%", (p) -> p != null ? String.valueOf(p.getEvs().get(Stats.SPECIAL_ATTACK)) : "0"),
-    Map.entry("%evsspdef%", (p) -> p != null ? String.valueOf(p.getEvs().get(Stats.SPECIAL_DEFENCE)) : "0"),
-    Map.entry("%evsspeed%", (p) -> p != null ? String.valueOf(p.getEvs().get(Stats.SPEED)) : "0"),
+    Map.entry("%evshp%", p -> safe(p, poke -> String.valueOf(poke.getEvs().get(Stats.HP)))),
+    Map.entry("%evsatk%", p -> safe(p, poke -> String.valueOf(poke.getEvs().get(Stats.ATTACK)))),
+    Map.entry("%evsdef%", p -> safe(p, poke -> String.valueOf(poke.getEvs().get(Stats.DEFENCE)))),
+    Map.entry("%evsspa%", p -> safe(p, poke -> String.valueOf(poke.getEvs().get(Stats.SPECIAL_ATTACK)))),
+    Map.entry("%evsspdef%", p -> safe(p, poke -> String.valueOf(poke.getEvs().get(Stats.SPECIAL_DEFENCE)))),
+    Map.entry("%evsspeed%", p -> safe(p, poke -> String.valueOf(poke.getEvs().get(Stats.SPEED)))),
     // Otros atributos
-    Map.entry("%item%", (p) -> p != null ? ItemUtils.getTranslatedName(p.heldItem()) : CobbleUtils.language.getNone()),
-    Map.entry("%size%", (p) -> p != null ? getSize(p) : CobbleUtils.language.getUnknown()),
-    Map.entry("%form%", (p) -> p != null ? getForm(p) : CobbleUtils.language.getUnknown()),
-    Map.entry("%up%", (p) -> p != null ? getStatTranslate(p.getNature().getIncreasedStat()) : ""),
-    Map.entry("%down%", (p) -> p != null ? getStatTranslate(p.getNature().getDecreasedStat()) : ""),
-    Map.entry("%ball%", (p) -> p != null ? getPokeBallTranslate(p.getCaughtBall()) : CobbleUtils.language.getUnknown()),
-    Map.entry("%gender%", (p) -> p != null ? getGenderTranslate(p.getGender()) : ""),
-    Map.entry("%ivs%", (p) -> p != null ? getIvsAverage(p.getIvs()).toString() : "0"),
-    Map.entry("%evs%", (p) -> p != null ? getEvsTotal(p.getEvs()).toString() : "0"),
-    Map.entry("%ivspercent%", (p) -> p != null ? String.format("%.2f", getIvsPercent(p.getIvs())) : "0"),
-    Map.entry("%evspercent%", (p) -> p != null ? String.format("%.2f", getEvsPercent(p.getEvs())) : "0"),
-    Map.entry("%move1%", (p) -> p != null ? getMoveSafe(p, 0) : CobbleUtils.language.getNone()),
-    Map.entry("%move2%", (p) -> p != null ? getMoveSafe(p, 1) : CobbleUtils.language.getNone()),
-    Map.entry("%move3%", (p) -> p != null ? getMoveSafe(p, 2) : CobbleUtils.language.getNone()),
-    Map.entry("%move4%", (p) -> p != null ? getMoveSafe(p, 3) : CobbleUtils.language.getNone()),
-    Map.entry("%owner%", (p) -> p != null ? getOwnerName(p) : CobbleUtils.language.getNone()),
-    Map.entry("%types%", (p) -> p != null ? getType(p) : CobbleUtils.language.getNone()),
-    Map.entry("%rarity%", (p) -> p != null ? getRarityS(p) : CobbleUtils.language.getNone()),
-    Map.entry("%breedable%", (p) -> p != null ? (isBreedable(p) ? CobbleUtils.language.getYes() : CobbleUtils.language.getNo()) : CobbleUtils.language.getNo()),
-    Map.entry("%friendship%", (p) -> p != null ? String.valueOf(p.getFriendship()) : "0"),
-    Map.entry("%ah%", (p) -> p != null ? (isAH(p) ? CobbleUtils.language.getHA() : "") : ""),
-    Map.entry("%ha%", (p) -> p != null ? (isAH(p) ? CobbleUtils.language.getHA() : "") : ""),
-    Map.entry("%country%", (p) -> p != null ? Optional.ofNullable(p.getPersistentData().getString(CobbleUtilsTags.COUNTRY_TAG)).orElse(CobbleUtils.language.getNone()) : CobbleUtils.language.getNone()),
-    Map.entry("%egggroups%", (p) -> p != null ? eggGroups(p) : CobbleUtils.language.getNone()),
-    Map.entry("%dex%", (p) -> p != null ? String.valueOf(p.getSpecies().getNationalPokedexNumber()) : "0"),
-    Map.entry("%labels%", (p) -> p != null ? p.getForm().getLabels().toString() : ""),
-    Map.entry("%aspects%", (p) -> p != null ? p.getAspects().stream().toList().toString() : "")
+    Map.entry("%item%", p -> safe(p, poke -> ItemUtils.getTranslatedName(poke.heldItem()))),
+    Map.entry("%size%", p -> safe(p, poke -> getSize(poke))),
+    Map.entry("%form%", p -> safe(p, poke -> getForm(poke))),
+    Map.entry("%up%", p -> safe(p, poke -> getStatTranslate(poke.getNature().getIncreasedStat()))),
+    Map.entry("%down%", p -> safe(p, poke -> getStatTranslate(poke.getNature().getDecreasedStat()))),
+    Map.entry("%ball%", p -> safe(p, poke -> getPokeBallTranslate(poke.getCaughtBall()))),
+    Map.entry("%gender%", p -> safe(p, poke -> getGenderTranslate(poke.getGender()))),
+    Map.entry("%ivs%", p -> safe(p, poke -> getIvsAverage(poke.getIvs()).toString())),
+    Map.entry("%evs%", p -> safe(p, poke -> getEvsTotal(poke.getEvs()).toString())),
+    Map.entry("%ivspercent%", p -> safe(p, poke -> String.format("%.2f", getIvsPercent(poke.getIvs())))),
+    Map.entry("%evspercent%", p -> safe(p, poke -> String.format("%.2f", getEvsPercent(poke.getEvs())))),
+    Map.entry("%move1%", p -> safe(p, poke -> getMoveSafe(poke, 0))),
+    Map.entry("%move2%", p -> safe(p, poke -> getMoveSafe(poke, 1))),
+    Map.entry("%move3%", p -> safe(p, poke -> getMoveSafe(poke, 2))),
+    Map.entry("%move4%", p -> safe(p, poke -> getMoveSafe(poke, 3))),
+    Map.entry("%owner%", p -> safe(p, PokemonUtils::getOwnerName)),
+    Map.entry("%types%", p -> safe(p, PokemonUtils::getType)),
+    Map.entry("%rarity%", p -> safe(p, PokemonUtils::getRarityS)),
+    Map.entry("%breedable%", p -> safe(p, poke -> isBreedable(poke) ? CobbleUtils.language.getYes() : CobbleUtils.language.getNo())),
+    Map.entry("%friendship%", p -> safe(p, poke -> String.valueOf(poke.getFriendship()))),
+    Map.entry("%ah%", p -> safe(p, poke -> isAH(poke) ? CobbleUtils.language.getHA() : EMPTY)),
+    Map.entry("%ha%", p -> safe(p, poke -> isAH(poke) ? CobbleUtils.language.getHA() : EMPTY)),
+    Map.entry("%country%", p -> safe(p, poke -> {
+      String c = poke.getPersistentData().getString(CobbleUtilsTags.COUNTRY_TAG);
+      return (c == null || c.isEmpty()) ? NONE : c;
+    })),
+    Map.entry("%egggroups%", p -> safe(p, PokemonUtils::eggGroups)),
+    Map.entry("%dex%", p -> safe(p, poke -> String.valueOf(poke.getSpecies().getNationalPokedexNumber()))),
+    Map.entry("%labels%", p -> safe(p, poke -> poke.getForm().getLabels().toString())),
+    Map.entry("%aspects%", p -> safe(p, poke -> poke.getAspects().toString()))
   );
 
-
-  private static Map<String, String> buildPlaceholders(Pokemon pokemon, String indexStr) {
-    Map<String, String> result = new HashMap<>();
-    indexStr = (indexStr == null) ? "" : indexStr;
+  public static Map<String, String> buildPlaceholders(Pokemon pokemon, String indexStr) {
+    Map<String, String> result = HashMap.newHashMap(PLACEHOLDER_FUNCTIONS.size());
+    String index = (indexStr == null) ? EMPTY : indexStr;
 
     for (Map.Entry<String, Function<Pokemon, String>> entry : PLACEHOLDER_FUNCTIONS.entrySet()) {
       String key = entry.getKey();
       String value = entry.getValue().apply(pokemon);
-
-      if (!indexStr.isEmpty()) {
-        String indexedKey = key.substring(0, key.length() - 1) + indexStr + "%";
-        result.put(indexedKey, value);
-      } else {
-        result.put(key, value);
+      if (!index.isEmpty()) {
+        key = key.substring(0, key.length() - 1) + index + "%";
       }
+      result.put(key, value);
     }
     return result;
   }
-
 
   private static String getMoveSafe(Pokemon p, int index) {
     List<Move> moves = p.getMoveSet().getMoves();
@@ -252,41 +262,51 @@ public class PokemonUtils {
     return s.toString();
   }
 
+  private static final Set<String> NORMAL_ASPECTS = Set.of(
+    "male", "female", "genderless", "milkable", "family"
+  );
 
   private static String getForm(Pokemon pokemon) {
     if (pokemon == null) return CobbleUtils.language.getUnknown();
-    String aspect;
-    List<String> aspects = pokemon.getAspects().stream().toList();
 
-    if (aspects.isEmpty()) {
-      aspect = "Normal";
-    } else {
-      String s = aspects.get(aspects.size() - 1);
-      if (s.contains("-")) {
-        String[] e = s.split("-");
-        switch (e.length) {
-          case 1 -> s = e[0];
-          case 2 -> s = e[1];
-          case 3 -> s = e[2];
-          default -> s = "Normal";
+    String aspect = "Normal";
+    Set<String> aspects = pokemon.getAspects();
+
+    if (!aspects.isEmpty()) {
+      // Take an arbitrary element from the set (last inserted if LinkedHashSet)
+      String s = null;
+      for (String a : aspects) s = a; // efficient, no extra objects
+
+      if (s != null) {
+        // Extract relevant part if it contains dashes
+        int dashIndex = s.lastIndexOf('-');
+        if (dashIndex != -1 && dashIndex + 1 < s.length()) {
+          s = s.substring(dashIndex + 1); // only the last section
+        }
+
+        // Check if it's considered a "Normal" aspect
+        if (!NORMAL_ASPECTS.contains(s.toLowerCase())) {
+          aspect = s;
         }
       }
-      if (s.equalsIgnoreCase("male")
-        || s.equalsIgnoreCase("female")
-        || s.equalsIgnoreCase("genderless")
-        || s.equalsIgnoreCase("milkable")
-        || s.equalsIgnoreCase("family")) {
-        aspect = "Normal";
-      } else {
-        aspect = s;
-      }
     }
-    return isEgg(pokemon)
-      ? (pokemon.getPersistentData().getString("form").isEmpty()
-      ? "Normal" : pokemon.getPersistentData().getString("form")) : pokemon.getForm().getName().equalsIgnoreCase("normal")
-      ? aspect
-      : CobbleUtils.language.getForms().getOrDefault(pokemon.getForm().getName(), pokemon.getForm().getName());
+
+    // Egg handling
+    if (isEgg(pokemon)) {
+      String eggForm = pokemon.getPersistentData().getString("form");
+      return eggForm.isEmpty() ? "Normal" : eggForm;
+    }
+
+    // Regular forms
+    String formName = pokemon.getForm().getName();
+    if (formName.equalsIgnoreCase("normal")) {
+      return aspect;
+    }
+
+    // Specific form translations
+    return CobbleUtils.language.getForms().getOrDefault(formName, formName);
   }
+
 
   public static Pokemon getFirstEvolution(Pokemon pokemon) {
     Pokemon firstEvolution = pokemon;
@@ -486,15 +506,35 @@ public class PokemonUtils {
    * @return The type of the pokemon
    */
   public static String getType(Pokemon pokemon) {
-    StringBuilder s = new StringBuilder(CobbleUtils.language.getTypes().getOrDefault(pokemon.getPrimaryType().getName(),
-      pokemon.getPrimaryType().getName()));
-    if (pokemon.getSecondaryType() != null) {
-      s.append(" &7/ ");
-      s.append(CobbleUtils.language.getTypes().getOrDefault(pokemon.getSecondaryType().getName(),
-        pokemon.getSecondaryType().getName()));
-    }
-    return s.toString();
+    if (pokemon == null) return "";
+
+    String key = pokemon.getPrimaryType().getName() +
+      (pokemon.getSecondaryType() != null ? ":" + pokemon.getSecondaryType().getName() : "");
+
+    return typeCache.get(key, k -> {
+      StringBuilder s = new StringBuilder(
+        CobbleUtils.language.getTypes().getOrDefault(
+          pokemon.getPrimaryType().getName(),
+          pokemon.getPrimaryType().getName()
+        )
+      );
+      if (pokemon.getSecondaryType() != null) {
+        s.append(" &7/ ");
+        s.append(
+          CobbleUtils.language.getTypes().getOrDefault(
+            pokemon.getSecondaryType().getName(),
+            pokemon.getSecondaryType().getName()
+          )
+        );
+      }
+      return s.toString();
+    });
   }
+
+  private static final Cache<String, String> typeCache = Caffeine.newBuilder()
+    .maximumSize(400) // un poco más que el máximo posible de combinaciones
+    .expireAfterAccess(60, TimeUnit.MINUTES)
+    .build();
 
   /**
    * Get the move translation
@@ -503,10 +543,22 @@ public class PokemonUtils {
    *
    * @return The move translation
    */
+
+
   public static String getMoveTranslate(Move move) {
     if (move == null) return CobbleUtils.language.getNone();
-    return getMoveColor(move.getType(), "cobblemon.move." + move.getName());
+
+    String key = move.getName(); // asumimos que el nombre es único
+
+    return moveTranslateCache.get(key, k ->
+      getMoveColor(move.getType(), "cobblemon.move." + move.getName())
+    );
   }
+
+  private static final Cache<String, String> moveTranslateCache = Caffeine.newBuilder()
+    .maximumSize(1000) // ajusta según cantidad de moves
+    .expireAfterAccess(30, TimeUnit.MINUTES)
+    .build();
 
   /**
    * Get the stat translation
@@ -537,9 +589,16 @@ public class PokemonUtils {
    */
   public static String getPokeBallTranslate(PokeBall caughtBall) {
     if (caughtBall == null) return CobbleUtils.language.getNone();
-    return caughtBall == null ? CobbleUtils.language.getNone()
-      : Text.translatable("item.cobblemon." + caughtBall.getName().getPath()).getString();
+
+    String key = caughtBall.getName().getPath();
+
+    // Devuelve del cache si existe, si no calcula y guarda
+    return pokeBallCache.computeIfAbsent(key, k ->
+      Text.translatable("item.cobblemon." + k).getString()
+    );
   }
+
+  private static final Map<String, String> pokeBallCache = new ConcurrentHashMap<>();
 
   /**
    * Get the gender translation

@@ -35,7 +35,7 @@ dependencies {
     modImplementation("me.lucko:fabric-permissions-api:0.3.1")
 
 
-// Economy
+    // Economy
     // Economy Impactor
     api(fileTree(dir: "libs", include: ["*.jar"], exclude: ["*sdm-economy*", "*ftb-ranks*"]))
     implementation("net.impactdev.impactor.api:economy:${property("impactor_version")}")

@@ -16,6 +16,7 @@ import net.minecraft.server.network.ServerPlayerEntity;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 @Data
@@ -27,6 +28,8 @@ public class ConfirmMenu {
   private ItemModel cancel;
   private ItemModel close;
   private List<PanelsConfig> panels;
+  transient
+  private ChestTemplate template;
 
   public ConfirmMenu() {
     this.rows = 3;
@@ -50,13 +53,18 @@ public class ConfirmMenu {
     );
   }
 
+  private ChestTemplate getTemplate() {
+    if (template == null) {
+      template = ChestTemplate.builder(rows).build();
+      PanelsConfig.applyConfig(template, panels);
+    }
+    return template;
+  }
+
   public void open(ServerPlayerEntity player, ItemStack itemStack, Consumer<ButtonAction> onConfirm,
                    Consumer<ButtonAction> onCancel) {
     CompletableFuture.runAsync(() -> {
-        ChestTemplate template = ChestTemplate.builder(rows).build();
-
-        // Aplicar paneles decorativos
-        PanelsConfig.applyConfig(template, panels);
+        ChestTemplate template = getTemplate();
 
         // Mostrar el ítem principal en el slot correspondiente
         template.set(slotDisplay, GooeyButton.of(itemStack));
@@ -82,8 +90,9 @@ public class ConfirmMenu {
           .template(template)
           .build();
 
-        UIManager.openUIForcefully(player, page);
+        CobbleUtils.server.execute(() -> UIManager.openUIForcefully(player, page));
       }, CobbleUtils.EXECUTOR_COBBLEUTILS)
+      .orTimeout(10, TimeUnit.SECONDS)
       .exceptionally(e -> {
         e.printStackTrace();
         return null;

@@ -9,7 +9,6 @@ import net.minecraft.command.argument.ItemStackArgumentType;
 import net.minecraft.component.DataComponentTypes;
 import net.minecraft.datafixer.TypeReferences;
 import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.NbtElement;
 import net.minecraft.nbt.NbtOps;
@@ -95,7 +94,7 @@ public class ItemUtils {
   }
 
   public static String getTranslatedName(ItemStack itemStack) {
-    if (itemStack.getItem() == Items.AIR) return CobbleUtils.language.getUnknown();
+    if (itemStack.isEmpty()) return CobbleUtils.language.getUnknown();
     if (itemStack.get(DataComponentTypes.CUSTOM_NAME) != null) return itemStack.getName().getString();
     return "<lang:" + itemStack.getItem().getTranslationKey() + ">";
   }

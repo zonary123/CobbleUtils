@@ -49,7 +49,7 @@ public class CobbleUtils {
   // Lang
   public static Lang language = new Lang();
   public static List<String> modsInUse = new ArrayList<>();
-  public static final ExecutorService EXECUTOR_COBBLEUTILS = Executors.newFixedThreadPool(4, new ThreadFactoryBuilder()
+  public static final ExecutorService EXECUTOR_COBBLEUTILS = Executors.newFixedThreadPool(8, new ThreadFactoryBuilder()
     .setNameFormat("CobbleUtils General Executor-%d")
     .build());
 
