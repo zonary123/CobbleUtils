@@ -45,10 +45,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.time.Instant;
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.*;
 import java.util.function.Consumer;
 
 public abstract class Utils {
@@ -115,9 +112,29 @@ public abstract class Utils {
       .registerTypeAdapter(HiperMessage.class, HiperMessage.EMPTY);
   }
 
-  public static final ExecutorService IO_EXECUTOR = Executors.newFixedThreadPool(16, new ThreadFactoryBuilder()
-    .setNameFormat("CobbleUtils IO Executor-%d")
-    .build());
+  public static final ExecutorService IO_EXECUTOR =
+    new ThreadPoolExecutor(
+      8, // core threads (you can tune down if needed)
+      16, // max threads
+      60L, TimeUnit.SECONDS,
+      new ArrayBlockingQueue<>(200), // queue limit for IO tasks
+      new ThreadFactoryBuilder()
+        .setNameFormat("CobbleUtils IO Executor-%d")
+        .build(),
+      (r, executor) -> {
+        CobbleUtils.LOGGER.warn("[CobbleUtils] IO Executor overloaded! " +
+          "ActiveThreads=" + executor.getActiveCount() +
+          ", PoolSize=" + executor.getPoolSize() +
+          ", QueueSize=" + executor.getQueue().size() +
+          ", Task=" + r.toString());
+
+        // Optional: run the task on the caller thread as a fallback
+        if (!executor.isShutdown()) {
+          r.run();
+        }
+      }
+    );
+
 
   public static CompletableFuture<Boolean> writeFileAsync(String filePath, String filename, String data) {
     if (filePath == null || filename == null || data == null) {

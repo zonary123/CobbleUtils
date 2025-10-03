@@ -131,7 +131,7 @@ public class DataBaseBlockSQLite extends DataBaseBlock {
         CobbleUtils.LOGGER.error(CobbleUtils.MOD_ID, "Failed to insert or retrieve ID from " + table + "  " + e);
         throw new RuntimeException(e);
       }
-    }, CobbleUtils.EXECUTOR_COBBLEUTILS);
+    }, DataBaseBlock.DB_THREAD_FACTORY);
   }
 
   private int getOrInsert(String table, String column, String value) throws SQLException {
@@ -161,7 +161,7 @@ public class DataBaseBlockSQLite extends DataBaseBlock {
         CobbleUtils.LOGGER.error(CobbleUtils.MOD_ID, "Failed to insert or retrieve chunk ID" + e);
         throw new RuntimeException(e);
       }
-    }, CobbleUtils.EXECUTOR_COBBLEUTILS);
+    }, DataBaseBlock.DB_THREAD_FACTORY);
   }
 
   private int getOrInsertChunk(int worldId, int chunkX, int chunkZ) throws SQLException {
@@ -200,7 +200,7 @@ public class DataBaseBlockSQLite extends DataBaseBlock {
         BlockData blockData = new BlockData(chunkDbId, pos.getX(), pos.getY(), pos.getZ(), playerUuid);
 
         // Ejecutar el cache con delay de 2 segundos
-        CompletableFuture.delayedExecutor(10, TimeUnit.MILLISECONDS, scheduler)
+        CompletableFuture.delayedExecutor(5, TimeUnit.MILLISECONDS, scheduler)
           .execute(() -> {
             blockCache.put(pos, blockData);
 
@@ -221,7 +221,7 @@ public class DataBaseBlockSQLite extends DataBaseBlock {
   @Override
   public void removeBlock(World world, BlockPos pos, BlockState state, ServerPlayerEntity player) {
     // Introducir retraso de 50ms antes de borrar el bloque
-    CompletableFuture.delayedExecutor(10, TimeUnit.MILLISECONDS, CobbleUtils.EXECUTOR_COBBLEUTILS)
+    CompletableFuture.delayedExecutor(5, TimeUnit.MILLISECONDS, DataBaseBlock.DB_THREAD_FACTORY)
       .execute(() -> {
         if (blockCache.remove(pos) == null) {
           removeBlockFromDatabaseAsync(world, pos);
@@ -234,7 +234,7 @@ public class DataBaseBlockSQLite extends DataBaseBlock {
 
 
   private void removeBlockFromDatabaseAsync(World world, BlockPos pos) {
-    CompletableFuture.runAsync(() -> removeBlockFromDatabase(world, pos), CobbleUtils.EXECUTOR_COBBLEUTILS);
+    CompletableFuture.runAsync(() -> removeBlockFromDatabase(world, pos), DataBaseBlock.DB_THREAD_FACTORY);
   }
 
   private void removeBlockFromDatabase(World world, BlockPos pos) {
@@ -394,7 +394,7 @@ public class DataBaseBlockSQLite extends DataBaseBlock {
       } catch (SQLException e) {
         CobbleUtils.LOGGER.error(CobbleUtils.MOD_ID, "Failed to perform batch update" + e);
       }
-    }, CobbleUtils.EXECUTOR_COBBLEUTILS);
+    }, DataBaseBlock.DB_THREAD_FACTORY);
   }
 
   @Data

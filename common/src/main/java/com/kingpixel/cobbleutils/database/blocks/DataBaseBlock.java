@@ -5,10 +5,29 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 
+import java.util.concurrent.Executor;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+
 /**
  * @author Carlos Varas Alonso - 23/08/2025 7:39
  */
 public abstract class DataBaseBlock {
+  public static final Executor DB_THREAD_FACTORY = new ThreadPoolExecutor(
+    4,
+    16,
+    0L,
+    TimeUnit.MILLISECONDS,
+    new java.util.concurrent.ArrayBlockingQueue<>(5000),
+    r -> {
+      Thread t = new Thread(r);
+      t.setDaemon(true);
+      t.setName("CobbleUtils Database Blocks - " + t.getId());
+      return t;
+    },
+    new ThreadPoolExecutor.CallerRunsPolicy()
+  );
+
   public abstract void connect();
 
   public abstract void disconnect();

@@ -13,10 +13,12 @@ import com.kingpixel.cobbleutils.util.AdventureTranslator;
 import lombok.Data;
 import net.minecraft.item.ItemStack;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.text.Text;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 
 @Data
@@ -30,6 +32,8 @@ public class ConfirmMenu {
   private List<PanelsConfig> panels;
   transient
   private ChestTemplate template;
+  transient
+  private Text titleText;
 
   public ConfirmMenu() {
     this.rows = 3;
@@ -46,17 +50,30 @@ public class ConfirmMenu {
       this.close = new ItemModel("minecraft:barrier", "&cClose");
     }
     confirm.setSlot(10);
+    confirm.setDisplayname("&aConfirm");
     cancel.setSlot(16);
+    cancel.setDisplayname("&cCancel");
     close.setSlot(22);
+    close.setDisplayname("&cClose");
     this.panels = List.of(
       new PanelsConfig(rows)
     );
+    int totalSlots = rows * 9;
+    for (PanelsConfig panel : panels) {
+      panel.getSlots().removeIf(slot -> slot < 0 || slot >= totalSlots);
+    }
   }
 
   private ChestTemplate getTemplate() {
     if (template == null) {
       template = ChestTemplate.builder(rows).build();
       PanelsConfig.applyConfig(template, panels);
+
+      titleText = AdventureTranslator.toNative(title);
+      int totalSlots = rows * 9;
+      for (PanelsConfig panel : panels) {
+        panel.getSlots().removeIf(slot -> slot < 0 || slot >= totalSlots);
+      }
     }
     return template;
   }
@@ -67,33 +84,25 @@ public class ConfirmMenu {
         ChestTemplate template = getTemplate();
 
         // Mostrar el ítem principal en el slot correspondiente
-        template.set(slotDisplay, GooeyButton.of(itemStack));
+        template.set(slotDisplay, GooeyButton.builder()
+          .display(itemStack)
+          .build()
+        );
 
         // Botón de confirmación
-        if (confirm != null) {
-          confirm.applyTemplate(template, confirm.getButton(onConfirm));
-        }
-
-        // Botón de cancelación
-        if (cancel != null) {
-          cancel.applyTemplate(template, cancel.getButton(onCancel));
-        }
-
-        // Botón de cierre
-        if (close != null) {
-          close.applyTemplate(template, close.getButton(onCancel));
-        }
-
+        if (confirm != null) confirm.applyTemplate(template, confirm.getButton(onConfirm, 1, TimeUnit.SECONDS, 1));
+        if (cancel != null) cancel.applyTemplate(template, cancel.getButton(onCancel, 1, TimeUnit.SECONDS, 1));
+        if (close != null) close.applyTemplate(template, close.getButton(onCancel, 1, TimeUnit.SECONDS, 1));
         // Crear y abrir la página del menú
         GooeyPage page = GooeyPage.builder()
-          .title(AdventureTranslator.toNative(title))
+          .title(titleText)
           .template(template)
           .build();
-
         CobbleUtils.server.execute(() -> UIManager.openUIForcefully(player, page));
       }, CobbleUtils.EXECUTOR_COBBLEUTILS)
-      .orTimeout(10, TimeUnit.SECONDS)
+      .orTimeout(2, TimeUnit.SECONDS)
       .exceptionally(e -> {
+        if (e instanceof TimeoutException) return null;
         e.printStackTrace();
         return null;
       });
