@@ -200,7 +200,7 @@ public class DataBaseBlockSQLite extends DataBaseBlock {
         BlockData blockData = new BlockData(chunkDbId, pos.getX(), pos.getY(), pos.getZ(), playerUuid);
 
         // Ejecutar el cache con delay de 2 segundos
-        CompletableFuture.delayedExecutor(50, TimeUnit.MILLISECONDS, scheduler)
+        CompletableFuture.delayedExecutor(10, TimeUnit.MILLISECONDS, scheduler)
           .execute(() -> {
             blockCache.put(pos, blockData);
 
@@ -221,7 +221,7 @@ public class DataBaseBlockSQLite extends DataBaseBlock {
   @Override
   public void removeBlock(World world, BlockPos pos, BlockState state, ServerPlayerEntity player) {
     // Introducir retraso de 50ms antes de borrar el bloque
-    CompletableFuture.delayedExecutor(5, TimeUnit.MILLISECONDS, CobbleUtils.EXECUTOR_COBBLEUTILS)
+    CompletableFuture.delayedExecutor(10, TimeUnit.MILLISECONDS, CobbleUtils.EXECUTOR_COBBLEUTILS)
       .execute(() -> {
         if (blockCache.remove(pos) == null) {
           removeBlockFromDatabaseAsync(world, pos);
