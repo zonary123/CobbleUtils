@@ -221,7 +221,7 @@ public class DataBaseBlockSQLite extends DataBaseBlock {
   @Override
   public void removeBlock(World world, BlockPos pos, BlockState state, ServerPlayerEntity player) {
     // Introducir retraso de 50ms antes de borrar el bloque
-    CompletableFuture.delayedExecutor(50, TimeUnit.MILLISECONDS, CobbleUtils.EXECUTOR_COBBLEUTILS)
+    CompletableFuture.delayedExecutor(5, TimeUnit.MILLISECONDS, CobbleUtils.EXECUTOR_COBBLEUTILS)
       .execute(() -> {
         if (blockCache.remove(pos) == null) {
           removeBlockFromDatabaseAsync(world, pos);
