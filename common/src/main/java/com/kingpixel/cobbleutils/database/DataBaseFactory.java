@@ -1,5 +1,6 @@
 package com.kingpixel.cobbleutils.database;
 
+import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.Model.DataBaseConfig;
 import com.kingpixel.cobbleutils.database.blocks.DataBaseBlock;
 import com.kingpixel.cobbleutils.database.blocks.DataBaseBlockSQLite;
@@ -39,7 +40,10 @@ public class DataBaseFactory {
   }
 
   public static void close() {
-    if (dataBaseBlock != null) dataBaseBlock.disconnect();
+    if (dataBaseBlock != null) {
+      CobbleUtils.shutdownAndAwait(DataBaseBlock.DB_THREAD_FACTORY);
+      dataBaseBlock.disconnect();
+    }
     if (dataBaseUsers != null) dataBaseUsers.disconnect();
 
   }

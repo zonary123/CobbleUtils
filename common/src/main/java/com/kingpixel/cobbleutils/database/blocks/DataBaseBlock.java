@@ -5,7 +5,7 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 
-import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
@@ -13,12 +13,12 @@ import java.util.concurrent.TimeUnit;
  * @author Carlos Varas Alonso - 23/08/2025 7:39
  */
 public abstract class DataBaseBlock {
-  public static final Executor DB_THREAD_FACTORY = new ThreadPoolExecutor(
+  public static final ExecutorService DB_THREAD_FACTORY = new ThreadPoolExecutor(
     4,
     16,
     0L,
     TimeUnit.MILLISECONDS,
-    new java.util.concurrent.ArrayBlockingQueue<>(5000),
+    new java.util.concurrent.LinkedBlockingQueue<>(), // sin límite de tamaño
     r -> {
       Thread t = new Thread(r);
       t.setDaemon(true);
