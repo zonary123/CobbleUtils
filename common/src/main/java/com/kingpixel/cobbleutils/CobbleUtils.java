@@ -48,10 +48,10 @@ public class CobbleUtils {
   public static List<String> modsInUse = new ArrayList<>();
   public static final ExecutorService EXECUTOR_COBBLEUTILS =
     new ThreadPoolExecutor(
-      4, // core threads
-      16, // max threads
-      60L, TimeUnit.SECONDS, // keep-alive for extra threads
-      new ArrayBlockingQueue<>(100), // max queue size
+      8,
+      16,
+      60L, TimeUnit.SECONDS,
+      new ArrayBlockingQueue<>(100),
       new ThreadFactoryBuilder()
         .setNameFormat("CobbleUtils General Executor-%d")
         .build(),
