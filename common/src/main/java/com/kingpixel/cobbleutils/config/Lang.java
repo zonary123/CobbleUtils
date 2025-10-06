@@ -5,6 +5,7 @@ import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.Model.ItemModel;
 import com.kingpixel.cobbleutils.ui.ConfirmMenu;
 import com.kingpixel.cobbleutils.ui.PartyPcMenu;
+import com.kingpixel.cobbleutils.ui.StorageMenu;
 import com.kingpixel.cobbleutils.util.Utils;
 import lombok.Getter;
 import lombok.Setter;
@@ -101,6 +102,7 @@ public class Lang {
   private Map<String, ItemModel> itemsEconomy;
   private PartyPcMenu partyPcMenu;
   private ConfirmMenu confirmMenu;
+  private StorageMenu storageMenu;
 
   /**
    * Constructor to generate a file if one doesn't exist.
@@ -249,6 +251,7 @@ public class Lang {
       "&7Get all: %getall%"), 0);
     partyPcMenu = new PartyPcMenu();
     confirmMenu = new ConfirmMenu();
+    storageMenu = new StorageMenu();
   }
 
   /**

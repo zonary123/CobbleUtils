@@ -1,13 +1,10 @@
 package com.kingpixel.cobbleutils.mixins;
 
-import com.kingpixel.cobbleutils.CobbleUtils;
-import com.kingpixel.cobbleutils.database.DataBaseFactory;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
-import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import org.spongepowered.asm.mixin.Mixin;
@@ -25,7 +22,8 @@ public abstract class BlockMixin {
   private void CobbleUtils$onPlaced(World world, BlockPos pos, BlockState state, LivingEntity placer,
                                     ItemStack itemStack,
                                     CallbackInfo ci) {
-    try {
+    return;
+    /*try {
       if (placer == null) {
         if (CobbleUtils.config.isDebug()) {
           CobbleUtils.LOGGER.info("Block placed by null entity at " + pos);
@@ -49,13 +47,14 @@ public abstract class BlockMixin {
       if (CobbleUtils.config.isDebug()) {
         CobbleUtils.LOGGER.error("Error in onPlaced mixin: " + e.getMessage());
       }
-    }
+    }*/
   }
 
   @Inject(method = "onBreak", at = @At("HEAD"))
   private void CobbleUtils$onBreak(World world, BlockPos pos, BlockState state, PlayerEntity playerEntity,
                                    CallbackInfoReturnable<BlockState> cir) {
-    try {
+    return;
+    /*try {
       if (playerEntity == null) return;
       ServerPlayerEntity player = (playerEntity instanceof ServerPlayerEntity serverPlayer) ? serverPlayer : null;
       if (player == null) return;
@@ -69,6 +68,6 @@ public abstract class BlockMixin {
       if (CobbleUtils.config.isDebug()) {
         CobbleUtils.LOGGER.error("Error in onBreak mixin: " + e.getMessage());
       }
-    }
+    }*/
   }
 }

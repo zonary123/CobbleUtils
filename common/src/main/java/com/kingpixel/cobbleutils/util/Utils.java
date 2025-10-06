@@ -18,6 +18,7 @@ import com.kingpixel.cobbleutils.Model.ItemChance;
 import com.kingpixel.cobbleutils.Model.ItemModel;
 import com.kingpixel.cobbleutils.Model.messages.HiperMessage;
 import com.kingpixel.cobbleutils.adapter.*;
+import com.kingpixel.cobbleutils.database.users.models.Storage;
 import com.mojang.authlib.GameProfile;
 import kotlin.ranges.IntRange;
 import net.minecraft.component.DataComponentTypes;
@@ -112,6 +113,7 @@ public abstract class Utils {
       .registerTypeAdapter(ItemChance.class, ItemChanceAdapter.INSTANCE)
       .registerTypeAdapter(DurationValue.class, DurationValue.INSTANCE)
       .registerTypeAdapter(DataBaseType.class, DataBaseTypeAdapter.INSTANCE)
+      .registerTypeAdapter(Storage.class, StorageAdapter.INSTANCE)
       .registerTypeAdapter(HiperMessage.class, HiperMessage.EMPTY);
   }
 

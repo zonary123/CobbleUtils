@@ -64,24 +64,23 @@ public class ConfirmMenu {
     }
   }
 
-  private ChestTemplate getTemplate() {
-    if (template == null) {
-      template = ChestTemplate.builder(rows).build();
-      PanelsConfig.applyConfig(template, panels);
+  private ChestTemplate createTemplate() {
+    ChestTemplate template = ChestTemplate.builder(rows).build();
+    PanelsConfig.applyConfig(template, panels);
 
-      titleText = AdventureTranslator.toNative(title);
-      int totalSlots = rows * 9;
-      for (PanelsConfig panel : panels) {
-        panel.getSlots().removeIf(slot -> slot < 0 || slot >= totalSlots);
-      }
+    titleText = AdventureTranslator.toNative(title);
+    int totalSlots = rows * 9;
+    for (PanelsConfig panel : panels) {
+      panel.getSlots().removeIf(slot -> slot < 0 || slot >= totalSlots);
     }
     return template;
   }
 
+
   public void open(ServerPlayerEntity player, ItemStack itemStack, Consumer<ButtonAction> onConfirm,
                    Consumer<ButtonAction> onCancel) {
     CompletableFuture.runAsync(() -> {
-        ChestTemplate template = getTemplate();
+        ChestTemplate template = createTemplate();
 
         // Mostrar el ítem principal en el slot correspondiente
         template.set(slotDisplay, GooeyButton.builder()

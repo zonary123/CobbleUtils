@@ -1,6 +1,7 @@
 package com.kingpixel.cobbleutils.database.users;
 
 import com.kingpixel.cobbleutils.Model.DataBaseConfig;
+import com.kingpixel.cobbleutils.database.users.models.Storage;
 import com.kingpixel.cobbleutils.util.Utils;
 import com.mongodb.ConnectionString;
 import com.mongodb.MongoClientSettings;
@@ -9,7 +10,7 @@ import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Filters;
-import com.mongodb.client.model.ReplaceOptions;
+import com.mongodb.client.model.UpdateOptions;
 import org.bson.Document;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -76,24 +77,24 @@ public class DataBaseUsersMongoDB extends DataBaseUsers {
     if (user == null) return;
 
     try {
-      // 1. Convertimos UserModel a JSON
+      // 1️⃣ Convertir UserModel a Document
       String json = Utils.newWithoutSpacingGson().toJson(user, UserModel.class);
-
-      // 2. Parseamos JSON a Document
       Document document = Utils.newWithoutSpacingGson().fromJson(json, Document.class);
+      document.remove("storageList"); // campo que no queremos guardar
 
-      // 3. Usamos el UUID como identificador único
-      collectionUser.replaceOne(
-        Filters.eq("playerUUID", user.getPlayerUUID().toString()), // filtro
-        document,
-        new ReplaceOptions().upsert(true) // upsert: si no existe lo crea
+      // 2️⃣ Actualizar solo los campos existentes o crear si no existe
+      collectionUser.updateOne(
+        Filters.eq("playerUUID", user.getPlayerUUID().toString()),
+        new Document("$set", document),
+        new UpdateOptions().upsert(true)
       );
 
     } catch (Exception e) {
-      System.err.println("Failed to save or update user: " + user);
+      System.err.println("❌ Failed to save or update user: " + user);
       e.printStackTrace();
     }
   }
+
 
   @Override public List<UserModel> getAllUsers() {
     List<UserModel> userList = new ArrayList<>();
@@ -131,6 +132,28 @@ public class DataBaseUsersMongoDB extends DataBaseUsers {
     }
 
     return inactiveUsers;
+  }
+
+  @Override public void addStorage(Storage storage, UUID playerUUID) {
+    collectionUser.updateOne(
+      Filters.eq("playerUUID", playerUUID.toString()),
+      new Document("$push", new Document("storageList", storage.toDocument()))
+    );
+    UserModel user = findUserByUUID(playerUUID);
+    if (user == null) return;
+    user.getStorageList().add(storage);
+  }
+
+  @Override public void removeStorage(Storage storage, UUID playerUUID) {
+    UUID id = storage.getId();
+    if (id == null) return;
+    collectionUser.updateOne(
+      Filters.eq("playerUUID", playerUUID.toString()),
+      new Document("$pull", new Document("storageList", new Document("id", id.toString())))
+    );
+    UserModel user = findUserByUUID(playerUUID);
+    if (user == null) return;
+    user.getStorageList().removeIf(s -> s.getId().equals(storage.getId()));
   }
 
 
