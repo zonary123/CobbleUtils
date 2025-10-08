@@ -51,8 +51,6 @@ public class CommandTree {
       PokeRename.register(dispatcher, base);
 
       EconomyIdCommand.register(dispatcher, base);
-
-      BlockCommand.register(dispatcher, base);
       HipperMessageCommand.register(dispatcher, base);
       StorageCommand.register(dispatcher, registry);
     }

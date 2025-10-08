@@ -1,10 +1,15 @@
 package com.kingpixel.cobbleutils.mixins;
 
+import com.kingpixel.cobbleutils.database.blocks.manager.ChunkBlockStorageManager;
+import com.kingpixel.cobbleutils.events.CobbleUtilsEvents;
+import com.kingpixel.cobbleutils.events.models.EventBlockBreak;
+import com.kingpixel.cobbleutils.events.models.EventBlockPlaced;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
+import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import org.spongepowered.asm.mixin.Mixin;
@@ -22,52 +27,31 @@ public abstract class BlockMixin {
   private void CobbleUtils$onPlaced(World world, BlockPos pos, BlockState state, LivingEntity placer,
                                     ItemStack itemStack,
                                     CallbackInfo ci) {
-    return;
-    /*try {
-      if (placer == null) {
-        if (CobbleUtils.config.isDebug()) {
-          CobbleUtils.LOGGER.info("Block placed by null entity at " + pos);
-        }
-        return;
-      }
-      ServerPlayerEntity player = (placer instanceof ServerPlayerEntity serverPlayer) ? serverPlayer : null;
-      if (player == null) {
-        if (CobbleUtils.config.isDebug()) {
-          CobbleUtils.LOGGER.info("Block placed by non-player entity at " + pos);
-        }
-        return;
-      }
-      DataBaseFactory.dataBaseBlock.placeBlock(
-        world,
-        pos,
-        state,
-        player
-      );
-    } catch (Exception e) {
-      if (CobbleUtils.config.isDebug()) {
-        CobbleUtils.LOGGER.error("Error in onPlaced mixin: " + e.getMessage());
-      }
-    }*/
+    ServerPlayerEntity player = (placer instanceof ServerPlayerEntity serverPlayer) ? serverPlayer : null;
+    if (player == null) return;
+    boolean placed = ChunkBlockStorageManager.isPlacedByPlayer(world, world.getChunk(pos), pos);
+    ChunkBlockStorageManager.markPlaced(world, world.getChunk(pos), pos);
+    CobbleUtilsEvents.BLOCK_PLACED_EVENT.emit(new EventBlockPlaced(
+      world,
+      pos,
+      state,
+      player,
+      placed
+    ));
   }
 
   @Inject(method = "onBreak", at = @At("HEAD"))
   private void CobbleUtils$onBreak(World world, BlockPos pos, BlockState state, PlayerEntity playerEntity,
                                    CallbackInfoReturnable<BlockState> cir) {
-    return;
-    /*try {
-      if (playerEntity == null) return;
-      ServerPlayerEntity player = (playerEntity instanceof ServerPlayerEntity serverPlayer) ? serverPlayer : null;
-      if (player == null) return;
-      DataBaseFactory.dataBaseBlock.removeBlock(
-        world,
-        pos,
-        state,
-        player
-      );
-    } catch (Exception e) {
-      if (CobbleUtils.config.isDebug()) {
-        CobbleUtils.LOGGER.error("Error in onBreak mixin: " + e.getMessage());
-      }
-    }*/
+    ServerPlayerEntity player = (playerEntity instanceof ServerPlayerEntity serverPlayer) ? serverPlayer : null;
+    if (player == null) return;
+    boolean isPlaced = ChunkBlockStorageManager.removePlaced(world, world.getChunk(pos), pos);
+    CobbleUtilsEvents.BLOCK_BREAK_EVENT.emit(new EventBlockBreak(
+      world,
+      pos,
+      state,
+      player,
+      isPlaced
+    ));
   }
 }
