@@ -61,6 +61,7 @@ public class ConfirmMenu {
     return template;
   }
 
+
   public void open(ServerPlayerEntity player, ItemStack itemStack, Consumer<ButtonAction> onConfirm,
                    Consumer<ButtonAction> onCancel) {
     CompletableFuture.runAsync(() -> {
@@ -86,13 +87,13 @@ public class ConfirmMenu {
 
         // Crear y abrir la página del menú
         GooeyPage page = GooeyPage.builder()
-          .title(AdventureTranslator.toNative(title))
           .template(template)
+          .title(AdventureTranslator.toNative(title))
           .build();
 
         CobbleUtils.server.execute(() -> UIManager.openUIForcefully(player, page));
       }, CobbleUtils.EXECUTOR_COBBLEUTILS)
-      .orTimeout(10, TimeUnit.SECONDS)
+      .orTimeout(3, TimeUnit.SECONDS)
       .exceptionally(e -> {
         e.printStackTrace();
         return null;
