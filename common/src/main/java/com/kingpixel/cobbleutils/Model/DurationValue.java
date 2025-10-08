@@ -117,11 +117,6 @@ public class DurationValue implements JsonSerializer<DurationValue>, JsonDeseria
         );
       };
     }
-
-    if (totalMillis == 0) {
-      throw new IllegalArgumentException("Invalid duration string: " + value);
-    }
-
     return new DurationValue(totalMillis, value);
   }
 

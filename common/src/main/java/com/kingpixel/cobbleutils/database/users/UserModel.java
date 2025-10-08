@@ -4,6 +4,7 @@ import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.Model.DurationValue;
 import com.kingpixel.cobbleutils.Model.ItemChance;
 import com.kingpixel.cobbleutils.database.DataBaseFactory;
+import com.kingpixel.cobbleutils.database.users.models.Storage;
 import com.kingpixel.cobbleutils.util.PlayerUtils;
 import lombok.Data;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -30,6 +31,8 @@ public class UserModel {
 
   // Map: ItemChance UUID -> RewardInfo
   private Map<String, RewardInfo> rewardsClaimed = new HashMap<>();
+
+  private List<Storage> storageList = new ArrayList<>();
 
   public UserModel(ServerPlayerEntity player) {
     this.playerUUID = player.getUuid();
@@ -115,6 +118,11 @@ public class UserModel {
           changed = true;
         }
       }
+    }
+
+    if (storageList == null) {
+      storageList = new ArrayList<>();
+      changed = true;
     }
 
     return changed;

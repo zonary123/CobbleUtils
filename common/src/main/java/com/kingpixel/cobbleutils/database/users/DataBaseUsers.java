@@ -4,6 +4,7 @@ import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.Model.DataBaseConfig;
 import com.kingpixel.cobbleutils.Model.ItemChance;
 import com.kingpixel.cobbleutils.api.RewardsApi;
+import com.kingpixel.cobbleutils.database.users.models.Storage;
 import com.mojang.authlib.GameProfile;
 import net.minecraft.network.packet.c2s.common.SyncedClientOptions;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -112,5 +113,8 @@ public abstract class DataBaseUsers {
   public void removeIfNecessary(UUID uuid) {
     users.remove(uuid);
   }
-  
+
+  public abstract void addStorage(Storage storage, UUID playerUUID);
+
+  public abstract void removeStorage(Storage storage, UUID playerUUID);
 }

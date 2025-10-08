@@ -2,6 +2,7 @@ package com.kingpixel.cobbleutils.database.users;
 
 import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.Model.DataBaseConfig;
+import com.kingpixel.cobbleutils.database.users.models.Storage;
 import com.kingpixel.cobbleutils.util.Utils;
 import org.jetbrains.annotations.NotNull;
 
@@ -88,6 +89,22 @@ public class DataBaseUsersJson extends DataBaseUsers {
       .map(this::readUserFile)
       .filter(user -> isInactive(user, currentTime, millis))
       .toList();
+  }
+
+  @Override public void addStorage(Storage storage, UUID playerUUID) {
+    if (storage == null || playerUUID == null) return;
+    UserModel user = findUserByUUID(playerUUID);
+    if (user == null) return;
+    List<Storage> list = user.getStorageList();
+    list.add(storage);
+  }
+
+  @Override public void removeStorage(Storage storage, UUID playerUUID) {
+    if (storage == null || playerUUID == null) return;
+    UserModel user = findUserByUUID(playerUUID);
+    if (user == null) return;
+    List<Storage> list = user.getStorageList();
+    list.removeIf(s -> s.getId().equals(storage.getId()));
   }
 
   // Método para leer un archivo JSON y convertirlo en UserModel

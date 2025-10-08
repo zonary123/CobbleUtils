@@ -20,8 +20,6 @@ import java.util.concurrent.Executors;
 @Setter
 public class WebHookData {
   public static final Map<String, WebhookClient> webhooks = new ConcurrentHashMap<>();
-
-
   private static final ExecutorService WEBHOOK_THREAD_FACTORY = Executors.newFixedThreadPool(2, new ThreadFactoryBuilder()
     .setDaemon(true)
     .setNameFormat("CobbleUtils Webhook - %d")

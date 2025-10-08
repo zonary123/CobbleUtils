@@ -18,6 +18,7 @@ import com.kingpixel.cobbleutils.Model.ItemChance;
 import com.kingpixel.cobbleutils.Model.ItemModel;
 import com.kingpixel.cobbleutils.Model.messages.HiperMessage;
 import com.kingpixel.cobbleutils.adapter.*;
+import com.kingpixel.cobbleutils.database.users.models.Storage;
 import com.mojang.authlib.GameProfile;
 import kotlin.ranges.IntRange;
 import net.minecraft.component.DataComponentTypes;
@@ -112,12 +113,15 @@ public abstract class Utils {
       .registerTypeAdapter(ItemChance.class, ItemChanceAdapter.INSTANCE)
       .registerTypeAdapter(DurationValue.class, DurationValue.INSTANCE)
       .registerTypeAdapter(DataBaseType.class, DataBaseTypeAdapter.INSTANCE)
+      .registerTypeAdapter(Storage.class, StorageAdapter.INSTANCE)
       .registerTypeAdapter(HiperMessage.class, HiperMessage.EMPTY);
   }
 
-  public static final ExecutorService IO_EXECUTOR = Executors.newFixedThreadPool(16, new ThreadFactoryBuilder()
-    .setNameFormat("CobbleUtils IO Executor-%d")
+  public static final ExecutorService IO_EXECUTOR = Executors.newFixedThreadPool(24, new ThreadFactoryBuilder()
+    .setDaemon(true)
+    .setNameFormat("CobbleUtils IO - %d")
     .build());
+
 
   public static CompletableFuture<Boolean> writeFileAsync(String filePath, String filename, String data) {
     if (filePath == null || filename == null || data == null) {

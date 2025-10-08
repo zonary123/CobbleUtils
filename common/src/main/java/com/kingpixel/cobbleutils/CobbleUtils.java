@@ -28,10 +28,7 @@ import net.minecraft.server.MinecraftServer;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 public class CobbleUtils {
   public static final String MOD_ID = "cobbleutils";
@@ -49,9 +46,24 @@ public class CobbleUtils {
   // Lang
   public static Lang language = new Lang();
   public static List<String> modsInUse = new ArrayList<>();
-  public static final ExecutorService EXECUTOR_COBBLEUTILS = Executors.newFixedThreadPool(8, new ThreadFactoryBuilder()
-    .setNameFormat("CobbleUtils General Executor-%d")
-    .build());
+  public static final ExecutorService EXECUTOR_COBBLEUTILS =
+    new ThreadPoolExecutor(
+      8,
+      16,
+      60L, TimeUnit.SECONDS,
+      new ArrayBlockingQueue<>(100),
+      new ThreadFactoryBuilder()
+        .setNameFormat("CobbleUtils General Executor-%d")
+        .build(),
+      (r, executor) -> {
+        // Log a warning when the pool is saturated
+        CobbleUtils.LOGGER.warn("[CobbleUtils] Executor is overloaded! " +
+          "ActiveThreads=" + executor.getActiveCount() +
+          ", PoolSize=" + executor.getPoolSize() +
+          ", QueueSize=" + executor.getQueue().size() +
+          ", Task=" + r.toString());
+      }
+    );
 
 
   public static void init() {

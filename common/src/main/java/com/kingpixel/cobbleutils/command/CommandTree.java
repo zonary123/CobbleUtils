@@ -54,6 +54,7 @@ public class CommandTree {
 
       BlockCommand.register(dispatcher, base);
       HipperMessageCommand.register(dispatcher, base);
+      StorageCommand.register(dispatcher, registry);
     }
     UserInfoCommand.register(dispatcher);
     ZonaryCommand.register(dispatcher);
