@@ -14,21 +14,29 @@ import java.util.UUID;
 /**
  * @author Carlos Varas Alonso - 06/10/2025 5:11
  */
-@EqualsAndHashCode(callSuper = true) @Data
+@EqualsAndHashCode(callSuper = true)
+@Data
 public class StoragePokemon extends Storage {
   private String type = "pokemon";
   private Pokemon pokemon;
 
-  public StoragePokemon(UUID id, Pokemon pokemon) {
-    this.setId(id);
+  public StoragePokemon(Pokemon pokemon) {
+    super();
     this.pokemon = pokemon;
   }
 
-  @Override public ItemStack getDisplay() {
+  public StoragePokemon(UUID id, Pokemon pokemon) {
+    super(id);
+    this.pokemon = pokemon;
+  }
+
+  @Override
+  public ItemStack getDisplay() {
     return PokemonItem.from(pokemon);
   }
 
-  @Override public void giveToPlayer(ServerPlayerEntity player) {
+  @Override
+  public void giveToPlayer(ServerPlayerEntity player) {
     CobbleUtils.server.execute(() -> Cobblemon.INSTANCE.getStorage().getParty(player).add(pokemon));
   }
 

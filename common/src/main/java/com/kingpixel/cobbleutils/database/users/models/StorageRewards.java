@@ -1,6 +1,6 @@
 package com.kingpixel.cobbleutils.database.users.models;
 
-import com.kingpixel.cobbleutils.CobbleUtils;
+import com.kingpixel.cobbleutils.Model.ItemChance;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import net.minecraft.item.ItemStack;
@@ -14,28 +14,28 @@ import java.util.UUID;
 @EqualsAndHashCode(callSuper = true)
 @Data
 
-public class StorageItemStack extends Storage {
-  private String type = "itemStack";
-  private ItemStack itemStack;
+public class StorageRewards extends Storage {
+  private String type = "reward";
+  private ItemChance reward;
 
-  public StorageItemStack(ItemStack itemStack) {
+  public StorageRewards(ItemChance itemChance) {
     super();
-    this.itemStack = itemStack;
+    this.reward = itemChance;
   }
 
-  public StorageItemStack(UUID id, ItemStack itemStack) {
+  public StorageRewards(UUID id, ItemChance itemChance) {
     super(id);
-    this.itemStack = itemStack;
+    this.reward = itemChance;
   }
 
   @Override
   public ItemStack getDisplay() {
-    return itemStack;
+    return reward.getIcon();
   }
 
   @Override
   public void giveToPlayer(ServerPlayerEntity playerEntity) {
-    CobbleUtils.server.execute(() -> playerEntity.getInventory().offerOrDrop(itemStack.copy()));
+    reward.giveReward(playerEntity);
   }
 
 }

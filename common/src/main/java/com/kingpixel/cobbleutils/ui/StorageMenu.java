@@ -19,6 +19,7 @@ import net.minecraft.server.network.ServerPlayerEntity;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
@@ -46,14 +47,14 @@ public class StorageMenu {
     this.previousPage.setSlot(45);
   }
 
-  public void open(ServerPlayerEntity player) {
+  public void open(ServerPlayerEntity executer, UUID targetUUID) {
     CompletableFuture.runAsync(() -> {
         ChestTemplate template = ChestTemplate
           .builder(rows)
           .build();
 
         rectangle.apply(template);
-        UserModel userModel = DataBaseFactory.dataBaseUsers.findUserByUUID(player.getUuid());
+        UserModel userModel = DataBaseFactory.dataBaseUsers.findUserByUUID(targetUUID);
         if (userModel == null) return;
         var list = userModel.getStorageList();
         int size = list.size();
@@ -64,9 +65,7 @@ public class StorageMenu {
 
 
         previousPage.applyTemplate(template, previousPage.getLinkedPageButton(LinkType.Next));
-        close.applyTemplate(template, close.getButton(action -> {
-
-        }, 1, TimeUnit.SECONDS, 1));
+        close.applyTemplate(template, close.getButton(action -> UIManager.closeUI(action.getPlayer()), 1, TimeUnit.SECONDS, 1));
         nextPage.applyTemplate(template, nextPage.getLinkedPageButton(LinkType.Next));
 
         GooeyPage page = PaginationHelper.createPagesFromPlaceholders(
@@ -74,7 +73,7 @@ public class StorageMenu {
           buttons,
           LinkedPage.builder().title(AdventureTranslator.toNative(title))
         );
-        CobbleUtils.server.execute(() -> UIManager.openUIForcefully(player, page));
+        CobbleUtils.server.execute(() -> UIManager.openUIForcefully(executer, page));
       }, CobbleUtils.EXECUTOR_COBBLEUTILS)
       .exceptionally(e -> {
         e.printStackTrace();
