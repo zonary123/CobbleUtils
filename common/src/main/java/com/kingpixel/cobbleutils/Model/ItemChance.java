@@ -216,7 +216,6 @@ public class ItemChance {
    * Gets the ItemStack of the item with a specific amount.
    *
    * @param amount The amount of the item.
-   *
    * @return The ItemStack of the item.
    */
   public ItemStack getItemStack(int amount) {
@@ -229,6 +228,10 @@ public class ItemChance {
 
   public static boolean giveReward(ServerPlayerEntity player, ItemChance itemChance) throws NoPokemonStoreException {
     return giveReward(player, itemChance, 1);
+  }
+
+  public boolean giveReward(ServerPlayerEntity player) {
+    return giveReward(player, this, 1);
   }
 
   private static final Pattern COMMAND_SPLIT_PATTERN = Pattern.compile("(?<!<)#");
@@ -263,7 +266,6 @@ public class ItemChance {
    *
    * @param player The player to give the reward to.
    * @param amount The amount of the item to give.
-   *
    * @return True if the reward was given successfully, false otherwise.
    */
   public static boolean giveReward(ServerPlayerEntity player, ItemChance itemChance, int amount) {
@@ -427,7 +429,6 @@ public class ItemChance {
    * Constructs a GooeyButton instance representing the item button.
    *
    * @param percentage The percentage to display in the lore.
-   *
    * @return The constructed GooeyButton instance.
    */
   public GooeyButton getButton(String percentage) {
@@ -448,7 +449,6 @@ public class ItemChance {
    *
    * @param item   The item to get the ItemStack of.
    * @param amount The amount of the item.
-   *
    * @return The ItemStack of the reward.
    */
   // Cache para memoization
@@ -668,7 +668,6 @@ public class ItemChance {
    *
    * @param itemChances The list of item chances to choose from.
    * @param player      The player to give the reward to.
-   *
    * @throws IllegalArgumentException If the list of item chances is empty.
    */
   @Deprecated
@@ -700,7 +699,6 @@ public class ItemChance {
    * @param itemChances     The list of item chances to choose from.
    * @param player          The player to give the reward to.
    * @param numberOfRewards The number of rewards to give.
-   *
    * @throws IllegalArgumentException If the list of item chances is empty or the
    *                                  number of rewards is less than or equal to
    *                                  zero.
@@ -726,7 +724,6 @@ public class ItemChance {
    * @param itemChances     The list of item chances to choose from.
    * @param player          The player to give the rewards to.
    * @param numberOfRewards The number of rewards to give.
-   *
    * @return The list of rewards given to the player.
    */
   public static List<ItemChance> getRewards(List<ItemChance> itemChances, ServerPlayerEntity player,
@@ -796,7 +793,6 @@ public class ItemChance {
    * Gets a list of GooeyButton instances representing the item chances.
    *
    * @param itemChances The list of item chances to get the buttons for.
-   *
    * @return The list of GooeyButton instances representing the item chances.
    */
   public static List<GooeyButton> getButtons(List<ItemChance> itemChances) {

@@ -19,7 +19,15 @@ import java.util.concurrent.CompletableFuture;
  */
 @Data
 public abstract class Storage {
-  private UUID id = UUID.randomUUID();
+  private UUID id;
+
+  protected Storage() {
+    this.id = UUID.randomUUID();
+  }
+
+  protected Storage(UUID id) {
+    this.id = id;
+  }
 
   public abstract ItemStack getDisplay();
 
@@ -31,9 +39,9 @@ public abstract class Storage {
       .onClick(action -> CompletableFuture.runAsync(() -> {
           ServerPlayerEntity player = action.getPlayer();
           userModel.getStorageList().remove(this);
-          giveToPlayer(action.getPlayer());
+          giveToPlayer(player);
           DataBaseFactory.dataBaseUsers.removeStorage(this, player.getUuid());
-          CobbleUtils.language.getStorageMenu().open(action.getPlayer());
+          CobbleUtils.language.getStorageMenu().open(player, player.getUuid());
         }, CobbleUtils.EXECUTOR_COBBLEUTILS)
         .exceptionally(e -> {
           e.printStackTrace();
@@ -52,16 +60,4 @@ public abstract class Storage {
     JsonElement jsonElement = Utils.newWithoutSpacingGson().fromJson(data, JsonElement.class);
     return Utils.newWithoutSpacingGson().fromJson(jsonElement, this.getClass());
   }
-
-  public void setId(UUID id) {
-    if (id == null) id = UUID.randomUUID();
-    this.id = id;
-  }
-
-  public void getId(UUID id) {
-    if (id == null) id = UUID.randomUUID();
-    this.id = id;
-  }
-
-
 }

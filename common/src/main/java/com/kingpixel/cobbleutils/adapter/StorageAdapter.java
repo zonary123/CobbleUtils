@@ -5,6 +5,7 @@ import com.google.gson.*;
 import com.kingpixel.cobbleutils.database.users.models.Storage;
 import com.kingpixel.cobbleutils.database.users.models.StorageItemStack;
 import com.kingpixel.cobbleutils.database.users.models.StoragePokemon;
+import com.kingpixel.cobbleutils.database.users.models.StorageRewards;
 import net.minecraft.item.ItemStack;
 
 import java.lang.reflect.Type;
@@ -31,11 +32,16 @@ public class StorageAdapter implements JsonSerializer<Storage>, JsonDeserializer
         ItemStack itemStack = ItemStackAdapter.INSTANCE.deserialize(jsonObject.get("itemStack").getAsJsonObject(), ItemStack.class, null);
         yield new StorageItemStack(id, itemStack);
       }
+      case "reward" -> {
+        var itemChance = ItemChanceAdapter.INSTANCE.deserialize(jsonObject.get("reward").getAsJsonObject(), null, null);
+        yield new StorageRewards(id, itemChance);
+      }
       default -> throw new IllegalStateException("Unexpected value: " + type);
     };
   }
 
-  @Override public JsonElement serialize(Storage src, Type typeOfSrc, JsonSerializationContext context) {
+  @Override
+  public JsonElement serialize(Storage src, Type typeOfSrc, JsonSerializationContext context) {
     JsonObject jsonObject = new JsonObject();
     UUID id = src.getId();
     switch (src) {
@@ -48,6 +54,11 @@ public class StorageAdapter implements JsonSerializer<Storage>, JsonDeserializer
         jsonObject.addProperty("id", id.toString());
         jsonObject.addProperty("type", "itemStack");
         jsonObject.add("itemStack", ItemStackAdapter.INSTANCE.serialize(storageItemStack.getItemStack(), ItemStack.class, null));
+      }
+      case StorageRewards storageRewards -> {
+        jsonObject.addProperty("id", id.toString());
+        jsonObject.addProperty("type", "reward");
+        jsonObject.add("reward", ItemChanceAdapter.INSTANCE.serialize(storageRewards.getReward(), null, null));
       }
       default -> throw new IllegalStateException("Unexpected value: " + src.getClass().getName());
     }
