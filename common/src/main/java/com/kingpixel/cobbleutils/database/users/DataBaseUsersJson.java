@@ -20,15 +20,18 @@ import java.util.UUID;
 public class DataBaseUsersJson extends DataBaseUsers {
   private static final String PATH_USERS = CobbleUtils.PATH + "/users/";
 
-  @Override public void connect(DataBaseConfig config) {
+  @Override
+  public void connect(DataBaseConfig config) {
     CobbleUtils.LOGGER.info("DataBaseUsersJson connected");
   }
 
-  @Override public void disconnect() {
+  @Override
+  public void disconnect() {
     CobbleUtils.LOGGER.info("DataBaseUsersJson disconnected");
   }
 
-  @Override public UserModel findUserByUUID(@NotNull UUID uuid) {
+  @Override
+  public UserModel findUserByUUID(@NotNull UUID uuid) {
     UserModel userModel = super.findUserByUUID(uuid);
     if (userModel != null) return userModel; // si está en la cache,
     // si no está en la cache, lo carga del archivo
@@ -38,7 +41,8 @@ public class DataBaseUsersJson extends DataBaseUsers {
     return userModel;
   }
 
-  @Override public UserModel findUserByName(@NotNull String name) {
+  @Override
+  public UserModel findUserByName(@NotNull String name) {
     UserModel userModel = super.findUserByName(name);
     if (userModel != null) return userModel; // si está en la cache,
     File folder = Utils.getAbsolutePath(PATH_USERS);
@@ -56,7 +60,8 @@ public class DataBaseUsersJson extends DataBaseUsers {
       .orElse(null);
   }
 
-  @Override public void saveOrUpdateUser(UserModel user) {
+  @Override
+  public void saveOrUpdateUser(UserModel user) {
     if (user == null || user.getPlayerUUID() == null) return;
     File folder = Utils.getAbsolutePath(PATH_USERS);
     if (!folder.exists()) folder.mkdirs();
@@ -65,7 +70,8 @@ public class DataBaseUsersJson extends DataBaseUsers {
     Utils.writeFileAsync(file, data);
   }
 
-  @Override public List<UserModel> getAllUsers() {
+  @Override
+  public List<UserModel> getAllUsers() {
     File folder = Utils.getAbsolutePath(PATH_USERS);
     File[] files = folder.listFiles();
     if (files == null) return List.of();
@@ -91,20 +97,20 @@ public class DataBaseUsersJson extends DataBaseUsers {
       .toList();
   }
 
-  @Override public void addStorage(Storage storage, UUID playerUUID) {
+  @Override
+  public void addStorage(Storage storage, UUID playerUUID) {
     if (storage == null || playerUUID == null) return;
     UserModel user = findUserByUUID(playerUUID);
     if (user == null) return;
-    List<Storage> list = user.getStorageList();
-    list.add(storage);
+    user.addStorage(storage);
   }
 
-  @Override public void removeStorage(Storage storage, UUID playerUUID) {
-    if (storage == null || playerUUID == null) return;
+  @Override
+  public Storage removeStorage(Storage storage, UUID playerUUID) {
+    if (storage == null || playerUUID == null) return null;
     UserModel user = findUserByUUID(playerUUID);
-    if (user == null) return;
-    List<Storage> list = user.getStorageList();
-    list.removeIf(s -> s.getId().equals(storage.getId()));
+    if (user == null) return null;
+    return user.removeStorage(storage.getId());
   }
 
   // Método para leer un archivo JSON y convertirlo en UserModel

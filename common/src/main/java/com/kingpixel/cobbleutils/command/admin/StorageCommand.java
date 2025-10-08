@@ -1,6 +1,7 @@
 package com.kingpixel.cobbleutils.command.admin;
 
 import com.cobblemon.mod.common.command.argument.PokemonPropertiesArgumentType;
+import com.cobblemon.mod.common.command.argument.PokemonStoreArgumentType;
 import com.cobblemon.mod.common.pokemon.Pokemon;
 import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.Model.ItemChance;
@@ -49,6 +50,21 @@ public class StorageCommand {
                 .then(
                   CommandManager.literal(ARG_POKEMON)
                     .then(
+                      CommandManager.literal("slot")
+                        .then(
+                          CommandManager.argument("slot", PokemonStoreArgumentType.Companion.pokemonStore())
+                            .executes(context -> {
+                              Pokemon pokemon = PokemonPropertiesArgumentType.Companion.getPokemonProperties(context, "slot").create();
+                              CobbleUtils.EXECUTOR_COBBLEUTILS.execute(() ->
+                                DataBaseFactory.dataBaseUsers.addStorage(
+                                  new StoragePokemon(pokemon),
+                                  getPlayerUUID(context)
+                                )
+                              );
+                              return 1;
+                            })
+                        )
+                    ).then(
                       CommandManager.argument(ARG_POKEMON, PokemonPropertiesArgumentType.Companion.properties())
                         .executes(context -> {
                           Pokemon pokemon = PokemonPropertiesArgumentType.Companion.getPokemonProperties(context, ARG_POKEMON).create();
@@ -65,20 +81,36 @@ public class StorageCommand {
                 .then(
                   CommandManager.literal("itemstack")
                     .then(
-                      CommandManager.argument(ARG_AMOUNT, IntegerArgumentType.integer())
+                      CommandManager.literal("hand")
+                        .executes(context -> {
+                          ServerPlayerEntity player = context.getSource().getPlayerOrThrow();
+                          var itemStack = player.getMainHandStack().copy();
+                          CobbleUtils.EXECUTOR_COBBLEUTILS.execute(() ->
+                            DataBaseFactory.dataBaseUsers.addStorage(
+                              new StorageItemStack(itemStack),
+                              getPlayerUUID(context)
+                            )
+                          );
+                          return 1;
+                        })
+                    ).then(
+                      CommandManager.literal("command")
                         .then(
-                          CommandManager.argument(ARG_ITEM, ItemStackArgumentType.itemStack(registry))
-                            .executes(context -> {
-                              int amount = IntegerArgumentType.getInteger(context, ARG_AMOUNT);
-                              var itemStack = ItemStackArgumentType.getItemStackArgument(context, ARG_ITEM).createStack(amount, true);
-                              CobbleUtils.EXECUTOR_COBBLEUTILS.execute(() ->
-                                DataBaseFactory.dataBaseUsers.addStorage(
-                                  new StorageItemStack(itemStack),
-                                  getPlayerUUID(context)
-                                )
-                              );
-                              return 1;
-                            })
+                          CommandManager.argument(ARG_AMOUNT, IntegerArgumentType.integer())
+                            .then(
+                              CommandManager.argument(ARG_ITEM, ItemStackArgumentType.itemStack(registry))
+                                .executes(context -> {
+                                  int amount = IntegerArgumentType.getInteger(context, ARG_AMOUNT);
+                                  var itemStack = ItemStackArgumentType.getItemStackArgument(context, ARG_ITEM).createStack(amount, true);
+                                  CobbleUtils.EXECUTOR_COBBLEUTILS.execute(() ->
+                                    DataBaseFactory.dataBaseUsers.addStorage(
+                                      new StorageItemStack(itemStack),
+                                      getPlayerUUID(context)
+                                    )
+                                  );
+                                  return 1;
+                                })
+                            )
                         )
                     )
                 )
@@ -106,8 +138,8 @@ public class StorageCommand {
               CobbleUtilsSuggests.SUGGESTS_PLAYER_OFFLINE_AND_ONLINE.suggestPlayerName(ARG_PLAYER, permissions, 2)
                 .executes(context -> {
                   ServerPlayerEntity player = context.getSource().getPlayerOrThrow();
-                  UUID playerUUID = getPlayerUUID(context);
                   CobbleUtils.EXECUTOR_COBBLEUTILS.execute(() -> {
+                    UUID playerUUID = getPlayerUUID(context);
                     var user = DataBaseFactory.dataBaseUsers.findUserByUUID(playerUUID);
                     if (user != null) CobbleUtils.language.getStorageMenu().open(player, playerUUID);
                   });

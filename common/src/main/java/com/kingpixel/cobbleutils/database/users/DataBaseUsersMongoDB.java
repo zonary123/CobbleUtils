@@ -42,13 +42,15 @@ public class DataBaseUsersMongoDB extends DataBaseUsers {
     collectionUser = database.getCollection("users");
   }
 
-  @Override public void disconnect() {
+  @Override
+  public void disconnect() {
     if (mongoClient != null) {
       mongoClient.close();
     }
   }
 
-  @Override public @Nullable UserModel findUserByUUID(@NotNull UUID uuid) {
+  @Override
+  public @Nullable UserModel findUserByUUID(@NotNull UUID uuid) {
     UserModel userModel = super.findUserByUUID(uuid);
     if (userModel != null) return userModel; // si está en la cache,
     Document document = collectionUser.find(Filters.eq("playerUUID", uuid.toString()))
@@ -60,7 +62,8 @@ public class DataBaseUsersMongoDB extends DataBaseUsers {
     return null;
   }
 
-  @Override public @Nullable UserModel findUserByName(@NotNull String name) {
+  @Override
+  public @Nullable UserModel findUserByName(@NotNull String name) {
     UserModel userModel = super.findUserByName(name);
     if (userModel != null) return userModel; // si está en la cache,
     Document document = collectionUser.find(Filters.eq("playerName", name))
@@ -96,7 +99,8 @@ public class DataBaseUsersMongoDB extends DataBaseUsers {
   }
 
 
-  @Override public List<UserModel> getAllUsers() {
+  @Override
+  public List<UserModel> getAllUsers() {
     List<UserModel> userList = new ArrayList<>();
     for (Document doc : collectionUser.find()) {
       try {
@@ -134,7 +138,8 @@ public class DataBaseUsersMongoDB extends DataBaseUsers {
     return inactiveUsers;
   }
 
-  @Override public void addStorage(Storage storage, UUID playerUUID) {
+  @Override
+  public void addStorage(Storage storage, UUID playerUUID) {
     collectionUser.updateOne(
       Filters.eq("playerUUID", playerUUID.toString()),
       new Document("$push", new Document("storageList", storage.toDocument()))
@@ -144,16 +149,17 @@ public class DataBaseUsersMongoDB extends DataBaseUsers {
     user.getStorageList().add(storage);
   }
 
-  @Override public void removeStorage(Storage storage, UUID playerUUID) {
+  @Override
+  public Storage removeStorage(Storage storage, UUID playerUUID) {
     UUID id = storage.getId();
-    if (id == null) return;
+    if (id == null) return null;
     collectionUser.updateOne(
       Filters.eq("playerUUID", playerUUID.toString()),
       new Document("$pull", new Document("storageList", new Document("id", id.toString())))
     );
     UserModel user = findUserByUUID(playerUUID);
-    if (user == null) return;
-    user.getStorageList().removeIf(s -> s.getId().equals(storage.getId()));
+    if (user == null) return null;
+    return user.removeStorage(id);
   }
 
 

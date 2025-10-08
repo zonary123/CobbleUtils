@@ -60,7 +60,7 @@ public class StorageMenu {
         int size = list.size();
         List<Button> buttons = new ArrayList<>(size);
         for (Storage storage : list) {
-          buttons.add(storage.getButton(userModel));
+          buttons.add(storage.getButton());
         }
 
 

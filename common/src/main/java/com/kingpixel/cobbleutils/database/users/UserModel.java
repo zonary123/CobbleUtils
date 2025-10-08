@@ -32,7 +32,7 @@ public class UserModel {
   // Map: ItemChance UUID -> RewardInfo
   private Map<String, RewardInfo> rewardsClaimed = new HashMap<>();
 
-  private List<Storage> storageList = new ArrayList<>();
+  private Set<Storage> storageList = new HashSet<>();
 
   public UserModel(ServerPlayerEntity player) {
     this.playerUUID = player.getUuid();
@@ -121,11 +121,27 @@ public class UserModel {
     }
 
     if (storageList == null) {
-      storageList = new ArrayList<>();
+      storageList = new HashSet<>();
       changed = true;
     }
 
     return changed;
+  }
+
+  public void addStorage(Storage storage) {
+    storageList.add(storage);
+  }
+
+  public Storage removeStorage(UUID storageId) {
+    Storage toRemove = null;
+    for (Storage storage : storageList) {
+      if (storage.getId().equals(storageId)) {
+        toRemove = storage;
+        break;
+      }
+    }
+    if (toRemove != null) storageList.remove(toRemove);
+    return toRemove;
   }
 
 

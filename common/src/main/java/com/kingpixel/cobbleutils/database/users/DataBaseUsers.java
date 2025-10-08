@@ -26,11 +26,13 @@ public abstract class DataBaseUsers {
 
   public abstract void disconnect();
 
-  @Nullable public UserModel findUserByUUID(@NotNull UUID uuid) {
+  @Nullable
+  public UserModel findUserByUUID(@NotNull UUID uuid) {
     return users.get(uuid);
   }
 
-  @Nullable public UserModel findUserByName(@NotNull String name) {
+  @Nullable
+  public UserModel findUserByName(@NotNull String name) {
     var userCache = CobbleUtils.server.getUserCache();
     if (userCache == null) return null;
     var gameProfile = userCache.findByName(name);
@@ -43,7 +45,8 @@ public abstract class DataBaseUsers {
 
   public abstract List<UserModel> getUsersInactiveSince(long millis);
 
-  @Nullable public ServerPlayerEntity getPlayerOfflineOrOnline(String playerName) {
+  @Nullable
+  public ServerPlayerEntity getPlayerOfflineOrOnline(String playerName) {
     ServerPlayerEntity player = CobbleUtils.server.getPlayerManager().getPlayer(playerName);
     if (player != null) return player;
 
@@ -116,5 +119,6 @@ public abstract class DataBaseUsers {
 
   public abstract void addStorage(Storage storage, UUID playerUUID);
 
-  public abstract void removeStorage(Storage storage, UUID playerUUID);
+  @Nullable
+  public abstract Storage removeStorage(Storage storage, UUID playerUUID);
 }

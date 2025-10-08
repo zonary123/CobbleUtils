@@ -25,6 +25,7 @@ import net.fabricmc.loader.api.ModContainer;
 import net.fabricmc.loader.api.metadata.Person;
 import net.minecraft.command.CommandRegistryAccess;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.network.ServerPlayerEntity;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -64,6 +65,21 @@ public class CobbleUtils {
           ", Task=" + r.toString());
       }
     );
+  private static final ScheduledExecutorService SCHEDULER_COBBLEUTILS =
+    new ScheduledThreadPoolExecutor(
+      2,
+      new ThreadFactoryBuilder()
+        .setNameFormat("CobbleUtils Scheduled Executor-%d")
+        .build(),
+      (r, executor) -> {
+        // Log a warning when the pool is saturated
+        CobbleUtils.LOGGER.warn("[CobbleUtils] Scheduled Executor is overloaded! " +
+          "ActiveThreads=" + executor.getActiveCount() +
+          ", PoolSize=" + executor.getPoolSize() +
+          ", QueueSize=" + executor.getQueue().size() +
+          ", Task=" + r.toString());
+      }
+    );
 
 
   public static void init() {
@@ -81,7 +97,7 @@ public class CobbleUtils {
   }
 
   public static void load() {
-
+    tasks();
     files();
     sign();
     EconomyApi.setEconomyType();
@@ -92,6 +108,28 @@ public class CobbleUtils {
     } catch (NoClassDefFoundError | NoSuchMethodError | Exception ignored) {
       LOGGER.error("Error while trying to get GtsEconomyProvider");
     }
+  }
+
+  private static void tasks() {
+    SCHEDULER_COBBLEUTILS.close();
+    SCHEDULER_COBBLEUTILS.scheduleAtFixedRate(() -> {
+      var players = server.getPlayerManager().getPlayerList();
+      for (ServerPlayerEntity player : players) {
+        if (player == null) continue;
+        var user = DataBaseFactory.dataBaseUsers.findUserByUUID(player.getUuid());
+        if (user == null) continue;
+        var storageList = user.getStorageList();
+        int size = storageList.size();
+        if (size > 0) {
+          PlayerUtils.sendMessage(
+            player.getUuid(),
+            "§e[§6CobbleUtils§e] §aYou have §e" + size + " §astorage item(s). Use §b/storage §ato claim them!",
+            config.getPrefix(),
+            TypeMessage.CHAT
+          );
+        }
+      }
+    }, 1, 1, TimeUnit.MINUTES);
   }
 
 
@@ -162,6 +200,7 @@ public class CobbleUtils {
       shutdownAndAwait(EXECUTOR_COBBLEUTILS);
       shutdownAndAwait(Utils.IO_EXECUTOR);
       shutdownAndAwait(RedisManager.EXECUTOR_REDIS);
+      shutdownAndAwait(SCHEDULER_COBBLEUTILS);
     });
 
     PlayerEvent.PLAYER_JOIN.register((player) -> {
