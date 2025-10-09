@@ -30,7 +30,7 @@ public class ChunkBlockStorageManager {
 
   // Cache chunks: key = world_sanitized + "_" + chunkX + "_" + chunkZ
   private static final Cache<String, ChunkBlockData> CHUNK_CACHE = Caffeine.newBuilder()
-    .expireAfterAccess(5, TimeUnit.MINUTES)
+    .expireAfterAccess(1, TimeUnit.MINUTES)
     .removalListener((key, value, cause) -> {
       if (key != null && value != null) {
         saveChunkByKey((String) key, (ChunkBlockData) value);
@@ -171,7 +171,7 @@ public class ChunkBlockStorageManager {
   // SHUTDOWN
   // ===========================
   public static void shutdown() {
-    CHUNK_CACHE.invalidateAll(); // esto dispara el save de removalListener
+    CHUNK_CACHE.asMap().forEach(ChunkBlockStorageManager::saveChunkByKey);
     CobbleUtils.shutdownAndAwait(IO_EXECUTOR);
   }
 }
