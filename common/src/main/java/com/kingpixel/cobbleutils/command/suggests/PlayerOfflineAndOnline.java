@@ -238,6 +238,18 @@ public class PlayerOfflineAndOnline {
     );
   }
 
+  public Optional<DataResultPlayer> getPlayer(UUID playerUUID) {
+    var online = CobbleUtils.server.getPlayerManager().getPlayer(playerUUID);
+    var userModel = DataBaseFactory.dataBaseUsers.findUserByUUID(playerUUID);
+    var offlineOrOnlineUser = DataBaseFactory.dataBaseUsers.getPlayerOfflineOrOnline(playerUUID);
+    return Optional.ofNullable(offlineOrOnlineUser == null ? null : new DataResultPlayer(
+        online != null,
+        userModel,
+        offlineOrOnlineUser
+      )
+    );
+  }
+
 
   public record DataResultPlayer(boolean isOnline, UserModel user, ServerPlayerEntity player) {
   }

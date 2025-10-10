@@ -15,6 +15,9 @@ import com.kingpixel.cobbleutils.Model.Animations.AnimationUtils;
 import com.kingpixel.cobbleutils.Model.Animations.CSGOAnimation;
 import com.kingpixel.cobbleutils.Model.Animations.CircleAnimation;
 import com.kingpixel.cobbleutils.api.PermissionApi;
+import com.kingpixel.cobbleutils.command.suggests.CobbleUtilsSuggests;
+import com.kingpixel.cobbleutils.database.DataBaseFactory;
+import com.kingpixel.cobbleutils.database.users.models.StorageRewards;
 import com.kingpixel.cobbleutils.util.AdventureTranslator;
 import com.kingpixel.cobbleutils.util.PlayerUtils;
 import com.kingpixel.cobbleutils.util.TypeMessage;
@@ -29,10 +32,7 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
 import net.minecraft.util.math.Vec3d;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Consumer;
 
 /**
@@ -140,6 +140,58 @@ public class AdvancedItemChance {
     return amount;
   }
 
+  public void giveRewards(UUID playerUUID) {
+    var user = CobbleUtilsSuggests.SUGGESTS_PLAYER_OFFLINE_AND_ONLINE.getPlayer(playerUUID);
+    user.ifPresent(dataResultPlayer -> {
+      ServerPlayerEntity player = dataResultPlayer.player();
+      boolean online = dataResultPlayer.isOnline();
+      try {
+        if (checker(player)) return;
+
+        List<ItemChance> obtainedRewards = getList(player);
+        List<ItemChance> allRewards = obtainedRewards;
+
+        if (giveAll) {
+          obtainedRewards = ItemChance.getAllRewards(obtainedRewards, player);
+        } else {
+          obtainedRewards = ItemChance.getRewards(obtainedRewards, player, getAmountReward(player));
+        }
+
+        if (obtainedRewards.isEmpty()) {
+          PlayerUtils.sendMessage(player,
+            "%prefix% &cYou have not obtained any rewards, please try again",
+            "&7[&cERROR&7]",
+            TypeMessage.CHAT);
+          return;
+        }
+
+        if (online) {
+          for (ItemChance obtainedReward : obtainedRewards) {
+            obtainedReward.giveReward(player);
+          }
+          List<ItemStack> showAllRewards = getListDisplay(allRewards);
+          List<ItemStack> showObtainedRewards = getListDisplay(obtainedRewards);
+          if (getNewSound() != null)
+            getNewSound().start(player);
+
+          if (particle != null) particle.sendParticles(player, player);
+
+          initAnimation(animation, player, showAllRewards, showObtainedRewards);
+        } else {
+          for (ItemChance reward : obtainedRewards) {
+            DataBaseFactory.dataBaseUsers.addStorage(new StorageRewards(reward), playerUUID);
+          }
+        }
+      } catch (Exception e) {
+        e.printStackTrace();
+        PlayerUtils.sendMessage(player,
+          "%prefix% &cAn error occurred while trying to give you the rewards, please notify the administrator of the error",
+          "&7[&cERROR&7]",
+          TypeMessage.CHAT);
+      }
+    });
+  }
+
   public void giveRewards(ServerPlayerEntity player) {
     try {
       if (checker(player)) return;
@@ -148,7 +200,7 @@ public class AdvancedItemChance {
       List<ItemChance> allRewards = obtainedRewards;
 
       if (giveAll) {
-        ItemChance.getAllRewards(obtainedRewards, player);
+        obtainedRewards = ItemChance.getAllRewards(obtainedRewards, player);
       } else {
         obtainedRewards = ItemChance.getRewards(obtainedRewards, player, getAmountReward(player));
       }
@@ -159,6 +211,10 @@ public class AdvancedItemChance {
           "&7[&cERROR&7]",
           TypeMessage.CHAT);
         return;
+      }
+
+      for (ItemChance obtainedReward : obtainedRewards) {
+        obtainedReward.giveReward(player);
       }
 
       List<ItemStack> showAllRewards = getListDisplay(allRewards);
