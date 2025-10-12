@@ -34,6 +34,7 @@ public class StorageMenu {
   private ItemModel nextPage;
   private ItemModel close;
   private ItemModel previousPage;
+  private ItemModel claimAll;
 
   public StorageMenu() {
     this.rows = 6;
@@ -45,6 +46,8 @@ public class StorageMenu {
     this.close.setSlot(49);
     this.previousPage = new ItemModel("minecraft:arrow", "&aPrevious Page");
     this.previousPage.setSlot(45);
+    this.claimAll = new ItemModel("minecraft:chest", "&eClaim All Rewards"); // 👈 botón genérico
+    this.claimAll.setSlot(47);
   }
 
   public void open(ServerPlayerEntity executer, UUID targetUUID) {
@@ -63,6 +66,47 @@ public class StorageMenu {
           buttons.add(storage.getButton());
         }
 
+
+        claimAll.applyTemplate(template, claimAll.getButton(action -> {
+          var player = action.getPlayer();
+
+          CompletableFuture.runAsync(() -> {
+              var data = DataBaseFactory.dataBaseUsers.findUserByUUID(targetUUID);
+              if (data == null) return;
+
+              var storageList = new ArrayList<>(data.getStorageList());
+              if (storageList.isEmpty()) {
+                CobbleUtils.server.execute(() ->
+                  player.sendMessage(AdventureTranslator.toNative("&cYou don't have any pending rewards to claim."), false)
+                );
+                return;
+              }
+
+              int claimed = 0;
+              for (Storage storage : storageList) {
+                try {
+                  // ❗ Usa la misma lógica que tus botones individuales
+                  Storage removed = DataBaseFactory.dataBaseUsers.removeStorage(storage, player.getUuid());
+                  if (removed != null) {
+                    removed.giveToPlayer(player);
+                    claimed++;
+                  }
+                } catch (Exception e) {
+                  e.printStackTrace();
+                }
+              }
+
+              int finalClaimed = claimed;
+              player.sendMessage(AdventureTranslator.toNative("&aYou have successfully claimed &e" + finalClaimed + " &arewards!"), false);
+              CobbleUtils.server.execute(() -> CobbleUtils.language.getStorageMenu().open(player, player.getUuid()));
+
+            }, CobbleUtils.EXECUTOR_COBBLEUTILS)
+            .exceptionally(e -> {
+              e.printStackTrace();
+              return null;
+            });
+
+        }, 1, TimeUnit.SECONDS, 1));
 
         previousPage.applyTemplate(template, previousPage.getLinkedPageButton(LinkType.Next));
         close.applyTemplate(template, close.getButton(action -> UIManager.closeUI(action.getPlayer()), 1, TimeUnit.SECONDS, 1));

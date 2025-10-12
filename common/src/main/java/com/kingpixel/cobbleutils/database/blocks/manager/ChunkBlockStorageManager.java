@@ -5,6 +5,9 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.database.blocks.model.ChunkBlockData;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
+import net.minecraft.block.BlockState;
+import net.minecraft.block.FallingBlock;
+import net.minecraft.entity.FallingBlockEntity;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.WorldSavePath;
 import net.minecraft.util.math.BlockPos;
@@ -12,12 +15,14 @@ import net.minecraft.world.World;
 import net.minecraft.world.chunk.Chunk;
 
 import java.io.*;
+import java.util.Map;
+import java.util.WeakHashMap;
 import java.util.concurrent.*;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
 public class ChunkBlockStorageManager {
-
+  public static final Map<FallingBlockEntity, BlockPos> PLAYER_PLACED_ORIGIN = new WeakHashMap<>();
   // Executor nombrado para IO
   private static final ExecutorService IO_EXECUTOR = Executors.newSingleThreadExecutor(r -> {
     Thread t = new Thread(r);
@@ -50,18 +55,57 @@ public class ChunkBlockStorageManager {
   // ===========================
   // MÉTODOS PRINCIPALES
   // ===========================
+  public static void markPlaced(World world, Chunk chunk, BlockPos pos, BlockState state) {
+    BlockPos target = pos;
 
-  public static void markPlaced(World world, Chunk chunk, BlockPos pos) {
-    getChunkData(world, chunk).add(pos.asLong());
+    // If the block is a FallingBlock, find the last replaceable position below
+    if (state.getBlock() instanceof FallingBlock) {
+      int steps = 0;
+      int maxSteps = 256; // maximum distance to avoid infinite loops
+      BlockPos down = target.down();
+      while (world.getBlockState(down).isReplaceable() && steps < maxSteps) {
+        target = down;
+        down = target.down();
+        steps++;
+      }
+    }
+
+    // Mark the final position as placed by the player
+    getChunkData(world, chunk).add(target.asLong());
   }
+
+  public static boolean removePlaced(World world, Chunk chunk, BlockPos pos, BlockState state) {
+    boolean removed = getChunkData(world, chunk).remove(pos.asLong());
+
+    BlockPos current = pos.up(); // block directly above
+    int steps = 0;
+    int maxSteps = 256; // maximum iterations to avoid infinite loops
+
+    while (steps < maxSteps) {
+      BlockState aboveState = world.getBlockState(current);
+
+      // Stop if the block above is not a FallingBlock
+      if (!(aboveState.getBlock() instanceof FallingBlock)) break;
+
+      Chunk chunkAbove = world.getChunk(current);
+      if (isPlacedByPlayer(world, chunkAbove, current)) {
+        // Move the block above down by one position
+        markPlaced(world, chunkAbove, current.down(), aboveState);
+        removePlaced(world, chunkAbove, current, aboveState); // optional: clear the old position
+      }
+
+      current = current.up(); // next block in the stack
+      steps++;
+    }
+
+    return removed;
+  }
+
 
   public static boolean isPlacedByPlayer(World world, Chunk chunk, BlockPos pos) {
     return getChunkData(world, chunk).contains(pos.asLong());
   }
 
-  public static boolean removePlaced(World world, Chunk chunk, BlockPos pos) {
-    return getChunkData(world, chunk).remove(pos.asLong());
-  }
 
   // ===========================
   // CACHE Y CARGA/SALVADO

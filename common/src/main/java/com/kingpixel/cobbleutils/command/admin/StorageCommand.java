@@ -14,6 +14,7 @@ import com.kingpixel.cobbleutils.database.users.models.StorageRewards;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
+import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import net.minecraft.command.CommandRegistryAccess;
 import net.minecraft.command.argument.EntityArgumentType;
@@ -36,9 +37,9 @@ public class StorageCommand {
   private static final String ARG_AMOUNT = "amount";
   private static final List<String> permissions = List.of("cobbleutils.admin");
 
-  public static void register(CommandDispatcher<ServerCommandSource> dispatcher, CommandRegistryAccess registry) {
+  public static void register(CommandDispatcher<ServerCommandSource> dispatcher, CommandRegistryAccess registry, LiteralArgumentBuilder<ServerCommandSource> base) {
     dispatcher.register(
-      CommandManager.literal("storage")
+      base
         .executes(context -> {
           ServerPlayerEntity player = context.getSource().getPlayerOrThrow();
           CobbleUtils.language.getStorageMenu().open(player, player.getUuid());

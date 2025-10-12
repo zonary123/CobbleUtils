@@ -11,6 +11,8 @@ import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
+import net.minecraft.registry.DynamicRegistryManager;
+import net.minecraft.registry.Registries;
 import net.minecraft.registry.RegistryWrapper;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.MutableText;
@@ -178,13 +180,13 @@ public class AdventureTranslator {
   public static MutableText toNativeComponent(String messageContent) {
     return Text.empty().append(toNative(messageContent));
   }
-
+  
   // Helper to get server registry wrapper
   private static RegistryWrapper.WrapperLookup getWrapper() {
     if (CobbleUtils.server != null) {
       return CobbleUtils.server.getRegistryManager();
     } else {
-      return null;
+      return DynamicRegistryManager.of(Registries.REGISTRIES);
     }
   }
 }

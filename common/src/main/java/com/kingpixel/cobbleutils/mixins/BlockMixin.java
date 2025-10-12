@@ -30,7 +30,7 @@ public abstract class BlockMixin {
     ServerPlayerEntity player = (placer instanceof ServerPlayerEntity serverPlayer) ? serverPlayer : null;
     if (player == null) return;
     boolean placed = ChunkBlockStorageManager.isPlacedByPlayer(world, world.getChunk(pos), pos);
-    ChunkBlockStorageManager.markPlaced(world, world.getChunk(pos), pos);
+    ChunkBlockStorageManager.markPlaced(world, world.getChunk(pos), pos, state);
     CobbleUtilsEvents.BLOCK_PLACED_EVENT.emit(new EventBlockPlaced(
       world,
       pos,
@@ -45,7 +45,7 @@ public abstract class BlockMixin {
                                    CallbackInfoReturnable<BlockState> cir) {
     ServerPlayerEntity player = (playerEntity instanceof ServerPlayerEntity serverPlayer) ? serverPlayer : null;
     if (player == null) return;
-    boolean isPlaced = ChunkBlockStorageManager.removePlaced(world, world.getChunk(pos), pos);
+    boolean isPlaced = ChunkBlockStorageManager.removePlaced(world, world.getChunk(pos), pos, state);
     CobbleUtilsEvents.BLOCK_BREAK_EVENT.emit(new EventBlockBreak(
       world,
       pos,

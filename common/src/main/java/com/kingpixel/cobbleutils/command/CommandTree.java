@@ -30,6 +30,10 @@ public class CommandTree {
       PokeShoutAll.register(dispatcher, CommandManager.literal(CobbleUtils.config.getPokeshoutall()));
       PokeShoutAllMe.register(dispatcher, CommandManager.literal(CobbleUtils.config.getPokeshoutall() + "me"));
     }
+    for (String s : CobbleUtils.config.getStorageCommand()) {
+      LiteralArgumentBuilder<ServerCommandSource> base = CommandManager.literal(s);
+      StorageCommand.register(dispatcher, registry, base);
+    }
 
     for (String literal : CobbleUtils.config.getCommmandplugin()) {
       LiteralArgumentBuilder<ServerCommandSource> base = CommandManager.literal(literal).requires(source ->
@@ -52,7 +56,7 @@ public class CommandTree {
 
       EconomyIdCommand.register(dispatcher, base);
       HipperMessageCommand.register(dispatcher, base);
-      StorageCommand.register(dispatcher, registry);
+
     }
     UserInfoCommand.register(dispatcher);
     ZonaryCommand.register(dispatcher);
