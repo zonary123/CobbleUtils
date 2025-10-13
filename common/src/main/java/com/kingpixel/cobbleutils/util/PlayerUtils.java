@@ -219,6 +219,18 @@ public class PlayerUtils {
     return cooldown;
   }
 
+  public static long getCooldown(Map<String, DurationValue> cooldowns, DurationValue defaultCooldown, ServerPlayerEntity player) {
+    long cooldown = defaultCooldown.toMillis();
+    var entries = cooldowns.entrySet();
+    for (Map.Entry<String, DurationValue> entry : entries) {
+      if (entry.getValue().toMillis() > cooldown) continue;
+      if (player != null && LuckPermsUtil.checkPermission(player, entry.getKey())) {
+        cooldown = entry.getValue().toMillis();
+      }
+    }
+    return cooldown;
+  }
+
   @Deprecated(forRemoval = true, since = "1.1.3")
   public static String getCooldown(Date date) {
     if (date == null) return CobbleUtils.language.getNocooldown();
@@ -295,6 +307,7 @@ public class PlayerUtils {
    * @return The head item of the player.
    */
   public static ItemStack getHeadItem(ServerPlayerEntity player) {
+    if (player == null) return Utils.parseItemId("minecraft:player_head");
     return getHeadItem(player.getUuid());
   }
 

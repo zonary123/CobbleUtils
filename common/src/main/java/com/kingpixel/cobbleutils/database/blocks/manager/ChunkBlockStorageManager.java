@@ -7,7 +7,6 @@ import com.kingpixel.cobbleutils.database.blocks.model.ChunkBlockData;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.FallingBlock;
-import net.minecraft.entity.FallingBlockEntity;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.WorldSavePath;
 import net.minecraft.util.math.BlockPos;
@@ -15,14 +14,11 @@ import net.minecraft.world.World;
 import net.minecraft.world.chunk.Chunk;
 
 import java.io.*;
-import java.util.Map;
-import java.util.WeakHashMap;
 import java.util.concurrent.*;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
 public class ChunkBlockStorageManager {
-  public static final Map<FallingBlockEntity, BlockPos> PLAYER_PLACED_ORIGIN = new WeakHashMap<>();
   // Executor nombrado para IO
   private static final ExecutorService IO_EXECUTOR = Executors.newSingleThreadExecutor(r -> {
     Thread t = new Thread(r);
@@ -114,15 +110,14 @@ public class ChunkBlockStorageManager {
   private static ChunkBlockData getChunkData(World world, Chunk chunk) {
     String key = getKey(world, chunk);
     ChunkBlockData data = CHUNK_CACHE.getIfPresent(key);
-    if (data == null) {
-      try {
-        data = loadChunk(world, chunk).get();
-      } catch (InterruptedException | ExecutionException e) {
-        e.printStackTrace();
-        data = new ChunkBlockData();
-        CHUNK_CACHE.put(key, data);
-      }
+    if (data != null) return data;
+    try {
+      data = loadChunk(world, chunk).get();
+    } catch (InterruptedException | ExecutionException e) {
+      e.printStackTrace();
+      data = new ChunkBlockData();
     }
+    CHUNK_CACHE.put(key, data);
     return data;
   }
 
@@ -140,7 +135,6 @@ public class ChunkBlockStorageManager {
   }
 
   public static Future<ChunkBlockData> loadChunk(World world, Chunk chunk) {
-    String key = getKey(world, chunk);
     return IO_EXECUTOR.submit(() -> {
       File worldDir = new File(storageDir, getSanitizedWorldName(world));
       if (!worldDir.exists()) worldDir.mkdirs();
@@ -163,8 +157,6 @@ public class ChunkBlockStorageManager {
           e.printStackTrace();
         }
       }
-
-      CHUNK_CACHE.put(key, chunkBlockData);
       return chunkBlockData;
     });
   }
@@ -172,9 +164,7 @@ public class ChunkBlockStorageManager {
   public static void saveChunk(World world, Chunk chunk) {
     String key = getKey(world, chunk);
     ChunkBlockData data = CHUNK_CACHE.getIfPresent(key);
-    if (data != null) {
-      saveChunkByKey(key, data);
-    }
+    if (data != null) saveChunkByKey(key, data);
   }
 
   private static void saveChunkByKey(String key, ChunkBlockData data) {
