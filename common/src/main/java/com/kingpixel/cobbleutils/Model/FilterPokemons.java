@@ -109,18 +109,28 @@ public class FilterPokemons {
     }
 
     public static Pokemon getPokemon(List<AdvancedPokemonChance> pokemonChances) {
-      double totalChance = pokemonChances.stream().mapToDouble(pokemon -> pokemon.chance).sum();
+      // Calculamos el total de la probabilidad usando un for clásico
+      double totalChance = 0;
+      for (AdvancedPokemonChance pokemonChance : pokemonChances) {
+        totalChance += pokemonChance.getChance();
+      }
+
       double randomValue = Utils.getRandom().nextDouble() * totalChance;
+
       for (AdvancedPokemonChance pokemonChance : pokemonChances) {
         randomValue -= pokemonChance.getChance();
         if (randomValue <= 0) {
-          int size = pokemonChance.getPokemons().size();
-          return PokemonProperties.Companion.parse(pokemonChance.getPokemons().get(Utils.getRandom().nextInt(size))).create();
+          List<String> pokemons = pokemonChance.getPokemons();
+          int size = pokemons.size();
+          int index = Utils.getRandom().nextInt(size);
+          return PokemonProperties.Companion.parse(pokemons.get(index)).create();
         }
       }
 
+      // Fallback en caso de que no se seleccione nada
       return PokemonProperties.Companion.parse("rattata").create();
     }
+
   }
 
 
@@ -203,9 +213,7 @@ public class FilterPokemons {
    */
   public List<Pokemon> getCachePokemons(String modId, String id) {
     if (isUseChances()) {
-      List<Pokemon> allowedPokemons = AdvancedPokemonChance.getPokemons(getPokemonsChances());
-      allowedPokemons = allowedPokemons.stream().map(this::getPokemon).toList();
-      return allowedPokemons;
+      return AdvancedPokemonChance.getPokemons(getPokemonsChances());
     } else {
       List<Pokemon> allowedPokemons;
       if (cache.containsKey(modId) && cache.get(modId).containsKey(id)) {
@@ -364,7 +372,7 @@ public class FilterPokemons {
    */
   private boolean isAllowed(Pokemon pokemon) {
     if (!legendarys && pokemon.isLegendary()) return false;
-    return !blackList.isBlackListed(pokemon);
+    return !blackList.isBlacklisted(pokemon);
   }
 
   /**

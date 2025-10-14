@@ -29,10 +29,7 @@ import net.minecraft.item.Items;
 import net.minecraft.server.network.ServerPlayerEntity;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 
@@ -678,25 +675,33 @@ public class ItemChance {
   @Deprecated
   public static void getRandomReward(List<ItemChance> itemChances, ServerPlayerEntity player) {
     if (itemChances == null || itemChances.isEmpty()) {
-      throw new IllegalArgumentException("The list of item chances cannot be empty");
+      throw new IllegalArgumentException("The list of item chances cannot be null or empty");
     }
 
-    double totalChance = itemChances.stream().mapToDouble(ItemChance::getChance).sum();
-    double randomChance = Utils.getRandom().nextDouble(totalChance);
-    double cumulativeChance = 0;
+    // ✅ Calculate total chance using a simple loop
+    double totalChance = 0.0;
+    for (ItemChance itemChance : itemChances) {
+      totalChance += itemChance.getChance();
+    }
 
+    // ✅ Pick a random point within the total chance
+    double randomPoint = Utils.getRandom().nextDouble(totalChance);
+    double cumulativeChance = 0.0;
+
+    // ✅ Iterate to find which reward corresponds to that random point
     for (ItemChance itemChance : itemChances) {
       cumulativeChance += itemChance.getChance();
-      if (randomChance < cumulativeChance) {
+      if (randomPoint < cumulativeChance) {
         try {
           giveReward(player, itemChance);
         } catch (NoPokemonStoreException e) {
           e.printStackTrace();
         }
-        break;
+        return; // Exit immediately after giving one reward
       }
     }
   }
+
 
   /**
    * Get a random reward from a list of item chances and give it to the player.
@@ -733,39 +738,59 @@ public class ItemChance {
    *
    * @return The list of rewards given to the player.
    */
-  public static List<ItemChance> getRewards(List<ItemChance> itemChances, ServerPlayerEntity player,
-                                            int numberOfRewards) {
-    List<ItemChance> rewards = new ArrayList<>(numberOfRewards);
-    List<ItemChance> finalItemChances = new ArrayList<>(itemChances);
-
-    finalItemChances.removeIf(itemChance -> !DataBaseFactory.dataBaseUsers.isAvailableReward(player, itemChance));
-
-    if (finalItemChances.isEmpty()) {
+  public static List<ItemChance> getRewards(List<ItemChance> itemChances, ServerPlayerEntity player, int numberOfRewards) {
+    if (itemChances == null || itemChances.isEmpty()) {
       PlayerUtils.sendMessage(
         player,
         "No rewards available",
         CobbleUtils.config.getPrefix(),
         TypeMessage.CHAT
       );
-      return finalItemChances;
+      return Collections.emptyList();
     }
 
-    double totalChance = finalItemChances.stream().mapToDouble(ItemChance::getChance).sum();
+    // ✅ Filter valid rewards (no streams)
+    List<ItemChance> validRewards = new ArrayList<>(itemChances.size());
+    for (ItemChance itemChance : itemChances) {
+      if (DataBaseFactory.dataBaseUsers.isAvailableReward(player, itemChance)) {
+        validRewards.add(itemChance);
+      }
+    }
 
+    if (validRewards.isEmpty()) {
+      PlayerUtils.sendMessage(
+        player,
+        "No rewards available",
+        CobbleUtils.config.getPrefix(),
+        TypeMessage.CHAT
+      );
+      return Collections.emptyList();
+    }
+
+    // ✅ Calculate total chance
+    double totalChance = 0.0;
+    for (ItemChance itemChance : validRewards) {
+      totalChance += itemChance.getChance();
+    }
+
+    // ✅ Select rewards
+    List<ItemChance> rewards = new ArrayList<>(numberOfRewards);
     for (int i = 0; i < numberOfRewards; i++) {
-      double randomChance = Utils.getRandom().nextDouble(totalChance);
-      double cumulativeChance = 0;
+      double randomPoint = Utils.getRandom().nextDouble(totalChance);
+      double cumulativeChance = 0.0;
 
-      for (ItemChance itemChance : finalItemChances) {
+      for (ItemChance itemChance : validRewards) {
         cumulativeChance += itemChance.getChance();
-        if (randomChance < cumulativeChance) {
+        if (randomPoint < cumulativeChance) {
           rewards.add(itemChance);
           break;
         }
       }
     }
+
     return rewards;
   }
+
 
   /**
    * Gives all rewards from a list of item chances to the player.

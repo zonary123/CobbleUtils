@@ -308,7 +308,7 @@ public class AdvancedItemChance {
     } else {
       finish = this;
     }
-    List<Button> buttons = finish.getButtons(player);
+    List<Button> buttons = finish.getButtons(player, finish);
 
     Rectangle rectangle = new Rectangle(1, 1, 4, 7);
     rectangle.apply(template);
@@ -361,18 +361,37 @@ public class AdvancedItemChance {
       linkedPageBuilder));
   }
 
-  public List<Button> getButtons(ServerPlayerEntity player) {
+  // Add this field to your class
+  private transient double cachedTotalWeight = -1;
+
+  public List<Button> getButtons(ServerPlayerEntity player, AdvancedItemChance finish) {
     List<Button> buttons = new ArrayList<>();
-    double totalWeight = getList(player).stream().mapToDouble(ItemChance::getChance).sum();
-    lootTable.forEach((key, value) -> {
-      value.forEach(itemChance -> {
+
+    // ✅ Only recalculate if cache is invalid
+    if (cachedTotalWeight < 0) {
+      double total = 0;
+      List<ItemChance> itemChances = finish.getList(player);
+      for (ItemChance item : itemChances) {
+        total += item.getChance();
+      }
+      cachedTotalWeight = total;
+    }
+
+    // ✅ Build buttons using cached total weight
+    for (Map.Entry<String, List<ItemChance>> entry : lootTable.entrySet()) {
+      String key = entry.getKey();
+      List<ItemChance> chances = entry.getValue();
+
+      for (ItemChance itemChance : chances) {
         boolean hasPermission = PermissionApi.hasPermission(player, key, 2);
-        double chance = hasPermission ? itemChance.getChance() : 0;
-        buttons.add(getButton(itemChance, key, chance, hasPermission, totalWeight));
-      });
-    });
+        double chance = hasPermission ? itemChance.getChance() : 0.0;
+        buttons.add(getButton(itemChance, key, chance, hasPermission, cachedTotalWeight));
+      }
+    }
+
     return buttons;
   }
+
 
   private GooeyButton getButton(ItemChance itemChance, String permission, double chance, boolean havePermission,
                                 double totalWeight) {
