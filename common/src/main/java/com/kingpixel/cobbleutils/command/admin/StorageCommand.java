@@ -1,7 +1,7 @@
 package com.kingpixel.cobbleutils.command.admin;
 
+import com.cobblemon.mod.common.command.argument.PartySlotArgumentType;
 import com.cobblemon.mod.common.command.argument.PokemonPropertiesArgumentType;
-import com.cobblemon.mod.common.command.argument.PokemonStoreArgumentType;
 import com.cobblemon.mod.common.pokemon.Pokemon;
 import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.Model.ItemChance;
@@ -14,10 +14,12 @@ import com.kingpixel.cobbleutils.database.users.models.StorageRewards;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
+import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import net.minecraft.command.CommandRegistryAccess;
 import net.minecraft.command.argument.EntityArgumentType;
 import net.minecraft.command.argument.ItemStackArgumentType;
+import net.minecraft.registry.DynamicRegistryManager;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -35,9 +37,9 @@ public class StorageCommand {
   private static final String ARG_AMOUNT = "amount";
   private static final List<String> permissions = List.of("cobbleutils.admin");
 
-  public static void register(CommandDispatcher<ServerCommandSource> dispatcher, CommandRegistryAccess registry) {
+  public static void register(CommandDispatcher<ServerCommandSource> dispatcher, CommandRegistryAccess registry, LiteralArgumentBuilder<ServerCommandSource> base) {
     dispatcher.register(
-      CommandManager.literal("storage")
+      base
         .executes(context -> {
           ServerPlayerEntity player = context.getSource().getPlayerOrThrow();
           CobbleUtils.language.getStorageMenu().open(player, player.getUuid());
@@ -52,9 +54,24 @@ public class StorageCommand {
                     .then(
                       CommandManager.literal("slot")
                         .then(
-                          CommandManager.argument("slot", PokemonStoreArgumentType.Companion.pokemonStore())
+                          CommandManager.argument("slot", PartySlotArgumentType.Companion.partySlot())
                             .executes(context -> {
-                              Pokemon pokemon = PokemonPropertiesArgumentType.Companion.getPokemonProperties(context, "slot").create();
+                              Pokemon pokemon = PartySlotArgumentType.Companion.getPokemon(context, "slot");
+                              CobbleUtils.EXECUTOR_COBBLEUTILS.execute(() ->
+                                DataBaseFactory.dataBaseUsers.addStorage(
+                                  new StoragePokemon(pokemon.clone(true, DynamicRegistryManager.EMPTY)),
+                                  getPlayerUUID(context)
+                                )
+                              );
+                              return 1;
+                            })
+                        )
+                    ).then(
+                      CommandManager.literal("pokemon")
+                        .then(
+                          CommandManager.argument(ARG_POKEMON, PokemonPropertiesArgumentType.Companion.properties())
+                            .executes(context -> {
+                              Pokemon pokemon = PokemonPropertiesArgumentType.Companion.getPokemonProperties(context, ARG_POKEMON).create();
                               CobbleUtils.EXECUTOR_COBBLEUTILS.execute(() ->
                                 DataBaseFactory.dataBaseUsers.addStorage(
                                   new StoragePokemon(pokemon),
@@ -64,18 +81,6 @@ public class StorageCommand {
                               return 1;
                             })
                         )
-                    ).then(
-                      CommandManager.argument(ARG_POKEMON, PokemonPropertiesArgumentType.Companion.properties())
-                        .executes(context -> {
-                          Pokemon pokemon = PokemonPropertiesArgumentType.Companion.getPokemonProperties(context, ARG_POKEMON).create();
-                          CobbleUtils.EXECUTOR_COBBLEUTILS.execute(() ->
-                            DataBaseFactory.dataBaseUsers.addStorage(
-                              new StoragePokemon(pokemon),
-                              getPlayerUUID(context)
-                            )
-                          );
-                          return 1;
-                        })
                     )
                 )
                 .then(

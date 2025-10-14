@@ -68,43 +68,86 @@ public class PokemonBlackList {
   }
 
   public boolean isBlackListed(Pokemon pokemon) {
-    if (pokemons.contains("*")) return true;
+    return isBlacklisted(pokemon);
+  }
+
+  public boolean isBlacklisted(Pokemon pokemon) {
+    // ✅ Quick wildcard check
+    if (pokemons.contains("*")) {
+      return true;
+    }
+
+    // ✅ Check cached result first to avoid redundant computation
+    String showdownId = pokemon.showdownId();
+    Boolean cached = resultsCache.get(showdownId);
+    if (cached != null) {
+      return cached;
+    }
+
+    // ✅ Check aspects
     if (!aspects.isEmpty()) {
       for (String aspect : pokemon.getAspects()) {
-        if (this.aspects.contains(aspect)) return true;
+        if (aspects.contains(aspect)) {
+          return cacheResult(showdownId, true);
+        }
       }
     }
-    String pokemonShowdownId = pokemon.showdownId();
-    Boolean result = resultsCache.get(pokemonShowdownId);
-    if (result != null) return result;
-    if (onlyImplemented && !pokemon.getSpecies().getImplemented()) return cacheResult(pokemonShowdownId, true);
-    String pokemonFormShowdownId = "";
+
+    // ✅ Check "only implemented" restriction
+    if (onlyImplemented && !pokemon.getSpecies().getImplemented()) {
+      return cacheResult(showdownId, true);
+    }
+
+    // ✅ Form and evolution restrictions
+    var form = pokemon.getForm();
+    String formShowdownId = form.showdownId();
+
     if (!allowEvolutions) {
       Pokemon firstEvolution = PokemonUtils.getFirstEvolution(pokemon);
-      pokemonFormShowdownId = pokemon.getForm().showdownId();
-      if (!firstEvolution.getForm().showdownId().equals(pokemonFormShowdownId))
-        return cacheResult(pokemonShowdownId, true);
+      if (!firstEvolution.getForm().showdownId().equals(formShowdownId)) {
+        return cacheResult(showdownId, true);
+      }
     }
-    if (pokemon.getForm().getEggGroups().stream().anyMatch(eggGroups::contains))
-      return cacheResult(pokemonShowdownId, true);
-    if (pokemons.contains("*") || pokemons.contains(pokemonFormShowdownId)) {
-      return cacheResult(pokemonShowdownId, true);
-    } else if (pokemons.contains(pokemonShowdownId)) return cacheResult(pokemonShowdownId, true);
 
-    if (pokemon.getForm().getLabels().stream().anyMatch(labels::contains)) return cacheResult(pokemonShowdownId, true);
-    if (forms.contains(pokemon.getForm().formOnlyShowdownId())) return cacheResult(pokemonShowdownId, true);
+    // ✅ Check egg groups
+    for (EggGroup eggGroup : form.getEggGroups()) {
+      if (eggGroups.contains(eggGroup)) {
+        return cacheResult(showdownId, true);
+      }
+    }
 
-    List<ElementalType> typeList = new ArrayList<>();
-    pokemon.getTypes().forEach(typeList::add);
-    if (typeList.stream().anyMatch(type -> {
-      String keyType = type.getName().toLowerCase();
-      return this.types.contains(keyType);
-    })) return cacheResult(pokemonShowdownId, true);
+    // ✅ Check for direct Pokémon matches
+    if (pokemons.contains("*") || pokemons.contains(formShowdownId) || pokemons.contains(showdownId)) {
+      return cacheResult(showdownId, true);
+    }
 
+    // ✅ Check labels
+    for (String label : form.getLabels()) {
+      if (labels.contains(label)) {
+        return cacheResult(showdownId, true);
+      }
+    }
 
+    // ✅ Check forms
+    if (forms.contains(form.formOnlyShowdownId())) {
+      return cacheResult(showdownId, true);
+    }
+
+    // ✅ Check types
+    for (ElementalType type : pokemon.getTypes()) {
+      String typeName = type.getName().toLowerCase();
+      if (types.contains(typeName)) {
+        return cacheResult(showdownId, true);
+      }
+    }
+
+    // ✅ Check rarity
     String rarity = PokemonUtils.getRarityS(pokemon);
-    return cacheResult(pokemonShowdownId, rarities.contains(rarity));
+    boolean isBlacklisted = rarities.contains(rarity);
+
+    return cacheResult(showdownId, isBlacklisted);
   }
+
 
   public boolean cacheResult(String pokemonShowdownId, boolean result) {
     resultsCache.putIfAbsent(pokemonShowdownId, result);

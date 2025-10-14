@@ -28,7 +28,7 @@ public class ItemStackAdapter implements JsonSerializer<ItemStack>, JsonDeserial
       .result()
       .orElseGet(() -> {
         CobbleUtils.LOGGER.error("Error deserializing ItemStack: " + json);
-        return null;
+        return ItemStack.EMPTY;
       });
   }
 

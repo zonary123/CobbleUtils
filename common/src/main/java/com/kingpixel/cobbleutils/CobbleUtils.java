@@ -7,10 +7,12 @@ import com.kingpixel.cobbleutils.Model.properties.MinIvsPropertyType;
 import com.kingpixel.cobbleutils.api.EconomyApi;
 import com.kingpixel.cobbleutils.command.CommandTree;
 import com.kingpixel.cobbleutils.command.suggests.CobbleUtilsSuggests;
+import com.kingpixel.cobbleutils.config.AdvancedRewardsConfig;
 import com.kingpixel.cobbleutils.config.Config;
 import com.kingpixel.cobbleutils.config.Lang;
-import com.kingpixel.cobbleutils.config.RewardsC;
+import com.kingpixel.cobbleutils.config.RewardsConfig;
 import com.kingpixel.cobbleutils.database.DataBaseFactory;
+import com.kingpixel.cobbleutils.database.blocks.manager.ChunkBlockStorageManager;
 import com.kingpixel.cobbleutils.database.users.DataBaseUsers;
 import com.kingpixel.cobbleutils.database.users.UserModel;
 import com.kingpixel.cobbleutils.events.ItemRightClickEvents;
@@ -42,7 +44,8 @@ public class CobbleUtils {
   public static CommandRegistryAccess commandRegistryAccess;
   public static MinecraftServer server;
   public static Config config = new Config();
-  public static RewardsC rewardsC = new RewardsC();
+  public static RewardsConfig rewardsConfig = new RewardsConfig();
+  public static AdvancedRewardsConfig advancedRewardsConfig = new AdvancedRewardsConfig();
   public static SpawnRates spawnRates = new SpawnRates();
   // Lang
   public static Lang language = new Lang();
@@ -93,11 +96,12 @@ public class CobbleUtils {
     } catch (Exception e) {
       e.printStackTrace();
     }
+    tasks();
     events();
   }
 
   public static void load() {
-    tasks();
+
     files();
     sign();
     EconomyApi.setEconomyType();
@@ -111,32 +115,43 @@ public class CobbleUtils {
   }
 
   private static void tasks() {
-    SCHEDULER_COBBLEUTILS.close();
     SCHEDULER_COBBLEUTILS.scheduleAtFixedRate(() -> {
-      var players = server.getPlayerManager().getPlayerList();
-      for (ServerPlayerEntity player : players) {
-        if (player == null) continue;
-        var user = DataBaseFactory.dataBaseUsers.findUserByUUID(player.getUuid());
-        if (user == null) continue;
-        var storageList = user.getStorageList();
-        int size = storageList.size();
-        if (size > 0) {
-          PlayerUtils.sendMessage(
-            player.getUuid(),
-            "§e[§6CobbleUtils§e] §aYou have §e" + size + " §astorage item(s). Use §b/storage §ato claim them!",
-            config.getPrefix(),
-            TypeMessage.CHAT
-          );
+      try {
+        if (server == null) return;
+        var players = server.getPlayerManager().getPlayerList();
+        for (ServerPlayerEntity player : players) {
+          if (player == null) {
+            LOGGER.error("Player is null in scheduled task");
+            continue;
+          }
+          var user = DataBaseFactory.dataBaseUsers.findUserByUUID(player.getUuid());
+          if (user == null) {
+            LOGGER.error("UserModel is null for player " + player.getName().getString() + " (" + player.getUuid() + ")");
+            continue;
+          }
+          var storageList = user.getStorageList();
+          int size = storageList.size();
+          if (size > 0) {
+            PlayerUtils.sendMessage(
+              player,
+              "§e[§6CobbleUtils§e] §aYou have §e" + size + " §astorage item(s). Use §b/storage §ato claim them!",
+              config.getPrefix(),
+              TypeMessage.CHAT
+            );
+          }
         }
+      } catch (Exception e) {
+        e.printStackTrace();
       }
-    }, 1, 1, TimeUnit.MINUTES);
+    }, 0, 1, TimeUnit.MINUTES);
   }
 
 
   private static void files() {
     config.init();
     language.init();
-    rewardsC.init();
+    rewardsConfig.init();
+    advancedRewardsConfig.init();
     DataBaseFactory.init(config.getDatabase());
   }
 
@@ -186,6 +201,7 @@ public class CobbleUtils {
 
     LifecycleEvent.SERVER_LEVEL_LOAD.register(level -> {
       server = level.getServer();
+      ChunkBlockStorageManager.init(server);
     });
 
     LifecycleEvent.SERVER_STARTED.register(server -> {
@@ -197,6 +213,7 @@ public class CobbleUtils {
     LifecycleEvent.SERVER_STOPPED.register(server1 -> {
       DataBaseFactory.close();
       RedisManager.close();
+      ChunkBlockStorageManager.shutdown();
       shutdownAndAwait(EXECUTOR_COBBLEUTILS);
       shutdownAndAwait(Utils.IO_EXECUTOR);
       shutdownAndAwait(RedisManager.EXECUTOR_REDIS);

@@ -4,8 +4,12 @@ import com.cobblemon.mod.common.Cobblemon;
 import com.cobblemon.mod.common.item.PokemonItem;
 import com.cobblemon.mod.common.pokemon.Pokemon;
 import com.kingpixel.cobbleutils.CobbleUtils;
+import com.kingpixel.cobbleutils.util.AdventureTranslator;
+import com.kingpixel.cobbleutils.util.PokemonUtils;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import net.minecraft.component.DataComponentTypes;
+import net.minecraft.component.type.LoreComponent;
 import net.minecraft.item.ItemStack;
 import net.minecraft.server.network.ServerPlayerEntity;
 
@@ -32,7 +36,14 @@ public class StoragePokemon extends Storage {
 
   @Override
   public ItemStack getDisplay() {
-    return PokemonItem.from(pokemon);
+    ItemStack itemStack = PokemonItem.from(pokemon);
+    itemStack.set(DataComponentTypes.CUSTOM_NAME, AdventureTranslator.toNative(
+      PokemonUtils.replace(pokemon)
+    ));
+    itemStack.set(DataComponentTypes.LORE, new LoreComponent(
+      AdventureTranslator.toNativeL(PokemonUtils.replaceLore(pokemon))
+    ));
+    return itemStack;
   }
 
   @Override

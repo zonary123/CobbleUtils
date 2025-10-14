@@ -29,10 +29,7 @@ import net.minecraft.item.Items;
 import net.minecraft.server.network.ServerPlayerEntity;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 
@@ -216,6 +213,7 @@ public class ItemChance {
    * Gets the ItemStack of the item with a specific amount.
    *
    * @param amount The amount of the item.
+   *
    * @return The ItemStack of the item.
    */
   public ItemStack getItemStack(int amount) {
@@ -266,6 +264,7 @@ public class ItemChance {
    *
    * @param player The player to give the reward to.
    * @param amount The amount of the item to give.
+   *
    * @return True if the reward was given successfully, false otherwise.
    */
   public static boolean giveReward(ServerPlayerEntity player, ItemChance itemChance, int amount) {
@@ -429,6 +428,7 @@ public class ItemChance {
    * Constructs a GooeyButton instance representing the item button.
    *
    * @param percentage The percentage to display in the lore.
+   *
    * @return The constructed GooeyButton instance.
    */
   public GooeyButton getButton(String percentage) {
@@ -449,6 +449,7 @@ public class ItemChance {
    *
    * @param item   The item to get the ItemStack of.
    * @param amount The amount of the item.
+   *
    * @return The ItemStack of the reward.
    */
   // Cache para memoization
@@ -668,30 +669,39 @@ public class ItemChance {
    *
    * @param itemChances The list of item chances to choose from.
    * @param player      The player to give the reward to.
+   *
    * @throws IllegalArgumentException If the list of item chances is empty.
    */
   @Deprecated
   public static void getRandomReward(List<ItemChance> itemChances, ServerPlayerEntity player) {
     if (itemChances == null || itemChances.isEmpty()) {
-      throw new IllegalArgumentException("The list of item chances cannot be empty");
+      throw new IllegalArgumentException("The list of item chances cannot be null or empty");
     }
 
-    double totalChance = itemChances.stream().mapToDouble(ItemChance::getChance).sum();
-    double randomChance = Utils.getRandom().nextDouble(totalChance);
-    double cumulativeChance = 0;
+    // ✅ Calculate total chance using a simple loop
+    double totalChance = 0.0;
+    for (ItemChance itemChance : itemChances) {
+      totalChance += itemChance.getChance();
+    }
 
+    // ✅ Pick a random point within the total chance
+    double randomPoint = Utils.getRandom().nextDouble(totalChance);
+    double cumulativeChance = 0.0;
+
+    // ✅ Iterate to find which reward corresponds to that random point
     for (ItemChance itemChance : itemChances) {
       cumulativeChance += itemChance.getChance();
-      if (randomChance < cumulativeChance) {
+      if (randomPoint < cumulativeChance) {
         try {
           giveReward(player, itemChance);
         } catch (NoPokemonStoreException e) {
           e.printStackTrace();
         }
-        break;
+        return; // Exit immediately after giving one reward
       }
     }
   }
+
 
   /**
    * Get a random reward from a list of item chances and give it to the player.
@@ -699,6 +709,7 @@ public class ItemChance {
    * @param itemChances     The list of item chances to choose from.
    * @param player          The player to give the reward to.
    * @param numberOfRewards The number of rewards to give.
+   *
    * @throws IllegalArgumentException If the list of item chances is empty or the
    *                                  number of rewards is less than or equal to
    *                                  zero.
@@ -724,50 +735,62 @@ public class ItemChance {
    * @param itemChances     The list of item chances to choose from.
    * @param player          The player to give the rewards to.
    * @param numberOfRewards The number of rewards to give.
+   *
    * @return The list of rewards given to the player.
    */
-  public static List<ItemChance> getRewards(List<ItemChance> itemChances, ServerPlayerEntity player,
-                                            int numberOfRewards) {
-    List<ItemChance> rewards = new ArrayList<>(numberOfRewards);
-    List<ItemChance> finalItemChances = new ArrayList<>(itemChances);
-
-    finalItemChances.removeIf(itemChance -> !DataBaseFactory.dataBaseUsers.isAvailableReward(player, itemChance));
-
-    if (finalItemChances.isEmpty()) {
+  public static List<ItemChance> getRewards(List<ItemChance> itemChances, ServerPlayerEntity player, int numberOfRewards) {
+    if (itemChances == null || itemChances.isEmpty()) {
       PlayerUtils.sendMessage(
         player,
         "No rewards available",
         CobbleUtils.config.getPrefix(),
         TypeMessage.CHAT
       );
-      return finalItemChances;
+      return Collections.emptyList();
     }
 
-    double totalChance = finalItemChances.stream().mapToDouble(ItemChance::getChance).sum();
+    // ✅ Filter valid rewards (no streams)
+    List<ItemChance> validRewards = new ArrayList<>(itemChances.size());
+    for (ItemChance itemChance : itemChances) {
+      if (DataBaseFactory.dataBaseUsers.isAvailableReward(player, itemChance)) {
+        validRewards.add(itemChance);
+      }
+    }
 
+    if (validRewards.isEmpty()) {
+      PlayerUtils.sendMessage(
+        player,
+        "No rewards available",
+        CobbleUtils.config.getPrefix(),
+        TypeMessage.CHAT
+      );
+      return Collections.emptyList();
+    }
+
+    // ✅ Calculate total chance
+    double totalChance = 0.0;
+    for (ItemChance itemChance : validRewards) {
+      totalChance += itemChance.getChance();
+    }
+
+    // ✅ Select rewards
+    List<ItemChance> rewards = new ArrayList<>(numberOfRewards);
     for (int i = 0; i < numberOfRewards; i++) {
-      double randomChance = Utils.getRandom().nextDouble(totalChance);
-      double cumulativeChance = 0;
+      double randomPoint = Utils.getRandom().nextDouble(totalChance);
+      double cumulativeChance = 0.0;
 
-      for (ItemChance itemChance : finalItemChances) {
+      for (ItemChance itemChance : validRewards) {
         cumulativeChance += itemChance.getChance();
-        if (randomChance < cumulativeChance) {
+        if (randomPoint < cumulativeChance) {
           rewards.add(itemChance);
           break;
         }
       }
     }
 
-    rewards.forEach(itemChance -> {
-      try {
-        giveReward(player, itemChance);
-      } catch (NoPokemonStoreException e) {
-        e.printStackTrace();
-      }
-    });
-
     return rewards;
   }
+
 
   /**
    * Gives all rewards from a list of item chances to the player.
@@ -775,24 +798,17 @@ public class ItemChance {
    * @param itemChances The list of item chances to choose from.
    * @param player      The player to give the rewards to.
    */
-  public static void getAllRewards(List<ItemChance> itemChances, ServerPlayerEntity player) {
-    for (ItemChance itemChance : itemChances) {
-      if (!DataBaseFactory.dataBaseUsers.isAvailableReward(player, itemChance)) return;
-      if (CobbleUtils.config.isDebug()) {
-        CobbleUtils.LOGGER.info("ItemChance: " + itemChance);
-      }
-      try {
-        giveReward(player, itemChance);
-      } catch (Exception e) {
-        e.printStackTrace();
-      }
-    }
+  public static List<ItemChance> getAllRewards(List<ItemChance> itemChances, ServerPlayerEntity player) {
+    List<ItemChance> finalItemChances = new ArrayList<>(itemChances);
+    finalItemChances.removeIf(itemChance -> !DataBaseFactory.dataBaseUsers.isAvailableReward(player, itemChance));
+    return finalItemChances;
   }
 
   /**
    * Gets a list of GooeyButton instances representing the item chances.
    *
    * @param itemChances The list of item chances to get the buttons for.
+   *
    * @return The list of GooeyButton instances representing the item chances.
    */
   public static List<GooeyButton> getButtons(List<ItemChance> itemChances) {

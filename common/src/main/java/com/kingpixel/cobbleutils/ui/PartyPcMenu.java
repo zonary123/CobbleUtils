@@ -86,7 +86,7 @@ public class PartyPcMenu {
     if (pokemon == null) return true;
     if (builder.getCustomFilter() != null) isBanned = builder.getCustomFilter().test(pokemon);
     if (isBanned) return true;
-    if (builder.getBlackList() != null) isBanned = builder.getBlackList().isBlackListed(pokemon);
+    if (builder.getBlackList() != null) isBanned = builder.getBlackList().isBlacklisted(pokemon);
     return isBanned;
   }
 

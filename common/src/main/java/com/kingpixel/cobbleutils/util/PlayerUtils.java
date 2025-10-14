@@ -6,6 +6,7 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.Model.DurationValue;
+import com.kingpixel.cobbleutils.mixins.UserCacheMixin;
 import com.kingpixel.cobbleutils.util.manager.CooldownManager;
 import com.mojang.authlib.GameProfile;
 import com.mojang.brigadier.CommandDispatcher;
@@ -219,6 +220,18 @@ public class PlayerUtils {
     return cooldown;
   }
 
+  public static long getCooldown(Map<String, DurationValue> cooldowns, DurationValue defaultCooldown, ServerPlayerEntity player) {
+    long cooldown = defaultCooldown.toMillis();
+    var entries = cooldowns.entrySet();
+    for (Map.Entry<String, DurationValue> entry : entries) {
+      if (entry.getValue().toMillis() > cooldown) continue;
+      if (player != null && LuckPermsUtil.checkPermission(player, entry.getKey())) {
+        cooldown = entry.getValue().toMillis();
+      }
+    }
+    return cooldown;
+  }
+
   @Deprecated(forRemoval = true, since = "1.1.3")
   public static String getCooldown(Date date) {
     if (date == null) return CobbleUtils.language.getNocooldown();
@@ -278,10 +291,15 @@ public class PlayerUtils {
    * @return The head item of the player.
    */
   public static ItemStack getHeadItem(UUID playerUUID) {
-    var userCache = CobbleUtils.server.getUserCache().getByUuid(playerUUID);
-    if (userCache.isPresent()) {
+    if (playerUUID == null) return Utils.parseItemId("minecraft:player_head");
+    var userCache = CobbleUtils.server.getUserCache();
+    if (userCache == null) return Utils.parseItemId("minecraft:player_head");
+    if (!((UserCacheMixin) userCache).byUuid().containsKey(playerUUID))
+      return Utils.parseItemId("minecraft:player_head");
+    var gameProfile = userCache.getByUuid(playerUUID);
+    if (gameProfile.isPresent()) {
       ItemStack itemStack = Items.PLAYER_HEAD.getDefaultStack();
-      itemStack.set(DataComponentTypes.PROFILE, new ProfileComponent(userCache.get()));
+      itemStack.set(DataComponentTypes.PROFILE, new ProfileComponent(gameProfile.get()));
       return itemStack;
     }
     return Utils.parseItemId("minecraft:player_head");
@@ -295,6 +313,7 @@ public class PlayerUtils {
    * @return The head item of the player.
    */
   public static ItemStack getHeadItem(ServerPlayerEntity player) {
+    if (player == null) return Utils.parseItemId("minecraft:player_head");
     return getHeadItem(player.getUuid());
   }
 

@@ -18,6 +18,7 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.world.biome.Biome;
 
 import java.util.List;
+import java.util.Set;
 
 /**
  * WebHookStruct class for managing Discord webhook messages.
@@ -226,9 +227,25 @@ public class WebHookStruct {
   }
 
   private static String getForm(Pokemon pokemon) {
-    List<String> aspects = pokemon.getAspects().stream().toList();
-    String form = aspects.isEmpty() ? "" : aspects.get(aspects.size() == 1 ? 0 : aspects.size() - 1).trim().toLowerCase();
-    return !pokemon.getForm().getName().equalsIgnoreCase("Normal") && (form.equalsIgnoreCase("male") || form.equalsIgnoreCase("female")) ? form : pokemon.getForm().getName().trim().toLowerCase();
+    Set<String> aspects = pokemon.getAspects();
+
+    // Default: empty form
+    String form = "";
+    if (!aspects.isEmpty()) {
+      // Tomamos el primer aspecto (sin importar el orden)
+      String firstAspect = aspects.iterator().next();
+      form = firstAspect == null ? "" : firstAspect.trim().toLowerCase();
+    }
+
+    String formName = pokemon.getForm().getName().trim().toLowerCase();
+
+    // Si la forma no es "normal" y el aspecto indica género, usamos ese
+    if (!formName.equals("normal") && ("male".equals(form) || "female".equals(form))) {
+      return form;
+    }
+
+    // Si no, devolvemos el nombre real de la forma
+    return formName;
   }
 
   private String getType(ElementalType type) {

@@ -41,27 +41,35 @@ public class PokemonChance {
   }
 
   public static String getPokemon(List<PokemonChance> specialPokemons) {
-    // Calcula la suma total de las probabilidades
-    double totalChance = specialPokemons.stream()
-      .mapToDouble(PokemonChance::getChance)
-      .sum();
+    if (specialPokemons == null || specialPokemons.isEmpty()) {
+      return null;
+    }
 
-    if (totalChance <= 0) return null; // Manejo de caso cuando la suma de probabilidades es 0
+    // ✅ Calculate total chance manually
+    double totalChance = 0.0;
+    for (int i = 0; i < specialPokemons.size(); i++) {
+      totalChance += specialPokemons.get(i).getChance();
+    }
 
-    // Genera un valor aleatorio entre 0 y el total de probabilidades
+    if (totalChance <= 0) {
+      return null; // No valid chances
+    }
+
+    // ✅ Generate a random value between 0 and totalChance
     double randomValue = Utils.getRandom().nextDouble() * totalChance;
 
-    // Recorre la lista de Pokémon especiales y selecciona uno basado en el valor aleatorio
+    // ✅ Iterate and pick the Pokémon based on cumulative probability
     double cumulativeChance = 0.0;
-    for (PokemonChance specialPokemon : specialPokemons) {
+    for (int i = 0; i < specialPokemons.size(); i++) {
+      PokemonChance specialPokemon = specialPokemons.get(i);
       cumulativeChance += specialPokemon.getChance();
       if (randomValue <= cumulativeChance) {
         return specialPokemon.getPokemon();
       }
     }
 
-    // En caso de algún error inesperado, retorna el último Pokémon en la lista
-    return specialPokemons.isEmpty() ? null : specialPokemons.get(specialPokemons.size() - 1).getPokemon();
+    // ✅ Fallback: return last Pokémon if something goes wrong
+    return specialPokemons.get(specialPokemons.size() - 1).getPokemon();
   }
 
 

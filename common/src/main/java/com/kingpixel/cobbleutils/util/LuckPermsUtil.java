@@ -159,8 +159,11 @@ public abstract class LuckPermsUtil {
 
     User user = userManager.getUser(player.getUuid());
     if (user == null) {
-      CobbleUtils.LOGGER.error("User not found in LuckPerms");
-      return false;
+      user = userManager.loadUser(player.getUuid()).join();
+      if (user == null) {
+        CobbleUtils.LOGGER.error("User not found in LuckPerms");
+        return false;
+      }
     }
     boolean hasPermission = false;
     for (String permission : permissions) {
@@ -202,15 +205,17 @@ public abstract class LuckPermsUtil {
       case LUCKPERMS, BUKKIT_PERMISSION_API -> {
         if (luckPermsApi == null) {
           CobbleUtils.LOGGER.error("LuckPerms not found");
-          yield 0; // Esto se convierte en Integer por autoboxing
+          yield 0;
         }
         UserManager userManager = luckPermsApi.getUserManager();
         User user = userManager.getUser(player.getUuid());
         if (user == null) {
-          CobbleUtils.LOGGER.error("User not found in LuckPerms");
-          yield 0;
+          user = userManager.loadUser(player.getUuid()).join();
+          if (user == null) {
+            CobbleUtils.LOGGER.error("User not found in LuckPerms");
+            yield 0;
+          }
         }
-
         var metaData = user.getCachedData().getMetaData().getMetaValue(permission);
 
         if (metaData == null) yield null;
@@ -252,8 +257,11 @@ public abstract class LuckPermsUtil {
 
         User user = userManager.getUser(player.getUuid());
         if (user == null) {
-          CobbleUtils.LOGGER.error("User not found in LuckPerms");
-          yield false;
+          user = userManager.loadUser(player.getUuid()).join();
+          if (user == null) {
+            CobbleUtils.LOGGER.error("User not found in LuckPerms");
+            yield false;
+          }
         }
         boolean hasPermission = false;
         for (String permission : permissions) {
@@ -292,5 +300,34 @@ public abstract class LuckPermsUtil {
       }
       default -> player.hasPermissionLevel(level);
     };
+  }
+
+  public static boolean checkPermission(UUID playerUUID, int level, String permission) {
+    switch (PERMISSION_TYPE) {
+      case LUCKPERMS, BUKKIT_PERMISSION_API -> {
+        setup();
+        if (luckPermsApi == null) {
+          CobbleUtils.LOGGER.error("LuckPerms not found");
+          return false;
+        }
+        UserManager userManager = luckPermsApi.getUserManager();
+
+        User user = userManager.getUser(playerUUID);
+        if (user == null) {
+          user = userManager.loadUser(playerUUID).join();
+          if (user == null) {
+            CobbleUtils.LOGGER.error("User not found in LuckPerms");
+            return false;
+          }
+        }
+        if (permission == null || permission.isEmpty()) return true;
+        return user.getCachedData().getPermissionData().checkPermission(permission).asBoolean();
+        // No podemos comprobar el level sin un ServerPlayerEntity
+      }
+      default -> {
+        // No podemos comprobar sin un ServerPlayerEntity
+        return false;
+      }
+    }
   }
 }

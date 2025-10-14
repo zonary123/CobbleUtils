@@ -2,7 +2,7 @@ package com.kingpixel.cobbleutils.api;
 
 import com.cobblemon.mod.common.block.MedicinalLeekBlock;
 import com.kingpixel.cobbleutils.CobbleUtils;
-import com.kingpixel.cobbleutils.database.DataBaseFactory;
+import com.kingpixel.cobbleutils.database.blocks.manager.ChunkBlockStorageManager;
 import net.minecraft.block.*;
 import net.minecraft.registry.Registries;
 import net.minecraft.util.math.BlockPos;
@@ -23,7 +23,7 @@ public class BlocksApi {
    * @return true if the block was placed by a player
    */
   public static boolean isBlockPlaceByPlayer(World world, BlockPos pos) {
-    return DataBaseFactory.dataBaseBlock.isBlockPlaceByPlayer(world, pos);
+    return ChunkBlockStorageManager.isPlacedByPlayer(world, world.getChunk(pos), pos);
   }
 
   /**

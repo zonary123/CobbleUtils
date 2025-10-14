@@ -15,6 +15,9 @@ import com.kingpixel.cobbleutils.Model.Animations.AnimationUtils;
 import com.kingpixel.cobbleutils.Model.Animations.CSGOAnimation;
 import com.kingpixel.cobbleutils.Model.Animations.CircleAnimation;
 import com.kingpixel.cobbleutils.api.PermissionApi;
+import com.kingpixel.cobbleutils.command.suggests.CobbleUtilsSuggests;
+import com.kingpixel.cobbleutils.database.DataBaseFactory;
+import com.kingpixel.cobbleutils.database.users.models.StorageRewards;
 import com.kingpixel.cobbleutils.util.AdventureTranslator;
 import com.kingpixel.cobbleutils.util.PlayerUtils;
 import com.kingpixel.cobbleutils.util.TypeMessage;
@@ -29,10 +32,7 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
 import net.minecraft.util.math.Vec3d;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Consumer;
 
 /**
@@ -43,6 +43,7 @@ import java.util.function.Consumer;
 @ToString
 public class AdvancedItemChance {
   // TODO: Add queue for the ANIMATIONS
+  private String id;
   // Title of the menu rewards
   private boolean showMenu;
   private String title;
@@ -58,6 +59,7 @@ public class AdvancedItemChance {
   private final Map<String, List<ItemChance>> lootTable;
 
   public AdvancedItemChance() {
+    this.id = "";
     this.showMenu = true;
     this.title = "";
     this.giveAll = false;
@@ -140,17 +142,45 @@ public class AdvancedItemChance {
     return amount;
   }
 
+  public void giveRewards(UUID playerUUID) {
+    CobbleUtilsSuggests.SUGGESTS_PLAYER_OFFLINE_AND_ONLINE.getPlayer(playerUUID)
+      .ifPresent(dataResultPlayer -> giveRewardsInternal(dataResultPlayer.player(), dataResultPlayer.isOnline(), playerUUID));
+  }
+
   public void giveRewards(ServerPlayerEntity player) {
+    giveRewardsInternal(player, true, player.getUuid());
+  }
+
+  /**
+   * Lógica común para dar recompensas a un jugador.
+   *
+   * @param player     Jugador objetivo.
+   * @param online     Si el jugador está online.
+   * @param playerUUID UUID del jugador si está offline, null si es online.
+   */
+  private void giveRewardsInternal(ServerPlayerEntity player, boolean online, UUID playerUUID) {
     try {
-      if (checker(player)) return;
+      AdvancedItemChance finish = this;
+      if (finish.getId() != null && !finish.getId().isEmpty()) {
+        finish = CobbleUtils.advancedRewardsConfig.getRewards().get(finish.getId());
+        if (finish == null) {
+          PlayerUtils.sendMessage(player,
+            "%prefix% &cThe reward with id &e" + this.getId() + " &cdoes not exist, please notify the administrator of the error",
+            "&7[&cERROR&7]",
+            TypeMessage.CHAT);
+          return;
+        }
+      }
+      finish.checker(player);
 
-      List<ItemChance> obtainedRewards = getList(player);
-      List<ItemChance> allRewards = obtainedRewards;
+      List<ItemChance> obtainedRewards = finish.getList(player);
+      List<ItemChance> allRewards = new ArrayList<>(obtainedRewards);
 
+      // Calculamos las recompensas finales
       if (giveAll) {
-        ItemChance.getAllRewards(obtainedRewards, player);
+        obtainedRewards = ItemChance.getAllRewards(obtainedRewards, player);
       } else {
-        obtainedRewards = ItemChance.getRewards(obtainedRewards, player, getAmountReward(player));
+        obtainedRewards = ItemChance.getRewards(obtainedRewards, player, finish.getAmountReward(player));
       }
 
       if (obtainedRewards.isEmpty()) {
@@ -161,14 +191,27 @@ public class AdvancedItemChance {
         return;
       }
 
-      List<ItemStack> showAllRewards = getListDisplay(allRewards);
-      List<ItemStack> showObtainedRewards = getListDisplay(obtainedRewards);
-      if (getNewSound() != null)
-        getNewSound().start(player);
+      if (online) {
+        // Entregamos las recompensas directamente
+        for (ItemChance reward : obtainedRewards) {
+          reward.giveReward(player);
+        }
 
-      if (particle != null) particle.sendParticles(player, player);
+        // Animaciones y visualización
+        List<ItemStack> showAllRewards = finish.getListDisplay(allRewards);
+        List<ItemStack> showObtainedRewards = finish.getListDisplay(obtainedRewards);
 
-      initAnimation(animation, player, showAllRewards, showObtainedRewards);
+        if (getNewSound() != null) getNewSound().start(player);
+        if (particle != null) particle.sendParticles(player, player);
+        initAnimation(animation, player, showAllRewards, showObtainedRewards);
+
+      } else if (playerUUID != null) {
+        // Guardamos las recompensas para cuando el jugador vuelva online
+        for (ItemChance reward : obtainedRewards) {
+          DataBaseFactory.dataBaseUsers.addStorage(new StorageRewards(reward), playerUUID);
+        }
+      }
+
     } catch (Exception e) {
       e.printStackTrace();
       PlayerUtils.sendMessage(player,
@@ -252,7 +295,20 @@ public class AdvancedItemChance {
   }
 
   private void applyTemplate(ServerPlayerEntity player, ChestTemplate template) {
-    List<Button> buttons = getButtons(player);
+    AdvancedItemChance finish;
+    if (getId() != null && !getId().isEmpty()) {
+      finish = CobbleUtils.advancedRewardsConfig.getRewards().get(getId());
+      if (finish == null) {
+        PlayerUtils.sendMessage(player,
+          "%prefix% &cThe reward with id &e" + this.getId() + " &cdoes not exist, please notify the administrator of the error",
+          "&7[&cERROR&7]",
+          TypeMessage.CHAT);
+        return;
+      }
+    } else {
+      finish = this;
+    }
+    List<Button> buttons = finish.getButtons(player, finish);
 
     Rectangle rectangle = new Rectangle(1, 1, 4, 7);
     rectangle.apply(template);
@@ -263,7 +319,7 @@ public class AdvancedItemChance {
 
     List<String> infoLore = new ArrayList<>(info.getLore());
     infoLore.replaceAll(s -> s
-      .replace("%amount%", String.valueOf(getAmountReward(player)))
+      .replace("%amount%", String.valueOf(finish.getAmountReward(player)))
       .replace("%getall%", giveAll ? CobbleUtils.language.getYes() : CobbleUtils.language.getNo()));
 
     if (info.getSlot() >= 0) {
@@ -305,18 +361,37 @@ public class AdvancedItemChance {
       linkedPageBuilder));
   }
 
-  public List<Button> getButtons(ServerPlayerEntity player) {
+  // Add this field to your class
+  private transient double cachedTotalWeight = -1;
+
+  public List<Button> getButtons(ServerPlayerEntity player, AdvancedItemChance finish) {
     List<Button> buttons = new ArrayList<>();
-    double totalWeight = getList(player).stream().mapToDouble(ItemChance::getChance).sum();
-    lootTable.forEach((key, value) -> {
-      value.forEach(itemChance -> {
+
+    // ✅ Only recalculate if cache is invalid
+    if (cachedTotalWeight < 0) {
+      double total = 0;
+      List<ItemChance> itemChances = finish.getList(player);
+      for (ItemChance item : itemChances) {
+        total += item.getChance();
+      }
+      cachedTotalWeight = total;
+    }
+
+    // ✅ Build buttons using cached total weight
+    for (Map.Entry<String, List<ItemChance>> entry : lootTable.entrySet()) {
+      String key = entry.getKey();
+      List<ItemChance> chances = entry.getValue();
+
+      for (ItemChance itemChance : chances) {
         boolean hasPermission = PermissionApi.hasPermission(player, key, 2);
-        double chance = hasPermission ? itemChance.getChance() : 0;
-        buttons.add(getButton(itemChance, key, chance, hasPermission, totalWeight));
-      });
-    });
+        double chance = hasPermission ? itemChance.getChance() : 0.0;
+        buttons.add(getButton(itemChance, key, chance, hasPermission, cachedTotalWeight));
+      }
+    }
+
     return buttons;
   }
+
 
   private GooeyButton getButton(ItemChance itemChance, String permission, double chance, boolean havePermission,
                                 double totalWeight) {
