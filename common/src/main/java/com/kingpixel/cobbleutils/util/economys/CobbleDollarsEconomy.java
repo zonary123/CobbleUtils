@@ -8,29 +8,32 @@ import lombok.EqualsAndHashCode;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.math.RoundingMode;
 import java.util.UUID;
 
 /**
  * @author Carlos Varas Alonso - 16/03/2025 3:41
  */
-@EqualsAndHashCode(callSuper = true) @Data
+@EqualsAndHashCode(callSuper = true)
+@Data
 public class CobbleDollarsEconomy extends EconomyAbstract {
   public static final String IDENTIFY = "COBBLE_DOLLARS";
 
   public CobbleDollarsEconomy() {
   }
 
-  @Override public String getIdentify() {
+  @Override
+  public String getIdentify() {
     return IDENTIFY;
   }
 
-  @Override public boolean isPresent() {
+  @Override
+  public boolean isPresent() {
     CobbleDollars.INSTANCE.getImplementation();
     return true;
   }
 
-  @Override public boolean deposit(UUID playerUuid, BigDecimal money, String currency) {
+  @Override
+  public boolean deposit(UUID playerUuid, BigDecimal money, String currency) {
     CobbleDollarsPlayer player = (CobbleDollarsPlayer) getPlayer(playerUuid);
     if (player == null) return false;
     BigInteger depositAmount = BigInteger.valueOf(money.longValue());
@@ -40,7 +43,8 @@ public class CobbleDollarsEconomy extends EconomyAbstract {
     return true;
   }
 
-  @Override public boolean withdraw(UUID playerUuid, BigDecimal money, String currency) {
+  @Override
+  public boolean withdraw(UUID playerUuid, BigDecimal money, String currency) {
     CobbleDollarsPlayer player = (CobbleDollarsPlayer) getPlayer(playerUuid);
     if (player == null) return false;
     BigInteger balance = player.cobbleDollars$getCobbleDollars();
@@ -52,24 +56,28 @@ public class CobbleDollarsEconomy extends EconomyAbstract {
     return false;
   }
 
-  @Override public BigDecimal getBalance(UUID playerUuid, String currency) {
+  @Override
+  public BigDecimal getBalance(UUID playerUuid, String currency) {
     CobbleDollarsPlayer player = (CobbleDollarsPlayer) getPlayer(playerUuid);
     if (player == null) return BigDecimal.ZERO;
     return BigDecimal.valueOf(player.cobbleDollars$getCobbleDollars().doubleValue());
   }
 
-  @Override public String format(BigDecimal money, String currency) {
-    return CobbleUtils.language.getDefaultSymbol() + money.setScale(getDecimals(currency), RoundingMode.UNNECESSARY);
+  @Override
+  public String format(BigDecimal money, String currency) {
+    return CobbleUtils.config.getFormat(money);
   }
 
-  @Override public boolean setBalance(UUID playerUuid, BigDecimal money, String currency) {
+  @Override
+  public boolean setBalance(UUID playerUuid, BigDecimal money, String currency) {
     CobbleDollarsPlayer player = (CobbleDollarsPlayer) getPlayer(playerUuid);
     if (player == null) return false;
     player.cobbleDollars$setCobbleDollars(BigInteger.valueOf(money.longValue()));
     return true;
   }
 
-  @Override public int getDecimals(String currency) {
+  @Override
+  public int getDecimals(String currency) {
     return CobbleUtils.config.getDecimals();
   }
 }
