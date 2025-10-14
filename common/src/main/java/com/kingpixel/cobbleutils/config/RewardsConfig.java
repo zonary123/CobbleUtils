@@ -15,7 +15,7 @@ import java.util.Map;
  * @author Carlos Varas Alonso - 02/09/2025 12:16
  */
 @Data
-public class RewardsC {
+public class RewardsConfig {
   private static final String PATH = CobbleUtils.PATH + "/rewards/";
   private final Map<String, ItemChance> rewards = new HashMap<>();
 

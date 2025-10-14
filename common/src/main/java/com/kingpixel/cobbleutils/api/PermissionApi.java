@@ -5,6 +5,7 @@ import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
 
 import java.util.List;
+import java.util.UUID;
 
 /**
  * @author Carlos Varas Alonso - 06/11/2024 23:06
@@ -37,6 +38,10 @@ public class PermissionApi {
   public static boolean hasPermission(ServerPlayerEntity player, List<String> permissions, int level) {
     if (player == null) return false;
     return LuckPermsUtil.checkPermission(player, level, permissions);
+  }
+
+  public static boolean hasPermission(UUID playerUUID, String permission, int level) {
+    return LuckPermsUtil.checkPermission(playerUUID, level, permission);
   }
 
   /**

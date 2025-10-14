@@ -27,7 +27,7 @@ public class Location {
 
   public Location() {
     this.displayItem = new ItemModel("minecraft:compass", "&eLocation");
-    this.server = CobbleUtils.config.getServer();
+    this.server = "default";
     this.world = "world";
     this.x = 0;
     this.y = 64;

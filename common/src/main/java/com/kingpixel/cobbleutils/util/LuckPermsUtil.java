@@ -301,4 +301,33 @@ public abstract class LuckPermsUtil {
       default -> player.hasPermissionLevel(level);
     };
   }
+
+  public static boolean checkPermission(UUID playerUUID, int level, String permission) {
+    switch (PERMISSION_TYPE) {
+      case LUCKPERMS, BUKKIT_PERMISSION_API -> {
+        setup();
+        if (luckPermsApi == null) {
+          CobbleUtils.LOGGER.error("LuckPerms not found");
+          return false;
+        }
+        UserManager userManager = luckPermsApi.getUserManager();
+
+        User user = userManager.getUser(playerUUID);
+        if (user == null) {
+          user = userManager.loadUser(playerUUID).join();
+          if (user == null) {
+            CobbleUtils.LOGGER.error("User not found in LuckPerms");
+            return false;
+          }
+        }
+        if (permission == null || permission.isEmpty()) return true;
+        return user.getCachedData().getPermissionData().checkPermission(permission).asBoolean();
+        // No podemos comprobar el level sin un ServerPlayerEntity
+      }
+      default -> {
+        // No podemos comprobar sin un ServerPlayerEntity
+        return false;
+      }
+    }
+  }
 }

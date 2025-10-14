@@ -43,6 +43,7 @@ import java.util.function.Consumer;
 @ToString
 public class AdvancedItemChance {
   // TODO: Add queue for the ANIMATIONS
+  private String id;
   // Title of the menu rewards
   private boolean showMenu;
   private String title;
@@ -58,6 +59,7 @@ public class AdvancedItemChance {
   private final Map<String, List<ItemChance>> lootTable;
 
   public AdvancedItemChance() {
+    this.id = "";
     this.showMenu = true;
     this.title = "";
     this.giveAll = false;
@@ -141,68 +143,44 @@ public class AdvancedItemChance {
   }
 
   public void giveRewards(UUID playerUUID) {
-    var user = CobbleUtilsSuggests.SUGGESTS_PLAYER_OFFLINE_AND_ONLINE.getPlayer(playerUUID);
-    user.ifPresent(dataResultPlayer -> {
-      ServerPlayerEntity player = dataResultPlayer.player();
-      boolean online = dataResultPlayer.isOnline();
-      try {
-        if (checker(player)) return;
+    CobbleUtilsSuggests.SUGGESTS_PLAYER_OFFLINE_AND_ONLINE.getPlayer(playerUUID)
+      .ifPresent(dataResultPlayer -> giveRewardsInternal(dataResultPlayer.player(), dataResultPlayer.isOnline(), playerUUID));
+  }
 
-        List<ItemChance> obtainedRewards = getList(player);
-        List<ItemChance> allRewards = obtainedRewards;
+  public void giveRewards(ServerPlayerEntity player) {
+    giveRewardsInternal(player, true, player.getUuid());
+  }
 
-        if (giveAll) {
-          obtainedRewards = ItemChance.getAllRewards(obtainedRewards, player);
-        } else {
-          obtainedRewards = ItemChance.getRewards(obtainedRewards, player, getAmountReward(player));
-        }
-
-        if (obtainedRewards.isEmpty()) {
+  /**
+   * Lógica común para dar recompensas a un jugador.
+   *
+   * @param player     Jugador objetivo.
+   * @param online     Si el jugador está online.
+   * @param playerUUID UUID del jugador si está offline, null si es online.
+   */
+  private void giveRewardsInternal(ServerPlayerEntity player, boolean online, UUID playerUUID) {
+    try {
+      AdvancedItemChance finish = this;
+      if (finish.getId() != null && !finish.getId().isEmpty()) {
+        finish = CobbleUtils.advancedRewardsConfig.getRewards().get(finish.getId());
+        if (finish == null) {
           PlayerUtils.sendMessage(player,
-            "%prefix% &cYou have not obtained any rewards, please try again",
+            "%prefix% &cThe reward with id &e" + this.getId() + " &cdoes not exist, please notify the administrator of the error",
             "&7[&cERROR&7]",
             TypeMessage.CHAT);
           return;
         }
-
-        if (online) {
-          for (ItemChance obtainedReward : obtainedRewards) {
-            obtainedReward.giveReward(player);
-          }
-          List<ItemStack> showAllRewards = getListDisplay(allRewards);
-          List<ItemStack> showObtainedRewards = getListDisplay(obtainedRewards);
-          if (getNewSound() != null)
-            getNewSound().start(player);
-
-          if (particle != null) particle.sendParticles(player, player);
-
-          initAnimation(animation, player, showAllRewards, showObtainedRewards);
-        } else {
-          for (ItemChance reward : obtainedRewards) {
-            DataBaseFactory.dataBaseUsers.addStorage(new StorageRewards(reward), playerUUID);
-          }
-        }
-      } catch (Exception e) {
-        e.printStackTrace();
-        PlayerUtils.sendMessage(player,
-          "%prefix% &cAn error occurred while trying to give you the rewards, please notify the administrator of the error",
-          "&7[&cERROR&7]",
-          TypeMessage.CHAT);
       }
-    });
-  }
+      finish.checker(player);
 
-  public void giveRewards(ServerPlayerEntity player) {
-    try {
-      if (checker(player)) return;
+      List<ItemChance> obtainedRewards = finish.getList(player);
+      List<ItemChance> allRewards = new ArrayList<>(obtainedRewards);
 
-      List<ItemChance> obtainedRewards = getList(player);
-      List<ItemChance> allRewards = obtainedRewards;
-
+      // Calculamos las recompensas finales
       if (giveAll) {
         obtainedRewards = ItemChance.getAllRewards(obtainedRewards, player);
       } else {
-        obtainedRewards = ItemChance.getRewards(obtainedRewards, player, getAmountReward(player));
+        obtainedRewards = ItemChance.getRewards(obtainedRewards, player, finish.getAmountReward(player));
       }
 
       if (obtainedRewards.isEmpty()) {
@@ -213,18 +191,27 @@ public class AdvancedItemChance {
         return;
       }
 
-      for (ItemChance obtainedReward : obtainedRewards) {
-        obtainedReward.giveReward(player);
+      if (online) {
+        // Entregamos las recompensas directamente
+        for (ItemChance reward : obtainedRewards) {
+          reward.giveReward(player);
+        }
+
+        // Animaciones y visualización
+        List<ItemStack> showAllRewards = finish.getListDisplay(allRewards);
+        List<ItemStack> showObtainedRewards = finish.getListDisplay(obtainedRewards);
+
+        if (getNewSound() != null) getNewSound().start(player);
+        if (particle != null) particle.sendParticles(player, player);
+        initAnimation(animation, player, showAllRewards, showObtainedRewards);
+
+      } else if (playerUUID != null) {
+        // Guardamos las recompensas para cuando el jugador vuelva online
+        for (ItemChance reward : obtainedRewards) {
+          DataBaseFactory.dataBaseUsers.addStorage(new StorageRewards(reward), playerUUID);
+        }
       }
 
-      List<ItemStack> showAllRewards = getListDisplay(allRewards);
-      List<ItemStack> showObtainedRewards = getListDisplay(obtainedRewards);
-      if (getNewSound() != null)
-        getNewSound().start(player);
-
-      if (particle != null) particle.sendParticles(player, player);
-
-      initAnimation(animation, player, showAllRewards, showObtainedRewards);
     } catch (Exception e) {
       e.printStackTrace();
       PlayerUtils.sendMessage(player,
@@ -308,7 +295,20 @@ public class AdvancedItemChance {
   }
 
   private void applyTemplate(ServerPlayerEntity player, ChestTemplate template) {
-    List<Button> buttons = getButtons(player);
+    AdvancedItemChance finish;
+    if (getId() != null && !getId().isEmpty()) {
+      finish = CobbleUtils.advancedRewardsConfig.getRewards().get(getId());
+      if (finish == null) {
+        PlayerUtils.sendMessage(player,
+          "%prefix% &cThe reward with id &e" + this.getId() + " &cdoes not exist, please notify the administrator of the error",
+          "&7[&cERROR&7]",
+          TypeMessage.CHAT);
+        return;
+      }
+    } else {
+      finish = this;
+    }
+    List<Button> buttons = finish.getButtons(player);
 
     Rectangle rectangle = new Rectangle(1, 1, 4, 7);
     rectangle.apply(template);
@@ -319,7 +319,7 @@ public class AdvancedItemChance {
 
     List<String> infoLore = new ArrayList<>(info.getLore());
     infoLore.replaceAll(s -> s
-      .replace("%amount%", String.valueOf(getAmountReward(player)))
+      .replace("%amount%", String.valueOf(finish.getAmountReward(player)))
       .replace("%getall%", giveAll ? CobbleUtils.language.getYes() : CobbleUtils.language.getNo()));
 
     if (info.getSlot() >= 0) {

@@ -12,11 +12,11 @@ import java.util.Map;
 public class RewardsApi {
 
   public static Map<String, ItemChance> getAllRewards() {
-    return CobbleUtils.rewardsC.getRewards();
+    return CobbleUtils.rewardsConfig.getRewards();
   }
 
   public static @Nullable ItemChance getReward(String id) {
-    ItemChance itemChance = CobbleUtils.rewardsC.getRewards().getOrDefault(id, null);
+    ItemChance itemChance = CobbleUtils.rewardsConfig.getRewards().getOrDefault(id, null);
     if (itemChance == null) {
       CobbleUtils.LOGGER.error("Reward with id " + id + " not found!");
     } else return itemChance;

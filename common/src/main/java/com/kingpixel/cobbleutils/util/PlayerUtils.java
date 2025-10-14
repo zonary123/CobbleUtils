@@ -6,6 +6,7 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.Model.DurationValue;
+import com.kingpixel.cobbleutils.mixins.UserCacheMixin;
 import com.kingpixel.cobbleutils.util.manager.CooldownManager;
 import com.mojang.authlib.GameProfile;
 import com.mojang.brigadier.CommandDispatcher;
@@ -290,10 +291,15 @@ public class PlayerUtils {
    * @return The head item of the player.
    */
   public static ItemStack getHeadItem(UUID playerUUID) {
-    var userCache = CobbleUtils.server.getUserCache().getByUuid(playerUUID);
-    if (userCache.isPresent()) {
+    if (playerUUID == null) return Utils.parseItemId("minecraft:player_head");
+    var userCache = CobbleUtils.server.getUserCache();
+    if (userCache == null) return Utils.parseItemId("minecraft:player_head");
+    if (!((UserCacheMixin) userCache).byUuid().containsKey(playerUUID))
+      return Utils.parseItemId("minecraft:player_head");
+    var gameProfile = userCache.getByUuid(playerUUID);
+    if (gameProfile.isPresent()) {
       ItemStack itemStack = Items.PLAYER_HEAD.getDefaultStack();
-      itemStack.set(DataComponentTypes.PROFILE, new ProfileComponent(userCache.get()));
+      itemStack.set(DataComponentTypes.PROFILE, new ProfileComponent(gameProfile.get()));
       return itemStack;
     }
     return Utils.parseItemId("minecraft:player_head");
