@@ -9,6 +9,8 @@ import lombok.Data;
 import lombok.Getter;
 import lombok.ToString;
 
+import java.math.BigDecimal;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -26,6 +28,7 @@ public class Config {
   private List<String> commmandplugin;
   private List<String> storageCommand;
   private int decimals;
+  private String priceFormat;
   private DurationValue timeSinceLastLoginToSuggest;
   private boolean GtsSupport;
   private EconomyUse GtsEconomyToUse;
@@ -50,6 +53,7 @@ public class Config {
     lang = "en";
     timeSinceLastLoginToSuggest = DurationValue.parse("1y");
     decimals = 2;
+    priceFormat = "#,##0.00";
     server = "ExampleServer";
     GtsSupport = false;
     GtsEconomyToUse = new EconomyUse(ImpactorEconomy.IDENTIFY, "");
@@ -117,5 +121,34 @@ public class Config {
       this.password = "";
       this.channel = "cobbleutils-messaging";
     }
+  }
+
+  // Transient para no serializarlo en el JSON
+  private transient DecimalFormat lazyFormat;
+
+  /**
+   * Obtiene un DecimalFormat con lazy initialization.
+   * Si aún no existe, se crea según el formato y decimales configurados.
+   */
+  private DecimalFormat getLazyFormat() {
+    if (lazyFormat != null) return lazyFormat;
+    synchronized (this) {
+      if (lazyFormat == null) {
+        String format = this.priceFormat != null ? this.priceFormat : "#.##";
+        lazyFormat = new DecimalFormat(format);
+        lazyFormat.setMaximumFractionDigits(this.decimals > 0 ? this.decimals : 2);
+        lazyFormat.setMinimumFractionDigits(0);
+        lazyFormat.setGroupingUsed(false);
+      }
+    }
+    return lazyFormat;
+  }
+
+  /**
+   * Formatea un BigDecimal con el formato configurado.
+   */
+  public String getFormat(BigDecimal amount) {
+    if (amount == null) return "0";
+    return getLazyFormat().format(amount);
   }
 }

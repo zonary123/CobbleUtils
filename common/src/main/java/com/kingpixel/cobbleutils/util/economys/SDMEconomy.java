@@ -12,19 +12,22 @@ import java.util.UUID;
 /**
  * @author Carlos Varas Alonso - 16/03/2025 3:56
  */
-@EqualsAndHashCode(callSuper = true) @Data
+@EqualsAndHashCode(callSuper = true)
+@Data
 public class SDMEconomy extends EconomyAbstract {
   public static final String IDENTIFY = "SDM_ECONOMY";
 
   public SDMEconomy() {
   }
 
-  @Override public String getIdentify() {
+  @Override
+  public String getIdentify() {
     return IDENTIFY;
   }
 
 
-  @Override public boolean isPresent() {
+  @Override
+  public boolean isPresent() {
     CurrencyHelper.getAllCurrency();
     return true;
   }
@@ -35,7 +38,8 @@ public class SDMEconomy extends EconomyAbstract {
     return null;
   }
 
-  @Override public boolean deposit(UUID playerUuid, BigDecimal money, String currency) {
+  @Override
+  public boolean deposit(UUID playerUuid, BigDecimal money, String currency) {
     var playerData = getPlayerData(playerUuid, currency);
     if (playerData == null) {
       CobbleUtils.LOGGER.error("Player data not found for player: " + playerUuid + " and currency: " + currency);
@@ -45,7 +49,8 @@ public class SDMEconomy extends EconomyAbstract {
     return true;
   }
 
-  @Override public boolean withdraw(UUID playerUuid, BigDecimal money, String currency) {
+  @Override
+  public boolean withdraw(UUID playerUuid, BigDecimal money, String currency) {
     var playerData = getPlayerData(playerUuid, currency);
     if (playerData == null) {
       CobbleUtils.LOGGER.error("Player data not found for player: " + playerUuid + " and currency: " + currency);
@@ -56,15 +61,18 @@ public class SDMEconomy extends EconomyAbstract {
     return true;
   }
 
-  @Override public BigDecimal getBalance(UUID playerUuid, String currency) {
+  @Override
+  public BigDecimal getBalance(UUID playerUuid, String currency) {
     return BigDecimal.valueOf(getPlayerData(playerUuid, currency).balance);
   }
 
-  @Override public String format(BigDecimal money, String currency) {
-    return CobbleUtils.language.getDefaultSymbol() + " " + money.doubleValue();
+  @Override
+  public String format(BigDecimal money, String currency) {
+    return CobbleUtils.language.getDefaultSymbol() + " " + CobbleUtils.config.getFormat(money);
   }
 
-  @Override public boolean setBalance(UUID playerUuid, BigDecimal money, String currency) {
+  @Override
+  public boolean setBalance(UUID playerUuid, BigDecimal money, String currency) {
     var playerData = getPlayerData(playerUuid, currency);
     if (playerData == null) {
       CobbleUtils.LOGGER.error("Player data not found for player: " + playerUuid + " and currency: " + currency);
@@ -74,7 +82,8 @@ public class SDMEconomy extends EconomyAbstract {
     return true;
   }
 
-  @Override public int getDecimals(String currency) {
+  @Override
+  public int getDecimals(String currency) {
     return CobbleUtils.config.getDecimals();
   }
 }
