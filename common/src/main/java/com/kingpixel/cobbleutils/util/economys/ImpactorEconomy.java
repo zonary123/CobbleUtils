@@ -74,15 +74,12 @@ public class ImpactorEconomy extends EconomyAbstract {
    * @param playerUuid The UUID of the player.
    * @param money      The amount of money to deposit.
    * @param currency   The currency type in which to deposit the money.
-   *
    * @return True if the deposit is successful, false otherwise.
    */
   @Override
   public boolean deposit(UUID playerUuid, BigDecimal money, String currency) {
     Account account = getAccount(playerUuid, currency);
-    boolean result = account.deposit(money).successful();
-    //if (result) service.save(account);
-    return result;
+    return account.deposit(money).successful();
   }
 
   /**
@@ -91,15 +88,12 @@ public class ImpactorEconomy extends EconomyAbstract {
    * @param playerUuid The UUID of the player.
    * @param money      The amount of money to withdraw.
    * @param currency   The currency type from which to withdraw the money.
-   *
    * @return True if the withdrawal is successful, false otherwise.
    */
   @Override
   public boolean withdraw(UUID playerUuid, BigDecimal money, String currency) {
     Account account = getAccount(playerUuid, currency);
-    boolean result = account.withdraw(money).successful();
-    //if (result) service.save(account);
-    return result;
+    return account.withdraw(money).successful();
   }
 
   /**
@@ -107,7 +101,6 @@ public class ImpactorEconomy extends EconomyAbstract {
    *
    * @param playerUuid The UUID of the player.
    * @param currency   The currency type for which to fetch the balance.
-   *
    * @return The current balance of the account.
    */
   @Override
@@ -138,7 +131,6 @@ public class ImpactorEconomy extends EconomyAbstract {
    *
    * @param money    The amount of money to format.
    * @param currency The currency in which to format the money.
-   *
    * @return The formatted string representation of the money.
    */
   @Override
@@ -155,15 +147,12 @@ public class ImpactorEconomy extends EconomyAbstract {
    * @param playerUuid The UUID of the player.
    * @param money      The new balance to set.
    * @param currency   The currency type in which to set the balance.
-   *
    * @return True if the balance is successfully set, false otherwise.
    */
   @Override
   public boolean setBalance(UUID playerUuid, BigDecimal money, String currency) {
     Account account = getAccount(playerUuid, currency);
-    boolean result = account.set(money).successful();
-    //if (result) service.save(account);
-    return result;
+    return account.set(money).successful();
   }
 
   /**
@@ -176,18 +165,11 @@ public class ImpactorEconomy extends EconomyAbstract {
    * Gets the symbol for the specified currency.
    *
    * @param currency The currency type for which to fetch the symbol.
-   *
    * @return The symbol of the currency, serialized as a string.
    */
   @Override
   public String getSymbol(String currency) {
-    String result = SYMBOLS_CACHE.get(currency);
-    if (result == null) {
-      result = GsonComponentSerializer.gson().serialize(getCurrency(currency).symbol());
-      SYMBOLS_CACHE.put(currency, result);
-      return result;
-    }
-    return result;
+    return SYMBOLS_CACHE.computeIfAbsent(currency, k -> GsonComponentSerializer.gson().serialize(getCurrency(currency).symbol()));
   }
 
   private Map<String, Cache<UUID, Account>> accountCacheBuilder = new HashMap<>();
@@ -201,7 +183,6 @@ public class ImpactorEconomy extends EconomyAbstract {
    *
    * @param uuid     The UUID of the account.
    * @param currency The currency type of the account.
-   *
    * @return The account associated with the UUID and currency.
    */
   private Account getAccount(UUID uuid, String currency) {
@@ -216,10 +197,7 @@ public class ImpactorEconomy extends EconomyAbstract {
       }
       return service.account(getCurrency(currency), uuid).join();
     });*/
-    if (hasAccountCache.getIfPresent(uuid) == null) {
-      hasAccountCache.put(uuid, service.hasAccount(uuid).join());
-    }
-    if (!service.hasAccount(uuid).join()) return service.account(uuid).join();
+    if (hasAccountCache.getIfPresent(uuid) == null) hasAccountCache.put(uuid, service.hasAccount(uuid).join());
     return service.account(getCurrency(currency), uuid).join();
   }
 
@@ -231,7 +209,6 @@ public class ImpactorEconomy extends EconomyAbstract {
    * If the currency is not already cached, it will be fetched from the Impact API.
    *
    * @param currency The string representation of the currency (e.g., "impactor:currencyName").
-   *
    * @return The Currency object corresponding to the specified currency.
    */
   private Currency getCurrency(String currency) {
@@ -260,7 +237,6 @@ public class ImpactorEconomy extends EconomyAbstract {
    * Retrieves the number of decimal places for the specified currency.
    *
    * @param currency The currency for which to retrieve the number of decimals.
-   *
    * @return The number of decimal places for the specified currency.
    */
   @Override

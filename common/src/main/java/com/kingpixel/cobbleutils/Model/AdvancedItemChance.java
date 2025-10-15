@@ -75,6 +75,7 @@ public class AdvancedItemChance {
     List<ItemChance> itemChances = new ArrayList<>();
     itemChances.add(new ItemChance());
     lootTable.put("group.vip", itemChances);
+    lootTable.entrySet().removeIf(entry -> entry.getValue().isEmpty());
   }
 
   private enum TypeError {
@@ -93,34 +94,13 @@ public class AdvancedItemChance {
       }
     }
 
-    String extraInfo = "";
 
-    for (Map.Entry<String, List<ItemChance>> entry : lootTable.entrySet()) {
-      if (entry.getValue().isEmpty()) {
-        typeError = TypeError.LOOTTABLE;
-        extraInfo = entry.getKey();
-        break;
-      }
-    }
-
-
-    if (lootTable == null || lootTable.isEmpty()) {
-      typeError = TypeError.LOOTTABLE;
-      extraInfo = "Error lootTable is null or empty";
-    }
+    lootTable.entrySet().removeIf(entry -> entry.getValue().isEmpty());
 
     return switch (typeError) {
       case AMOUNTREWARD -> {
         PlayerUtils.sendMessage(player,
           "%prefix% &cplease notify the administrator of the error in the configuration in the amountReward",
-          "&7[&cERROR&7]",
-          TypeMessage.CHAT);
-        yield true;
-      }
-      case LOOTTABLE -> {
-        PlayerUtils.sendMessage(player,
-          "%prefix% &cplease notify the administrator of the error in the configuration in the lootTable -> %extra%"
-            .replace("%extra%", extraInfo),
           "&7[&cERROR&7]",
           TypeMessage.CHAT);
         yield true;
@@ -171,7 +151,9 @@ public class AdvancedItemChance {
           return;
         }
       }
-      finish.checker(player);
+
+      // Check configuration errors before proceeding
+      checker(player);
 
       List<ItemChance> obtainedRewards = finish.getList(player);
       List<ItemChance> allRewards = new ArrayList<>(obtainedRewards);
@@ -215,7 +197,7 @@ public class AdvancedItemChance {
     } catch (Exception e) {
       e.printStackTrace();
       PlayerUtils.sendMessage(player,
-        "%prefix% &cAn error occurred while trying to give you the rewards, please notify the administrator of the error",
+        "%prefix% &cAn error occurred while trying to give you the rewards, please notify the administrator of the error date: " + new Date().toString(),
         "&7[&cERROR&7]",
         TypeMessage.CHAT);
     }
