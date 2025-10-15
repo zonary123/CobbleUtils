@@ -46,7 +46,6 @@ allprojects {
     apply plugin: "maven-publish"
 
     archivesBaseName = "${rootProject.minecraft_version}/${rootProject.mod_version}/${tag}/${rootProject.archives_base_name}-${rootProject.minecraft_version}-${project.name}-${rootProject.mod_version}"
-
     group = rootProject.maven_group
 
     repositories {
@@ -66,73 +65,78 @@ allprojects {
         maven { url "https://maven.impactdev.net/repository/development/" }
         maven { url "https://hub.spigotmc.org/nexus/content/repositories/snapshots/" }
         maven { url "https://repo.extendedclip.com/content/repositories/placeholderapi/" }
-        maven {
-            url "https://maven.nucleoid.xyz/"
-            name = "Nucleoid"
-        }
-        maven {
-            url "https://oss.sonatype.org/content/repositories/snapshots"
-            name = "Sonatype Snapshots"
-        }
-        maven {
-            url "https://s01.oss.sonatype.org/content/repositories/snapshots"
-            name = "Sonatype 01 Snapshots"
-        }
+        maven { url "https://maven.nucleoid.xyz/"; name = "Nucleoid" }
+        maven { url "https://oss.sonatype.org/content/repositories/snapshots"; name = "Sonatype Snapshots" }
+        maven { url "https://s01.oss.sonatype.org/content/repositories/snapshots"; name = "Sonatype 01 Snapshots" }
     }
 
+    // =============================================
+    // JAVAC: default optimization for all projects
+    // =============================================
     tasks.withType(JavaCompile).configureEach {
         options.encoding = "UTF-8"
-        // Minecraft 1.20.5 now requires Java 21 to run.
-        // ref: https://fabricmc.net/2024/04/19/1205.html
         options.release = 21
+        options.compilerArgs += [
+                "-g",
+                "-O",          // Enable basic compile-time optimizations
+                "-parameters"  // Keep method parameter names (optional, useful for reflection)
+        ]
     }
 
 
+    // =============================================
+    // SOURCES JAR
+    // =============================================
     java {
         withSourcesJar()
     }
 
-    // Task to write the version to a file
+    // =============================================
+    // JIT + JVM FLAGS: applied to all executions
+    // =============================================
+    tasks.withType(JavaExec).configureEach {
+        jvmArgs = [
+                "-Xmx2G",
+                "-XX:+UseG1GC",
+                "-XX:+TieredCompilation",
+                "-XX:+AggressiveOpts",
+                "-XX:+OptimizeStringConcat",
+                "-XX:+AlwaysPreTouch"
+        ]
+    }
+
+
+    // =============================================
+    // TASK TO WRITE VERSION FILE
+    // =============================================
     task writeVersionFile {
         doLast {
             def versionFile = file("${buildDir}/version.txt")
             versionFile.text = "Version: ${version}"
         }
     }
-
-    // Ensure the version file is written after the build
     build.finalizedBy(writeVersionFile)
 
-
+    // =============================================
+    // TASK TO COPY JAR TO actual_versions
+    // =============================================
     boolean isDelete = false
-
     task cleanAndCopyJarToActualVersions(type: Copy) {
         dependsOn jar
         if (!isDelete) {
             delete fileTree(dir: "${rootProject.projectDir}/actual_versions", include: "**/*")
             isDelete = true
         }
-        // Define la variable 'path' correctamente, como la ruta del directorio build
         def path = buildDir.absolutePath
-
-        // Verifica si el nombre del proyecto es "build", si es así, omite la copia
         if (!path.contains("CobbleUtils\\build") && !path.contains("common")) {
             println("Copying jar to actual_versions -> ${rootProject.projectDir}\\actual_versions")
             println("Jar file -> ${path}\\libs\\${archivesBaseName}-${tag}.jar")
-
-            // Verifica si el archivo .jar existe antes de copiar
             def jarFile = file("${path}\\libs\\${archivesBaseName}-${tag}.jar")
             if (jarFile.exists()) {
                 from(jarFile)
                 into("${rootProject.projectDir}\\actual_versions")
-            } else {
-                //throw new GradleException("El archivo .jar no se encuentra en la ruta esperada: ${jarFile}")
             }
-        } else {
-            println("Skipping cleanAndCopyJarToActualVersions task because the project name is 'build'")
         }
     }
     build.finalizedBy(cleanAndCopyJarToActualVersions)
-
-
 }

@@ -33,6 +33,7 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
+import net.minecraft.util.math.Box;
 import net.minecraft.util.math.Vec3d;
 
 import java.io.File;
@@ -116,7 +117,8 @@ public abstract class Utils {
       .registerTypeAdapter(DataBaseType.class, DataBaseTypeAdapter.INSTANCE)
       .registerTypeAdapter(Storage.class, StorageAdapter.INSTANCE)
       .registerTypeAdapter(HiperMessage.class, HiperMessage.EMPTY)
-      .registerTypeAdapter(Vec3d.class, Vec3dAdapter.INSTANCE);
+      .registerTypeAdapter(Vec3d.class, Vec3dAdapter.INSTANCE)
+      .registerTypeAdapter(Box.class, BoxAdapter.INSTANCE);
   }
 
   public static final ExecutorService IO_EXECUTOR = Executors.newFixedThreadPool(24, new ThreadFactoryBuilder()
