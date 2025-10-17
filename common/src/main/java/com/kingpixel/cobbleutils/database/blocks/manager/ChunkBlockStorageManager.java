@@ -4,6 +4,7 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.database.blocks.model.ChunkBlockData;
+import com.kingpixel.cobbleutils.util.Utils;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.FallingBlock;
@@ -14,27 +15,34 @@ import net.minecraft.world.World;
 import net.minecraft.world.chunk.Chunk;
 
 import java.io.*;
-import java.util.concurrent.*;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
 public class ChunkBlockStorageManager {
-  // Executor nombrado para IO
-  private static final ExecutorService IO_EXECUTOR = Executors.newSingleThreadExecutor(r -> {
-    Thread t = new Thread(r);
-    t.setName("CobbleUtils-IO-Thread");
-    t.setDaemon(true);
-    return t;
-  });
 
   private static File storageDir;
 
   // Cache chunks: key = world_sanitized + "_" + chunkX + "_" + chunkZ
   private static final Cache<String, ChunkBlockData> CHUNK_CACHE = Caffeine.newBuilder()
     .expireAfterAccess(1, TimeUnit.MINUTES)
+    .expireAfterWrite(5, TimeUnit.MINUTES)
     .removalListener((key, value, cause) -> {
-      if (key != null && value != null) {
-        saveChunkByKey((String) key, (ChunkBlockData) value);
+      if (CobbleUtils.config.isDebug()) {
+        CobbleUtils.LOGGER.info("ChunkBlockStorageManager: Chunk cache entry removed. Key: " + key + ", Cause: " + cause);
+      }
+      switch (cause) {
+        case EXPLICIT -> {
+          // No hacer nada si se elimina explícitamente
+        }
+        default -> {
+          // Guardar en disco si se expulsa por expiración o tamaño
+          if (key != null && value != null) {
+            saveChunkByKey((String) key, (ChunkBlockData) value);
+          }
+        }
       }
     })
     .build();
@@ -135,7 +143,7 @@ public class ChunkBlockStorageManager {
   }
 
   public static Future<ChunkBlockData> loadChunk(World world, Chunk chunk) {
-    return IO_EXECUTOR.submit(() -> {
+    return Utils.IO_EXECUTOR.submit(() -> {
       File worldDir = new File(storageDir, getSanitizedWorldName(world));
       if (!worldDir.exists()) worldDir.mkdirs();
 
@@ -168,44 +176,46 @@ public class ChunkBlockStorageManager {
   }
 
   private static void saveChunkByKey(String key, ChunkBlockData data) {
-    IO_EXECUTOR.execute(() -> {
-      try {
-        // La key = sanitizedWorld + "_" + chunkX + "_" + chunkZ
-        int lastUnderscore = key.lastIndexOf('_');
-        int secondLastUnderscore = key.lastIndexOf('_', lastUnderscore - 1);
-        if (secondLastUnderscore == -1 || lastUnderscore == -1) return;
+    Utils.IO_EXECUTOR.execute(() -> saveChunkByKeySync(key, data));
+  }
 
-        String worldName = key.substring(0, secondLastUnderscore);
-        int chunkX = Integer.parseInt(key.substring(secondLastUnderscore + 1, lastUnderscore));
-        int chunkZ = Integer.parseInt(key.substring(lastUnderscore + 1));
+  private static void saveChunkByKeySync(String key, ChunkBlockData data) {
+    try {
+      // La key = sanitizedWorld + "_" + chunkX + "_" + chunkZ
+      int lastUnderscore = key.lastIndexOf('_');
+      int secondLastUnderscore = key.lastIndexOf('_', lastUnderscore - 1);
+      if (secondLastUnderscore == -1 || lastUnderscore == -1) return;
 
-        File worldDir = new File(storageDir, worldName);
-        if (!worldDir.exists()) worldDir.mkdirs();
+      String worldName = key.substring(0, secondLastUnderscore);
+      int chunkX = Integer.parseInt(key.substring(secondLastUnderscore + 1, lastUnderscore));
+      int chunkZ = Integer.parseInt(key.substring(lastUnderscore + 1));
 
-        File chunkFile = new File(worldDir, "chunk_" + chunkX + "_" + chunkZ + ".dat");
+      File worldDir = new File(storageDir, worldName);
+      if (!worldDir.exists()) worldDir.mkdirs();
 
-        try (FileOutputStream fos = new FileOutputStream(chunkFile);
-             GZIPOutputStream gzip = new GZIPOutputStream(fos);
-             DataOutputStream dos = new DataOutputStream(gzip)) {
+      File chunkFile = new File(worldDir, "chunk_" + chunkX + "_" + chunkZ + ".dat");
 
-          LongOpenHashSet blocks = data.getBlocks();
-          dos.writeInt(blocks.size());
-          for (long block : blocks) {
-            dos.writeLong(block);
-          }
+      try (FileOutputStream fos = new FileOutputStream(chunkFile);
+           GZIPOutputStream gzip = new GZIPOutputStream(fos);
+           DataOutputStream dos = new DataOutputStream(gzip)) {
+
+        LongOpenHashSet blocks = data.getBlocks();
+        dos.writeInt(blocks.size());
+        for (long block : blocks) {
+          dos.writeLong(block);
         }
-
-      } catch (IOException | NumberFormatException e) {
-        e.printStackTrace();
       }
-    });
+
+    } catch (IOException | NumberFormatException e) {
+      e.printStackTrace();
+    }
   }
 
   // ===========================
   // SHUTDOWN
   // ===========================
   public static void shutdown() {
-    CHUNK_CACHE.asMap().forEach(ChunkBlockStorageManager::saveChunkByKey);
-    CobbleUtils.shutdownAndAwait(IO_EXECUTOR);
+    CobbleUtils.LOGGER.info("ChunkBlockStorageManager: Saving all cached chunk data to disk on shutdown...");
+    CHUNK_CACHE.asMap().forEach(ChunkBlockStorageManager::saveChunkByKeySync);
   }
 }
