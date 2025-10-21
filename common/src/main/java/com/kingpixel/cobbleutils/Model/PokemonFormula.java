@@ -1,6 +1,8 @@
 package com.kingpixel.cobbleutils.Model;
 
 import com.cobblemon.mod.common.api.pokemon.egg.EggGroup;
+import com.cobblemon.mod.common.api.pokemon.evolution.PreEvolution;
+import com.cobblemon.mod.common.api.pokemon.stats.Stats;
 import com.cobblemon.mod.common.pokemon.Gender;
 import com.cobblemon.mod.common.pokemon.Nature;
 import com.cobblemon.mod.common.pokemon.Pokemon;
@@ -34,8 +36,7 @@ import java.util.function.Function;
 public class PokemonFormula {
   private boolean showVariablesInConsole = false;
   private String formula;
-  transient
-  private Expression expression;
+
 
   // Base configurations
   private float base = 0;
@@ -59,19 +60,6 @@ public class PokemonFormula {
   transient
   private final Map<String, Function<Pokemon, Float>> variableResolvers = new HashMap<>();
 
-  // Cache for performance - avoid recalculating the same Pokemon values
-  transient
-  private final Cache<Integer, @Nullable Double> pokemonResultCache = Caffeine.newBuilder()
-    .maximumSize(1000)
-    .expireAfterAccess(Duration.ofMinutes(1))
-    .removalListener((key, value, cause) -> {
-      // Debug message when cache entries are removed
-      if (CobbleUtils.config.isDebug()) {
-        CobbleUtils.LOGGER.info("[DEBUG] Pokemon cache entry removed: " + key +
-          " | Value: " + value + " | Cause: " + cause);
-      }
-    })
-    .build();
 
   public PokemonFormula() {
     this.formula = "base + heldItem + gender + labels + nature + ability + ivsAverage + ivsTotal + evsTotal +" +
@@ -102,27 +90,59 @@ public class PokemonFormula {
    */
   private void registerVariables() {
     variableResolvers.clear();
+    // Base stat value
     variableResolvers.put("base", this::getBase);
+    // Held Item
     variableResolvers.put("heldItem", this::getHeldItem);
+    // Shiny
     variableResolvers.put("shiny", p -> p.getShiny() ? shiny : 1.0f);
+    // Gender
     variableResolvers.put("gender", this::getGender);
+    // Labels
     variableResolvers.put("labels", this::getLabel);
+    // Nature
     variableResolvers.put("nature", this::getNature);
+    // Ability
     variableResolvers.put("ability", this::getAbility);
+    // Form
     variableResolvers.put("form", this::getForm);
+    // Ball
     variableResolvers.put("ball", this::getBall);
+    // Aspect
     variableResolvers.put("aspect", this::getAspect);
-    variableResolvers.put("ivsAverage", p -> (float) Math.max(PokemonUtils.getIvsAverage(p.getIvs()), 1));
+    // Breedable
+    variableResolvers.put("breedable", this::getBreedable);
+    // Friendship
+    variableResolvers.put("friendship", p -> (float) Math.max(p.getFriendship(), 1));
+    // Level
+    variableResolvers.put("level", p -> (float) Math.max(p.getLevel(), 1));
+    // Evolutions count
+    variableResolvers.put("evolutions", this::getEvolversCount);
+    // Stats IVs and EVs
     variableResolvers.put("ivsTotal", p -> (float) Math.max(PokemonUtils.getIvsTotal(p.getIvs()), 1));
+    variableResolvers.put("ivsAverage", p -> (float) Math.max(PokemonUtils.getIvsAverage(p.getIvs()), 1));
     variableResolvers.put("evsTotal", p -> (float) Math.max(PokemonUtils.getEvsTotal(p.getEvs()), 1));
     variableResolvers.put("evsAverage", p -> (float) Math.max(PokemonUtils.getEvsAverage(p.getEvs()), 1));
-    variableResolvers.put("breedable", this::getBreedable);
-    variableResolvers.put("friendship", p -> (float) Math.max(p.getFriendship(), 1));
-    variableResolvers.put("level", p -> (float) Math.max(p.getLevel(), 1));
-
-    if (CobbleUtils.config.isDebug() || showVariablesInConsole) {
-      CobbleUtils.LOGGER.info("[DEBUG] Pokemon formula available variables: " + variableResolvers.keySet());
+    for (Stats stats : PokemonUtils.STATS_LIST) {
+      var showdownId = stats.getShowdownId();
+      variableResolvers.put("iv_" + showdownId, p -> (float) Math.max(p.getIvs().getOrDefault(stats), 1));
+      variableResolvers.put("ev_" + showdownId, p -> (float) Math.max(p.getEvs().getOrDefault(stats), 1));
     }
+
+    if (showVariablesInConsole) {
+      CobbleUtils.LOGGER.info("Pokemon formula available variables: " + variableResolvers.keySet());
+    }
+  }
+
+
+  private Float getEvolversCount(Pokemon pokemon) {
+    int count = 0;
+    PreEvolution preEvolution;
+    do {
+      preEvolution = pokemon.getPreEvolution();
+      count++;
+    } while (preEvolution != null && preEvolution != pokemon.getPreEvolution());
+    return (float) count;
   }
 
   /**
@@ -133,8 +153,19 @@ public class PokemonFormula {
    * @return The computed value.
    */
   public Double getPokemonValue(Pokemon pokemon) {
-    return getPokemonExpression(pokemon).evaluate();
+    return pokemonResultCache.get(pokemon, p -> getPokemonExpression(p).evaluate());
   }
+
+  private transient final Cache<Pokemon, @Nullable Double> pokemonResultCache = Caffeine.newBuilder()
+    .maximumSize(1000)
+    .expireAfterWrite(Duration.ofSeconds(5)) // ✅ 10 seconds cache
+    .removalListener((key, value, cause) -> {
+      if (CobbleUtils.config.isDebug()) {
+        CobbleUtils.LOGGER.info("PokemonFormula Cache eviction | Key: " + key + " | Value: " + value + " | Cause: " + cause);
+      }
+    })
+    .build();
+
 
   /**
    * Builds the Pokemon-specific expression with dynamic variables set.
@@ -146,9 +177,9 @@ public class PokemonFormula {
   public Expression getPokemonExpression(Pokemon pokemon) {
     ServerPlayerEntity player = pokemon.getOwnerPlayer();
     Expression expr = getExpression();
-    if (CobbleUtils.config.isDebug() || showVariablesInConsole) {
+    if (showVariablesInConsole) {
       StringBuilder sb = new StringBuilder();
-      sb.append("[DEBUG] Evaluating Pokemon: ").append(pokemon.getDisplayName().getString()).append(" | ID: ").append(pokemon.showdownId()).append(" | Hash: ").append(System.identityHashCode(pokemon));
+      sb.append("Evaluating Pokemon: ").append(pokemon.getDisplayName().getString()).append(" | ID: ").append(pokemon.showdownId()).append(" | Hash: ").append(System.identityHashCode(pokemon));
       CobbleUtils.LOGGER.info(sb.toString());
       if (player != null) {
         player.sendMessage(Text.literal(sb.toString()));
@@ -158,9 +189,9 @@ public class PokemonFormula {
       float value = resolver.apply(pokemon);
       expr.setVariable(name, value);
 
-      if (CobbleUtils.config.isDebug() || showVariablesInConsole) {
+      if (showVariablesInConsole) {
         StringBuilder sb = new StringBuilder();
-        sb.append("[DEBUG] Variable set: ").append(name).append(" = ").append(value);
+        sb.append("Variable set: ").append(name).append(" = ").append(value);
         CobbleUtils.LOGGER.info(sb.toString());
         if (player != null) {
           player.sendMessage(Text.literal(sb.toString()));
@@ -170,23 +201,39 @@ public class PokemonFormula {
     return expr;
   }
 
+
   /**
    * Builds the base expression if not already built.
    *
    * @return The Expression object.
    */
-  private Expression getExpression() {
-    if (expression != null) return expression;
-    registerVariables();
-    ExpressionBuilder builder = new ExpressionBuilder(formula);
-    variableResolvers.keySet().forEach(builder::variable);
-    expression = builder.build();
+  private transient ExpressionBuilder baseBuilder;
 
-    if (CobbleUtils.config.isDebug() || showVariablesInConsole) {
-      CobbleUtils.LOGGER.info("[DEBUG] Expression built with formula: " + formula);
+  private Expression getExpression() {
+    // Reusar el builder si ya está creado
+    if (baseBuilder == null) {
+      // Solo registramos las variables una vez
+      registerVariables();
+
+      // Creamos el builder y registramos todas las variables disponibles
+      baseBuilder = new ExpressionBuilder(formula);
+      variableResolvers.keySet().forEach(baseBuilder::variable);
+
+      if (showVariablesInConsole) {
+        CobbleUtils.LOGGER.info("[PokemonFormula] ExpressionBuilder created for formula: " + formula);
+      }
     }
-    return expression;
+
+    // Cada .build() devuelve una expresión independiente (segura en hilos)
+    Expression expr = baseBuilder.build();
+
+    if (showVariablesInConsole) {
+      CobbleUtils.LOGGER.info("[PokemonFormula] Expression built instance ready for evaluation.");
+    }
+
+    return expr;
   }
+
 
   // ---- Variable resolvers ----
 

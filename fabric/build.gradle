@@ -57,8 +57,9 @@ dependencies {
     //shadowCommon("net.kyori:adventure-platform-fabric:6.2.0")
 
     // Database
-    libby("org.mongodb:mongodb-driver-sync:${property("mongodb_version")}") //{ transitive = true }
+    libby("org.mongodb:mongodb-driver-sync:${property("mongodb_version")}") { transitive = true }
     libby("org.mongodb:bson:${property("mongodb_version")}")
+
     libby("org.xerial:sqlite-jdbc:${property("sqlite_version")}")
     libby("com.zaxxer:HikariCP:${property("hikaricp_version")}")
 
@@ -135,8 +136,8 @@ shadowJar {
     //    exclude("org/sqlite/native/Solaris/**/*")
     //}
     //relocate("net.milkbowl.vault", "net.milkbowl.vault")
-    relocate("com.mongodb", "com.kingpixel.cobbleutils.mongodb")
-    relocate("org.bson", "com.kingpixel.cobbleutils.bson")
+    //relocate("com.mongodb", "com.kingpixel.cobbleutils.mongodb")
+    //relocate("org.bson", "com.kingpixel.cobbleutils.bson")
     relocate("redis.clients.jedis", "com.kingpixel.cobbleutils.redis.clients.jedis")
     relocate("org.apache.commons.commons-pool2", "com.kingpixel.cobbleutils.org.apache.commons.pool2")
 

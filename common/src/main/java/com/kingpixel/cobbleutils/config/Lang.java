@@ -26,7 +26,6 @@ public class Lang {
   private String titlepc;
   private String titleparty;
   private String titleconfirm;
-  private String AH;
   private String HA;
   private String confirm;
   private String cancel;
@@ -121,6 +120,7 @@ public class Lang {
     titlemenushiny = "&eShiny Menu";
     titlepc = "&bPC";
     titleparty = "&bParty";
+    HA = "&f(&bHA&f)";
     messageNotHaveRewards = "&cYou don't have rewards.";
     titlemenushinyoperation = "&eShiny Operation";
     titleconfirm = "&eConfirm";
@@ -131,7 +131,6 @@ public class Lang {
     symbolshiny = " &e⭐";
     nocooldown = "&cNo cooldown";
     unknown = "&cUnknown";
-    AH = "&f(&bHA&f)";
     none = "&cNone";
     coloritem = "<gradient:#cc7435:#e3ab84>";
     pokemonnameformat = "&e%pokemon%%shiny% %gender% &f(&b%form%&f) &f(&b%level%&f) %ha%";
@@ -262,11 +261,6 @@ public class Lang {
       el -> {
         Gson gson = Utils.newGson();
         CobbleUtils.language = gson.fromJson(el, Lang.class);
-        Lang lang = CobbleUtils.language;
-        if (lang.getAH() != null) {
-          lang.setHA(lang.getAH());
-          lang.setAH(null);
-        }
         if (CobbleUtils.language.getTitlemenurewards() == null)
           CobbleUtils.language.setTitlemenurewards("&eRewards Menu");
         String data = gson.toJson(CobbleUtils.language);

@@ -18,6 +18,8 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.Model.CobbleUtilsTags;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 
@@ -31,8 +33,17 @@ import java.util.regex.Pattern;
 /**
  * @author Carlos Varas Alonso - 28/06/2024 18:53
  */
+@Data
+@EqualsAndHashCode(callSuper = false)
 public class PokemonUtils {
-
+  public static final List<Stats> STATS_LIST = List.of(
+    Stats.HP,
+    Stats.ATTACK,
+    Stats.DEFENCE,
+    Stats.SPECIAL_ATTACK,
+    Stats.SPECIAL_DEFENCE,
+    Stats.SPEED
+  );
   private static String CACHED_LORE;
 
   private static String getCachedLore() {
