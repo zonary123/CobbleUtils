@@ -687,7 +687,7 @@ public class PokemonUtils {
   public static String getSizeName(Pokemon pokemon) {
     String size = pokemon.getPersistentData().getString("size");
     if (size.isEmpty()) return CobbleUtils.language.getUnknown();
-    return size;
+    return CobbleUtils.language.getSizes().getOrDefault(size, CobbleUtils.language.getDefaultSize());
   }
 
   /**

@@ -79,6 +79,8 @@ public class Lang {
   private String second;
 
   // Pokemon Colors
+  private String defaultSize;
+  private Map<String, String> sizes;
   private Map<String, String> gender;
   private Map<String, String> forms;
   private Map<String, String> movecolor;
@@ -187,6 +189,13 @@ public class Lang {
     seconds = "&6%s &aseconds ";
     second = "&6%s &asecond";
 
+    defaultSize = "&eNormal";
+    sizes = Map.of(
+      "small", "&aSmall",
+      "normal", "&eNormal",
+      "large", "&cLarge",
+      "huge", "&4Huge"
+    );
     gender = Map.of("M", "&b♂", "F", "&d♀", "N", "&7⚲");
     forms = Map.of("hisui", "&cHisuian");
     types = new HashMap<>();
