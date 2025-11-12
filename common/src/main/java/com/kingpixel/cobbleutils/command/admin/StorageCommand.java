@@ -62,7 +62,9 @@ public class StorageCommand {
                               Pokemon pokemon = PartySlotArgumentType.Companion.getPokemon(context, "slot").clone(true, DynamicRegistryManager.EMPTY);
 
                               DataBaseFactory.dataBaseUsers.addStorage(new StoragePokemon(pokemon), targetUUID);
-                              sendFeedback(source, "✅ Added Pokémon " + pokemon.getDisplayName().getString() + " to " + targetName + "'s storage.");
+                              sendFeedback(source,
+                                "✅ Added Pokémon " + pokemon.getDisplayName(false).getString() + " to " + targetName +
+                                  "'s storage.");
                               return 1;
                             })
                         )
@@ -78,7 +80,8 @@ public class StorageCommand {
                               Pokemon pokemon = PokemonPropertiesArgumentType.Companion.getPokemonProperties(context, ARG_POKEMON).create();
 
                               DataBaseFactory.dataBaseUsers.addStorage(new StoragePokemon(pokemon), targetUUID);
-                              sendFeedback(source, "✅ Added Pokémon " + pokemon.getDisplayName().getString() + " to " + targetName + "'s storage.");
+                              sendFeedback(source, "✅ Added Pokémon " + pokemon.getDisplayName(false).getString() +
+                                " to " + targetName + "'s storage.");
                               return 1;
                             })
                         )

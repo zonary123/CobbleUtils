@@ -179,7 +179,7 @@ public class PokemonFormula {
     Expression expr = getExpression();
     if (showVariablesInConsole) {
       StringBuilder sb = new StringBuilder();
-      sb.append("Evaluating Pokemon: ").append(pokemon.getDisplayName().getString()).append(" | ID: ").append(pokemon.showdownId()).append(" | Hash: ").append(System.identityHashCode(pokemon));
+      sb.append("Evaluating Pokemon: ").append(pokemon.getDisplayName(false).getString()).append(" | ID: ").append(pokemon.showdownId()).append(" | Hash: ").append(System.identityHashCode(pokemon));
       CobbleUtils.LOGGER.info(sb.toString());
       if (player != null) {
         player.sendMessage(Text.literal(sb.toString()));
