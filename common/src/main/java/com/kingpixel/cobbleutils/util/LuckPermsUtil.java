@@ -15,6 +15,7 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.RegisteredServiceProvider;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -23,7 +24,8 @@ import java.util.UUID;
 public abstract class LuckPermsUtil {
   private static final Cache<UUID, ServerCommandSource> commandSourceCache = Caffeine.newBuilder()
     .maximumSize(1000)
-    .expireAfterAccess(java.time.Duration.ofMinutes(1))
+    .expireAfterAccess(Duration.ofMinutes(1))
+    .expireAfterWrite(Duration.ofMinutes(1))
     .build();
 
   private static Permission PERMISSION_TYPE;

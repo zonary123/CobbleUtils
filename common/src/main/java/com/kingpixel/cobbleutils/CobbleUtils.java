@@ -220,32 +220,28 @@ public class CobbleUtils {
       shutdownAndAwait(SCHEDULER_COBBLEUTILS);
     });
 
-    PlayerEvent.PLAYER_JOIN.register((player) -> {
-      CompletableFuture.runAsync(() -> {
-          UserModel user = DataBaseFactory.dataBaseUsers.findUserByUUID(player.getUuid());
-          if (user == null) user = new UserModel(player);
-          user.updateData(player);
-          user.fix();
-          DataBaseFactory.dataBaseUsers.saveOrUpdateUser(user);
-          DataBaseUsers.users.put(player.getUuid(), user);
-        }, EXECUTOR_COBBLEUTILS)
-        .exceptionally(e -> {
-          e.printStackTrace();
-          return null;
-        });
-    });
+    PlayerEvent.PLAYER_JOIN.register((player) -> CompletableFuture.runAsync(() -> {
+        UserModel user = DataBaseFactory.dataBaseUsers.findUserByUUID(player.getUuid());
+        if (user == null) user = new UserModel(player);
+        user.updateData(player);
+        user.fix();
+        DataBaseFactory.dataBaseUsers.saveOrUpdateUser(user);
+        DataBaseUsers.users.put(player.getUuid(), user);
+      }, EXECUTOR_COBBLEUTILS)
+      .exceptionally(e -> {
+        e.printStackTrace();
+        return null;
+      }));
 
-    PlayerEvent.PLAYER_QUIT.register((player) -> {
-      CompletableFuture.runAsync(() -> {
-          UserModel user = DataBaseFactory.dataBaseUsers.findUserByUUID(player.getUuid());
-          if (user != null) DataBaseFactory.dataBaseUsers.saveOrUpdateUser(user);
-          DataBaseFactory.dataBaseUsers.removeIfNecessary(player.getUuid());
-        }, EXECUTOR_COBBLEUTILS)
-        .exceptionally(e -> {
-          e.printStackTrace();
-          return null;
-        });
-    });
+    PlayerEvent.PLAYER_QUIT.register((player) -> CompletableFuture.runAsync(() -> {
+        UserModel user = DataBaseFactory.dataBaseUsers.findUserByUUID(player.getUuid());
+        if (user != null) DataBaseFactory.dataBaseUsers.saveOrUpdateUser(user);
+        DataBaseFactory.dataBaseUsers.removeIfNecessary(player.getUuid());
+      }, EXECUTOR_COBBLEUTILS)
+      .exceptionally(e -> {
+        e.printStackTrace();
+        return null;
+      }));
 
     CommandRegistrationEvent.EVENT.register((dispatcher, registry, selection) -> {
       CustomPokemonProperty.Companion.register(MinIvsPropertyType.INSTANCE);

@@ -311,7 +311,6 @@ public class ItemChance {
           TypeMessage.CHAT
         );
         return true;
-
       } else {
         itemStack = getCachedItem(itemChance, parseAmount(item.split(":")[1]) * amount).copy();
       }
@@ -452,53 +451,63 @@ public class ItemChance {
    *
    * @return The ItemStack of the reward.
    */
-  // Cache para memoization
   private static ItemStack getRewardItemStack(String item, int amount) {
     if (item == null || item.isEmpty()) return ItemStack.EMPTY;
 
-    // Cache key based on item and amount
     String cacheKey = item + "|" + amount;
 
-    // Memoization: improve performance for frequently requested items
-    return REWARD_ITEM_STACK.computeIfAbsent(cacheKey, key -> {
-      ItemStack itemStack;
-      if (item.startsWith("id:")) {
-        String id = item.replace("id:", "");
-        ItemChance ic = RewardsApi.getReward(id);
+    // Check if already cached
+    ItemStack cached = REWARD_ITEM_STACK.get(cacheKey);
+    if (cached != null) return cached.copy();
 
-        if (ic != null) {
-          String nestedItem = ic.getItem();
-          if (nestedItem.equals(item)) {
-            // Stop infinite Cycle
-            return ItemStack.EMPTY;
-          }
-          return getRewardItemStack(nestedItem, amount);
-        }
-      }
+    // Resolve the ItemStack
+    ItemStack resolved = resolveRewardItemStack(item, amount);
 
-      String[] parts = item.split("\\|");
-      if (parts.length > 1) {
-        itemStack = getRewardItemStack(parts[0], amount);
-        return itemStack;
-      }
+    // Cache the resolved ItemStack
+    REWARD_ITEM_STACK.put(cacheKey, resolved);
 
-      if (item.startsWith("pokemon:")) {
-        itemStack = PokemonItem.from(getRewardPokemon(item));
-      } else if (item.startsWith("command:")) {
-        itemStack = parseCommandItem(item);
-      } else if (item.startsWith("money:")) {
-        itemStack = parseMoneyItem(item);
-      } else if (item.startsWith("item:")) {
-        itemStack = parseItemStack(item, parseAmount(item.split(":")[1]) * amount);
-      } else if (item.startsWith("mod:")) {
-        itemStack = getModItem(new ItemChance(item, 100));
-      } else {
-        itemStack = Utils.parseItemId(item, amount);
-      }
-
-      return itemStack;
-    }).copy(); // Return copy to avoid modifying cached instance
+    return resolved.copy(); // Return a copy to avoid modifying the cached instance
   }
+
+  /**
+   * Resolves the ItemStack without touching the cache (safe for recursion).
+   */
+  private static ItemStack resolveRewardItemStack(String item, int amount) {
+    ItemStack itemStack;
+
+    if (item.startsWith("id:")) {
+      String id = item.replace("id:", "");
+      ItemChance ic = RewardsApi.getReward(id);
+
+      if (ic != null) {
+        String nestedItem = ic.getItem();
+        if (nestedItem.equals(item)) return ItemStack.EMPTY; // Prevent infinite cycles
+        return getRewardItemStack(nestedItem, amount);
+      }
+    }
+
+    String[] parts = item.split("\\|");
+    if (parts.length > 1) {
+      return getRewardItemStack(parts[0], amount);
+    }
+
+    if (item.startsWith("pokemon:")) {
+      itemStack = PokemonItem.from(getRewardPokemon(item));
+    } else if (item.startsWith("command:")) {
+      itemStack = parseCommandItem(item);
+    } else if (item.startsWith("money:")) {
+      itemStack = parseMoneyItem(item);
+    } else if (item.startsWith("item:")) {
+      itemStack = parseItemStack(item, parseAmount(item.split(":")[1]) * amount);
+    } else if (item.startsWith("mod:")) {
+      itemStack = getModItem(new ItemChance(item, 100));
+    } else {
+      itemStack = Utils.parseItemId(item, amount);
+    }
+
+    return itemStack;
+  }
+
 
   private static ItemStack parseCommandItem(String item) {
     String command = item.replace("command:", "");

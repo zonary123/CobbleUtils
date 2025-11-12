@@ -23,19 +23,17 @@ import net.minecraft.registry.DynamicRegistryManager;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.text.Text;
 
 import java.util.List;
 import java.util.UUID;
 
-/**
- * @author Carlos Varas Alonso - 07/11/2024 4:18
- */
 public class StorageCommand {
   private static final String ARG_PLAYER = "player";
   private static final String ARG_POKEMON = "pokemon";
   private static final String ARG_ITEM = "item";
   private static final String ARG_AMOUNT = "amount";
-  private static final List<String> permissions = List.of("cobbleutils.admin");
+  private static final List<String> PERMISSIONS = List.of("cobbleutils.admin");
 
   public static void register(CommandDispatcher<ServerCommandSource> dispatcher, CommandRegistryAccess registry, LiteralArgumentBuilder<ServerCommandSource> base) {
     dispatcher.register(
@@ -44,121 +42,137 @@ public class StorageCommand {
           ServerPlayerEntity player = context.getSource().getPlayerOrThrow();
           CobbleUtils.language.getStorageMenu().open(player, player.getUuid());
           return 1;
-        }).then(
+        })
+        .then(
           CommandManager.literal("add")
-            .requires(source -> PermissionApi.hasPermission(source, permissions, 2))
+            .requires(source -> PermissionApi.hasPermission(source, PERMISSIONS, 2))
             .then(
-              CobbleUtilsSuggests.SUGGESTS_PLAYER_OFFLINE_AND_ONLINE.suggestPlayerName(ARG_PLAYER, permissions, 2)
+              CobbleUtilsSuggests.SUGGESTS_PLAYER_OFFLINE_AND_ONLINE.suggestPlayerName(ARG_PLAYER, PERMISSIONS, 2)
+                // --- Add Pokémon ---
                 .then(
-                  CommandManager.literal(ARG_POKEMON)
+                  CommandManager.literal("pokemon")
                     .then(
                       CommandManager.literal("slot")
                         .then(
                           CommandManager.argument("slot", PartySlotArgumentType.Companion.partySlot())
                             .executes(context -> {
-                              Pokemon pokemon = PartySlotArgumentType.Companion.getPokemon(context, "slot");
-                              CobbleUtils.EXECUTOR_COBBLEUTILS.execute(() ->
-                                DataBaseFactory.dataBaseUsers.addStorage(
-                                  new StoragePokemon(pokemon.clone(true, DynamicRegistryManager.EMPTY)),
-                                  getPlayerUUID(context)
-                                )
-                              );
+                              ServerCommandSource source = context.getSource();
+                              UUID targetUUID = getPlayerUUID(context);
+                              String targetName = getTargetName(context);
+                              Pokemon pokemon = PartySlotArgumentType.Companion.getPokemon(context, "slot").clone(true, DynamicRegistryManager.EMPTY);
+
+                              DataBaseFactory.dataBaseUsers.addStorage(new StoragePokemon(pokemon), targetUUID);
+                              sendFeedback(source, "✅ Added Pokémon " + pokemon.getDisplayName().getString() + " to " + targetName + "'s storage.");
                               return 1;
                             })
                         )
-                    ).then(
-                      CommandManager.literal("pokemon")
+                    )
+                    .then(
+                      CommandManager.literal("properties")
                         .then(
                           CommandManager.argument(ARG_POKEMON, PokemonPropertiesArgumentType.Companion.properties())
                             .executes(context -> {
+                              ServerCommandSource source = context.getSource();
+                              UUID targetUUID = getPlayerUUID(context);
+                              String targetName = getTargetName(context);
                               Pokemon pokemon = PokemonPropertiesArgumentType.Companion.getPokemonProperties(context, ARG_POKEMON).create();
-                              CobbleUtils.EXECUTOR_COBBLEUTILS.execute(() ->
-                                DataBaseFactory.dataBaseUsers.addStorage(
-                                  new StoragePokemon(pokemon),
-                                  getPlayerUUID(context)
-                                )
-                              );
+
+                              DataBaseFactory.dataBaseUsers.addStorage(new StoragePokemon(pokemon), targetUUID);
+                              sendFeedback(source, "✅ Added Pokémon " + pokemon.getDisplayName().getString() + " to " + targetName + "'s storage.");
                               return 1;
                             })
                         )
                     )
                 )
+                // --- Add ItemStack ---
                 .then(
                   CommandManager.literal("itemstack")
                     .then(
                       CommandManager.literal("hand")
                         .executes(context -> {
-                          ServerPlayerEntity player = context.getSource().getPlayerOrThrow();
-                          var itemStack = player.getMainHandStack().copy();
-                          CobbleUtils.EXECUTOR_COBBLEUTILS.execute(() ->
-                            DataBaseFactory.dataBaseUsers.addStorage(
-                              new StorageItemStack(itemStack),
-                              getPlayerUUID(context)
-                            )
-                          );
+                          ServerCommandSource source = context.getSource();
+                          ServerPlayerEntity sender = source.getPlayerOrThrow();
+                          UUID targetUUID = getPlayerUUID(context);
+                          String targetName = getTargetName(context);
+                          var itemStack = sender.getMainHandStack().copy();
+
+                          DataBaseFactory.dataBaseUsers.addStorage(new StorageItemStack(itemStack), targetUUID);
+                          sendFeedback(source, "✅ Added " + itemStack.getCount() + "x " + itemStack.getName().getString() + " to " + targetName + "'s storage.");
                           return 1;
                         })
-                    ).then(
+                    )
+                    .then(
                       CommandManager.literal("command")
                         .then(
                           CommandManager.argument(ARG_AMOUNT, IntegerArgumentType.integer())
                             .then(
                               CommandManager.argument(ARG_ITEM, ItemStackArgumentType.itemStack(registry))
                                 .executes(context -> {
+                                  ServerCommandSource source = context.getSource();
+                                  UUID targetUUID = getPlayerUUID(context);
+                                  String targetName = getTargetName(context);
                                   int amount = IntegerArgumentType.getInteger(context, ARG_AMOUNT);
                                   var itemStack = ItemStackArgumentType.getItemStackArgument(context, ARG_ITEM).createStack(amount, true);
-                                  CobbleUtils.EXECUTOR_COBBLEUTILS.execute(() ->
-                                    DataBaseFactory.dataBaseUsers.addStorage(
-                                      new StorageItemStack(itemStack),
-                                      getPlayerUUID(context)
-                                    )
-                                  );
+
+                                  DataBaseFactory.dataBaseUsers.addStorage(new StorageItemStack(itemStack), targetUUID);
+                                  sendFeedback(source, "✅ Added " + amount + "x " + itemStack.getName().getString() + " to " + targetName + "'s storage.");
                                   return 1;
                                 })
                             )
                         )
                     )
                 )
+                // --- Add Reward ---
                 .then(
                   CommandManager.literal("reward")
                     .then(
                       CommandManager.argument("data", StringArgumentType.greedyString())
                         .executes(context -> {
+                          ServerCommandSource source = context.getSource();
+                          UUID targetUUID = getPlayerUUID(context);
+                          String targetName = getTargetName(context);
                           String data = StringArgumentType.getString(context, "data");
-                          CobbleUtils.EXECUTOR_COBBLEUTILS.execute(() ->
-                            DataBaseFactory.dataBaseUsers.addStorage(
-                              new StorageRewards(new ItemChance(data, 100)),
-                              getPlayerUUID(context)
-                            )
-                          );
+
+                          DataBaseFactory.dataBaseUsers.addStorage(new StorageRewards(new ItemChance(data, 100)), targetUUID);
+                          sendFeedback(source, "✅ Added reward '" + data + "' to " + targetName + "'s storage.");
                           return 1;
                         })
                     )
                 )
             )
-        ).then(
+        )
+        // --- View Storage ---
+        .then(
           CommandManager.literal("view")
-            .requires(source -> PermissionApi.hasPermission(source, permissions, 2))
+            .requires(source -> PermissionApi.hasPermission(source, PERMISSIONS, 2))
             .then(
-              CobbleUtilsSuggests.SUGGESTS_PLAYER_OFFLINE_AND_ONLINE.suggestPlayerName(ARG_PLAYER, permissions, 2)
+              CobbleUtilsSuggests.SUGGESTS_PLAYER_OFFLINE_AND_ONLINE.suggestPlayerName(ARG_PLAYER, PERMISSIONS, 2)
                 .executes(context -> {
                   ServerPlayerEntity player = context.getSource().getPlayerOrThrow();
-                  CobbleUtils.EXECUTOR_COBBLEUTILS.execute(() -> {
-                    UUID playerUUID = getPlayerUUID(context);
-                    var user = DataBaseFactory.dataBaseUsers.findUserByUUID(playerUUID);
-                    if (user != null) CobbleUtils.language.getStorageMenu().open(player, playerUUID);
-                  });
+                  UUID playerUUID = getPlayerUUID(context);
+                  String targetName = getTargetName(context);
+
+                  var user = DataBaseFactory.dataBaseUsers.findUserByUUID(playerUUID);
+                  if (user != null) {
+                    CobbleUtils.language.getStorageMenu().open(player, playerUUID);
+                    sendFeedback(context.getSource(), "📦 Displaying storage for " + targetName + ".");
+                  } else {
+                    sendFeedback(context.getSource(), "⚠️ Player " + targetName + " was not found.");
+                  }
                   return 1;
                 })
             )
-        ).then(
+        )
+        // --- Open another player's storage ---
+        .then(
           CommandManager.literal("other")
-            .requires(source -> PermissionApi.hasPermission(source, permissions, 2))
+            .requires(source -> PermissionApi.hasPermission(source, PERMISSIONS, 2))
             .then(
               CommandManager.argument(ARG_PLAYER, EntityArgumentType.player())
                 .executes(context -> {
                   ServerPlayerEntity target = EntityArgumentType.getPlayer(context, ARG_PLAYER);
-                  CobbleUtils.EXECUTOR_COBBLEUTILS.execute(() -> CobbleUtils.language.getStorageMenu().open(target, target.getUuid()));
+                  CobbleUtils.language.getStorageMenu().open(target, target.getUuid());
+                  sendFeedback(context.getSource(), "📦 Opened storage for " + target.getName().getString() + ".");
                   return 1;
                 })
             )
@@ -169,5 +183,17 @@ public class StorageCommand {
   private static UUID getPlayerUUID(CommandContext<ServerCommandSource> context) {
     String playerName = context.getArgument(ARG_PLAYER, String.class);
     return CobbleUtilsSuggests.SUGGESTS_PLAYER_OFFLINE_AND_ONLINE.getPlayerUUIDWithName(playerName);
+  }
+
+  private static String getTargetName(CommandContext<ServerCommandSource> context) {
+    return context.getArgument(ARG_PLAYER, String.class);
+  }
+
+  private static void sendFeedback(ServerCommandSource source, String message) {
+    try {
+      source.sendFeedback(() -> Text.of(message), false);
+    } catch (Exception e) {
+      CobbleUtils.LOGGER.warn("Error sending feedback message: " + e.getMessage());
+    }
   }
 }

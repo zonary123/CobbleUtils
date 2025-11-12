@@ -11,6 +11,7 @@ import net.minecraft.entity.effect.StatusEffect;
 import net.minecraft.entity.effect.StatusEffectInstance;
 import net.minecraft.network.packet.s2c.play.ParticleS2CPacket;
 import net.minecraft.network.packet.s2c.play.SubtitleS2CPacket;
+import net.minecraft.network.packet.s2c.play.TitleFadeS2CPacket;
 import net.minecraft.network.packet.s2c.play.TitleS2CPacket;
 import net.minecraft.particle.ParticleEffect;
 import net.minecraft.registry.Registries;
@@ -198,7 +199,8 @@ public class HiperMessage implements JsonSerializer<HiperMessage>, JsonDeseriali
           content = parts[1];
           if (type == null) {
             type = MessageType.CHAT;
-            System.out.println("[HiperMessage] Unknown message type in rawMessage: " + rawMessage + ". Defaulting to CHAT." +
+            CobbleUtils.LOGGER.info("[HiperMessage] Unknown message type in rawMessage: " + rawMessage + ". Defaulting " +
+              "to CHAT." +
               " Valid types are: " + MessageType.defaults());
           }
         }
@@ -399,6 +401,7 @@ public class HiperMessage implements JsonSerializer<HiperMessage>, JsonDeseriali
      * @return the TitleS2CPacket instance
      */
     public TitleS2CPacket getTitlePacker(ServerPlayerEntity player, String prefix) {
+
       return titlePacketCache.get(title, t -> new TitleS2CPacket(AdventureTranslator.toNative(t, prefix, player)));
     }
 
@@ -420,13 +423,13 @@ public class HiperMessage implements JsonSerializer<HiperMessage>, JsonDeseriali
     public void sendTo(ServerPlayerEntity player, String prefix) {
       if (player == null) return;
       if (title != null && !title.isEmpty()) {
+        player.networkHandler.sendPacket(new TitleFadeS2CPacket(0, 40, 20));
         player.networkHandler.sendPacket(getTitlePacker(player, prefix));
       }
       if (subtitle != null && !subtitle.isEmpty()) {
         player.networkHandler.sendPacket(getSubtitlePacker(player, prefix));
       }
     }
-
   }
 
   /**
