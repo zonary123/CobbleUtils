@@ -1,6 +1,6 @@
 package com.kingpixel.cobbleutils.util;
 
-import com.cobblemon.mod.common.Cobblemon;
+import com.cobblemon.mod.common.battles.BattleRegistry;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
@@ -38,7 +38,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class PlayerUtils {
 
-  private static final ExecutorService MESSAGE_EXECUTOR = Executors.newFixedThreadPool(4, new ThreadFactoryBuilder()
+  private static final ExecutorService MESSAGE_EXECUTOR = Executors.newFixedThreadPool(8, new ThreadFactoryBuilder()
     .setDaemon(true)
     .setNameFormat("CobbleUtils Message - %d")
     .build());
@@ -51,7 +51,7 @@ public class PlayerUtils {
    * @return true if the player is in a battle.
    */
   public static boolean isBattle(ServerPlayerEntity player) {
-    var battle = Cobblemon.INSTANCE.getBattleRegistry().getBattleByParticipatingPlayer(player);
+    var battle = BattleRegistry.getBattleByParticipatingPlayer(player);
     if (battle != null) {
       PlayerUtils.sendMessage(
         player,
