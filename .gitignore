@@ -8,6 +8,9 @@ fabric/run
 /run/
 .env
 
+/libs/cobblemon-*.jar
+/libs/fabric-*.jar
+
 /forge/.architectury-transformer/debug.log
 
 # eclipse

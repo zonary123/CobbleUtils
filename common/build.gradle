@@ -1,6 +1,5 @@
 architectury {
     common("fabric")
-    common("neoforge")
 }
 
 loom {
@@ -9,7 +8,7 @@ loom {
 
 dependencies {
 
-    modImplementation("com.cobblemon:fabric:${property("cobblemon_version")}")
+    //modImplementation("com.cobblemon:fabric:${property("cobblemon_version")}")
     // alL fabric dependencies:
     modImplementation("net.fabricmc:fabric-loader:${property("fabric_loader_version")}")
     modImplementation("net.fabricmc.fabric-api:fabric-api:${property("fabric_version")}")
@@ -37,7 +36,7 @@ dependencies {
 
     // Economy
     // Economy Impactor
-    api(fileTree(dir: "libs", include: ["*.jar"], exclude: ["*sdm-economy*", "*ftb-ranks*"]))
+    modImplementation(fileTree(dir: "libs", include: ["*.jar"], exclude: ["*sdm-economy*", "*ftb-ranks*"]))
     implementation("net.impactdev.impactor.api:economy:${property("impactor_version")}")
     modImplementation(files("libs/sdmeconomy-fabric-1.21.1-2.0.0.jar"))
     modImplementation(files("libs/ftb-ranks-fabric-2101.1.3.jar"))

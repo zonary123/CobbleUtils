@@ -36,7 +36,7 @@ dependencies {
     modImplementation("net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}")
     modImplementation("dev.architectury:architectury-fabric:${project.architectury_version}")
 
-    modImplementation("com.cobblemon:fabric:${property("cobblemon_version")}")
+    //modImplementation("com.cobblemon:fabric:${property("cobblemon_version")}")
     modImplementation("net.fabricmc:fabric-language-kotlin:${property("fabric-kotlin")}")
     modImplementation("org.jetbrains.kotlin:kotlin-reflect:${property("kotlin")}")
     modImplementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:${property("kotlin")}")

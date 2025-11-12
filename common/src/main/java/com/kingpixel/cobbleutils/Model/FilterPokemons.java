@@ -208,6 +208,7 @@ public class FilterPokemons {
    *
    * @param modId the mod id
    * @param id    the id
+   *
    * @return the list of pokemons
    */
   public List<Pokemon> getCachePokemons(String modId, String id) {
@@ -235,6 +236,7 @@ public class FilterPokemons {
    * Gets a pokemon with properties
    *
    * @param pokemon the pokemon
+   *
    * @return the pokemon
    */
   private Pokemon clonePokemon(Pokemon pokemon) {
@@ -253,6 +255,7 @@ public class FilterPokemons {
    *
    * @param modId the mod id
    * @param id    the id
+   *
    * @return the pokemon
    */
   public Pokemon generateRandomPokemon(String modId, String id) {
@@ -271,6 +274,7 @@ public class FilterPokemons {
    * @param modId the mod id
    * @param id    the id
    * @param size  the size of the list
+   *
    * @return the list of pokemons
    */
   public List<Pokemon> generateRandomPokemons(String modId, String id, int size) {
@@ -299,7 +303,7 @@ public class FilterPokemons {
   public List<Pokemon> getAllPokemons() {
     List<Pokemon> allPokemons = new ArrayList<>();
     Set<String> uniquePokemonIds = new HashSet<>();
-    List<Species> species = new ArrayList<>(PokemonSpecies.INSTANCE.getSpecies().stream().toList());
+    List<Species> species = new ArrayList<>(PokemonSpecies.getSpecies().stream().toList());
     species.sort(Comparator.comparing(Species::getNationalPokedexNumber));
 
     species.forEach(pokemon -> {
@@ -363,6 +367,7 @@ public class FilterPokemons {
    * Checks if a pokemon is allowed
    *
    * @param pokemon the pokemon
+   *
    * @return true if the pokemon is allowed
    */
   private boolean isAllowed(Pokemon pokemon) {
