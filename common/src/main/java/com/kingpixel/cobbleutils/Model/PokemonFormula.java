@@ -3,6 +3,7 @@ package com.kingpixel.cobbleutils.Model;
 import com.cobblemon.mod.common.api.pokemon.egg.EggGroup;
 import com.cobblemon.mod.common.api.pokemon.evolution.PreEvolution;
 import com.cobblemon.mod.common.api.pokemon.stats.Stats;
+import com.cobblemon.mod.common.api.riding.stats.RidingStat;
 import com.cobblemon.mod.common.pokemon.Gender;
 import com.cobblemon.mod.common.pokemon.Nature;
 import com.cobblemon.mod.common.pokemon.Pokemon;
@@ -10,6 +11,7 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.util.PokemonUtils;
+import com.kingpixel.cobbleutils.util.Utils;
 import lombok.Data;
 import net.minecraft.item.ItemStack;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -53,6 +55,7 @@ public class PokemonFormula {
   private boolean accumulationLabels = false;
   private Map<String, Float> labels = new HashMap<>();
   private Map<Boolean, Float> breedable = new HashMap<>();
+  private Map<String, Map<Object, Float>> persistentDataValues = new HashMap<>();
 
   private HeldItemPrice heldItemPrice = new HeldItemPrice();
 
@@ -82,6 +85,20 @@ public class PokemonFormula {
     labels.put("legendary", 0f);
     breedable.put(true, 0f);
     breedable.put(false, 0f);
+    persistentDataValues.put(
+      "example_data_1",
+      Map.of(
+        "common", 100f,
+        "uncommon", 0f
+      )
+    );
+    persistentDataValues.put(
+      "example_data_2",
+      Map.of(
+        false, 0f,
+        true, 0f
+      )
+    );
   }
 
   /**
@@ -125,9 +142,30 @@ public class PokemonFormula {
     variableResolvers.put("evsAverage", p -> (float) Math.max(PokemonUtils.getEvsAverage(p.getEvs()), 1));
     for (Stats stats : PokemonUtils.STATS_LIST) {
       var showdownId = stats.getShowdownId();
+      // IVs and EVs per stat
       variableResolvers.put("iv_" + showdownId, p -> (float) Math.max(p.getIvs().getOrDefault(stats), 1));
       variableResolvers.put("ev_" + showdownId, p -> (float) Math.max(p.getEvs().getOrDefault(stats), 1));
+      // Hyper Trained IVs
+      variableResolvers.put("ht_iv_" + showdownId,
+        p -> (float) Math.max(p.getIvs().getHyperTrainedIVs().getOrDefault(stats, 0), 0));
     }
+
+    // Riding stats
+    for (RidingStat value : RidingStat.values()) {
+      var showdownId = value.name();
+      variableResolvers.put("riding_" + showdownId, p -> p.getRideBoost(value));
+    }
+
+    // Persistent data variables are registered dynamically during evaluation
+    persistentDataValues.forEach((key, map) -> variableResolvers.put(key, p -> {
+        var persistentData = p.getPersistentData();
+        var nbtElement = persistentData.get(key);
+        if (nbtElement == null) return 0f;
+        var nbtValue = Utils.convertNbtValue(nbtElement);
+        var value = map.getOrDefault(nbtValue, 0f);
+        return value != null ? value : 0f;
+      })
+    );
 
     if (showVariablesInConsole) {
       CobbleUtils.LOGGER.info("Pokemon formula available variables: " + variableResolvers.keySet());
@@ -188,7 +226,6 @@ public class PokemonFormula {
     variableResolvers.forEach((name, resolver) -> {
       float value = resolver.apply(pokemon);
       expr.setVariable(name, value);
-
       if (showVariablesInConsole) {
         StringBuilder sb = new StringBuilder();
         sb.append("Variable set: ").append(name).append(" = ").append(value);

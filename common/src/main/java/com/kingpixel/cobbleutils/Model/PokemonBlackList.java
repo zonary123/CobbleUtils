@@ -4,8 +4,11 @@ import com.cobblemon.mod.common.api.pokemon.egg.EggGroup;
 import com.cobblemon.mod.common.api.types.ElementalType;
 import com.cobblemon.mod.common.pokemon.Pokemon;
 import com.kingpixel.cobbleutils.util.PokemonUtils;
+import com.kingpixel.cobbleutils.util.Utils;
 import lombok.Getter;
 import lombok.Setter;
+import net.minecraft.nbt.NbtCompound;
+import net.minecraft.nbt.NbtElement;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -16,8 +19,7 @@ import java.util.stream.Collectors;
 @Getter
 @Setter
 public class PokemonBlackList {
-  transient
-  private final Map<String, Boolean> resultsCache = new HashMap<>();
+  private transient final Map<String, Boolean> resultsCache = new HashMap<>();
   private boolean onlyImplemented;
   private boolean allowEvolutions = true;
   private Set<String> pokemons;
@@ -26,6 +28,7 @@ public class PokemonBlackList {
   private Set<String> labels;
   private Set<String> types;
   private Set<String> rarities;
+  private Map<String, List<Object>> persistentDataMap;
   private Set<EggGroup> eggGroups;
 
   public PokemonBlackList() {
@@ -42,6 +45,16 @@ public class PokemonBlackList {
     forms.add("hisuian_Example");
     this.aspects = new HashSet<>();
     aspects.add("gmax_Example");
+    this.persistentDataMap = new HashMap<>();
+    persistentDataMap.put("example_1", List.of(
+      "example_value_1",
+      "example_value_2"
+    ));
+    persistentDataMap.put("example_2", List.of(
+      1,
+      2,
+      3
+    ));
     this.eggGroups = new HashSet<>();
     this.rarities = new HashSet<>();
   }
@@ -72,33 +85,42 @@ public class PokemonBlackList {
   }
 
   public boolean isBlacklisted(Pokemon pokemon) {
-    // ✅ Quick wildcard check
-    if (pokemons.contains("*")) {
-      return true;
-    }
+    // Quick wildcard check
+    if (pokemons.contains("*")) return true;
 
-    // ✅ Check cached result first to avoid redundant computation
-    String showdownId = pokemon.showdownId();
-    Boolean cached = resultsCache.get(showdownId);
-    if (cached != null) {
-      return cached;
-    }
-
-    // ✅ Check aspects
+    // Check aspects
     if (!aspects.isEmpty()) {
-      for (String aspect : pokemon.getAspects()) {
-        if (aspects.contains(aspect)) {
-          return cacheResult(showdownId, true);
-        }
+      var pokemonAspects = pokemon.getAspects();
+      for (String aspect : pokemonAspects) {
+        if (aspects.contains(aspect)) return true;
+      }
+      var forcedAspects = pokemon.getForcedAspects();
+      for (String forcedAspect : forcedAspects) {
+        if (aspects.contains(forcedAspect)) return true;
       }
     }
 
-    // ✅ Check "only implemented" restriction
+    // Check Persistent data
+    NbtCompound persistentData = pokemon.getPersistentData();
+    Set<String> keys = persistentData.getKeys();
+    for (String key : keys) {
+      List<Object> list = persistentDataMap.get(key);
+      if (list == null || list.isEmpty()) continue;
+      NbtElement element = persistentData.get(key);
+      if (list.contains(Utils.convertNbtValue(element))) return true;
+    }
+
+    // Check cached result first to avoid redundant computation
+    String showdownId = pokemon.showdownId();
+    Boolean cached = resultsCache.get(showdownId);
+    if (cached != null) return cached;
+
+    //  Check "only implemented" restriction
     if (onlyImplemented && !pokemon.getSpecies().getImplemented()) {
       return cacheResult(showdownId, true);
     }
 
-    // ✅ Form and evolution restrictions
+    // Form and evolution restrictions
     var form = pokemon.getForm();
     String formShowdownId = form.showdownId();
 
@@ -109,31 +131,31 @@ public class PokemonBlackList {
       }
     }
 
-    // ✅ Check egg groups
+    // Check egg groups
     for (EggGroup eggGroup : form.getEggGroups()) {
       if (eggGroups.contains(eggGroup)) {
         return cacheResult(showdownId, true);
       }
     }
 
-    // ✅ Check for direct Pokémon matches
+    // Check for direct Pokémon matches
     if (pokemons.contains("*") || pokemons.contains(formShowdownId) || pokemons.contains(showdownId)) {
       return cacheResult(showdownId, true);
     }
 
-    // ✅ Check labels
+    // Check labels
     for (String label : form.getLabels()) {
       if (labels.contains(label)) {
         return cacheResult(showdownId, true);
       }
     }
 
-    // ✅ Check forms
+    // Check forms
     if (forms.contains(form.formOnlyShowdownId())) {
       return cacheResult(showdownId, true);
     }
 
-    // ✅ Check types
+    // Check types
     for (ElementalType type : pokemon.getTypes()) {
       String typeName = type.getName().toLowerCase();
       if (types.contains(typeName)) {
@@ -141,7 +163,7 @@ public class PokemonBlackList {
       }
     }
 
-    // ✅ Check rarity
+    // Check rarity
     String rarity = PokemonUtils.getRarityS(pokemon);
     boolean isBlacklisted = rarities.contains(rarity);
 

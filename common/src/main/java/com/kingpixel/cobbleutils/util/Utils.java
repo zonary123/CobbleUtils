@@ -27,7 +27,7 @@ import net.minecraft.component.type.LoreComponent;
 import net.minecraft.component.type.ProfileComponent;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
-import net.minecraft.nbt.NbtCompound;
+import net.minecraft.nbt.*;
 import net.minecraft.registry.Registries;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -121,6 +121,26 @@ public abstract class Utils {
       .registerTypeAdapter(Box.class, BoxAdapter.INSTANCE);
   }
 
+
+  public static Object convertNbtValue(NbtElement element) {
+    return switch (element) {
+      case null -> null;
+      case NbtByte byteTag -> {
+        byte b = byteTag.byteValue();
+        if (b == 0 || b == 1) yield b == 1;
+        yield b;
+      }
+      case NbtShort shortTag -> shortTag.shortValue();
+      case NbtInt intTag -> intTag.intValue();
+      case NbtLong longTag -> longTag.longValue();
+      case NbtFloat floatTag -> floatTag.floatValue();
+      case NbtDouble doubleTag -> doubleTag.doubleValue();
+      case NbtString stringTag -> stringTag.asString();
+      default -> null;
+    };
+  }
+
+  // IO Methods
   public static final ExecutorService IO_EXECUTOR = Executors.newFixedThreadPool(24, new ThreadFactoryBuilder()
     .setDaemon(true)
     .setNameFormat("CobbleUtils IO - %d")

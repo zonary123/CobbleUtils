@@ -46,7 +46,7 @@ public class LegendaryProperty implements CustomPokemonProperty {
 
   private Species getRandomLegendary() {
     if (legendaries.isEmpty()) {
-      var s = PokemonSpecies.INSTANCE.getSpecies();
+      var s = PokemonSpecies.getSpecies();
       for (Species species : s) {
         if (!species.getImplemented()) continue;
         if (species.getLabels().contains(CobblemonPokemonLabels.LEGENDARY)) {

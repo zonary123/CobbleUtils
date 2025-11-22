@@ -303,6 +303,7 @@ public class FilterPokemons {
   public List<Pokemon> getAllPokemons() {
     List<Pokemon> allPokemons = new ArrayList<>();
     Set<String> uniquePokemonIds = new HashSet<>();
+    // 1.7 List<Species> species = new ArrayList<>(PokemonSpecies.getSpecies().stream().toList());
     List<Species> species = new ArrayList<>(PokemonSpecies.getSpecies().stream().toList());
     species.sort(Comparator.comparing(Species::getNationalPokedexNumber));
 

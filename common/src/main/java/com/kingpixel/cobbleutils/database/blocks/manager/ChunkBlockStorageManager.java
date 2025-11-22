@@ -30,6 +30,7 @@ public class ChunkBlockStorageManager {
     .expireAfterAccess(1, TimeUnit.MINUTES)
     .expireAfterWrite(5, TimeUnit.MINUTES)
     .removalListener((key, value, cause) -> {
+      if (CobbleUtils.server.isStopped() || CobbleUtils.server.isStopping()) return;
       if (CobbleUtils.config.isDebug()) {
         CobbleUtils.LOGGER.info("ChunkBlockStorageManager: Chunk cache entry removed. Key: " + key + ", Cause: " + cause);
       }

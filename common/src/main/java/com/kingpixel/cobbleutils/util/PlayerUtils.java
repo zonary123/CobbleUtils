@@ -51,6 +51,7 @@ public class PlayerUtils {
    * @return true if the player is in a battle.
    */
   public static boolean isBattle(ServerPlayerEntity player) {
+    // 1.7 var battle = BattleRegistry.getBattleByParticipatingPlayer(player);
     var battle = BattleRegistry.getBattleByParticipatingPlayer(player);
     if (battle != null) {
       PlayerUtils.sendMessage(

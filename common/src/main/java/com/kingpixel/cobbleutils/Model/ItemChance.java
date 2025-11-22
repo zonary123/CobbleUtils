@@ -193,6 +193,7 @@ public class ItemChance {
    */
   public static List<ItemChance> defaultItemChances() {
     List<ItemChance> itemChances = new ArrayList<>();
+    itemChances.add(new ItemChance("id:battle", 1.0));
     itemChances.add(new ItemChance("cobblemon:poke_ball", 999.0));
     itemChances.add(new ItemChance("item:1:cobblemon:poke_ball", 1.0));
     itemChances.add(new ItemChance("item:1:minecraft:dirt#[minecraft:custom_model_data=1]", 1.0));

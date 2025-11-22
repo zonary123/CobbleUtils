@@ -6,6 +6,7 @@ import com.cobblemon.mod.common.pokemon.Pokemon;
 import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.Model.ItemChance;
 import com.kingpixel.cobbleutils.api.PermissionApi;
+import com.kingpixel.cobbleutils.api.RewardsApi;
 import com.kingpixel.cobbleutils.command.suggests.CobbleUtilsSuggests;
 import com.kingpixel.cobbleutils.database.DataBaseFactory;
 import com.kingpixel.cobbleutils.database.users.models.StorageItemStack;
@@ -135,8 +136,15 @@ public class StorageCommand {
                           UUID targetUUID = getPlayerUUID(context);
                           String targetName = getTargetName(context);
                           String data = StringArgumentType.getString(context, "data");
+                          ItemChance itemChance = null;
+                          if (data.startsWith("id:")) {
+                            String id = data.substring(3);
+                            itemChance = RewardsApi.getReward(id);
+                          } else {
+                            itemChance = new ItemChance(data, 100);
+                          }
 
-                          DataBaseFactory.dataBaseUsers.addStorage(new StorageRewards(new ItemChance(data, 100)), targetUUID);
+                          DataBaseFactory.dataBaseUsers.addStorage(new StorageRewards(itemChance), targetUUID);
                           sendFeedback(source, "✅ Added reward '" + data + "' to " + targetName + "'s storage.");
                           return 1;
                         })

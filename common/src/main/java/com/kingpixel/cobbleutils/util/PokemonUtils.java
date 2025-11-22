@@ -154,12 +154,27 @@ public class PokemonUtils {
     Map.entry("%ability%", p -> safe(p, poke -> isEgg(poke) ? "<lang:cobblemon.ability." + poke.getPersistentData().getString("ability") + ">" : getAbilityTranslate(poke.getAbility()))),
     Map.entry("%tradeable%", p -> safe(p, poke -> poke.getTradeable() ? CobbleUtils.language.getYes() : CobbleUtils.language.getNo())),
     // IVs
-    Map.entry("%ivshp%", p -> safe(p, poke -> String.valueOf(poke.getIvs().get(Stats.HP)))),
-    Map.entry("%ivsatk%", p -> safe(p, poke -> String.valueOf(poke.getIvs().get(Stats.ATTACK)))),
-    Map.entry("%ivsdef%", p -> safe(p, poke -> String.valueOf(poke.getIvs().get(Stats.DEFENCE)))),
-    Map.entry("%ivsspa%", p -> safe(p, poke -> String.valueOf(poke.getIvs().get(Stats.SPECIAL_ATTACK)))),
-    Map.entry("%ivsspdef%", p -> safe(p, poke -> String.valueOf(poke.getIvs().get(Stats.SPECIAL_DEFENCE)))),
-    Map.entry("%ivsspeed%", p -> safe(p, poke -> String.valueOf(poke.getIvs().get(Stats.SPEED)))),
+    Map.entry("%ivshp%", p -> safe(p, poke -> String.valueOf(getIv(poke, Stats.HP)))),
+    Map.entry("%ivsatk%", p -> safe(p, poke -> String.valueOf(getIv(poke, Stats.ATTACK)))),
+    Map.entry("%ivsdef%", p -> safe(p, poke -> String.valueOf(getIv(poke, Stats.DEFENCE)))),
+    Map.entry("%ivsspa%", p -> safe(p, poke -> String.valueOf(getIv(poke, Stats.SPECIAL_ATTACK)))),
+    Map.entry("%ivsspdef%", p -> safe(p, poke -> String.valueOf(getIv(poke, Stats.SPECIAL_DEFENCE)))),
+    Map.entry("%ivsspeed%", p -> safe(p, poke -> String.valueOf(getIv(poke, Stats.SPEED)))),
+    // HyperTrained IVs
+    Map.entry("%htivshp%", p -> safe(p,
+      poke -> String.valueOf(poke.getIvs().getHyperTrainedIVs().getOrDefault(Stats.HP, getIv(poke, Stats.HP))))),
+    Map.entry("%htivsatk%", p -> safe(p,
+      poke -> String.valueOf(poke.getIvs().getHyperTrainedIVs().getOrDefault(Stats.ATTACK, getIv(poke, Stats.ATTACK))))),
+    Map.entry("%htivsdef%", p -> safe(p, poke -> String.valueOf(poke.getIvs().getHyperTrainedIVs().getOrDefault(Stats.DEFENCE, getIv(poke, Stats.DEFENCE))))),
+    Map.entry("%htivsspa%", p -> safe(p, poke -> String.valueOf(poke.getIvs().getHyperTrainedIVs().getOrDefault(Stats.SPECIAL_ATTACK, getIv(poke, Stats.SPECIAL_ATTACK))))),
+    Map.entry("%htivsspdef%", p -> safe(p, poke -> String.valueOf(poke.getIvs().getHyperTrainedIVs().getOrDefault(Stats.SPECIAL_DEFENCE, getIv(poke, Stats.SPECIAL_DEFENCE))))),
+    Map.entry("%htivsspeed%", p -> safe(p, poke -> String.valueOf(poke.getIvs().getHyperTrainedIVs().getOrDefault(Stats.SPEED, getIv(poke, Stats.SPEED))))),
+    // Riding IVs
+    /*Map.entry("%riding_speed%", p -> safe(p, poke -> String.valueOf(poke.getRideBoost(RidingStat.SPEED)))),
+    Map.entry("%riding_stamina%", p -> safe(p, poke -> String.valueOf(poke.getRideBoost(RidingStat.STAMINA)))),
+    Map.entry("%riding_acceleration%", p -> safe(p, poke -> String.valueOf(poke.getRideBoost(RidingStat.ACCELERATION)))),
+    Map.entry("%riding_jump%", p -> safe(p, poke -> String.valueOf(poke.getRideBoost(RidingStat.JUMP)))),
+    Map.entry("%riding_handling%", p -> safe(p, poke -> String.valueOf(poke.getRideBoost(RidingStat.SKILL)))),*/
     // EVs
     Map.entry("%evshp%", p -> safe(p, poke -> String.valueOf(poke.getEvs().get(Stats.HP)))),
     Map.entry("%evsatk%", p -> safe(p, poke -> String.valueOf(poke.getEvs().get(Stats.ATTACK)))),
@@ -169,8 +184,8 @@ public class PokemonUtils {
     Map.entry("%evsspeed%", p -> safe(p, poke -> String.valueOf(poke.getEvs().get(Stats.SPEED)))),
     // Otros atributos
     Map.entry("%item%", p -> safe(p, poke -> ItemUtils.getTranslatedName(poke.heldItem()))),
-    Map.entry("%size%", p -> safe(p, poke -> getSize(poke))),
-    Map.entry("%form%", p -> safe(p, poke -> getForm(poke))),
+    Map.entry("%size%", p -> safe(p, PokemonUtils::getSize)),
+    Map.entry("%form%", p -> safe(p, PokemonUtils::getForm)),
     Map.entry("%up%", p -> safe(p, poke -> getStatTranslate(poke.getNature().getIncreasedStat()))),
     Map.entry("%down%", p -> safe(p, poke -> getStatTranslate(poke.getNature().getDecreasedStat()))),
     Map.entry("%ball%", p -> safe(p, poke -> getPokeBallTranslate(poke.getCaughtBall()))),
@@ -199,6 +214,10 @@ public class PokemonUtils {
     Map.entry("%labels%", p -> safe(p, poke -> poke.getForm().getLabels().toString())),
     Map.entry("%aspects%", p -> safe(p, poke -> poke.getAspects().toString()))
   );
+
+  private static int getIv(Pokemon pokemon, Stat stat) {
+    return pokemon.getIvs().getOrDefault(stat);
+  }
 
   public static Map<String, String> buildPlaceholders(Pokemon pokemon, String indexStr) {
     Map<String, String> result = HashMap.newHashMap(PLACEHOLDER_FUNCTIONS.size());
@@ -335,7 +354,7 @@ public class PokemonUtils {
 
   public static Pokemon getEvolutionPokemonEgg(Species species) {
     if (species.showdownId().equals("manaphy"))
-      return PokemonSpecies.INSTANCE.getByIdentifier(Identifier.of("cobblemon:phione")).create(1);
+      return PokemonSpecies.getByIdentifier(Identifier.of("cobblemon:phione")).create(1);
     Species firstEvolution = getFirstPreEvolution(species);
     Pokemon specialPokemon = firstEvolution.create(1);
 
@@ -687,7 +706,7 @@ public class PokemonUtils {
   public static String getSizeName(Pokemon pokemon) {
     String size = pokemon.getPersistentData().getString("size");
     if (size.isEmpty()) return CobbleUtils.language.getUnknown();
-    return CobbleUtils.language.getSizes().getOrDefault(size, CobbleUtils.language.getDefaultSize());
+    return CobbleUtils.language.getSizes().getOrDefault(size, size);
   }
 
   /**

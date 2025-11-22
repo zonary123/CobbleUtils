@@ -79,7 +79,6 @@ public class Lang {
   private String second;
 
   // Pokemon Colors
-  private String defaultSize;
   private Map<String, String> sizes;
   private Map<String, String> gender;
   private Map<String, String> forms;
@@ -160,8 +159,11 @@ public class Lang {
       "<#9be8c2><lang:cobblemon.ui.info.nature>: &f%nature% &f(&a↑%up%&f/&c↓%down%&f)",
       "<#6fa7de><lang:cobblemon.ui.info.ability>: &f%ability% %ha%",
       "<#83a7de><lang:cobblemon.ui.stats.ivs>: &e%ivs%&7/&e31",
-      " <#ee8339><lang:cobblemon.ui.stats.hp>: &f%ivshp% <#e84b48><lang:cobblemon.ui.stats.atk>: &f%ivsatk% <#5d79e1><lang:cobblemon.ui.stats.def>: &f%ivsdef%",
-      " <#40b5cd><lang:cobblemon.ui.stats.sp_atk>: &f%ivsspa% <#f59bc2><lang:cobblemon.ui.stats.sp_def>: &f%ivsspdef% <#69cd65><lang:cobblemon.ui.stats.speed>: &f%ivsspeed%",
+      " <#ee8339><lang:cobblemon.ui.stats.hp>: &f%ivshp% (%htivshp%) <#e84b48><lang:cobblemon.ui.stats.atk>: " +
+        "&f%ivsatk% (%htivsatk%) " +
+        "<#5d79e1><lang:cobblemon.ui.stats.def>: &f%ivsdef% (%htivsdef%)",
+      " <#40b5cd><lang:cobblemon.ui.stats.sp_atk>: &f%ivsspa% (%htivsspa%) <#f59bc2><lang:cobblemon.ui.stats.sp_def>: " +
+        "&f%ivsspdef% (%htivsspdef%) <#69cd65><lang:cobblemon.ui.stats.speed>: &f%ivsspeed% (%htivsspeed%)",
       "<#de8397><lang:cobblemon.ui.stats.evs>: &e%evs%&7/&e510",
       " <#ee8339><lang:cobblemon.ui.stats.hp>: &f%evshp% <#e84b48><lang:cobblemon.ui.stats.atk>: &f%evsatk% <#5d79e1><lang:cobblemon.ui.stats.def>: &f%evsdef%",
       " <#40b5cd><lang:cobblemon.ui.stats.sp_atk>: &f%evsspa% <#f59bc2><lang:cobblemon.ui.stats.sp_def>: &f%evsspdef% <#69cd65><lang:cobblemon.ui.stats.speed>: &f%evsspeed%",
@@ -189,7 +191,6 @@ public class Lang {
     seconds = "&6%s &aseconds ";
     second = "&6%s &asecond";
 
-    defaultSize = "&eNormal";
     sizes = Map.of(
       "small", "&aSmall",
       "normal", "&eNormal",
