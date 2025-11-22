@@ -851,6 +851,11 @@ public class ItemChance {
     } else {
       itemStack = getItemStack();
     }
+
+    if (title != null && !title.isEmpty()) {
+      itemStack.set(DataComponentTypes.CUSTOM_NAME, AdventureTranslator.toNative(title));
+    }
+
     return itemStack;
   }
 }
