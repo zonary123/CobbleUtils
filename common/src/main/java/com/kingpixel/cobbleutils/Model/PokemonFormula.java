@@ -38,13 +38,11 @@ import java.util.function.Function;
 public class PokemonFormula {
   private boolean showVariablesInConsole = false;
   private String formula;
-
-
   // Base configurations
   private float base = 0;
   private float shiny = 0;
   private float hiddenAbility = 0;
-
+  // Variable maps
   private Map<String, Float> pokemonBase = new HashMap<>();
   private Map<String, Float> form = new HashMap<>();
   private Map<Gender, Float> gender = new EnumMap<>(Gender.class);
@@ -56,12 +54,11 @@ public class PokemonFormula {
   private Map<String, Float> labels = new HashMap<>();
   private Map<Boolean, Float> breedable = new HashMap<>();
   private Map<String, Map<Object, Float>> persistentDataValues = new HashMap<>();
-
+  // Held item prices
   private HeldItemPrice heldItemPrice = new HeldItemPrice();
 
   // Dynamic variable resolvers: register any formula variable with a function
-  transient
-  private final Map<String, Function<Pokemon, Float>> variableResolvers = new HashMap<>();
+  private transient final Map<String, Function<Pokemon, Float>> variableResolvers = new HashMap<>();
 
 
   public PokemonFormula() {
@@ -147,7 +144,10 @@ public class PokemonFormula {
       variableResolvers.put("ev_" + showdownId, p -> (float) Math.max(p.getEvs().getOrDefault(stats), 1));
       // Hyper Trained IVs
       variableResolvers.put("ht_iv_" + showdownId,
-        p -> (float) Math.max(p.getIvs().getHyperTrainedIVs().getOrDefault(stats, 0), 0));
+        p -> {
+          int iv = p.getIvs().getHyperTrainedIVs().getOrDefault(stats, 0);
+          return (float) iv;
+        });
     }
 
     // Riding stats
@@ -157,15 +157,22 @@ public class PokemonFormula {
     }
 
     // Persistent data variables are registered dynamically during evaluation
-    persistentDataValues.forEach((key, map) -> variableResolvers.put(key, p -> {
-        var persistentData = p.getPersistentData();
-        var nbtElement = persistentData.get(key);
-        if (nbtElement == null) return 0f;
-        var nbtValue = Utils.convertNbtValue(nbtElement);
-        var value = map.getOrDefault(nbtValue, 0f);
-        return value != null ? value : 0f;
-      })
-    );
+    persistentDataValues.forEach((key, map) -> {
+      variableResolvers.put(key, p -> {
+        try {
+          var persistentData = p.getPersistentData();
+          var nbtElement = persistentData.get(key);
+          if (nbtElement == null) return 0f;
+          var nbtValue = Utils.convertNbtValue(nbtElement);
+          if (nbtValue == null) return 0f;
+          var value = map.getOrDefault(nbtValue, 0f);
+          return value != null ? value : 0f;
+        } catch (Exception e) {
+          CobbleUtils.LOGGER.error("Error getting persistent data variable '" + key + "' for Pokemon: " + p.getDisplayName(false).getString());
+          return 0f;
+        }
+      });
+    });
 
     if (showVariablesInConsole) {
       CobbleUtils.LOGGER.info("Pokemon formula available variables: " + variableResolvers.keySet());
@@ -191,12 +198,13 @@ public class PokemonFormula {
    * @return The computed value.
    */
   public Double getPokemonValue(Pokemon pokemon) {
-    return pokemonResultCache.get(pokemon, p -> getPokemonExpression(p).evaluate());
+    return getPokemonExpression(pokemon).evaluate();
+    //return pokemonResultCache.get(pokemon, p -> getPokemonExpression(p).evaluate());
   }
 
   private transient final Cache<Pokemon, @Nullable Double> pokemonResultCache = Caffeine.newBuilder()
     .maximumSize(1000)
-    .expireAfterWrite(Duration.ofSeconds(5)) // ✅ 10 seconds cache
+    .expireAfterWrite(Duration.ofSeconds(5))
     .removalListener((key, value, cause) -> {
       if (CobbleUtils.config.isDebug()) {
         CobbleUtils.LOGGER.info("PokemonFormula Cache eviction | Key: " + key + " | Value: " + value + " | Cause: " + cause);
