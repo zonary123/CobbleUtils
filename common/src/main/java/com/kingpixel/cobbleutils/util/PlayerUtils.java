@@ -87,7 +87,12 @@ public class PlayerUtils {
    * @param typeMessage The type of message to send (CHAT, ACTIONBAR, ACTIONBAR_BROADCAST, BROADCAST).
    */
   public static void sendMessage(UUID playerUUID, String message, String prefix, TypeMessage typeMessage) {
-    if (message.isEmpty()) return;
+    if (message.isEmpty()) {
+      if (CobbleUtils.config.isDebug()) {
+        CobbleUtils.LOGGER.info("Tried to send an empty message to player UUID: " + playerUUID);
+      }
+      return;
+    }
 
     String fullMessage = message.replace("%prefix%", prefix);
 
@@ -100,6 +105,7 @@ public class PlayerUtils {
             case BROADCAST -> RedisManager.sendMessage(fullMessage, prefix);
           }
         }, RedisManager.EXECUTOR_REDIS)
+        .orTimeout(5, TimeUnit.SECONDS)
         .exceptionally(e -> {
           e.printStackTrace();
           return null;
@@ -148,9 +154,16 @@ public class PlayerUtils {
    * @param typeMessage The type of message to send (CHAT, ACTIONBAR, ACTIONBAR_BROADCAST, BROADCAST).
    */
   public static void sendMessage(ServerPlayerEntity player, String message, String prefix, TypeMessage typeMessage) {
-    if (player == null || message.isEmpty()) return;
+    if (message.isEmpty()) {
+      if (CobbleUtils.config.isDebug()) {
+        CobbleUtils.LOGGER.info("Tried to send an empty message to player: " +
+          (player != null ? player.getGameProfile().getName() : "null"));
+      }
+      return;
+    }
     CompletableFuture.runAsync(() -> {
         if (CobbleUtils.config.isRedisMessaging()) {
+          if (player == null) return;
           sendMessage(player.getUuid(), message, prefix, typeMessage);
           return;
         }

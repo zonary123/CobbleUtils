@@ -10,6 +10,7 @@ import com.cobblemon.mod.common.api.pokemon.PokemonSpecies;
 import com.cobblemon.mod.common.api.pokemon.egg.EggGroup;
 import com.cobblemon.mod.common.api.pokemon.stats.Stat;
 import com.cobblemon.mod.common.api.pokemon.stats.Stats;
+import com.cobblemon.mod.common.api.riding.stats.RidingStat;
 import com.cobblemon.mod.common.api.types.ElementalType;
 import com.cobblemon.mod.common.pokeball.PokeBall;
 import com.cobblemon.mod.common.pokemon.*;
@@ -145,7 +146,7 @@ public class PokemonUtils {
     return p != null ? func.apply(p) : UNKNOWN;
   }
 
-  private static final Map<String, Function<Pokemon, String>> PLACEHOLDER_FUNCTIONS = Map.ofEntries(
+  private static final Map<String, Function<Pokemon, String>> PLACEHOLDER_FUNCTIONS = Map.<String, Function<Pokemon, String>>ofEntries(
     Map.entry("%showdownid%", p -> safe(p, Pokemon::showdownId)),
     Map.entry("%level%", p -> safe(p, poke -> String.valueOf(poke.getLevel()))),
     Map.entry("%nature%", p -> safe(p, poke -> getNatureTranslate(poke.getNature()))),
@@ -170,11 +171,11 @@ public class PokemonUtils {
     Map.entry("%htivsspdef%", p -> safe(p, poke -> String.valueOf(poke.getIvs().getHyperTrainedIVs().getOrDefault(Stats.SPECIAL_DEFENCE, getIv(poke, Stats.SPECIAL_DEFENCE))))),
     Map.entry("%htivsspeed%", p -> safe(p, poke -> String.valueOf(poke.getIvs().getHyperTrainedIVs().getOrDefault(Stats.SPEED, getIv(poke, Stats.SPEED))))),
     // Riding IVs
-    /*Map.entry("%riding_speed%", p -> safe(p, poke -> String.valueOf(poke.getRideBoost(RidingStat.SPEED)))),
+    Map.entry("%riding_speed%", p -> safe(p, poke -> String.valueOf(poke.getRideBoost(RidingStat.SPEED)))),
     Map.entry("%riding_stamina%", p -> safe(p, poke -> String.valueOf(poke.getRideBoost(RidingStat.STAMINA)))),
     Map.entry("%riding_acceleration%", p -> safe(p, poke -> String.valueOf(poke.getRideBoost(RidingStat.ACCELERATION)))),
     Map.entry("%riding_jump%", p -> safe(p, poke -> String.valueOf(poke.getRideBoost(RidingStat.JUMP)))),
-    Map.entry("%riding_handling%", p -> safe(p, poke -> String.valueOf(poke.getRideBoost(RidingStat.SKILL)))),*/
+    Map.entry("%riding_handling%", p -> safe(p, poke -> String.valueOf(poke.getRideBoost(RidingStat.SKILL)))),
     // EVs
     Map.entry("%evshp%", p -> safe(p, poke -> String.valueOf(poke.getEvs().get(Stats.HP)))),
     Map.entry("%evsatk%", p -> safe(p, poke -> String.valueOf(poke.getEvs().get(Stats.ATTACK)))),

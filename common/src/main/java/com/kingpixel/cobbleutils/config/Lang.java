@@ -77,7 +77,9 @@ public class Lang {
   private String minute;
   private String seconds;
   private String second;
-
+  // World Colors+
+  private Map<String, String> worlds;
+  private Map<String, String> biomes;
   // Pokemon Colors
   private Map<String, String> sizes;
   private Map<String, String> gender;
@@ -190,6 +192,25 @@ public class Lang {
     minute = "&6%s &aminute ";
     seconds = "&6%s &aseconds ";
     second = "&6%s &asecond";
+
+    // World Colors+
+    worlds = Map.of(
+      "minecraft:overworld", "&aOverworld",
+      "minecraft:nether", "&cNether",
+      "minecraft:the_end", "&5The End"
+    );
+    biomes = Map.of(
+      "minecraft:plains", "&aPlains",
+      "minecraft:desert", "&eDesert",
+      "minecraft:forest", "&2Forest",
+      "minecraft:taiga", "&3Taiga",
+      "minecraft:swamp", "&2Swamp",
+      "minecraft:river", "&bRiver",
+      "minecraft:ocean", "&1Ocean",
+      "minecraft:mushroom_fields", "&5Mushroom Fields",
+      "minecraft:savanna", "&6Savanna",
+      "minecraft:jungle", "&2Jungle"
+    );
 
     sizes = Map.of(
       "small", "&aSmall",

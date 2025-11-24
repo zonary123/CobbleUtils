@@ -17,6 +17,7 @@ import net.minecraft.registry.entry.RegistryEntry;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.world.biome.Biome;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Set;
 
@@ -66,7 +67,7 @@ public class WebHookStruct {
       .setColor(Integer.parseInt(embeds.get(i).getColor(), 16))
       .setTitle(new WebhookEmbed.EmbedTitle(embeds.get(i).getTitle(), null))
       .setDescription(description)
-      .setTimestamp(new java.util.Date().toInstant())
+      .setTimestamp(new Date().toInstant())
       .setThumbnailUrl(getGif(pokemonEntity.getPokemon()))
       .setFooter(new WebhookEmbed.EmbedFooter(pokemonEntity.getForm().showdownId(), getGif(pokemonEntity.getPokemon())))
       .build();
@@ -89,7 +90,7 @@ public class WebHookStruct {
 
       String biome = "";
       try {
-        RegistryEntry<Biome> biomeRegistry = pokemonEntity.getWorld().getBiome(pokemonEntity.getBlockPos());
+        RegistryEntry<Biome> biomeRegistry = pokemonEntity.getEntityWorld().getBiome(pokemonEntity.getBlockPos());
         biome = biomeRegistry.getIdAsString();
       } catch (Exception ignored) {
         biome = "Unknown";
