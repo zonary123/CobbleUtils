@@ -11,10 +11,7 @@ import net.minecraft.server.network.ServerPlayerEntity;
 
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.*;
 
 @Getter
 @Setter
@@ -45,10 +42,7 @@ public class WebHookData {
    */
   public void sendWebHook(String id, WebHookStruct struct, List<ServerPlayerEntity> players,
                           List<Pokemon> pokemons) {
-    runAsyncWebhook(id, () -> {
-      WebhookClient client = webhooks.computeIfAbsent(URL_WEBHOOK, k -> WebhookClient.withUrl(URL_WEBHOOK));
-      client.send(struct.getMessage(this, players, pokemons));
-    });
+    runAsyncWebhook(id, () -> getWebhookClient().send(struct.getMessage(this, players, pokemons)));
   }
 
 
@@ -57,10 +51,7 @@ public class WebHookData {
    */
   public void sendWebHookEntity(String id, WebHookStruct struct, List<ServerPlayerEntity> players,
                                 List<PokemonEntity> pokemons) {
-    runAsyncWebhook(id, () -> {
-      WebhookClient client = webhooks.computeIfAbsent(URL_WEBHOOK, k -> WebhookClient.withUrl(URL_WEBHOOK));
-      client.send(struct.getMessageEntity(this, players, pokemons));
-    });
+    runAsyncWebhook(id, () -> getWebhookClient().send(struct.getMessageEntity(this, players, pokemons)));
   }
 
   /**
@@ -69,9 +60,14 @@ public class WebHookData {
   private void runAsyncWebhook(String id, Runnable task) {
     if (!ENABLED || URL_WEBHOOK == null || URL_WEBHOOK.isEmpty()) return;
     CompletableFuture.runAsync(task, WEBHOOK_THREAD_FACTORY)
+      .orTimeout(5, TimeUnit.SECONDS)
       .exceptionally(e -> {
         e.printStackTrace();
         return null;
       });
+  }
+
+  public WebhookClient getWebhookClient() {
+    return webhooks.computeIfAbsent(URL_WEBHOOK, k -> WebhookClient.withUrl(URL_WEBHOOK));
   }
 }
