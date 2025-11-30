@@ -8,8 +8,8 @@ import com.google.gson.stream.JsonWriter;
 
 import java.io.IOException;
 import java.time.Instant;
+import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
 
 /**
  * Custom Gson TypeAdapter for serializing and deserializing {@link Instant} objects.
@@ -51,23 +51,65 @@ public class InstantTypeAdapter extends TypeAdapter<Instant> {
    */
   @Override
   public Instant read(final JsonReader in) throws IOException {
-    try {
-      // Check if the next token is null in the JSON input
-      if (in.peek() == JsonToken.NULL) {
-        in.nextNull(); // Skip the null value in the input
-        return null; // Return null if the value is null
-      }
+    JsonToken token = in.peek();
 
-      // Read the next string and try to parse it as an Instant
-      String dateString = in.nextString();
-      return Instant.from(FORMATTER.parse(dateString)); // Deserialize the Instant using ISO 8601 format
-
-    } catch (DateTimeParseException e) {
-      // Handle malformed date format
-      throw new JsonParseException("Malformed ISO instant format: " + e.getMessage(), e);
-
-      // Alternatively, you can return a default Instant, such as Instant.EPOCH:
-      // return Instant.EPOCH; // Returns the epoch (1970-01-01T00:00:00Z) if format is invalid
+    // 1) Null → return null
+    if (token == JsonToken.NULL) {
+      in.nextNull();
+      return null;
     }
+
+    // 2) Objeto => puede ser { "$date": "..." }
+    if (token == JsonToken.BEGIN_OBJECT) {
+      in.beginObject();
+
+      String name = in.nextName(); // debería ser "$date"
+      String value = in.nextString(); // el valor real
+
+      in.endObject();
+
+      return parseInstant(value); // reutilizamos la lógica de parseo
+    }
+
+    // 3) String normal
+    if (token == JsonToken.STRING) {
+      String value = in.nextString();
+      return parseInstant(value);
+    }
+
+    // 4) Número => epoch millis
+    if (token == JsonToken.NUMBER) {
+      long epochMillis = in.nextLong();
+      return Instant.ofEpochMilli(epochMillis);
+    }
+
+    throw new JsonParseException("Tipo no soportado para Instant: " + token);
   }
+
+// ---- MÉTODO AUXILIAR PARA PARSEAR EN ORDEN ----
+
+  private Instant parseInstant(String dateString) {
+    // 1) Tu FORMATTER primero
+    try {
+      return Instant.from(FORMATTER.parse(dateString));
+    } catch (Exception ignored) {
+    }
+
+    // 2) ISO_OFFSET_DATE_TIME
+    try {
+      return OffsetDateTime.parse(dateString, DateTimeFormatter.ISO_OFFSET_DATE_TIME).toInstant();
+    } catch (Exception ignored) {
+    }
+
+    // 3) Epoch millis
+    try {
+      long millis = Long.parseLong(dateString);
+      return Instant.ofEpochMilli(millis);
+    } catch (Exception ignored) {
+    }
+
+    throw new JsonParseException("Formato de fecha inválido: " + dateString);
+  }
+
+
 }

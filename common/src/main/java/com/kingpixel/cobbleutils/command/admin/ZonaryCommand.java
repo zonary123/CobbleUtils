@@ -45,7 +45,7 @@ public class ZonaryCommand {
                 .append("Debug CobbleUtils").append(Formatting.GOLD).append(" =====\n")
                 .append(Formatting.AQUA).append("Autor: ").append(Formatting.YELLOW).append("zonary123\n")
                 .append(Formatting.AQUA).append("Mods: ").append(Formatting.RESET).append("\n");
-
+              int totalMods = modsByAuthor.size();
               if (modsByAuthor.isEmpty()) {
                 sb.append(Formatting.RED).append("  - Ningún mod encontrado.\n");
               } else {
@@ -56,8 +56,11 @@ public class ZonaryCommand {
 
               sb.append(Formatting.AQUA).append("Server: ").append(Formatting.YELLOW)
                 .append(CobbleUtils.server.getServerModName()).append("\n")
-                .append(Formatting.AQUA).append("IP: ").append(Formatting.YELLOW)
-                .append(CobbleUtils.server.getServerIp()).append("\n")
+                .append(Formatting.AQUA).append("Total Mods by zonary123: ").append(Formatting.YELLOW)
+                .append(totalMods).append("\n")
+                // Añade el total de usuarios
+                .append(Formatting.AQUA).append("Online users: ").append(Formatting.YELLOW)
+                .append(CobbleUtils.server.getPlayerManager().getPlayerList().size()).append("\n")
                 .append(Formatting.GOLD).append("============================");
 
               PlayerUtils.sendMessage(player, sb.toString(), "", TypeMessage.CHAT);

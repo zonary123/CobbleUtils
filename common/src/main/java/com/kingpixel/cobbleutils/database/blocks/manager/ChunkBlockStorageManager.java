@@ -15,7 +15,6 @@ import net.minecraft.world.World;
 import net.minecraft.world.chunk.Chunk;
 
 import java.io.*;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.zip.GZIPInputStream;
@@ -122,7 +121,7 @@ public class ChunkBlockStorageManager {
     if (data != null) return data;
     try {
       data = loadChunk(world, chunk).get();
-    } catch (InterruptedException | ExecutionException e) {
+    } catch (Exception e) {
       e.printStackTrace();
       data = new ChunkBlockData();
     }
@@ -158,17 +157,28 @@ public class ChunkBlockStorageManager {
 
           int size = dis.readInt();
           for (int i = 0; i < size; i++) {
-            long blockKey = dis.readLong();
-            chunkBlockData.add(blockKey);
+            chunkBlockData.add(dis.readLong());
           }
 
+        } catch (EOFException e) {
+          CobbleUtils.LOGGER.error("Chunk file is corrupt or incomplete: " + chunkFile.getName() + ". Skipping it.");
+          // Opcional: eliminar archivo corrupto para regenerarlo
+          try {
+            if (!chunkFile.delete()) {
+              CobbleUtils.LOGGER.warn("Failed to delete corrupted chunk file: " + chunkFile.getName());
+            }
+          } catch (Exception ex) {
+            CobbleUtils.LOGGER.error("Error deleting corrupted chunk file: " + chunkFile.getName());
+          }
         } catch (IOException e) {
-          e.printStackTrace();
+          CobbleUtils.LOGGER.error("Error reading chunk file: " + chunkFile.getName());
         }
       }
+
       return chunkBlockData;
     });
   }
+
 
   public static void saveChunk(World world, Chunk chunk) {
     String key = getKey(world, chunk);

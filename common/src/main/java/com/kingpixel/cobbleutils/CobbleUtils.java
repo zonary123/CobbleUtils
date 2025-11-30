@@ -210,7 +210,7 @@ public class CobbleUtils {
       CobbleUtilsSuggests.SUGGESTS_PLAYER_OFFLINE_AND_ONLINE.refreshIfNeeded();
     });
 
-    LifecycleEvent.SERVER_STOPPED.register(server1 -> {
+    LifecycleEvent.SERVER_STOPPING.register(server1 -> {
       DataBaseFactory.close();
       RedisManager.close();
       ChunkBlockStorageManager.shutdown();
