@@ -99,7 +99,10 @@ public class StorageCommand {
                           UUID targetUUID = getPlayerUUID(context);
                           String targetName = getTargetName(context);
                           var itemStack = sender.getMainHandStack().copy();
-
+                          if (itemStack.isEmpty()) {
+                            sendFeedback(source, "⚠️ You must be holding an item to use this command.");
+                            return 0;
+                          }
                           DataBaseFactory.dataBaseUsers.addStorage(new StorageItemStack(itemStack), targetUUID);
                           sendFeedback(source, "✅ Added " + itemStack.getCount() + "x " + itemStack.getName().getString() + " to " + targetName + "'s storage.");
                           return 1;

@@ -85,12 +85,9 @@ public class StorageMenu {
               int claimed = 0;
               for (Storage storage : storageList) {
                 try {
-                  // ❗ Usa la misma lógica que tus botones individuales
-                  Storage removed = DataBaseFactory.dataBaseUsers.removeStorage(storage, player.getUuid());
-                  if (removed != null) {
-                    removed.giveToPlayer(player);
-                    claimed++;
-                  }
+                  DataBaseFactory.dataBaseUsers.removeStorage(storage, player.getUuid());
+                  CobbleUtils.server.execute(() -> storage.giveToPlayer(player));
+                  claimed++;
                 } catch (Exception e) {
                   e.printStackTrace();
                 }
@@ -99,8 +96,8 @@ public class StorageMenu {
               int finalClaimed = claimed;
               player.sendMessage(AdventureTranslator.toNative("&aYou have successfully claimed &e" + finalClaimed + " &arewards!"), false);
               CobbleUtils.server.execute(() -> CobbleUtils.language.getStorageMenu().open(player, player.getUuid()));
-
             }, CobbleUtils.EXECUTOR_COBBLEUTILS)
+            .orTimeout(5, TimeUnit.SECONDS)
             .exceptionally(e -> {
               e.printStackTrace();
               return null;
@@ -119,6 +116,7 @@ public class StorageMenu {
         );
         CobbleUtils.server.execute(() -> UIManager.openUIForcefully(executer, page));
       }, CobbleUtils.EXECUTOR_COBBLEUTILS)
+      .orTimeout(5, TimeUnit.SECONDS)
       .exceptionally(e -> {
         e.printStackTrace();
         return null;

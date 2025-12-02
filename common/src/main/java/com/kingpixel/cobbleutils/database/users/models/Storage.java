@@ -37,8 +37,8 @@ public abstract class Storage {
       .display(getDisplay())
       .onClick(action -> CompletableFuture.runAsync(() -> {
           ServerPlayerEntity player = action.getPlayer();
-          Storage storage = DataBaseFactory.dataBaseUsers.removeStorage(this, player.getUuid());
-          if (storage != null) storage.giveToPlayer(player);
+          DataBaseFactory.dataBaseUsers.removeStorage(this, player.getUuid());
+          this.giveToPlayer(player);
           CobbleUtils.language.getStorageMenu().open(player, player.getUuid());
         }, CobbleUtils.EXECUTOR_COBBLEUTILS)
         .exceptionally(e -> {

@@ -9,6 +9,7 @@ import net.minecraft.command.CommandSource;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.text.Text;
 
 import java.util.List;
 
@@ -30,6 +31,7 @@ public class HipperMessageCommand {
   );
 
   public static void register(CommandDispatcher<ServerCommandSource> dispatcher, LiteralArgumentBuilder<ServerCommandSource> base) {
+
     dispatcher.register(
       base.then(
         CommandManager.literal("sendMessage")
@@ -39,14 +41,53 @@ public class HipperMessageCommand {
               .suggests(((context, builder) -> CommandSource.suggestMatching(messages, builder)))
               .executes(context -> {
                 String message = StringArgumentType.getString(context, "message");
-                ServerPlayerEntity player = null;
-                if (context.getSource().isExecutedByPlayer()) {
-                  player = context.getSource().getPlayer();
-                }
-                new HiperMessage(message, null).sendMessage(player == null ? null : player.getUuid(),
-                  CobbleUtils.config.getPrefix(), false, false, null, null);
+
+                ServerPlayerEntity player = context.getSource().isExecutedByPlayer()
+                  ? context.getSource().getPlayer()
+                  : null;
+
+                new HiperMessage(message, null).sendMessage(
+                  player == null ? null : player.getUuid(),
+                  CobbleUtils.config.getPrefix(),
+                  false, false, null, null
+                );
                 return 1;
               })
+          )
+          .then(
+            CommandManager.argument("target", StringArgumentType.word())
+              .suggests(((ctx, builder) ->
+                CommandSource.suggestMatching(
+                  ctx.getSource().getServer().getPlayerNames(),
+                  builder
+                )
+              ))
+              .then(
+                CommandManager.argument("message", StringArgumentType.greedyString())
+                  .suggests(((context, builder) -> CommandSource.suggestMatching(messages, builder)))
+                  .executes(context -> {
+                    String targetName = StringArgumentType.getString(context, "target");
+                    String message = StringArgumentType.getString(context, "message");
+
+                    ServerPlayerEntity target = context.getSource().getServer()
+                      .getPlayerManager().getPlayer(targetName);
+
+                    if (target == null) {
+                      context.getSource().sendError(
+                        Text.literal("§cThe player is not online.")
+                      );
+                      return 0;
+                    }
+
+                    new HiperMessage(message, null).sendMessage(
+                      target.getUuid(),
+                      CobbleUtils.config.getPrefix(),
+                      false, false, null, null
+                    );
+
+                    return 1;
+                  })
+              )
           )
       )
     );

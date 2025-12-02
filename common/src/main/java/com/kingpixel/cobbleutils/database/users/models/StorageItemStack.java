@@ -34,8 +34,8 @@ public class StorageItemStack extends Storage {
   }
 
   @Override
-  public void giveToPlayer(ServerPlayerEntity playerEntity) {
-    CobbleUtils.server.execute(() -> playerEntity.getInventory().offerOrDrop(itemStack.copy()));
+  public void giveToPlayer(ServerPlayerEntity player) {
+    CobbleUtils.server.execute(() -> player.getInventory().offerOrDrop(itemStack.copy()));
   }
 
 }
