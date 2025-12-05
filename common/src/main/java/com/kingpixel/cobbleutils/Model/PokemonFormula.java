@@ -62,7 +62,7 @@ public class PokemonFormula {
 
 
   public PokemonFormula() {
-    this.formula = "base + heldItem + gender + labels + nature + ability + ivsAverage + ivsTotal + evsTotal +" +
+    this.formula = "base + heldItem + gender + labels + nature + ability + ivsAverage + ivsTotal + totalPerfectIvs + evsTotal +" +
       " evsAverage + form + ball + aspect + shiny + breedable";
 
     initDefaults();
@@ -135,6 +135,7 @@ public class PokemonFormula {
     // Stats IVs and EVs
     variableResolvers.put("ivsTotal", p -> (float) Math.max(PokemonUtils.getIvsTotal(p.getIvs()), 1));
     variableResolvers.put("ivsAverage", p -> (float) Math.max(PokemonUtils.getIvsAverage(p.getIvs()), 1));
+    variableResolvers.put("totalPerfectIvs", p -> (float) Math.max(PokemonUtils.getTotalPerfectIvs(p.getIvs()), 0));
     variableResolvers.put("evsTotal", p -> (float) Math.max(PokemonUtils.getEvsTotal(p.getEvs()), 1));
     variableResolvers.put("evsAverage", p -> (float) Math.max(PokemonUtils.getEvsAverage(p.getEvs()), 1));
     for (Stats stats : PokemonUtils.STATS_LIST) {

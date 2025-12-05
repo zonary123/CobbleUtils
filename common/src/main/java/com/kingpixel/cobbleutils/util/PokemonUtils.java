@@ -461,6 +461,21 @@ public class PokemonUtils {
   }
 
   /**
+   * Get the total number of max IVs (31)
+   *
+   * @param iVs The IVs to get the number max Ivs
+   *
+   * @return The number of the maxed IVs
+   */
+  public static Integer getTotalPerfectIvs(IVs iVs) {
+    int count = 0;
+    for (Map.Entry<? extends Stat, ? extends Integer> iV : iVs) {
+      if (iV.getValue() == 31) count++;
+    }
+    return count;
+  }
+
+  /**
    * Get the total of the EVs
    *
    * @param eVs The EVs to get the total
