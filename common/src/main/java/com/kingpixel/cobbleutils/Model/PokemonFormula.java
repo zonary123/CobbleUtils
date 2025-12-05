@@ -135,7 +135,7 @@ public class PokemonFormula {
     // Stats IVs and EVs
     variableResolvers.put("ivsTotal", p -> (float) Math.max(PokemonUtils.getIvsTotal(p.getIvs()), 1));
     variableResolvers.put("ivsAverage", p -> (float) Math.max(PokemonUtils.getIvsAverage(p.getIvs()), 1));
-    variableResolvers.put("maxIvs", p -> (float) Math.max(PokemonUtils.getNumbMaxIvs(p), 0));
+    variableResolvers.put("maxIvs", p -> (float) Math.max(PokemonUtils.getNumbMaxIvs(p.getIvs()), 0));
     variableResolvers.put("evsTotal", p -> (float) Math.max(PokemonUtils.getEvsTotal(p.getEvs()), 1));
     variableResolvers.put("evsAverage", p -> (float) Math.max(PokemonUtils.getEvsAverage(p.getEvs()), 1));
     for (Stats stats : PokemonUtils.STATS_LIST) {
