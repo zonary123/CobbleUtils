@@ -467,7 +467,7 @@ public class PokemonUtils {
    *
    * @return The number of the maxed IVs
    */
-  public static Integer getNumbMaxIvs(IVs iVs) {
+  public static Integer getTotalPerfectIvs(IVs iVs) {
     int count = 0;
     for (Map.Entry<? extends Stat, ? extends Integer> iV : iVs) {
       if (iV.getValue() == 31) count++;
