@@ -44,7 +44,7 @@ dependencies {
     common(project(path: ":common", configuration: "namedElements")) { transitive false }
     shadowCommon(project(path: ":common", configuration: "transformProductionFabric"))
 
-    include(modImplementation("com.github.MemencioPerez:libby-fabric:1.0.0"))
+    include(modImplementation("com.github.MemencioPerez:libby-fabric:2.0.0"))
 
     // Caffeine
     api("com.github.ben-manes.caffeine:caffeine:${property("caffeine_version")}")
