@@ -216,7 +216,7 @@ public class WebHookStruct {
     return PokemonUtils.replace(description, pokemon);
   }
 
-  private static String getGif(Pokemon pokemon) {
+  public static String getGif(Pokemon pokemon) {
     if (pokemon == null) return "";
     String url = "https://play.pokemonshowdown.com/sprites/%rute%/%pokemon%.gif";
     String form = pokemon.getForm().getName().trim().toLowerCase();

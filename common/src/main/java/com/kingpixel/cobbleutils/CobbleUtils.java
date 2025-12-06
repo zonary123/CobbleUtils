@@ -50,24 +50,23 @@ public class CobbleUtils {
   // Lang
   public static Lang language = new Lang();
   public static List<String> modsInUse = new ArrayList<>();
-  public static final ExecutorService EXECUTOR_COBBLEUTILS =
-    new ThreadPoolExecutor(
-      8,
-      16,
-      60L, TimeUnit.SECONDS,
-      new ArrayBlockingQueue<>(100),
-      new ThreadFactoryBuilder()
-        .setNameFormat("CobbleUtils General Executor-%d")
-        .build(),
-      (r, executor) -> {
-        // Log a warning when the pool is saturated
-        CobbleUtils.LOGGER.warn("[CobbleUtils] Executor is overloaded! " +
-          "ActiveThreads=" + executor.getActiveCount() +
-          ", PoolSize=" + executor.getPoolSize() +
-          ", QueueSize=" + executor.getQueue().size() +
-          ", Task=" + r.toString());
-      }
-    );
+  public static final ExecutorService EXECUTOR_COBBLEUTILS = new ThreadPoolExecutor(
+    8,
+    16,
+    60L, TimeUnit.SECONDS,
+    new ArrayBlockingQueue<>(100),
+    new ThreadFactoryBuilder()
+      .setNameFormat("CobbleUtils General Executor-%d")
+      .build(),
+    (r, executor) -> {
+      // Log a warning when the pool is saturated
+      CobbleUtils.LOGGER.warn("[CobbleUtils] Executor is overloaded! " +
+        "ActiveThreads=" + executor.getActiveCount() +
+        ", PoolSize=" + executor.getPoolSize() +
+        ", QueueSize=" + executor.getQueue().size() +
+        ", Task=" + r.toString());
+    }
+  );
   private static final ScheduledExecutorService SCHEDULER_COBBLEUTILS =
     new ScheduledThreadPoolExecutor(
       2,
@@ -101,7 +100,6 @@ public class CobbleUtils {
   }
 
   public static void load() {
-
     files();
     sign();
     EconomyApi.setEconomyType();
