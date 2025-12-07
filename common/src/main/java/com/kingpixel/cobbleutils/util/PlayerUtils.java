@@ -368,16 +368,15 @@ public class PlayerUtils {
     ServerCommandSource serverSource = CobbleUtils.server.getCommandSource();
     ParseResults<ServerCommandSource> parse = disparador.parse(command, serverSource);
     String finalCommand = command;
-    return CobbleUtils.server.submit(() -> {
+    CobbleUtils.server.execute(() -> {
       try {
         disparador.execute(parse);
-        return true;
       } catch (CommandSyntaxException e) {
         System.err.println("Error to execute command: " + finalCommand);
         e.printStackTrace();
-        return false;
       }
-    }).join();
+    });
+    return true;
   }
 
   /**

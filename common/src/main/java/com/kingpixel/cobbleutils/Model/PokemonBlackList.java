@@ -65,18 +65,23 @@ public class PokemonBlackList {
 
     pokemons = pokemons.stream()
       .map(String::toLowerCase)
+      .map(String::trim)
       .collect(Collectors.toSet());
     forms = forms.stream()
       .map(String::toLowerCase)
+      .map(String::trim)
       .collect(Collectors.toSet());
     aspects = aspects.stream()
       .map(String::toLowerCase)
+      .map(String::trim)
       .collect(Collectors.toSet());
     labels = labels.stream()
       .map(String::toLowerCase)
+      .map(String::trim)
       .collect(Collectors.toSet());
     types = types.stream()
       .map(String::toLowerCase)
+      .map(String::trim)
       .collect(Collectors.toSet());
   }
 
