@@ -7,8 +7,6 @@ import com.cobblemon.mod.common.api.riding.stats.RidingStat;
 import com.cobblemon.mod.common.pokemon.Gender;
 import com.cobblemon.mod.common.pokemon.Nature;
 import com.cobblemon.mod.common.pokemon.Pokemon;
-import com.github.benmanes.caffeine.cache.Cache;
-import com.github.benmanes.caffeine.cache.Caffeine;
 import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.util.PokemonUtils;
 import com.kingpixel.cobbleutils.util.Utils;
@@ -18,10 +16,8 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
 import net.objecthunter.exp4j.Expression;
 import net.objecthunter.exp4j.ExpressionBuilder;
-import org.checkerframework.checker.nullness.qual.Nullable;
 
 import java.math.BigDecimal;
-import java.time.Duration;
 import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.Map;
@@ -200,19 +196,7 @@ public class PokemonFormula {
    */
   public Double getPokemonValue(Pokemon pokemon) {
     return getPokemonExpression(pokemon).evaluate();
-    //return pokemonResultCache.get(pokemon, p -> getPokemonExpression(p).evaluate());
   }
-
-  private transient final Cache<Pokemon, @Nullable Double> pokemonResultCache = Caffeine.newBuilder()
-    .maximumSize(1000)
-    .expireAfterWrite(Duration.ofSeconds(5))
-    .removalListener((key, value, cause) -> {
-      if (CobbleUtils.config.isDebug()) {
-        CobbleUtils.LOGGER.info("PokemonFormula Cache eviction | Key: " + key + " | Value: " + value + " | Cause: " + cause);
-      }
-    })
-    .build();
-
 
   /**
    * Builds the Pokemon-specific expression with dynamic variables set.

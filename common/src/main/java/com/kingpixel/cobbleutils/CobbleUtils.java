@@ -252,17 +252,29 @@ public class CobbleUtils {
   }
 
   public static void shutdownAndAwait(ExecutorService executorService) {
+    try {
+      // Espera antes de iniciar el shutdown
+      Thread.sleep(TimeUnit.SECONDS.toMillis(5));
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt(); // mantener la interrupción
+    }
+
+    // Ahora sí hacemos shutdown
     executorService.shutdown();
     try {
       if (!executorService.awaitTermination(1, TimeUnit.MINUTES)) {
         executorService.shutdownNow();
-        if (executorService.awaitTermination(1, TimeUnit.MINUTES)) {
+        if (!executorService.awaitTermination(1, TimeUnit.MINUTES)) {
           LOGGER.info("CobbleUtils executor was force shutdown");
         }
       }
     } catch (InterruptedException e) {
       executorService.shutdownNow();
+      Thread.currentThread().interrupt();
+      LOGGER.info("CobbleUtils executor was interrupted during shutdown");
+      e.printStackTrace();
     }
   }
+
 
 }

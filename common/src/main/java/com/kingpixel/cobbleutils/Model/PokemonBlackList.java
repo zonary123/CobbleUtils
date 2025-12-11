@@ -3,6 +3,7 @@ package com.kingpixel.cobbleutils.Model;
 import com.cobblemon.mod.common.api.pokemon.egg.EggGroup;
 import com.cobblemon.mod.common.api.types.ElementalType;
 import com.cobblemon.mod.common.pokemon.Pokemon;
+import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.util.PokemonUtils;
 import com.kingpixel.cobbleutils.util.Utils;
 import lombok.Getter;
@@ -89,6 +90,7 @@ public class PokemonBlackList {
     return isBlacklisted(pokemon);
   }
 
+  @Deprecated(forRemoval = true)
   public boolean isBlacklisted(Pokemon pokemon) {
     // Quick wildcard check
     if (pokemons.contains("*")) return true;
@@ -112,11 +114,14 @@ public class PokemonBlackList {
       List<Object> list = persistentDataMap.get(key);
       if (list == null || list.isEmpty()) continue;
       NbtElement element = persistentData.get(key);
-      if (list.contains(Utils.convertNbtValue(element))) return true;
+      if (list.contains("*") || list.contains(Utils.convertNbtValue(element))) return true;
     }
 
     // Check cached result first to avoid redundant computation
     String showdownId = pokemon.showdownId();
+    if (CobbleUtils.config.isDebug()) {
+      CobbleUtils.LOGGER.info("Checking blacklist for Pokémon: " + showdownId);
+    }
     Boolean cached = resultsCache.get(showdownId);
     if (cached != null) return cached;
 
@@ -131,7 +136,7 @@ public class PokemonBlackList {
 
     if (!allowEvolutions) {
       Pokemon firstEvolution = PokemonUtils.getFirstEvolution(pokemon);
-      if (!firstEvolution.getForm().showdownId().equals(formShowdownId)) {
+      if (!firstEvolution.getForm().showdownId().equals(showdownId)) {
         return cacheResult(showdownId, true);
       }
     }
@@ -161,11 +166,12 @@ public class PokemonBlackList {
     }
 
     // Check types
-    for (ElementalType type : pokemon.getTypes()) {
+    for (ElementalType type : form.getTypes()) {
       String typeName = type.getName().toLowerCase();
-      if (types.contains(typeName)) {
-        return cacheResult(showdownId, true);
+      if (CobbleUtils.config.isDebug()) {
+        CobbleUtils.LOGGER.info("Checking type: " + typeName);
       }
+      if (types.contains(typeName)) return true;
     }
 
     // Check rarity
@@ -176,8 +182,11 @@ public class PokemonBlackList {
   }
 
 
-  public boolean cacheResult(String pokemonShowdownId, boolean result) {
-    resultsCache.putIfAbsent(pokemonShowdownId, result);
+  public boolean cacheResult(String showdownId, boolean result) {
+    resultsCache.putIfAbsent(showdownId, result);
+    if (CobbleUtils.config.isDebug()) {
+      CobbleUtils.LOGGER.info("Caching blacklist result for " + showdownId + ": " + result);
+    }
     return result;
   }
 }
