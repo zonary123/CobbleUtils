@@ -534,14 +534,14 @@ public class PokemonUtils {
 
   public static String getMoveColor(ElementalType type, String lang) {
     if (type == null) return CobbleUtils.language.getNone();
-    String color = CobbleUtils.language.getMovecolor().getOrDefault(type.getName(), "");
+    String color = CobbleUtils.language.getMovecolor().getOrDefault(type.getShowdownId(), "");
     if (color.contains("gradient")) return color + "<lang:" + lang + ">" + "</gradient>";
     return color + "<lang:" + lang + ">";
   }
 
   public static String getType(ElementalType type) {
     if (type == null) return CobbleUtils.language.getNone();
-    return CobbleUtils.language.getTypes().getOrDefault(type.getName(), type.getName());
+    return CobbleUtils.language.getTypes().getOrDefault(type.getShowdownId(), type.getShowdownId());
   }
 
   /**
@@ -553,25 +553,12 @@ public class PokemonUtils {
    */
   public static String getType(Pokemon pokemon) {
     if (pokemon == null) return "";
-
-    String key = pokemon.getPrimaryType().getName() +
-      (pokemon.getSecondaryType() != null ? ":" + pokemon.getSecondaryType().getName() : "");
-
+    String key = pokemon.getPrimaryType().getShowdownId() + (pokemon.getSecondaryType() != null ? ":" + pokemon.getSecondaryType().getShowdownId() : "");
     return typeCache.get(key, k -> {
-      StringBuilder s = new StringBuilder(
-        CobbleUtils.language.getTypes().getOrDefault(
-          pokemon.getPrimaryType().getName(),
-          pokemon.getPrimaryType().getName()
-        )
-      );
+      StringBuilder s = new StringBuilder(getType(pokemon.getPrimaryType()));
       if (pokemon.getSecondaryType() != null) {
         s.append(" &7/ ");
-        s.append(
-          CobbleUtils.language.getTypes().getOrDefault(
-            pokemon.getSecondaryType().getName(),
-            pokemon.getSecondaryType().getName()
-          )
-        );
+        s.append(getType(pokemon.getSecondaryType()));
       }
       return s.toString();
     });
