@@ -38,6 +38,7 @@ public class PartyPcMenu {
   private String titleParty;
   private int rowsParty;
   private Integer[] slotsParty;
+  private Long[] customModelDataParty;
   private ItemModel pc;
   private ItemModel closeParty;
   private List<PanelsConfig> panelsParty;
@@ -54,6 +55,7 @@ public class PartyPcMenu {
     this.titleParty = "&bParty";
     this.rowsParty = 3;
     this.slotsParty = new Integer[]{10, 11, 12, 14, 15, 16};
+    this.customModelDataParty = new Long[]{0L, 0L, 0L, 0L, 0L, 0L};
     this.pc = new ItemModel("cobblemon:pc", "PC");
     this.pc.setSlot(13);
     this.closeParty = new ItemModel("minecraft:barrier", "&cClose");
@@ -79,6 +81,47 @@ public class PartyPcMenu {
 
   public static PartyPcMenuBuilder builder() {
     return new PartyPcMenuBuilder();
+  }
+
+  /**
+   * Opens the default party menu if useDefault is enabled.
+   * This is the recommended way to open party menus when using CobbleUtils as an API.
+   *
+   * @param builder The PartyPcMenuBuilder with the configuration
+   * @return true if the default menu was used, false if custom implementation should be used
+   */
+  public static boolean openDefaultParty(PartyPcMenuBuilder builder) {
+    if (!CobbleUtils.config.isUseDefault()) {
+      return false;
+    }
+    // Force the use of default menu
+    builder.setPartyPcMenu(CobbleUtils.language.getPartyPcMenu());
+    if (builder.getConfirmMenu() == null) {
+      builder.setConfirmMenu(CobbleUtils.language.getConfirmMenu());
+    }
+    CobbleUtils.language.getPartyPcMenu().openParty(builder);
+    return true;
+  }
+
+  /**
+   * Opens the default PC menu if useDefault is enabled.
+   * This is the recommended way to open PC menus when using CobbleUtils as an API.
+   *
+   * @param builder The PartyPcMenuBuilder with the configuration
+   * @param pos The starting position in the PC
+   * @return true if the default menu was used, false if custom implementation should be used
+   */
+  public static boolean openDefaultPc(PartyPcMenuBuilder builder, int pos) {
+    if (!CobbleUtils.config.isUseDefault()) {
+      return false;
+    }
+    // Force the use of default menu
+    builder.setPartyPcMenu(CobbleUtils.language.getPartyPcMenu());
+    if (builder.getConfirmMenu() == null) {
+      builder.setConfirmMenu(CobbleUtils.language.getConfirmMenu());
+    }
+    CobbleUtils.language.getPartyPcMenu().openPc(builder, pos);
+    return true;
   }
 
   private boolean isBanned(Pokemon pokemon, PartyPcMenuBuilder builder) {
@@ -127,7 +170,7 @@ public class PartyPcMenu {
             currentIndex = pos + index;
             if (currentIndex >= maxSize) break;
             Pokemon pokemon = finalPokemons.get(currentIndex);
-            GooeyButton.Builder button = createPokemonButton(pokemon, builder);
+            GooeyButton.Builder button = createPokemonButton(pokemon, builder, -1);
             template.set(row, column, button.build());
             index++;
           }
@@ -177,7 +220,7 @@ public class PartyPcMenu {
         for (int i = 0; i < slotsParty.length; i++) {
           int slot = slotsParty[i];
           Pokemon pokemon = party.get(i);
-          GooeyButton.Builder button = createPokemonButton(pokemon, builder);
+          GooeyButton.Builder button = createPokemonButton(pokemon, builder, i);
           template.set(slot, button.build());
         }
 
@@ -218,7 +261,7 @@ public class PartyPcMenu {
     return false;
   }
 
-  private GooeyButton.Builder createPokemonButton(Pokemon pokemon, PartyPcMenuBuilder builder) {
+  private GooeyButton.Builder createPokemonButton(Pokemon pokemon, PartyPcMenuBuilder builder, int slotIndex) {
     var blackList = builder.getBlackList();
     var pokemonAction = builder.getPokemonAction();
     var closeAction = builder.getCloseAction();
@@ -227,8 +270,12 @@ public class PartyPcMenu {
     var loreModifier = builder.getLoreModifier();
 
     if (pokemon == null || isBanned(pokemon, builder)) {
+      ItemModel noPokemonItem = new ItemModel(CobbleUtils.language.getItemNoPokemon());
+      if (slotIndex >= 0 && slotIndex < customModelDataParty.length && customModelDataParty[slotIndex] != 0) {
+        noPokemonItem.setCustomModelData(customModelDataParty[slotIndex]);
+      }
       return GooeyButton.builder()
-        .display(CobbleUtils.language.getItemNoPokemon().getItemStack());
+        .display(noPokemonItem.getItemStack());
     }
 
     List<String> lore;
@@ -246,6 +293,9 @@ public class PartyPcMenu {
       itemStack = builder.getItemStackProvider().apply(pokemon);
     } else {
       itemStack = PokemonItem.from(pokemon);
+    }
+    if (slotIndex >= 0 && slotIndex < customModelDataParty.length && customModelDataParty[slotIndex] != 0) {
+      itemStack.set(DataComponentTypes.CUSTOM_MODEL_DATA, new net.minecraft.component.type.CustomModelDataComponent(customModelDataParty[slotIndex].intValue()));
     }
     itemStack.set(DataComponentTypes.CUSTOM_NAME, AdventureTranslator.toNative(PokemonUtils.replace(pokemon)));
     itemStack.set(DataComponentTypes.LORE, new LoreComponent(AdventureTranslator.toNativeL(lore)));

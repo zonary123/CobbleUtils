@@ -296,6 +296,21 @@ public class ItemChance {
         String[] commandParts = COMMAND_SPLIT_PATTERN.split(item);
         for (String commandPart : commandParts) {
           String command = commandPart.replace(PREFIX_COMMAND, "").trim();
+
+          // Support for Base64 encoded commands to avoid quote issues
+          if (command.startsWith("base64:")) {
+            String base64Command = command.replace("base64:", "");
+            try {
+              command = new String(java.util.Base64.getDecoder().decode(base64Command));
+            } catch (IllegalArgumentException e) {
+              CobbleUtils.LOGGER.error("Failed to decode Base64 command: " + base64Command);
+              continue;
+            }
+          } else {
+            // Replace single quotes with double quotes for easier command writing
+            command = command.replace("'", "\"");
+          }
+
           if (!commandPart.isEmpty()) {
             CobbleUtilities.executeCommand(player, command);
           }

@@ -26,6 +26,7 @@ public class ConfirmMenu {
   private int rows;
   private String title;
   private int slotDisplay;
+  private long customModelDataConfirm;
   private ItemModel confirm;
   private ItemModel cancel;
   private ItemModel close;
@@ -39,6 +40,7 @@ public class ConfirmMenu {
     this.rows = 3;
     this.title = "Confirm";
     this.slotDisplay = 13;
+    this.customModelDataConfirm = -1;
     Lang lang = CobbleUtils.language;
     if (lang != null) {
       this.confirm = CobbleUtils.language.getItemConfirm();
@@ -76,15 +78,43 @@ public class ConfirmMenu {
     return template;
   }
 
+  /**
+   * Opens the default confirm menu if useDefault is enabled.
+   * This is the recommended way to open confirm menus when using CobbleUtils as an API.
+   *
+   * @param player The player to show the menu to
+   * @param itemStack The item to display
+   * @param onConfirm Action to execute on confirm
+   * @param onCancel Action to execute on cancel
+   * @return true if the default menu was used, false if custom implementation should be used
+   */
+  public static boolean openDefault(ServerPlayerEntity player, ItemStack itemStack,
+                                     Consumer<ButtonAction> onConfirm, Consumer<ButtonAction> onCancel) {
+    if (!CobbleUtils.config.isUseDefault()) {
+      return false;
+    }
+    // Force the use of default confirm menu
+    CobbleUtils.language.getConfirmMenu().open(player, itemStack, onConfirm, onCancel);
+    return true;
+  }
 
   public void open(ServerPlayerEntity player, ItemStack itemStack, Consumer<ButtonAction> onConfirm,
                    Consumer<ButtonAction> onCancel) {
     CompletableFuture.runAsync(() -> {
         ChestTemplate template = createTemplate();
 
+        // Copiar el ItemStack para no modificar el original
+        ItemStack displayStack = itemStack.copy();
+
+        // Aplicar customModelData si está configurado (>= 0 es válido, -1 significa no aplicar)
+        if (customModelDataConfirm >= 0) {
+          displayStack.set(net.minecraft.component.DataComponentTypes.CUSTOM_MODEL_DATA,
+            new net.minecraft.component.type.CustomModelDataComponent((int) customModelDataConfirm));
+        }
+
         // Mostrar el ítem principal en el slot correspondiente
         template.set(slotDisplay, GooeyButton.builder()
-          .display(itemStack)
+          .display(displayStack)
           .build()
         );
 

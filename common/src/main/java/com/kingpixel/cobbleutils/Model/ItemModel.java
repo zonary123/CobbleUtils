@@ -44,7 +44,7 @@ public class ItemModel {
   private List<String> lore = new ArrayList<>();
   private long CustomModelData = 0;
   private String nbt;
-  private Boolean tooltip;
+  private Object tooltip;
 
 
   public ItemModel() {
@@ -272,9 +272,19 @@ public class ItemModel {
     LoreComponent loreComponent = new LoreComponent(AdventureTranslator.toNativeL(resultLore));
     builder.with(DataComponentTypes.LORE, loreComponent);
 
-    if (Boolean.TRUE.equals(tooltip)) {
-      builder.with(DataComponentTypes.HIDE_ADDITIONAL_TOOLTIP, Unit.INSTANCE);
-      builder.with(DataComponentTypes.HIDE_TOOLTIP, Unit.INSTANCE);
+    if (tooltip != null) {
+      if (tooltip instanceof Boolean && Boolean.TRUE.equals(tooltip)) {
+        builder.with(DataComponentTypes.HIDE_ADDITIONAL_TOOLTIP, Unit.INSTANCE);
+        builder.with(DataComponentTypes.HIDE_TOOLTIP, Unit.INSTANCE);
+      } else if (tooltip instanceof String) {
+        String tooltipValue = ((String) tooltip).toLowerCase();
+        if ("all".equals(tooltipValue)) {
+          builder.with(DataComponentTypes.HIDE_ADDITIONAL_TOOLTIP, Unit.INSTANCE);
+          builder.with(DataComponentTypes.HIDE_TOOLTIP, Unit.INSTANCE);
+        } else if ("additional".equals(tooltipValue)) {
+          builder.with(DataComponentTypes.HIDE_ADDITIONAL_TOOLTIP, Unit.INSTANCE);
+        }
+      }
     }
 
     if (action != null) builder.onClick(action);
