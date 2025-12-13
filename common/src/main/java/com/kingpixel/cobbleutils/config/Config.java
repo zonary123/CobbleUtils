@@ -22,6 +22,7 @@ import java.util.concurrent.CompletableFuture;
 @ToString
 public class Config {
   private boolean debug;
+  private boolean useDefault;
   private String lang;
   private String prefix;
   private String server;
@@ -49,6 +50,7 @@ public class Config {
 
   public Config() {
     debug = false;
+    useDefault = true;
     prefix = "§7[§6CobbleUtils§7] ";
     lang = "en";
     timeSinceLastLoginToSuggest = DurationValue.parse("1y");
