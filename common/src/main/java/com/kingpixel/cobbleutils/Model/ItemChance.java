@@ -759,8 +759,8 @@ public class ItemChance {
       return Collections.emptyList();
     }
 
-    // ✅ Filter valid rewards (no streams)
-    List<ItemChance> validRewards = new ArrayList<>(itemChances.size());
+    // Filter valid rewards
+    List<ItemChance> validRewards = new ArrayList<>();
     for (ItemChance itemChance : itemChances) {
       if (DataBaseFactory.dataBaseUsers.isAvailableReward(player, itemChance)) {
         validRewards.add(itemChance);
@@ -777,19 +777,35 @@ public class ItemChance {
       return Collections.emptyList();
     }
 
-    // ✅ Calculate total chance
-    double totalChance = 0.0;
+    // Separate guaranteed and normal rewards
+    List<ItemChance> guaranteedRewards = new ArrayList<>();
+    List<ItemChance> normalRewards = new ArrayList<>();
+
     for (ItemChance itemChance : validRewards) {
+      if (itemChance.getChance() < 0) {
+        guaranteedRewards.add(itemChance);
+      } else {
+        normalRewards.add(itemChance);
+      }
+    }
+
+    // Add guaranteed rewards to the result
+    List<ItemChance> rewards = new ArrayList<>(guaranteedRewards);
+
+    // Calculate totalChance only for normal rewards
+    double totalChance = 0.0;
+    for (ItemChance itemChance : normalRewards) {
       totalChance += itemChance.getChance();
     }
 
-    // ✅ Select rewards
-    List<ItemChance> rewards = new ArrayList<>(numberOfRewards);
-    for (int i = 0; i < numberOfRewards; i++) {
+    // Randomly select the remaining rewards
+    int remainingRewards = numberOfRewards - rewards.size();
+    for (int i = 0; i < remainingRewards; i++) {
+      if (normalRewards.isEmpty()) break; // No more normal rewards
       double randomPoint = Utils.getRandom().nextDouble(totalChance);
       double cumulativeChance = 0.0;
 
-      for (ItemChance itemChance : validRewards) {
+      for (ItemChance itemChance : normalRewards) {
         cumulativeChance += itemChance.getChance();
         if (randomPoint < cumulativeChance) {
           rewards.add(itemChance);
