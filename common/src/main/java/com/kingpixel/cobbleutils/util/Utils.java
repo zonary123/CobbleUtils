@@ -48,10 +48,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.time.Instant;
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.*;
 import java.util.function.Consumer;
 
 public abstract class Utils {
@@ -147,28 +144,49 @@ public abstract class Utils {
     .build());
 
 
-  public static CompletableFuture<Boolean> writeFileAsync(String filePath, String filename, String data) {
+  public static CompletableFuture<Boolean> writeFileAsync(
+    String filePath,
+    String filename,
+    String data
+  ) {
     if (filePath == null || filename == null || data == null) {
       CobbleUtils.LOGGER.error("Invalid input: filePath, filename, or data is null.");
       return CompletableFuture.completedFuture(false);
     }
 
-    return CompletableFuture.supplyAsync(() -> {
-      Path path = Paths.get(new File("").getAbsolutePath() + filePath, filename);
-      File file = path.toFile();
+    File file = Paths
+      .get(new File("").getAbsolutePath() + filePath, filename)
+      .toFile();
 
-      try {
-        if (!Files.exists(path.getParent())) {
-          Files.createDirectories(path.getParent());
-        }
+    if (IO_EXECUTOR.isShutdown() || IO_EXECUTOR.isTerminated()) {
+      return CompletableFuture.completedFuture(
+        writeFileSyncSafe(file, data)
+      );
+    }
 
-        Files.writeString(path, data, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
-        return true;
-      } catch (IOException e) {
-        CobbleUtils.LOGGER.error("Error writing file: " + file.getPath() + ". " + e);
-        return false;
+    try {
+      return CompletableFuture.supplyAsync(() -> writeFileSyncSafe(file, data), IO_EXECUTOR);
+    } catch (RejectedExecutionException e) {
+      // Fallback absoluto
+      return CompletableFuture.completedFuture(
+        writeFileSyncSafe(file, data)
+      );
+    }
+  }
+
+  private static boolean writeFileSyncSafe(File file, String data) {
+    try {
+      Path parent = file.toPath().getParent();
+      if (parent != null && !Files.exists(parent)) {
+        Files.createDirectories(parent);
       }
-    }, IO_EXECUTOR);
+    } catch (IOException e) {
+      CobbleUtils.LOGGER.error("Error creating directories for " + file.getPath());
+      e.printStackTrace();
+      return false;
+    }
+
+    return writeFileSync(file, data); // ⬅ método legacy intacto
   }
 
   public static boolean writeFileSync(File file, String data) {
