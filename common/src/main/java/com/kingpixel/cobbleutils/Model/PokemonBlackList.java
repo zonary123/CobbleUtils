@@ -86,6 +86,17 @@ public class PokemonBlackList {
       .collect(Collectors.toSet());
   }
 
+  public void clear() {
+    pokemons.clear();
+    forms.clear();
+    aspects.clear();
+    labels.clear();
+    types.clear();
+    rarities.clear();
+    persistentDataMap.clear();
+    eggGroups.clear();
+  }
+
   public boolean isBlackListed(Pokemon pokemon) {
     return isBlacklisted(pokemon);
   }
