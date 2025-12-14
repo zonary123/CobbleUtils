@@ -373,7 +373,7 @@ public class FilterPokemons {
    */
   private boolean isAllowed(Pokemon pokemon) {
     if (!legendarys && pokemon.isLegendary()) return false;
-    return !blackList.isBlacklisted(pokemon);
+    return !blackList.isBlackListed(pokemon);
   }
 
   /**

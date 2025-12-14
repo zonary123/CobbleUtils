@@ -88,6 +88,7 @@ public class PartyPcMenu {
    * This is the recommended way to open party menus when using CobbleUtils as an API.
    *
    * @param builder The PartyPcMenuBuilder with the configuration
+   *
    * @return true if the default menu was used, false if custom implementation should be used
    */
   public static boolean openDefaultParty(PartyPcMenuBuilder builder) {
@@ -108,7 +109,8 @@ public class PartyPcMenu {
    * This is the recommended way to open PC menus when using CobbleUtils as an API.
    *
    * @param builder The PartyPcMenuBuilder with the configuration
-   * @param pos The starting position in the PC
+   * @param pos     The starting position in the PC
+   *
    * @return true if the default menu was used, false if custom implementation should be used
    */
   public static boolean openDefaultPc(PartyPcMenuBuilder builder, int pos) {
@@ -129,7 +131,7 @@ public class PartyPcMenu {
     if (pokemon == null) return true;
     if (builder.getCustomFilter() != null) isBanned = builder.getCustomFilter().test(pokemon);
     if (isBanned) return true;
-    if (builder.getBlackList() != null) isBanned = builder.getBlackList().isBlacklisted(pokemon);
+    if (builder.getBlackList() != null) isBanned = builder.getBlackList().isBlackListed(pokemon);
     return isBanned;
   }
 
