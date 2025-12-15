@@ -252,14 +252,6 @@ public class CobbleUtils {
   }
 
   public static void shutdownAndAwait(ExecutorService executorService) {
-    try {
-      // Espera antes de iniciar el shutdown
-      Thread.sleep(TimeUnit.SECONDS.toMillis(5));
-    } catch (InterruptedException e) {
-      Thread.currentThread().interrupt(); // mantener la interrupción
-    }
-
-    // Ahora sí hacemos shutdown
     executorService.shutdown();
     try {
       if (!executorService.awaitTermination(1, TimeUnit.MINUTES)) {

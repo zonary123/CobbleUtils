@@ -805,7 +805,7 @@ public class ItemChance {
     }
 
     // Add guaranteed rewards to the result
-    List<ItemChance> rewards = new ArrayList<>(guaranteedRewards);
+    List<ItemChance> rewards = new ArrayList<>();
 
     // Calculate totalChance only for normal rewards
     double totalChance = 0.0;
@@ -814,8 +814,7 @@ public class ItemChance {
     }
 
     // Randomly select the remaining rewards
-    int remainingRewards = numberOfRewards - rewards.size();
-    for (int i = 0; i < remainingRewards; i++) {
+    for (int i = 0; i < numberOfRewards; i++) {
       if (normalRewards.isEmpty()) break; // No more normal rewards
       double randomPoint = Utils.getRandom().nextDouble(totalChance);
       double cumulativeChance = 0.0;
@@ -828,7 +827,7 @@ public class ItemChance {
         }
       }
     }
-
+    rewards.addAll(guaranteedRewards);
     return rewards;
   }
 
