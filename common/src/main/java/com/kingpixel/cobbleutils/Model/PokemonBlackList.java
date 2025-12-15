@@ -60,6 +60,19 @@ public class PokemonBlackList {
     this.rarities = new HashSet<>();
   }
 
+  public static PokemonBlackList createBlackList() {
+    PokemonBlackList blackList = new PokemonBlackList();
+    blackList.clear();
+    return blackList;
+  }
+
+  public static PokemonBlackList createFilter() {
+    PokemonBlackList filter = new PokemonBlackList();
+    filter.clear();
+    filter.getPokemons().add("*");
+    return filter;
+  }
+
   public void fix() {
     List<String> pokemonsBanneds = List.of("egg", "pokestop");
     pokemons.addAll(pokemonsBanneds);
