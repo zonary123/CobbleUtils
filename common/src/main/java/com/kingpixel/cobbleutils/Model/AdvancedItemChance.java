@@ -55,7 +55,6 @@ public class AdvancedItemChance {
   private Particle particle;
   private Animations animation;
   // Rewards
-
   private final Map<String, List<ItemChance>> lootTable;
 
   public AdvancedItemChance() {
@@ -145,7 +144,9 @@ public class AdvancedItemChance {
         finish = CobbleUtils.advancedRewardsConfig.getRewards().get(finish.getId());
         if (finish == null) {
           PlayerUtils.sendMessage(player,
-            "%prefix% &cThe reward with id &e" + this.getId() + " &cdoes not exist, please notify the administrator of the error",
+            "%prefix% &cThe Advanced Reward Template with id &e" + this.getId() + " &cdoes not exist, please notify the " +
+              "administrator" +
+              " of the error",
             "&7[&cERROR&7]",
             TypeMessage.CHAT);
           return;
@@ -282,7 +283,9 @@ public class AdvancedItemChance {
       finish = CobbleUtils.advancedRewardsConfig.getRewards().get(getId());
       if (finish == null) {
         PlayerUtils.sendMessage(player,
-          "%prefix% &cThe reward with id &e" + this.getId() + " &cdoes not exist, please notify the administrator of the error",
+          "%prefix% &cThe Advanced Reward Template with id &e" + this.getId() + " &cdoes not exist, please notify the" +
+            " " +
+            "administrator of the error",
           "&7[&cERROR&7]",
           TypeMessage.CHAT);
         return;
