@@ -38,7 +38,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class PlayerUtils {
 
-  private static final ExecutorService MESSAGE_EXECUTOR = Executors.newFixedThreadPool(8, new ThreadFactoryBuilder()
+  private static final ExecutorService MESSAGE_EXECUTOR = Executors.newFixedThreadPool(2, new ThreadFactoryBuilder()
     .setDaemon(true)
     .setNameFormat("CobbleUtils Message - %d")
     .build());
