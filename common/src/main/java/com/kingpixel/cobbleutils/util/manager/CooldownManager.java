@@ -22,8 +22,8 @@ import java.util.UUID;
  */
 public class CooldownManager {
 
-  // Clave compuesta: jugador + menú
-  private record MenuKey(UUID playerId, String menu) {
+  // Clave compuesta: playerId + value
+  private record Key(UUID playerId, String value) {
   }
 
   // Valor: tiempo de expiración (timestamp en ms)
@@ -31,29 +31,29 @@ public class CooldownManager {
   }
 
   // Cache con expiración dinámica por entrada
-  private static final Cache<MenuKey, CooldownEntry> cooldownMenus = Caffeine.newBuilder()
-    .expireAfter(new Expiry<MenuKey, CooldownEntry>() {
+  private static final Cache<Key, CooldownEntry> COOLDOWNS = Caffeine.newBuilder()
+    .expireAfter(new Expiry<Key, CooldownEntry>() {
       @Override
-      public long expireAfterCreate(@NotNull MenuKey key, @NotNull CooldownEntry value, long currentTime) {
+      public long expireAfterCreate(@NotNull CooldownManager.Key key, @NotNull CooldownEntry value, long currentTime) {
         return value.expiryTime() - System.currentTimeMillis();
       }
 
       @Override
-      public long expireAfterUpdate(@NotNull MenuKey key, @NotNull CooldownEntry value,
+      public long expireAfterUpdate(@NotNull CooldownManager.Key key, @NotNull CooldownEntry value,
                                     long currentTime, long currentDuration) {
         return value.expiryTime() - System.currentTimeMillis();
       }
 
       @Override
-      public long expireAfterRead(@NotNull MenuKey key, @NotNull CooldownEntry value,
+      public long expireAfterRead(@NotNull CooldownManager.Key key, @NotNull CooldownEntry value,
                                   long currentTime, long currentDuration) {
         return currentDuration;
       }
     })
-    .removalListener((MenuKey key, CooldownEntry value, RemovalCause cause) -> {
+    .removalListener((Key key, CooldownEntry value, RemovalCause cause) -> {
       if (cause == RemovalCause.EXPIRED && CobbleUtils.config.isDebug()) {
         CobbleUtils.LOGGER.info("[CobbleUtils] ⏰ Cooldown expirado: " +
-          key.playerId() + " | menú=" + key.menu());
+          key.playerId() + " | menú=" + key.value());
       }
     })
     .build();
@@ -67,22 +67,44 @@ public class CooldownManager {
    *
    * @return true si sigue en cooldown, false si puede usarlo
    */
-  public static boolean isCooldownMenu(ServerPlayerEntity player, String menu, DurationValue durationValue) {
+  public static boolean hasCooldownMenu(ServerPlayerEntity player, String menu, DurationValue durationValue) {
     if (player == null) return false;
     if (durationValue == null || durationValue.toMillis() <= 0) return false;
 
-    MenuKey key = new MenuKey(player.getUuid(), menu);
+    Key key = new Key(player.getUuid(), menu);
     long currentTime = System.currentTimeMillis();
-    CooldownEntry entry = cooldownMenus.getIfPresent(key);
+    CooldownEntry entry = COOLDOWNS.getIfPresent(key);
 
     if (entry == null || currentTime >= entry.expiryTime()) {
-      cooldownMenus.put(key, new CooldownEntry(currentTime + durationValue.toMillis()));
+      COOLDOWNS.put(key, new CooldownEntry(currentTime + durationValue.toMillis()));
       return false;
     }
 
     PlayerUtils.sendMessage(
       player,
       CobbleUtils.language.getMessageCooldownMenu(),
+      null,
+      TypeMessage.CHAT
+    );
+    return true;
+  }
+
+  public static boolean hasCooldownCommand(ServerPlayerEntity player, String command, DurationValue durationValue) {
+    if (player == null) return false;
+    if (durationValue == null || durationValue.toMillis() <= 0) return false;
+
+    Key key = new Key(player.getUuid(), "cmd:" + command);
+    long currentTime = System.currentTimeMillis();
+    CooldownEntry entry = COOLDOWNS.getIfPresent(key);
+
+    if (entry == null || currentTime >= entry.expiryTime()) {
+      COOLDOWNS.put(key, new CooldownEntry(currentTime + durationValue.toMillis()));
+      return false;
+    }
+
+    PlayerUtils.sendMessage(
+      player,
+      CobbleUtils.language.getMessageCooldownCommand(),
       null,
       TypeMessage.CHAT
     );

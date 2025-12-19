@@ -4,6 +4,7 @@ import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.Model.DataBaseConfig;
 import com.kingpixel.cobbleutils.database.users.models.Storage;
 import com.kingpixel.cobbleutils.util.Utils;
+import net.minecraft.entity.Entity;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
@@ -111,6 +112,12 @@ public class DataBaseUsersJson extends DataBaseUsers {
     UserModel user = findUserByUUID(playerUUID);
     if (user == null) return null;
     return user.removeStorage(storage.getId());
+  }
+
+  @Override public List<UUID> getOnlinePlayers() {
+    return CobbleUtils.server.getPlayerManager().getPlayerList().stream()
+      .map(Entity::getUuid)
+      .toList();
   }
 
   // Método para leer un archivo JSON y convertirlo en UserModel

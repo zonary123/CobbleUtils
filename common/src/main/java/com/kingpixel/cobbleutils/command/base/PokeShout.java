@@ -56,7 +56,7 @@ public class PokeShout implements Command<CommandSource> {
               }
               long cooldown = cooldowns.getOrDefault(player.getUuid(), 0L);
               if (PlayerUtils.isCooldown(cooldown)) {
-                PlayerUtils.sendMessage(player, CobbleUtils.language.getMessageCooldown()
+                PlayerUtils.sendMessage(player, CobbleUtils.language.getMessageCooldownCommand()
                     .replace("%cooldown%", String.valueOf(PlayerUtils.getCooldown(cooldown))),
                   CobbleUtils.config.getPrefix(),
                   TypeMessage.CHAT

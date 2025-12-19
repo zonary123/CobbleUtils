@@ -74,8 +74,12 @@ public class PlayerUtils {
    *
    * @return true if the player has a cooldown for the specific menu.
    */
-  public static boolean isCooldownMenu(ServerPlayerEntity player, String menu, DurationValue durationValue) {
-    return CooldownManager.isCooldownMenu(player, menu, durationValue);
+  public static boolean isCooldownMenu(ServerPlayerEntity player, String menu, DurationValue duration) {
+    return CooldownManager.hasCooldownMenu(player, menu, duration);
+  }
+
+  public static boolean hasCooldownCommand(ServerPlayerEntity player, String command, DurationValue duration) {
+    return CooldownManager.hasCooldownCommand(player, command, duration);
   }
 
   /**

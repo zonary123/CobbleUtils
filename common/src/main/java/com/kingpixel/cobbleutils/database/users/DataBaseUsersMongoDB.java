@@ -162,5 +162,23 @@ public class DataBaseUsersMongoDB extends DataBaseUsers {
     return user.removeStorage(id);
   }
 
+  @Override public List<UUID> getOnlinePlayers() {
+    var filter = Filters.eq("isOnline", true);
+    return collectionUser.find(filter)
+      .map(doc -> {
+        try {
+          String uuidStr = doc.getString("playerUUID");
+          if (uuidStr != null) {
+            return UUID.fromString(uuidStr);
+          }
+        } catch (Exception e) {
+          System.err.println("Failed to parse online player document: " + doc.toJson());
+          e.printStackTrace();
+        }
+        return null;
+      })
+      .into(new ArrayList<>());
+  }
+
 
 }

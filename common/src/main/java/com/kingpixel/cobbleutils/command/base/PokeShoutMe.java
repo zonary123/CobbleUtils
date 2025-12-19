@@ -47,7 +47,7 @@ public class PokeShoutMe implements Command<CommandSource> {
               long cooldown = PokeShout.cooldowns.getOrDefault(player.getUuid(), 0L);
               if (PlayerUtils.isCooldown(cooldown)) {
                 PlayerUtils.sendMessage(player,
-                  CobbleUtils.language.getMessageCooldown()
+                  CobbleUtils.language.getMessageCooldownCommand()
                     .replace("%cooldown%", String.valueOf(PlayerUtils.getCooldown(cooldown))),
                   CobbleUtils.config.getPrefix(),
                   TypeMessage.CHAT

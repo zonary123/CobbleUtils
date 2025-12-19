@@ -18,14 +18,15 @@ import java.util.concurrent.CompletableFuture;
 @Getter
 @Setter
 public class Lang {
-  private String prefixShop;
-  private String prefixStorageRewards;
+  private String prefixCooldown;
   private String titlemenushiny;
   private String titlemenushinyoperation;
   private String titlemenurewards;
   private String titlepc;
   private String titleparty;
   private String titleconfirm;
+  private String messageCooldownMenu;
+  private String messageCooldownCommand;
   private String HA;
   private String confirm;
   private String cancel;
@@ -52,8 +53,7 @@ public class Lang {
   private String messageReceiveReward;
   private String messageReceiveMoney;
   private String messagePokeShout;
-  private String messageCooldown;
-  private String messageCooldownMenu;
+
   private String coloritem;
   private List<String> lorepokemon;
   private List<String> lorechance;
@@ -110,8 +110,7 @@ public class Lang {
    * Constructor to generate a file if one doesn't exist.
    */
   public Lang() {
-    prefixShop = "&7[<gradient:#34ff00:#ade37e><bold>Shop&7] &8» &a";
-    prefixStorageRewards = "&7[<gradient:#34ff00:#ade37e><bold>Storage&7] &8» &a";
+    prefixCooldown = "&c[Cooldown] ";
     soundopen = "cobblemon:pc.on";
     soundclose = "cobblemon:pc.off";
     confirm = "&aConfirm";
@@ -270,7 +269,7 @@ public class Lang {
     itemConfirm = new ItemModel("minecraft:lime_stained_glass_pane", "<gradient:#4B9F4B:#7DC97D>Confirm", List.of(),
       0);
     itemCancel = new ItemModel("minecraft:red_stained_glass_pane", "<gradient:#E05858:#F09E9E>Cancel", List.of(), 0);
-    this.messageCooldown = "%prefix% <gradient:#e33636:#f08181>You need to wait %cooldown% <gradient:#e33636:#f08181>to use this command" +
+    this.messageCooldownCommand = "%prefix% <gradient:#e33636:#f08181>You need to wait %cooldown% <gradient:#e33636:#f08181>to use this command" +
       ".</gradient>";
     this.defaultSymbol = "&e$";
     this.itemsEconomy = new HashMap<>();

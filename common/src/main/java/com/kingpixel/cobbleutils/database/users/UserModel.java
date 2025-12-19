@@ -23,10 +23,11 @@ import java.util.*;
  */
 @Data
 public class UserModel {
-
+  private boolean online;
   private UUID playerUUID;
   private String playerName;
   private Instant lastLogin;
+  private Instant disconnectTime;
   private String ip;
 
   // Map: ItemChance UUID -> RewardInfo
@@ -36,7 +37,7 @@ public class UserModel {
 
   public UserModel(ServerPlayerEntity player) {
     this.playerUUID = player.getUuid();
-    updateData(player);
+    connect(player);
   }
 
   public UserModel(UUID uuid, String playerName) {
@@ -46,10 +47,12 @@ public class UserModel {
     this.ip = null;
   }
 
-  public void updateData(ServerPlayerEntity player) {
+  public void connect(ServerPlayerEntity player) {
     this.playerName = player.getGameProfile().getName();
     this.lastLogin = Instant.now();
     this.ip = player.getIp();
+    this.online = true;
+    this.disconnectTime = null;
     if (rewardsClaimed == null) rewardsClaimed = new HashMap<>();
   }
 
@@ -142,6 +145,11 @@ public class UserModel {
     }
     if (toRemove != null) storageList.remove(toRemove);
     return toRemove;
+  }
+
+  public void disconnect() {
+    this.online = false;
+    this.disconnectTime = Instant.now();
   }
 
 

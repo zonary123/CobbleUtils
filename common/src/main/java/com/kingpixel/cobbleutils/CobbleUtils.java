@@ -51,10 +51,10 @@ public class CobbleUtils {
   public static Lang language = new Lang();
   public static List<String> modsInUse = new ArrayList<>();
   public static final ExecutorService EXECUTOR_COBBLEUTILS = new ThreadPoolExecutor(
+    2,
     8,
-    16,
     60L, TimeUnit.SECONDS,
-    new ArrayBlockingQueue<>(100),
+    new ArrayBlockingQueue<>(200),
     new ThreadFactoryBuilder()
       .setNameFormat("CobbleUtils General Executor-%d")
       .build(),
@@ -69,7 +69,7 @@ public class CobbleUtils {
   );
   private static final ScheduledExecutorService SCHEDULER_COBBLEUTILS =
     new ScheduledThreadPoolExecutor(
-      2,
+      1,
       new ThreadFactoryBuilder()
         .setNameFormat("CobbleUtils Scheduled Executor-%d")
         .build(),
@@ -221,7 +221,7 @@ public class CobbleUtils {
     PlayerEvent.PLAYER_JOIN.register((player) -> CompletableFuture.runAsync(() -> {
         UserModel user = DataBaseFactory.dataBaseUsers.findUserByUUID(player.getUuid());
         if (user == null) user = new UserModel(player);
-        user.updateData(player);
+        user.connect(player);
         user.fix();
         DataBaseFactory.dataBaseUsers.saveOrUpdateUser(user);
         DataBaseUsers.users.put(player.getUuid(), user);
@@ -233,7 +233,10 @@ public class CobbleUtils {
 
     PlayerEvent.PLAYER_QUIT.register((player) -> CompletableFuture.runAsync(() -> {
         UserModel user = DataBaseFactory.dataBaseUsers.findUserByUUID(player.getUuid());
-        if (user != null) DataBaseFactory.dataBaseUsers.saveOrUpdateUser(user);
+        if (user != null) {
+          user.disconnect();
+          DataBaseFactory.dataBaseUsers.saveOrUpdateUser(user);
+        }
         DataBaseFactory.dataBaseUsers.removeIfNecessary(player.getUuid());
       }, EXECUTOR_COBBLEUTILS)
       .exceptionally(e -> {

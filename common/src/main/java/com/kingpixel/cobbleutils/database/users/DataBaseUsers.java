@@ -121,4 +121,6 @@ public abstract class DataBaseUsers {
 
   @Nullable
   public abstract Storage removeStorage(Storage storage, UUID playerUUID);
+
+  public abstract List<UUID> getOnlinePlayers();
 }
