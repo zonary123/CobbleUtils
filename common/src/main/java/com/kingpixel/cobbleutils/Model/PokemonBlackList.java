@@ -1,5 +1,6 @@
 package com.kingpixel.cobbleutils.Model;
 
+import com.cobblemon.mod.common.api.pokemon.PokemonProperties;
 import com.cobblemon.mod.common.api.pokemon.egg.EggGroup;
 import com.cobblemon.mod.common.api.types.ElementalType;
 import com.cobblemon.mod.common.pokemon.Pokemon;
@@ -23,6 +24,7 @@ public class PokemonBlackList {
   private transient final Map<String, Boolean> resultsCache = new HashMap<>();
   private boolean onlyImplemented;
   private boolean allowEvolutions = true;
+  private Set<String> properties;
   private Set<String> pokemons;
   private Set<String> forms;
   private Set<String> aspects;
@@ -33,6 +35,7 @@ public class PokemonBlackList {
   private Set<EggGroup> eggGroups;
 
   public PokemonBlackList() {
+    this.properties = new HashSet<>();
     this.pokemons = new HashSet<>();
     pokemons.add("egg");
     pokemons.add("pokestop");
@@ -100,6 +103,7 @@ public class PokemonBlackList {
   }
 
   public void clear() {
+    properties.clear();
     pokemons.clear();
     forms.clear();
     aspects.clear();
@@ -118,6 +122,13 @@ public class PokemonBlackList {
   public boolean isBlacklisted(Pokemon pokemon) {
     // Quick wildcard check
     if (pokemons.contains("*")) return true;
+
+    // Properties check
+    if (!properties.isEmpty()) {
+      for (String property : properties) {
+        if (PokemonProperties.Companion.parse(property).matches(pokemon)) return true;
+      }
+    }
 
     // Check aspects
     if (!aspects.isEmpty()) {

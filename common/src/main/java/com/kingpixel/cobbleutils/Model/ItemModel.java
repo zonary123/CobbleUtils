@@ -9,6 +9,7 @@ import ca.landonjw.gooeylibs2.api.template.types.ChestTemplate;
 import com.cobblemon.mod.common.api.pokemon.PokemonProperties;
 import com.cobblemon.mod.common.item.PokemonItem;
 import com.kingpixel.cobbleutils.CobbleUtils;
+import com.kingpixel.cobbleutils.mixins.GooeyButtonMixin;
 import com.kingpixel.cobbleutils.util.AdventureTranslator;
 import com.kingpixel.cobbleutils.util.UIUtils;
 import com.kingpixel.cobbleutils.util.Utils;
@@ -349,12 +350,15 @@ public class ItemModel {
     int rows = template.getRows();
     if (UIUtils.isInside(slot, rows)) template.set(slot, button);
     if (slots != null) {
-      for (Integer slot : slots) {
-        if (UIUtils.isInside(slot, rows)) template.set(slot, button);
+      GooeyButton invisibleButton = CobbleUtils.language.getItemInvisible().getButton(((GooeyButtonMixin) button).getOnClick());
+      invisibleButton.getDisplay().set(DataComponentTypes.LORE, button.getDisplay().get(DataComponentTypes.LORE));
+      invisibleButton.getDisplay().set(DataComponentTypes.CUSTOM_NAME, button.getDisplay().get(DataComponentTypes.CUSTOM_NAME));
+      invisibleButton.getDisplay().set(DataComponentTypes.CUSTOM_MODEL_DATA, button.getDisplay().get(DataComponentTypes.CUSTOM_MODEL_DATA));
+      for (Integer s : slots) {
+        if (UIUtils.isInside(s, rows)) template.set(s, invisibleButton);
       }
     }
   }
-
 
   public void applyTemplate(ChestTemplate template, RateLimitedButton button) {
     int rows = template.getRows();

@@ -8,6 +8,7 @@
   },
   "mixins": [
     "BlockMixin",
+    "GooeyButtonMixin",
     "UserCacheMixin",
     "brewing.BrewingBlockEntityMixin",
     "brewing.BrewingBlockMixin"
