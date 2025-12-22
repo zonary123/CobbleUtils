@@ -353,7 +353,6 @@ public class ItemModel {
       GooeyButton invisibleButton = CobbleUtils.language.getItemInvisible().getButton(((GooeyButtonMixin) button).getOnClick());
       invisibleButton.getDisplay().set(DataComponentTypes.LORE, button.getDisplay().get(DataComponentTypes.LORE));
       invisibleButton.getDisplay().set(DataComponentTypes.CUSTOM_NAME, button.getDisplay().get(DataComponentTypes.CUSTOM_NAME));
-      invisibleButton.getDisplay().set(DataComponentTypes.CUSTOM_MODEL_DATA, button.getDisplay().get(DataComponentTypes.CUSTOM_MODEL_DATA));
       for (Integer s : slots) {
         if (UIUtils.isInside(s, rows)) template.set(s, invisibleButton);
       }
