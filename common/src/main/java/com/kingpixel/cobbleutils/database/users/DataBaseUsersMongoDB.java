@@ -142,9 +142,6 @@ public class DataBaseUsersMongoDB extends DataBaseUsers {
       Filters.eq("playerUUID", playerUUID.toString()),
       new Document("$push", new Document("storageList", storage.toDocument()))
     );
-    UserModel user = findUserByUUID(playerUUID);
-    if (user == null) return;
-    user.getStorageList().add(storage);
   }
 
   @Override
