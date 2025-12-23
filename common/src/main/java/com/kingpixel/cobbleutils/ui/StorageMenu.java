@@ -9,6 +9,7 @@ import ca.landonjw.gooeylibs2.api.page.LinkedPage;
 import ca.landonjw.gooeylibs2.api.template.types.ChestTemplate;
 import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.Model.ItemModel;
+import com.kingpixel.cobbleutils.Model.PanelsConfig;
 import com.kingpixel.cobbleutils.Model.Rectangle;
 import com.kingpixel.cobbleutils.database.DataBaseFactory;
 import com.kingpixel.cobbleutils.database.users.UserModel;
@@ -35,6 +36,7 @@ public class StorageMenu {
   private ItemModel close;
   private ItemModel previousPage;
   private ItemModel claimAll;
+  private List<PanelsConfig> panels;
 
   public StorageMenu() {
     this.rows = 6;
@@ -48,6 +50,13 @@ public class StorageMenu {
     this.previousPage.setSlot(45);
     this.claimAll = new ItemModel("minecraft:chest", "&eClaim All Rewards"); // 👈 botón genérico
     this.claimAll.setSlot(47);
+    this.panels = List.of(
+      new PanelsConfig(rows)
+    );
+    int totalSlots = rows * 9;
+    for (PanelsConfig panel : panels) {
+      panel.getSlots().removeIf(slot -> slot < 0 || slot >= totalSlots);
+    }
   }
 
   public void open(ServerPlayerEntity executer, UUID targetUUID) {
@@ -56,6 +65,7 @@ public class StorageMenu {
           .builder(rows)
           .build();
 
+        PanelsConfig.applyConfig(template, panels);
         rectangle.apply(template);
         UserModel userModel = DataBaseFactory.dataBaseUsers.findUserByUUID(targetUUID);
         if (userModel == null) return;
