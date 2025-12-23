@@ -3,6 +3,7 @@ package com.kingpixel.cobbleutils.config;
 import com.google.gson.Gson;
 import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.Model.ItemModel;
+import com.kingpixel.cobbleutils.ui.AdvancedRewardsGUI;
 import com.kingpixel.cobbleutils.ui.ConfirmMenu;
 import com.kingpixel.cobbleutils.ui.PartyPcMenu;
 import com.kingpixel.cobbleutils.ui.StorageMenu;
@@ -106,6 +107,7 @@ public class Lang {
   private PartyPcMenu partyPcMenu;
   private ConfirmMenu confirmMenu;
   private StorageMenu storageMenu;
+  private AdvancedRewardsGUI advancedRewardsGUI;
 
   /**
    * Constructor to generate a file if one doesn't exist.
@@ -283,6 +285,7 @@ public class Lang {
     partyPcMenu = new PartyPcMenu();
     confirmMenu = new ConfirmMenu();
     storageMenu = new StorageMenu();
+    advancedRewardsGUI = new AdvancedRewardsGUI();
   }
 
   /**

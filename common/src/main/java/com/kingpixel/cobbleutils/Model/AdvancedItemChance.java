@@ -235,11 +235,12 @@ public class AdvancedItemChance {
   public void openMenu(ServerPlayerEntity player, Consumer<ChestTemplate> templateConsumer) {
     if (!showMenu) return;
     CobbleUtils.EXECUTOR_COBBLEUTILS.execute(() -> {
-      ChestTemplate template = ChestTemplate.builder(6)
+      int rows = CobbleUtils.language.getAdvancedRewardsGUI().getRows();
+      ChestTemplate template = ChestTemplate.builder(rows)
         .build();
 
-      ItemModel itemClose = CobbleUtils.language.getItemClose();
-      template.set(49, itemClose.getButton(action -> {
+      ItemModel itemClose = CobbleUtils.language.getAdvancedRewardsGUI().getClose();
+      template.set(itemClose.getSlot(), itemClose.getButton(action -> {
         UIManager.closeUI(action.getPlayer());
       }));
 
@@ -252,11 +253,12 @@ public class AdvancedItemChance {
                        Consumer<ButtonAction> close) {
     if (!showMenu) return;
     CobbleUtils.EXECUTOR_COBBLEUTILS.execute(() -> {
-      ChestTemplate template = ChestTemplate.builder(6)
+      int rows = CobbleUtils.language.getAdvancedRewardsGUI().getRows();
+      ChestTemplate template = ChestTemplate.builder(rows)
         .build();
 
-      ItemModel itemClose = CobbleUtils.language.getItemClose();
-      template.set(49, itemClose.getButton(close));
+      ItemModel itemClose = CobbleUtils.language.getAdvancedRewardsGUI().getClose();
+      template.set(itemClose.getSlot(), itemClose.getButton(close));
 
       templateConsumer.accept(template);
       applyTemplate(player, template);
@@ -267,10 +269,12 @@ public class AdvancedItemChance {
   public void openMenu(ServerPlayerEntity player) {
     if (!showMenu) return;
     CobbleUtils.EXECUTOR_COBBLEUTILS.execute(() -> {
-      ChestTemplate template = ChestTemplate.builder(6)
+      int rows = CobbleUtils.language.getAdvancedRewardsGUI().getRows();
+      ChestTemplate template = ChestTemplate.builder(rows)
         .build();
 
-      template.set(49, CobbleUtils.language.getItemClose().getButton(action -> {
+      ItemModel itemClose = CobbleUtils.language.getAdvancedRewardsGUI().getClose();
+      template.set(itemClose.getSlot(), itemClose.getButton(action -> {
         UIManager.closeUI(action.getPlayer());
       }));
       applyTemplate(player, template);
@@ -319,24 +323,21 @@ public class AdvancedItemChance {
     }
 
     if (buttons.size() > freeSlots) {
-      ItemModel itemNext = CobbleUtils.language.getItemNext();
-      template.set(53, LinkedPageButton.builder()
+      ItemModel itemNext = CobbleUtils.language.getAdvancedRewardsGUI().getNext();
+      template.set(itemNext.getSlot(), LinkedPageButton.builder()
         .display(itemNext.getItemStack())
         .linkType(LinkType.Next)
         .build());
 
-      ItemModel itemPrevious = CobbleUtils.language.getItemPrevious();
-      template.set(45, LinkedPageButton.builder()
+      ItemModel itemPrevious = CobbleUtils.language.getAdvancedRewardsGUI().getPrevious();
+      template.set(itemPrevious.getSlot(), LinkedPageButton.builder()
         .display(itemPrevious.getItemStack())
         .linkType(LinkType.Previous)
         .build());
     }
 
-
-    template.fill(GooeyButton.builder()
-      .display(Utils.parseItemId(CobbleUtils.config.getFill()))
-      .with(DataComponentTypes.CUSTOM_NAME, Text.empty())
-      .build());
+    // Apply panels configuration (fill items)
+    PanelsConfig.applyConfig(template, CobbleUtils.language.getAdvancedRewardsGUI().getPanels());
 
     LinkedPage.Builder linkedPageBuilder = LinkedPage.builder()
       .title(AdventureTranslator.toNative(title == null || title.isEmpty() ? CobbleUtils.language.getTitleLoot() : title));
