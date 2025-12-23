@@ -258,7 +258,7 @@ public class Lang {
     movecolor.put("ground", "<gradient:#B8860B:#D2B48C>");
     movecolor.put("psychic", "<gradient:#D74DE2:#DE77E7>");
     movecolor.put("fairy", "<gradient:#9C38A5:#C06EC7>");
-    itemInvisible = new ItemModel("minecraft:paper", " ", List.of(), 1);
+    itemInvisible = new ItemModel("minecraft:air", " ", List.of(), 1);
     itemMoney = new ItemModel("cobblemon:relic_coin", "%amount%", List.of(), 0);
     itemPc = new ItemModel("cobblemon:pc", "&bPC", List.of(
       "&7Right click to open"
