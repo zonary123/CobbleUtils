@@ -50,7 +50,7 @@ public class Config {
 
   public Config() {
     debug = false;
-    useDefault = true;
+    useDefault = false;
     prefix = "§7[§6CobbleUtils§7] ";
     lang = "en";
     timeSinceLastLoginToSuggest = DurationValue.parse("1y");
