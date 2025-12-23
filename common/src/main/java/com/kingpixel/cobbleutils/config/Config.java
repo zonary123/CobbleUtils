@@ -60,7 +60,8 @@ public class Config {
     GtsSupport = false;
     GtsEconomyToUse = new EconomyUse(ImpactorEconomy.IDENTIFY, "");
     priorityEconomy = new ArrayList<>();
-    priorityEconomy.add(new PriorityEconomy(ImpactorEconomy.IDENTIFY, Priority.HIGHEST));
+    priorityEconomy.add(new PriorityEconomy(UltraEEconomy.IDENTIFY, Priority.HIGHEST));
+    priorityEconomy.add(new PriorityEconomy(ImpactorEconomy.IDENTIFY, Priority.HIGH));
     priorityEconomy.add(new PriorityEconomy(BeEconomy.IDENTIFY, Priority.HIGH));
     priorityEconomy.add(new PriorityEconomy(CobbleDollarsEconomy.IDENTIFY, Priority.MEDIUM));
     priorityEconomy.add(new PriorityEconomy(PebbleEconomy.IDENTIFY, Priority.LOW));
