@@ -1,9 +1,12 @@
 package com.kingpixel.cobbleutils.database.users;
 
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.Model.DataBaseConfig;
 import com.kingpixel.cobbleutils.Model.ItemChance;
 import com.kingpixel.cobbleutils.api.RewardsApi;
+import com.kingpixel.cobbleutils.database.DataBaseFactory;
 import com.kingpixel.cobbleutils.database.users.models.Storage;
 import com.mojang.authlib.GameProfile;
 import net.minecraft.network.packet.c2s.common.SyncedClientOptions;
@@ -11,25 +14,30 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author Carlos Varas Alonso - 27/08/2025 15:11
  */
 public abstract class DataBaseUsers {
-  public static final Map<UUID, UserModel> users = new HashMap<>();
+  public static final Cache<UUID, UserModel> users = Caffeine.newBuilder()
+    .expireAfterAccess(5, TimeUnit.SECONDS)
+    .removalListener((o, o2, removalCause) -> {
+      if (o2 != null) {
+        UserModel user = (UserModel) o2;
+        DataBaseFactory.dataBaseUsers.saveOrUpdateUser(user);
+      }
+    })
+    .build();
 
   public abstract void connect(DataBaseConfig config);
 
   public abstract void disconnect();
 
   @Nullable
-  public UserModel findUserByUUID(@NotNull UUID uuid) {
-    return users.get(uuid);
-  }
+  public abstract UserModel findUserByUUID(@NotNull UUID uuid);
 
   @Nullable
   public UserModel findUserByName(@NotNull String name) {
@@ -114,7 +122,7 @@ public abstract class DataBaseUsers {
   }
 
   public void removeIfNecessary(UUID uuid) {
-    users.remove(uuid);
+    users.invalidate(uuid);
   }
 
   public abstract void addStorage(Storage storage, UUID playerUUID);

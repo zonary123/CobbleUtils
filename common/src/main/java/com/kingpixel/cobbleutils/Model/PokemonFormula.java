@@ -36,7 +36,9 @@ public class PokemonFormula {
   private String formula;
   // Base configurations
   private float base = 0;
+  private float notShiny = 1;
   private float shiny = 0;
+  private float notHiddenAbility = 1;
   private float hiddenAbility = 0;
   // Variable maps
   private Map<String, Float> pokemonBase = new HashMap<>();
@@ -49,6 +51,7 @@ public class PokemonFormula {
   private boolean accumulationLabels = false;
   private Map<String, Float> labels = new HashMap<>();
   private Map<Boolean, Float> breedable = new HashMap<>();
+  private Map<String, Float> rarity = new HashMap<>();
   private Map<String, Map<Object, Float>> persistentDataValues = new HashMap<>();
   // Held item prices
   private HeldItemPrice heldItemPrice = new HeldItemPrice();
@@ -59,7 +62,7 @@ public class PokemonFormula {
 
   public PokemonFormula() {
     this.formula = "base + heldItem + gender + labels + nature + ability + ivsAverage + ivsTotal + totalPerfectIvs + evsTotal +" +
-      " evsAverage + form + ball + aspect + shiny + breedable";
+      " evsAverage + form + ball + aspect + shiny + breedable + rarity";
 
     initDefaults();
     registerVariables();
@@ -85,6 +88,7 @@ public class PokemonFormula {
         "uncommon", 0f
       )
     );
+    rarity.put("common", 0f);
     persistentDataValues.put(
       "example_data_2",
       Map.of(
@@ -105,7 +109,7 @@ public class PokemonFormula {
     // Held Item
     variableResolvers.put("heldItem", this::getHeldItem);
     // Shiny
-    variableResolvers.put("shiny", p -> p.getShiny() ? shiny : 1.0f);
+    variableResolvers.put("shiny", p -> p.getShiny() ? shiny : notShiny);
     // Gender
     variableResolvers.put("gender", this::getGender);
     // Labels
@@ -128,6 +132,11 @@ public class PokemonFormula {
     variableResolvers.put("level", p -> (float) Math.max(p.getLevel(), 1));
     // Evolutions count
     variableResolvers.put("evolutions", this::getEvolversCount);
+    // Rarity
+    variableResolvers.put("rarity", p -> {
+      String rarityId = PokemonUtils.getRarityS(p);
+      return rarity.getOrDefault(rarityId, 0f);
+    });
     // Stats IVs and EVs
     variableResolvers.put("ivsTotal", p -> (float) Math.max(PokemonUtils.getIvsTotal(p.getIvs()), 1));
     variableResolvers.put("ivsAverage", p -> (float) Math.max(PokemonUtils.getIvsAverage(p.getIvs()), 1));
@@ -195,7 +204,12 @@ public class PokemonFormula {
    * @return The computed value.
    */
   public Double getPokemonValue(Pokemon pokemon) {
-    return getPokemonExpression(pokemon).evaluate();
+    try {
+      return getPokemonExpression(pokemon).evaluate();
+    } catch (Exception e) {
+      e.printStackTrace();
+      return 0.0;
+    }
   }
 
   /**
@@ -311,7 +325,7 @@ public class PokemonFormula {
   }
 
   private float getAbility(Pokemon pokemon) {
-    return PokemonUtils.isAH(pokemon) ? hiddenAbility : 0f;
+    return PokemonUtils.isAH(pokemon) ? hiddenAbility : notHiddenAbility;
   }
 
   private float getLabel(Pokemon pokemon) {

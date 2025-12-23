@@ -8,6 +8,7 @@ import com.kingpixel.cobbleutils.database.users.models.Storage;
 import com.kingpixel.cobbleutils.util.PlayerUtils;
 import lombok.Data;
 import net.minecraft.server.network.ServerPlayerEntity;
+import org.jetbrains.annotations.NotNull;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -45,6 +46,10 @@ public class UserModel {
     this.playerName = playerName;
     this.lastLogin = null;
     this.ip = null;
+  }
+
+  public UserModel(@NotNull UUID uuid) {
+    this.playerUUID = uuid;
   }
 
   public void connect(ServerPlayerEntity player) {

@@ -189,10 +189,10 @@ public class AdvancedItemChance {
         initAnimation(animation, player, showAllRewards, showObtainedRewards);
 
       } else if (playerUUID != null) {
-        // Guardamos las recompensas para cuando el jugador vuelva online
         for (ItemChance reward : obtainedRewards) {
           DataBaseFactory.dataBaseUsers.addStorage(new StorageRewards(reward), playerUUID);
         }
+        DataBaseFactory.dataBaseUsers.saveOrUpdateUser(DataBaseFactory.dataBaseUsers.findUserByUUID(playerUUID));
       }
 
     } catch (Exception e) {

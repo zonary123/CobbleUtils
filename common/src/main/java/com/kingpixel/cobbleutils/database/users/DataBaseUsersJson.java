@@ -33,13 +33,11 @@ public class DataBaseUsersJson extends DataBaseUsers {
 
   @Override
   public UserModel findUserByUUID(@NotNull UUID uuid) {
-    UserModel userModel = super.findUserByUUID(uuid);
-    if (userModel != null) return userModel; // si está en la cache,
-    // si no está en la cache, lo carga del archivo
-    File file = Utils.getAbsolutePath(PATH_USERS + uuid + ".json");
-    if (!file.exists()) return null;
-    userModel = readUserFile(file);
-    return userModel;
+    return DataBaseUsers.users.get(uuid, k -> {
+      File file = Utils.getAbsolutePath(PATH_USERS + k + ".json");
+      if (!file.exists()) return null;
+      return readUserFile(file);
+    });
   }
 
   @Override

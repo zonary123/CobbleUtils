@@ -51,8 +51,8 @@ public class CobbleUtils {
   public static Lang language = new Lang();
   public static List<String> modsInUse = new ArrayList<>();
   public static final ExecutorService EXECUTOR_COBBLEUTILS = new ThreadPoolExecutor(
-    2,
-    8,
+    1,
+    4,
     60L, TimeUnit.SECONDS,
     new ArrayBlockingQueue<>(200),
     new ThreadFactoryBuilder()

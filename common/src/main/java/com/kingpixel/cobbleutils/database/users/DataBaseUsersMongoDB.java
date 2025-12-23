@@ -51,15 +51,13 @@ public class DataBaseUsersMongoDB extends DataBaseUsers {
 
   @Override
   public @Nullable UserModel findUserByUUID(@NotNull UUID uuid) {
-    UserModel userModel = super.findUserByUUID(uuid);
-    if (userModel != null) return userModel; // si está en la cache,
-    Document document = collectionUser.find(Filters.eq("playerUUID", uuid.toString()))
-      .first();
-    if (document != null) {
-      userModel = Utils.newWithoutSpacingGson().fromJson(document.toJson(), UserModel.class);
+    return DataBaseUsers.users.get(uuid, k -> {
+      UserModel userModel = new UserModel(uuid);
+      Document document = collectionUser.find(Filters.eq("playerUUID", uuid.toString()))
+        .first();
+      if (document != null) userModel = Utils.newWithoutSpacingGson().fromJson(document.toJson(), UserModel.class);
       return userModel;
-    }
-    return null;
+    });
   }
 
   @Override
