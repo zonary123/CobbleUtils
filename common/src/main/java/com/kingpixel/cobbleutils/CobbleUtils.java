@@ -128,6 +128,7 @@ public class CobbleUtils {
             continue;
           }
           var storageList = user.getStorageList();
+          if (storageList == null) continue;
           int size = storageList.size();
           if (size > 0) {
             PlayerUtils.sendMessage(
