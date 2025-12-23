@@ -59,6 +59,7 @@ public class UserModel {
     this.online = true;
     this.disconnectTime = null;
     if (rewardsClaimed == null) rewardsClaimed = new HashMap<>();
+    if (storageList == null) storageList = new HashSet<>();
   }
 
   /**
