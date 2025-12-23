@@ -142,6 +142,7 @@ public class DataBaseUsersMongoDB extends DataBaseUsers {
       Filters.eq("playerUUID", playerUUID.toString()),
       new Document("$push", new Document("storageList", storage.toDocument()))
     );
+    DataBaseUsers.users.invalidate(playerUUID);
   }
 
   @Override
