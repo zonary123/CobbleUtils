@@ -72,10 +72,20 @@ public class StorageMenu {
         var list = userModel.getStorageList();
         int size = list.size();
         List<Button> buttons = new ArrayList<>(size);
+        List<Storage> removeList = new ArrayList<>();
         for (Storage storage : list) {
-          buttons.add(storage.getButton());
+          try {
+
+            buttons.add(storage.getButton());
+          } catch (Exception e) {
+            e.printStackTrace();
+            removeList.add(storage);
+          }
         }
 
+        for (Storage storage : removeList) {
+          DataBaseFactory.dataBaseUsers.removeStorage(storage, targetUUID);
+        }
 
         claimAll.applyTemplate(template, claimAll.getButton(action -> {
           var player = action.getPlayer();

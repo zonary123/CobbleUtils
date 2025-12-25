@@ -50,6 +50,12 @@ public class UserModel {
 
   public UserModel(@NotNull UUID uuid) {
     this.playerUUID = uuid;
+    this.lastLogin = null;
+    this.ip = null;
+    this.online = false;
+    this.disconnectTime = null;
+    this.storageList = new HashSet<>();
+    this.rewardsClaimed = new HashMap<>();
   }
 
   public void connect(ServerPlayerEntity player) {
