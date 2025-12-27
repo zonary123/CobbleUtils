@@ -4,6 +4,8 @@ import com.cobblemon.mod.common.api.pokemon.egg.EggGroup;
 import com.cobblemon.mod.common.api.pokemon.evolution.PreEvolution;
 import com.cobblemon.mod.common.api.pokemon.stats.Stats;
 import com.cobblemon.mod.common.api.riding.stats.RidingStat;
+import com.cobblemon.mod.common.api.types.ElementalType;
+import com.cobblemon.mod.common.api.types.ElementalTypes;
 import com.cobblemon.mod.common.pokemon.Gender;
 import com.cobblemon.mod.common.pokemon.Nature;
 import com.cobblemon.mod.common.pokemon.Pokemon;
@@ -42,6 +44,8 @@ public class PokemonFormula {
   private float hiddenAbility = 0;
   // Variable maps
   private Map<String, Float> pokemonBase = new HashMap<>();
+  private boolean acumulationTypes = false;
+  private Map<String, Float> types = new HashMap<>();
   private Map<String, Float> form = new HashMap<>();
   private Map<Gender, Float> gender = new EnumMap<>(Gender.class);
   private Map<String, Float> nature = new HashMap<>();
@@ -61,7 +65,8 @@ public class PokemonFormula {
 
 
   public PokemonFormula() {
-    this.formula = "base + heldItem + gender + labels + nature + ability + ivsAverage + ivsTotal + totalPerfectIvs + evsTotal +" +
+    this.formula = "base + types + heldItem + gender + labels + nature + ability + ivsAverage + ivsTotal + " +
+      "totalPerfectIvs + evsTotal +" +
       " evsAverage + form + ball + aspect + shiny + breedable + rarity";
 
     initDefaults();
@@ -75,6 +80,9 @@ public class PokemonFormula {
     pokemonBase.put("example", 0f);
     form.put("example", 0f);
     aspect.put("example", 0f);
+    for (ElementalType elementalType : ElementalTypes.all()) {
+      types.put(elementalType.getShowdownId(), 0f);
+    }
     for (Gender g : Gender.values()) gender.put(g, 0f);
     nature.put("example", 0f);
     ball.put("cobblemon:poke_ball", 0f);
@@ -106,6 +114,8 @@ public class PokemonFormula {
     variableResolvers.clear();
     // Base stat value
     variableResolvers.put("base", this::getBase);
+    // Type values
+    variableResolvers.put("types", this::getTypes);
     // Held Item
     variableResolvers.put("heldItem", this::getHeldItem);
     // Shiny
@@ -183,6 +193,19 @@ public class PokemonFormula {
     if (showVariablesInConsole) {
       CobbleUtils.LOGGER.info("Pokemon formula available variables: " + variableResolvers.keySet());
     }
+  }
+
+  private Float getTypes(Pokemon pokemon) {
+    float value = 0f;
+    var elementalTypes = pokemon.getForm().getTypes();
+    for (ElementalType type : elementalTypes) {
+      if (acumulationTypes) {
+        value += types.getOrDefault(type.getShowdownId(), 0f);
+      } else {
+        value = Math.max(value, types.getOrDefault(type.getShowdownId(), 0f));
+      }
+    }
+    return value;
   }
 
 
