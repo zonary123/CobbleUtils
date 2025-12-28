@@ -15,6 +15,7 @@ public class EventChannel<T> {
   }
 
   public void emit(T data) {
+    if (listeners.isEmpty()) return;
     for (EventListener<T> l : listeners) {
       l.onEvent(data);
     }
