@@ -23,6 +23,7 @@ import java.util.concurrent.CompletableFuture;
 public abstract class BrewingBlockEntityMixin {
   @Inject(method = "craft", at = @At("HEAD"))
   private static void cobbleUtils$craft(World world, BlockPos pos, DefaultedList<ItemStack> slots, CallbackInfo ci) {
+    if (CobbleUtilsEvents.BREWING_EVENT.hasListeners()) return;
     BlockEntity blockEntity = world.getBlockEntity(pos);
     if (blockEntity == null) {
       if (CobbleUtils.config.isDebug()) {
@@ -64,9 +65,7 @@ public abstract class BrewingBlockEntityMixin {
       }
       return;
     }
-    CompletableFuture.runAsync(() -> {
-      CobbleUtilsEvents.BREWING_EVENT.emit(new
-        EventBrewing(player, world, pos, slots));
-    }, CobbleUtils.EXECUTOR_COBBLEUTILS);
+    CompletableFuture.runAsync(() -> CobbleUtilsEvents.BREWING_EVENT.emit(new
+      EventBrewing(player, world, pos, slots)), CobbleUtils.EXECUTOR_COBBLEUTILS);
   }
 }

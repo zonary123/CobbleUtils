@@ -21,7 +21,6 @@ import com.kingpixel.cobbleutils.database.users.models.StorageRewards;
 import com.kingpixel.cobbleutils.util.AdventureTranslator;
 import com.kingpixel.cobbleutils.util.PlayerUtils;
 import com.kingpixel.cobbleutils.util.TypeMessage;
-import com.kingpixel.cobbleutils.util.Utils;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
@@ -29,7 +28,6 @@ import net.minecraft.component.DataComponentTypes;
 import net.minecraft.component.type.LoreComponent;
 import net.minecraft.item.ItemStack;
 import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.text.Text;
 import net.minecraft.util.math.Vec3d;
 
 import java.util.*;
@@ -236,7 +234,7 @@ public class AdvancedItemChance {
     if (!showMenu) return;
     CobbleUtils.EXECUTOR_COBBLEUTILS.execute(() -> {
       int rows = CobbleUtils.language.getAdvancedRewardsGUI().getRows();
-      ChestTemplate template = ChestTemplate.builder(rows)
+      ChestTemplate template = ChestTemplate.builder(rows <= 0 ? 6 : rows)
         .build();
 
       ItemModel itemClose = CobbleUtils.language.getAdvancedRewardsGUI().getClose();

@@ -4,6 +4,7 @@ import com.kingpixel.cobbleutils.database.blocks.manager.ChunkBlockStorageManage
 import com.kingpixel.cobbleutils.events.CobbleUtilsEvents;
 import com.kingpixel.cobbleutils.events.models.EventBlockBreak;
 import com.kingpixel.cobbleutils.events.models.EventBlockPlaced;
+import com.kingpixel.cobbleutils.events.models.EventCollect;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.entity.LivingEntity;
@@ -27,31 +28,58 @@ public abstract class BlockMixin {
   private void CobbleUtils$onPlaced(World world, BlockPos pos, BlockState state, LivingEntity placer,
                                     ItemStack itemStack,
                                     CallbackInfo ci) {
-    ServerPlayerEntity player = (placer instanceof ServerPlayerEntity serverPlayer) ? serverPlayer : null;
-    if (player == null) return;
-    boolean placed = ChunkBlockStorageManager.isPlacedByPlayer(world, world.getChunk(pos), pos);
-    ChunkBlockStorageManager.markPlaced(world, world.getChunk(pos), pos, state);
-    CobbleUtilsEvents.BLOCK_PLACED_EVENT.emit(new EventBlockPlaced(
-      world,
-      pos,
-      state,
-      player,
-      placed
-    ));
+    try {
+      ServerPlayerEntity player = (placer instanceof ServerPlayerEntity serverPlayer) ? serverPlayer : null;
+      if (player == null) return;
+      boolean placed = ChunkBlockStorageManager.isPlacedByPlayer(world, world.getChunk(pos), pos);
+      ChunkBlockStorageManager.markPlaced(world, world.getChunk(pos), pos, state);
+      if (CobbleUtilsEvents.BLOCK_PLACED_EVENT.hasListeners()) {
+        CobbleUtilsEvents.BLOCK_PLACED_EVENT.emit(new EventBlockPlaced(
+          world,
+          pos,
+          state,
+          player,
+          placed
+        ));
+      }
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
   }
 
   @Inject(method = "onBreak", at = @At("HEAD"))
   private void CobbleUtils$onBreak(World world, BlockPos pos, BlockState state, PlayerEntity playerEntity,
                                    CallbackInfoReturnable<BlockState> cir) {
-    ServerPlayerEntity player = (playerEntity instanceof ServerPlayerEntity serverPlayer) ? serverPlayer : null;
-    if (player == null) return;
-    boolean isPlaced = ChunkBlockStorageManager.removePlaced(world, world.getChunk(pos), pos, state);
-    CobbleUtilsEvents.BLOCK_BREAK_EVENT.emit(new EventBlockBreak(
-      world,
-      pos,
-      state,
-      player,
-      isPlaced
-    ));
+    try {
+      ServerPlayerEntity player = (playerEntity instanceof ServerPlayerEntity serverPlayer) ? serverPlayer : null;
+      if (player == null) return;
+      boolean isPlaced = ChunkBlockStorageManager.removePlaced(world, world.getChunk(pos), pos, state);
+      if (CobbleUtilsEvents.BLOCK_BREAK_EVENT.hasListeners()) {
+        CobbleUtilsEvents.BLOCK_BREAK_EVENT.emit(new EventBlockBreak(
+          world,
+          pos,
+          state,
+          player,
+          isPlaced
+        ));
+      }
+
+      if (CobbleUtilsEvents.COLLECT_EVENT.hasListeners()) {
+        var evt = EventCollect.builder()
+          .player(player)
+          .playerPlaced(isPlaced)
+          .world(world)
+          .state(state)
+          .pos(pos)
+          .build();
+        if (evt.getAmount() > 0) {
+          CobbleUtilsEvents.COLLECT_EVENT.emit(
+            evt
+          );
+        }
+      }
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
   }
 }

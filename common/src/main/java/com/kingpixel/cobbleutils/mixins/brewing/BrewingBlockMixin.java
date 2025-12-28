@@ -1,5 +1,6 @@
 package com.kingpixel.cobbleutils.mixins.brewing;
 
+import com.kingpixel.cobbleutils.events.CobbleUtilsEvents;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.BrewingStandBlock;
 import net.minecraft.block.entity.BlockEntity;
@@ -23,6 +24,7 @@ public abstract class BrewingBlockMixin {
   @Inject(method = "onUse", at = @At("HEAD"))
   private void cobbleQuests$onUse(BlockState state, World world, BlockPos pos, PlayerEntity player, BlockHitResult hit, CallbackInfoReturnable<ActionResult> cir) {
     if (cir.getReturnValue() != null && cir.getReturnValue().equals(ActionResult.FAIL)) return;
+    if (CobbleUtilsEvents.BREWING_EVENT.hasListeners()) return;
     BlockEntity blockEntity = world.getBlockEntity(pos);
     if (blockEntity == null) return;
     NbtCompound nbtCompound = new NbtCompound();

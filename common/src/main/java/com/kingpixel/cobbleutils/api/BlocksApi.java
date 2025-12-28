@@ -4,6 +4,7 @@ import com.cobblemon.mod.common.block.MedicinalLeekBlock;
 import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.database.blocks.manager.ChunkBlockStorageManager;
 import net.minecraft.block.*;
+import net.minecraft.item.ItemStack;
 import net.minecraft.registry.Registries;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
@@ -121,7 +122,6 @@ public class BlocksApi {
   private static boolean needCheckPlacedByPlayer(Block block) {
     return block instanceof PumpkinBlock ||
       getBlockId(block).equals("minecraft:melon");
-
   }
 
   /**
@@ -160,4 +160,7 @@ public class BlocksApi {
   }
 
 
+  public static ItemStack getItemStack(Block block) {
+    return block.asItem().getDefaultStack();
+  }
 }
