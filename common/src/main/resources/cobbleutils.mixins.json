@@ -12,6 +12,7 @@
     "UserCacheMixin",
     "brewing.BrewingBlockEntityMixin",
     "brewing.BrewingBlockMixin",
-    "collect.BeehiveBlockMixin"
+    "collect.BeehiveBlockMixin",
+    "collect.SweetBerriesMixin"
   ]
 }
