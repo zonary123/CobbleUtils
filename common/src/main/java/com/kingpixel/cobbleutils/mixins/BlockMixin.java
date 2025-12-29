@@ -1,6 +1,5 @@
 package com.kingpixel.cobbleutils.mixins;
 
-import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.database.blocks.manager.ChunkBlockStorageManager;
 import com.kingpixel.cobbleutils.events.CobbleUtilsEvents;
 import com.kingpixel.cobbleutils.events.models.EventBlockBreak;
@@ -34,15 +33,13 @@ public abstract class BlockMixin {
       if (!(placer instanceof ServerPlayerEntity player)) return;
       boolean placed = ChunkBlockStorageManager.isPlacedByPlayer(world, world.getChunk(pos), pos);
       ChunkBlockStorageManager.markPlaced(world, world.getChunk(pos), pos, state);
-      if (CobbleUtilsEvents.BLOCK_PLACED_EVENT.hasListeners()) {
-        CobbleUtilsEvents.BLOCK_PLACED_EVENT.emit(new EventBlockPlaced(
-          world,
-          pos,
-          state,
-          player,
-          placed
-        ));
-      }
+      CobbleUtilsEvents.BLOCK_PLACED_EVENT.emit(new EventBlockPlaced(
+        world,
+        pos,
+        state,
+        player,
+        placed
+      ));
     } catch (Exception e) {
       e.printStackTrace();
     }
@@ -54,43 +51,30 @@ public abstract class BlockMixin {
     try {
       if (!(playerEntity instanceof ServerPlayerEntity player)) return;
       boolean isPlaced = ChunkBlockStorageManager.removePlaced(world, world.getChunk(pos), pos, state);
-      if (CobbleUtilsEvents.BLOCK_BREAK_EVENT.hasListeners()) {
-        CobbleUtilsEvents.BLOCK_BREAK_EVENT.emit(new EventBlockBreak(
-          world,
-          pos,
-          state,
-          player,
-          isPlaced
-        ));
-      }
+      CobbleUtilsEvents.BLOCK_BREAK_EVENT.emit(new EventBlockBreak(
+        world,
+        pos,
+        state,
+        player,
+        isPlaced
+      ));
 
-      if (CobbleUtilsEvents.COLLECT_EVENT.hasListeners()) {
-        var evt = EventCollect.builder()
-          .player(player)
-          .playerPlaced(isPlaced)
-          .world(world)
-          .state(state)
-          .pos(pos)
-          .build();
-        if (evt.getAmount() > 0) {
-          if (CobbleUtils.config.isDebug()) {
-            CobbleUtils.LOGGER.info("Collecting " + evt.getAmount() + " of " + evt.getItemStack().getItem().getName().getString());
-          }
-          if (isPlaced) {
-            if (CobbleUtils.config.isDebug()) {
-              CobbleUtils.LOGGER.info("Block was player placed, adjusting collect amount accordingly.");
-            }
-            int adjustedAmount = Math.max(0, evt.getAmount() - 1);
-            evt.setAmount(adjustedAmount);
-          }
-          CobbleUtilsEvents.COLLECT_EVENT.emit(
-            evt
-          );
-        } else {
-          if (CobbleUtils.config.isDebug()) {
-            CobbleUtils.LOGGER.info("No items to collect for block " + state.getBlock().toString() + " at " + pos);
-          }
+
+      var evt = EventCollect.builder()
+        .player(player)
+        .playerPlaced(isPlaced)
+        .world(world)
+        .state(state)
+        .pos(pos)
+        .build();
+      if (evt.getAmount() > 0) {
+        if (isPlaced) {
+          int adjustedAmount = Math.max(0, evt.getAmount() - 1);
+          evt.setAmount(adjustedAmount);
         }
+        CobbleUtilsEvents.COLLECT_EVENT.emit(
+          evt
+        );
       }
     } catch (Exception e) {
       e.printStackTrace();

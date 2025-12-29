@@ -13,6 +13,7 @@
     "brewing.BrewingBlockEntityMixin",
     "brewing.BrewingBlockMixin",
     "collect.BeehiveBlockMixin",
+    "collect.CaveVinesMixin",
     "collect.SweetBerriesMixin"
   ]
 }

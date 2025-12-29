@@ -11,7 +11,7 @@ import java.util.function.Consumer;
  *
  * @author Carlos Varas Alonso - 21/12/2025 23:57
  */
-@Mixin(GooeyButton.class)
+@Mixin(value = GooeyButton.class)
 public interface GooeyButtonMixin {
 
   @Accessor("onClick")

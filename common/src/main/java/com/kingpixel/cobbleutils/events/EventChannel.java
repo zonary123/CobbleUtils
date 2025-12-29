@@ -20,9 +20,5 @@ public class EventChannel<T> {
       l.onEvent(data);
     }
   }
-
-  public boolean hasListeners() {
-    return !listeners.isEmpty();
-  }
 }
 

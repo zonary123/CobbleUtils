@@ -1,5 +1,6 @@
 package com.kingpixel.cobbleutils.api;
 
+import com.cobblemon.mod.common.block.HeartyGrainsBlock;
 import com.cobblemon.mod.common.block.MedicinalLeekBlock;
 import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.database.blocks.manager.ChunkBlockStorageManager;
@@ -41,13 +42,13 @@ public class BlocksApi {
       int maxAge = 0;
 
       switch (block) {
-        case CactusBlock cactusBlock -> {
-          age = 0;
-          maxAge = 0;
-        }
         case MedicinalLeekBlock medicinalLeekBlock -> {
           age = medicinalLeekBlock.getAge(state);
           maxAge = medicinalLeekBlock.getMaxAge();
+        }
+        case CactusBlock cactusBlock -> {
+          age = 0;
+          maxAge = 0;
         }
         case CropBlock cropBlock -> {
           return cropBlock.isMature(state);
@@ -87,7 +88,7 @@ public class BlocksApi {
       }
 
       return age >= maxAge;
-    } catch (Exception e) {
+    } catch (NoSuchMethodError | Exception e) {
       CobbleUtils.LOGGER.error("Error checking if block is mature: " + getBlockId(block));
       e.printStackTrace();
       return false;
@@ -109,7 +110,8 @@ public class BlocksApi {
     return block instanceof CactusBlock
       || block instanceof SugarCaneBlock
       || block instanceof KelpBlock
-      || block instanceof BambooBlock;
+      || block instanceof BambooBlock
+      || block instanceof HeartyGrainsBlock;
   }
 
   /**
@@ -150,11 +152,13 @@ public class BlocksApi {
       }
     } else if (needCheckPlacedByPlayer(block)) {
       if (!isBlockPlaceByPlayer(world, pos)) amount = 1;
-    } else if (isMature(block, state)) amount = 1;
-
-    if (CobbleUtils.config.isDebug()) {
-      CobbleUtils.LOGGER.info("Final amount for block at " + pos + ": " + amount);
+    } else if (isMature(block, state)) {
+      amount = 1;
+    } else {
+      boolean isPlaced = isBlockPlaceByPlayer(world, pos);
+      amount = isPlaced ? 0 : 1;
     }
+
 
     return amount;
   }

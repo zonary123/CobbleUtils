@@ -28,7 +28,7 @@ public class EventCollect {
   private final BlockState state;
   private final ServerPlayerEntity player;
   private final boolean playerPlaced;
-  private int amount = -1;
+  private int amount;
   private final ItemStack itemStack;
 
   /**
