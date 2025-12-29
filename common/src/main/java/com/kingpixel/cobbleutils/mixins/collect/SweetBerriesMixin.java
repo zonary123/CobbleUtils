@@ -1,7 +1,5 @@
 package com.kingpixel.cobbleutils.mixins.collect;
 
-import com.kingpixel.cobblejobs.api.JobsApi;
-import com.kingpixel.cobblejobs.models.tasks.TaskItemStack;
 import com.kingpixel.cobbleutils.events.CobbleUtilsEvents;
 import com.kingpixel.cobbleutils.events.models.EventCollect;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
@@ -41,12 +39,6 @@ public abstract class SweetBerriesMixin {
         .itemStack(stack)
         .player((ServerPlayerEntity) player)
         .build()
-    );
-    JobsApi.addPoint(
-      (ServerPlayerEntity) player,
-      stack,
-      "test",
-      TaskItemStack.class
     );
     original.call(world, pos, stack);
   }

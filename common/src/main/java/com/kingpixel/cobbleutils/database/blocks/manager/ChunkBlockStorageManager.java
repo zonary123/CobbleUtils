@@ -30,9 +30,6 @@ public class ChunkBlockStorageManager {
     .expireAfterWrite(5, TimeUnit.MINUTES)
     .removalListener((key, value, cause) -> {
       if (CobbleUtils.server.isStopped() || CobbleUtils.server.isStopping()) return;
-      if (CobbleUtils.config.isDebug()) {
-        CobbleUtils.LOGGER.info("ChunkBlockStorageManager: Chunk cache entry removed. Key: " + key + ", Cause: " + cause);
-      }
       switch (cause) {
         case EXPLICIT -> {
           // No hacer nada si se elimina explícitamente
@@ -73,8 +70,10 @@ public class ChunkBlockStorageManager {
         steps++;
       }
     }
-
-    // Mark the final position as placed by the player
+    if (CobbleUtils.config.isDebug()) {
+      CobbleUtils.LOGGER.info("Marking block as placed by player at " + target.getX() + ", " + target.getY() + ", " + target.getZ()
+        + " in world " + getSanitizedWorldName(world));
+    }
     getChunkData(world, chunk).add(target.asLong());
   }
 

@@ -259,10 +259,6 @@ public class PlayerUtils {
   private static final Cache<Long, String> cooldownCache = Caffeine.newBuilder()
     .maximumSize(10000)
     .expireAfterAccess(5, TimeUnit.MINUTES)
-    .removalListener((key, value, cause) -> {
-      if (CobbleUtils.config.isDebug())
-        CobbleUtils.LOGGER.info("Removed key from cooldownCache: Key: " + key + ", Value: " + value + ", cause: " + cause);
-    })
     .build();
 
   /**

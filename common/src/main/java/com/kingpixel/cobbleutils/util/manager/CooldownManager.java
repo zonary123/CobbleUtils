@@ -7,7 +7,6 @@ package com.kingpixel.cobbleutils.util.manager;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.Expiry;
-import com.github.benmanes.caffeine.cache.RemovalCause;
 import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.Model.DurationValue;
 import com.kingpixel.cobbleutils.util.PlayerUtils;
@@ -48,12 +47,6 @@ public class CooldownManager {
       public long expireAfterRead(@NotNull CooldownManager.Key key, @NotNull CooldownEntry value,
                                   long currentTime, long currentDuration) {
         return currentDuration;
-      }
-    })
-    .removalListener((Key key, CooldownEntry value, RemovalCause cause) -> {
-      if (cause == RemovalCause.EXPIRED && CobbleUtils.config.isDebug()) {
-        CobbleUtils.LOGGER.info("[CobbleUtils] ⏰ Cooldown expirado: " +
-          key.playerId() + " | menú=" + key.value());
       }
     })
     .build();

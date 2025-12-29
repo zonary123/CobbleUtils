@@ -124,10 +124,6 @@ public class ImpactorEconomy extends EconomyAbstract {
   private static final Cache<String, String> formatCache = Caffeine.newBuilder()
     .maximumSize(CACHE_SIZE)
     .expireAfterAccess(5, TimeUnit.SECONDS)
-    .removalListener((key, value, cause) -> {
-      if (CobbleUtils.config.isDebug())
-        CobbleUtils.LOGGER.info("Removed key from formatCache: " + key + ", cause: " + cause);
-    })
     .build();
 
   /**

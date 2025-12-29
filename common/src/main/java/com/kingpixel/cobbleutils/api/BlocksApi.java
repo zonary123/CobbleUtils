@@ -58,7 +58,7 @@ public class BlocksApi {
         }
         case SugarCaneBlock sugarCaneBlock -> {
           age = state.getOrEmpty(SugarCaneBlock.AGE).orElse(0);
-          maxAge = 1;
+          maxAge = 0;
         }
         case CocoaBlock cocoaBlock -> {
           age = state.getOrEmpty(CocoaBlock.AGE).orElse(0);
