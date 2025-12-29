@@ -58,8 +58,7 @@ public abstract class BlockMixin {
         player,
         isPlaced
       ));
-
-
+      
       var evt = EventCollect.builder()
         .player(player)
         .playerPlaced(isPlaced)

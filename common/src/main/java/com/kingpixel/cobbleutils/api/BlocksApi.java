@@ -1,7 +1,6 @@
 package com.kingpixel.cobbleutils.api;
 
 import com.cobblemon.mod.common.block.HeartyGrainsBlock;
-import com.cobblemon.mod.common.block.MedicinalLeekBlock;
 import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.database.blocks.manager.ChunkBlockStorageManager;
 import net.minecraft.block.*;
@@ -42,10 +41,6 @@ public class BlocksApi {
       int maxAge = 0;
 
       switch (block) {
-        case MedicinalLeekBlock medicinalLeekBlock -> {
-          age = medicinalLeekBlock.getAge(state);
-          maxAge = medicinalLeekBlock.getMaxAge();
-        }
         case CactusBlock cactusBlock -> {
           age = 0;
           maxAge = 0;
@@ -141,11 +136,10 @@ public class BlocksApi {
 
       BlockPos checkPos = pos;
 
-      // Usamos el state inicial en la primera iteración
       while (checkPos.getY() < world.getTopY()) {
-        BlockState currentState = (checkPos.equals(pos)) ? state : world.getBlockState(checkPos);
+        BlockState currentState = checkPos.equals(pos) ? state : world.getBlockState(checkPos);
         Block stateBlock = currentState.getBlock();
-        if (stateBlock == Blocks.AIR) break;
+        if (stateBlock.equals(Blocks.AIR)) break;
         if (!currentState.isOf(block) || !isMature(stateBlock, currentState)) break;
         if (!isBlockPlaceByPlayer(world, checkPos)) amount++;
         checkPos = checkPos.up();
@@ -154,9 +148,6 @@ public class BlocksApi {
       if (!isBlockPlaceByPlayer(world, pos)) amount = 1;
     } else if (isMature(block, state)) {
       amount = 1;
-    } else {
-      boolean isPlaced = isBlockPlaceByPlayer(world, pos);
-      amount = isPlaced ? 0 : 1;
     }
 
 

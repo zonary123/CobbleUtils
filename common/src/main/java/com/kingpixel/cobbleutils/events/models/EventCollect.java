@@ -18,18 +18,18 @@ import net.minecraft.world.World;
  * @author Carlos Varas Alonso - 26/08/2025 14:43
  */
 @Data
+@NoArgsConstructor
 @AllArgsConstructor
-@NoArgsConstructor(force = true)
 @Builder
 public class EventCollect {
-
-  private final World world;
-  private final BlockPos pos;
-  private final BlockState state;
-  private final ServerPlayerEntity player;
-  private final boolean playerPlaced;
+  private World world;
+  private BlockPos pos;
+  private BlockState state;
+  private ServerPlayerEntity player;
+  private boolean playerPlaced;
   private int amount;
-  private final ItemStack itemStack;
+  private ItemStack itemStack;
+  private boolean cachedAmount;
 
   /**
    * Obtain the amount of items to collect from the block state and position.
@@ -37,7 +37,7 @@ public class EventCollect {
    * @return the amount of items to collect
    */
   public int getAmount() {
-    if (amount > 0) {
+    if (cachedAmount) {
       if (CobbleUtils.config.isDebug()) {
         CobbleUtils.LOGGER.info("EventCollect: Using preset amount: " + amount);
       }
@@ -50,13 +50,17 @@ public class EventCollect {
         CobbleUtils.LOGGER.info("EventCollect: BlocksApi amount for "
           + state.getBlock().toString() + " at " + pos + ": " + amount);
       }
-      if (amount != -1) return amount;
+      if (amount != -1) {
+        cachedAmount = true;
+        return amount;
+      }
     }
 
     amount = itemStack != null ? itemStack.getCount() : 1;
     if (CobbleUtils.config.isDebug()) {
       CobbleUtils.LOGGER.info("EventCollect: Final fallback amount: " + amount);
     }
+    cachedAmount = true;
     return amount;
   }
 
