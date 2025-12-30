@@ -6,6 +6,7 @@ import net.minecraft.block.BeehiveBlock;
 import net.minecraft.block.BlockState;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
+import net.minecraft.item.Items;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.util.Hand;
 import net.minecraft.util.ItemActionResult;
@@ -49,18 +50,25 @@ public abstract class BeehiveBlockMixin {
       ItemActionResult result = cir.getReturnValue();
       if (!result.isAccepted()) return;
 
-      boolean isBottle = stack.isOf(GLASS_BOTTLE);
+      boolean isBottle = stack.isOf(GLASS_BOTTLE) || stack.isOf(Items.HONEY_BOTTLE) || stack.isEmpty();
       boolean isShears = stack.isOf(SHEARS);
 
       if (!isBottle && !isShears) return;
 
+      ItemStack finalItemStack = null;
+      if (isBottle && stack.isEmpty()) {
+        finalItemStack = new ItemStack(Items.HONEY_BOTTLE, 1);
+      } else if (isShears) {
+        finalItemStack = new ItemStack(Items.HONEYCOMB, 3);
+      } else {
+        finalItemStack = ItemStack.EMPTY.copy();
+      }
       CobbleUtilsEvents.COLLECT_EVENT.emit(
         EventCollect.builder()
           .world(world)
           .pos(pos)
-          .state(state)
           .player(serverPlayer)
-          .itemStack(stack.copy())
+          .itemStack(finalItemStack)
           .build()
       );
     } catch (Exception e) {

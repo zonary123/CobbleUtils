@@ -19,6 +19,7 @@ import lombok.Data;
 import net.minecraft.server.network.ServerPlayerEntity;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -70,6 +71,10 @@ public class StorageMenu {
         UserModel userModel = DataBaseFactory.dataBaseUsers.findUserByUUID(targetUUID);
         if (userModel == null) return;
         var list = userModel.getStorageList();
+        if (list == null) {
+          userModel.setStorageList(new HashSet<>());
+          list = userModel.getStorageList();
+        }
         int size = list.size();
         List<Button> buttons = new ArrayList<>(size);
         List<Storage> removeList = new ArrayList<>();

@@ -56,6 +56,7 @@ public class DataBaseUsersMongoDB extends DataBaseUsers {
       Document document = collectionUser.find(Filters.eq("playerUUID", uuid.toString()))
         .first();
       if (document != null) userModel = Utils.newWithoutSpacingGson().fromJson(document.toJson(), UserModel.class);
+      userModel.fix();
       return userModel;
     });
   }
