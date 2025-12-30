@@ -16,6 +16,8 @@ import com.kingpixel.cobbleutils.database.blocks.manager.ChunkBlockStorageManage
 import com.kingpixel.cobbleutils.database.users.DataBaseUsers;
 import com.kingpixel.cobbleutils.database.users.UserModel;
 import com.kingpixel.cobbleutils.events.ItemRightClickEvents;
+import com.kingpixel.cobbleutils.network.CrossServerManager;
+import com.kingpixel.cobbleutils.tasks.RegistryTasks;
 import com.kingpixel.cobbleutils.util.*;
 import dev.architectury.event.events.common.CommandRegistrationEvent;
 import dev.architectury.event.events.common.InteractionEvent;
@@ -27,7 +29,6 @@ import net.fabricmc.loader.api.ModContainer;
 import net.fabricmc.loader.api.metadata.Person;
 import net.minecraft.command.CommandRegistryAccess;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.network.ServerPlayerEntity;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -67,7 +68,7 @@ public class CobbleUtils {
         ", Task=" + r.toString());
     }
   );
-  private static final ScheduledExecutorService SCHEDULER_COBBLEUTILS =
+  public static final ScheduledExecutorService SCHEDULER_COBBLEUTILS =
     new ScheduledThreadPoolExecutor(
       1,
       new ThreadFactoryBuilder()
@@ -97,6 +98,8 @@ public class CobbleUtils {
     }
     tasks();
     events();
+    CrossServerManager.register();
+
   }
 
   public static void load() {
@@ -113,36 +116,7 @@ public class CobbleUtils {
   }
 
   private static void tasks() {
-    SCHEDULER_COBBLEUTILS.scheduleAtFixedRate(() -> {
-      try {
-        if (server == null) return;
-        var players = server.getPlayerManager().getPlayerList();
-        for (ServerPlayerEntity player : players) {
-          if (player == null) {
-            LOGGER.error("Player is null in scheduled task");
-            continue;
-          }
-          var user = DataBaseFactory.dataBaseUsers.findUserByUUID(player.getUuid());
-          if (user == null) {
-            LOGGER.error("UserModel is null for player " + player.getName().getString() + " (" + player.getUuid() + ")");
-            continue;
-          }
-          var storageList = user.getStorageList();
-          if (storageList == null) continue;
-          int size = storageList.size();
-          if (size > 0) {
-            PlayerUtils.sendMessage(
-              player,
-              "§e[§6CobbleUtils§e] §aYou have §e" + size + " §astorage item(s). Use §b/storage §ato claim them!",
-              config.getPrefix(),
-              TypeMessage.CHAT
-            );
-          }
-        }
-      } catch (Exception e) {
-        e.printStackTrace();
-      }
-    }, 0, 1, TimeUnit.MINUTES);
+    RegistryTasks.register();
   }
 
 

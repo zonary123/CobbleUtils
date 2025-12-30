@@ -56,7 +56,7 @@ public abstract class BeehiveBlockMixin {
       if (!isBottle && !isShears) return;
 
       ItemStack finalItemStack = null;
-      if (isBottle && stack.isEmpty()) {
+      if (isBottle) {
         finalItemStack = new ItemStack(Items.HONEY_BOTTLE, 1);
       } else if (isShears) {
         finalItemStack = new ItemStack(Items.HONEYCOMB, 3);

@@ -1,5 +1,6 @@
 package com.kingpixel.cobbleutils.mixins;
 
+import com.kingpixel.cobbleutils.api.BlocksApi;
 import com.kingpixel.cobbleutils.database.blocks.manager.ChunkBlockStorageManager;
 import com.kingpixel.cobbleutils.events.CobbleUtilsEvents;
 import com.kingpixel.cobbleutils.events.models.EventBlockBreak;
@@ -50,7 +51,7 @@ public abstract class BlockMixin {
                                    CallbackInfoReturnable<BlockState> cir) {
     try {
       if (!(playerEntity instanceof ServerPlayerEntity player)) return;
-      boolean isPlaced = ChunkBlockStorageManager.removePlaced(world, world.getChunk(pos), pos, state);
+      boolean isPlaced = BlocksApi.isBlockPlaceByPlayer(world, pos);
       CobbleUtilsEvents.BLOCK_BREAK_EVENT.emit(new EventBlockBreak(
         world,
         pos,
@@ -58,7 +59,7 @@ public abstract class BlockMixin {
         player,
         isPlaced
       ));
-      
+
       var evt = EventCollect.builder()
         .player(player)
         .playerPlaced(isPlaced)
@@ -67,14 +68,15 @@ public abstract class BlockMixin {
         .pos(pos)
         .build();
       if (evt.getAmount() > 0) {
-        if (isPlaced) {
+        /*if (isPlaced) {
           int adjustedAmount = Math.max(0, evt.getAmount() - 1);
           evt.setAmount(adjustedAmount);
-        }
+        }*/
         CobbleUtilsEvents.COLLECT_EVENT.emit(
           evt
         );
       }
+      ChunkBlockStorageManager.removePlaced(world, world.getChunk(pos), pos, state);
     } catch (Exception e) {
       e.printStackTrace();
     }

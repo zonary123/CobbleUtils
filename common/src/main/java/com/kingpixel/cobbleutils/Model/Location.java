@@ -3,7 +3,9 @@ package com.kingpixel.cobbleutils.Model;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.kingpixel.cobbleutils.CobbleUtils;
+import com.kingpixel.cobbleutils.network.ProxyPacket;
 import lombok.Data;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.registry.RegistryKey;
 import net.minecraft.registry.RegistryKeys;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -48,12 +50,13 @@ public class Location {
   }
 
   public void teleportTo(ServerPlayerEntity player) {
-    if (CobbleUtils.config.isRedisMessaging()) {
-      // Cross-Server
-      teleportToNoCrossServer(player);
-    } else {
-      teleportToNoCrossServer(player);
-    }
+    CobbleUtils.server.execute(() -> {
+      if (CobbleUtils.config.isRedisMessaging()) {
+        teleportToCrossServer(player);
+      } else {
+        teleportToNoCrossServer(player);
+      }
+    });
   }
 
   private void teleportToNoCrossServer(ServerPlayerEntity player) {
@@ -66,7 +69,7 @@ public class Location {
   }
 
   private void teleportToCrossServer(ServerPlayerEntity player) {
-
+    ServerPlayNetworking.send(player, new ProxyPacket("Connect", server));
   }
 
 
