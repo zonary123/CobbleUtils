@@ -96,7 +96,7 @@ public class PlayerOfflineAndOnline {
    * Carga los jugadores inactivos de forma asíncrona.
    */
   private void loadAsync() {
-    currentLoad = CompletableFuture.runAsync(() -> {
+    currentLoad = CobbleUtils.runAsync(() -> {
       try {
         var list = DataBaseFactory.dataBaseUsers.getUsersInactiveSince(
           CobbleUtils.config.getTimeSinceLastLoginToSuggest().toMillis()
@@ -119,7 +119,7 @@ public class PlayerOfflineAndOnline {
       } catch (Exception ex) {
         CobbleUtils.LOGGER.error("Error fetching player data: ");
       }
-    }, CobbleUtils.EXECUTOR_COBBLEUTILS);
+    });
   }
 
   /**

@@ -30,8 +30,6 @@ import net.fabricmc.loader.api.metadata.Person;
 import net.minecraft.command.CommandRegistryAccess;
 import net.minecraft.server.MinecraftServer;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.*;
 
 public class CobbleUtils {
@@ -50,8 +48,7 @@ public class CobbleUtils {
   public static SpawnRates spawnRates = new SpawnRates();
   // Lang
   public static Lang language = new Lang();
-  public static List<String> modsInUse = new ArrayList<>();
-  public static final ExecutorService EXECUTOR_COBBLEUTILS = new ThreadPoolExecutor(
+  private static final ExecutorService EXECUTOR_COBBLEUTILS = new ThreadPoolExecutor(
     2,
     6,
     60L, TimeUnit.SECONDS,
@@ -68,21 +65,20 @@ public class CobbleUtils {
         ", Task=" + r.toString());
     }
   );
-  public static final ScheduledExecutorService SCHEDULER_COBBLEUTILS =
-    new ScheduledThreadPoolExecutor(
-      1,
-      new ThreadFactoryBuilder()
-        .setNameFormat("CobbleUtils Scheduled Executor-%d")
-        .build(),
-      (r, executor) -> {
-        // Log a warning when the pool is saturated
-        CobbleUtils.LOGGER.warn("[CobbleUtils] Scheduled Executor is overloaded! " +
-          "ActiveThreads=" + executor.getActiveCount() +
-          ", PoolSize=" + executor.getPoolSize() +
-          ", QueueSize=" + executor.getQueue().size() +
-          ", Task=" + r.toString());
-      }
-    );
+  public static final ScheduledExecutorService SCHEDULER_COBBLEUTILS = new ScheduledThreadPoolExecutor(
+    1,
+    new ThreadFactoryBuilder()
+      .setNameFormat("CobbleUtils Scheduled Executor-%d")
+      .build(),
+    (r, executor) -> {
+      // Log a warning when the pool is saturated
+      CobbleUtils.LOGGER.warn("[CobbleUtils] Scheduled Executor is overloaded! " +
+        "ActiveThreads=" + executor.getActiveCount() +
+        ", PoolSize=" + executor.getPoolSize() +
+        ", QueueSize=" + executor.getQueue().size() +
+        ", Task=" + r.toString());
+    }
+  );
 
 
   public static void init() {
@@ -238,12 +234,16 @@ public class CobbleUtils {
     }
   }
 
-  public static void runAsync(Runnable runnable) {
+  public static CompletableFuture<Void> runAsync(Runnable runnable) {
     if (EXECUTOR_COBBLEUTILS.isShutdown() || EXECUTOR_COBBLEUTILS.isTerminated()) {
-      runnable.run();
-      return;
+      return CompletableFuture.runAsync(runnable)
+        .orTimeout(1, TimeUnit.MINUTES)
+        .exceptionally(e -> {
+          e.printStackTrace();
+          return null;
+        });
     }
-    CompletableFuture.runAsync(runnable, EXECUTOR_COBBLEUTILS)
+    return CompletableFuture.runAsync(runnable, EXECUTOR_COBBLEUTILS)
       .orTimeout(1, TimeUnit.MINUTES)
       .exceptionally(e -> {
         e.printStackTrace();
