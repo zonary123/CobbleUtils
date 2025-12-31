@@ -22,7 +22,6 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -61,89 +60,78 @@ public class StorageMenu {
   }
 
   public void open(ServerPlayerEntity executer, UUID targetUUID) {
-    CompletableFuture.runAsync(() -> {
-        ChestTemplate template = ChestTemplate
-          .builder(rows)
-          .build();
+    CobbleUtils.runAsync(() -> {
+      ChestTemplate template = ChestTemplate
+        .builder(rows)
+        .build();
 
-        PanelsConfig.applyConfig(template, panels);
-        rectangle.apply(template);
-        UserModel userModel = DataBaseFactory.dataBaseUsers.findUserByUUID(targetUUID);
-        if (userModel == null) return;
-        var list = userModel.getStorageList();
-        if (list == null) {
-          userModel.setStorageList(new HashSet<>());
-          list = userModel.getStorageList();
+      PanelsConfig.applyConfig(template, panels);
+      rectangle.apply(template);
+      UserModel userModel = DataBaseFactory.dataBaseUsers.findUserByUUID(targetUUID);
+      if (userModel == null) return;
+      var list = userModel.getStorageList();
+      if (list == null) {
+        userModel.setStorageList(new HashSet<>());
+        list = userModel.getStorageList();
+      }
+      int size = list.size();
+      List<Button> buttons = new ArrayList<>(size);
+      List<Storage> removeList = new ArrayList<>();
+      for (Storage storage : list) {
+        try {
+          buttons.add(storage.getButton());
+        } catch (Exception e) {
+          e.printStackTrace();
+          removeList.add(storage);
         }
-        int size = list.size();
-        List<Button> buttons = new ArrayList<>(size);
-        List<Storage> removeList = new ArrayList<>();
-        for (Storage storage : list) {
-          try {
-            buttons.add(storage.getButton());
-          } catch (Exception e) {
-            e.printStackTrace();
-            removeList.add(storage);
+      }
+
+      for (Storage storage : removeList) {
+        DataBaseFactory.dataBaseUsers.removeStorage(storage, targetUUID);
+      }
+
+      claimAll.applyTemplate(template, claimAll.getButton(action -> {
+        var player = action.getPlayer();
+
+        CobbleUtils.runAsync(() -> {
+          var data = DataBaseFactory.dataBaseUsers.findUserByUUID(targetUUID);
+          if (data == null) return;
+
+          var storageList = new ArrayList<>(data.getStorageList());
+          if (storageList.isEmpty()) {
+            CobbleUtils.server.execute(() ->
+              player.sendMessage(AdventureTranslator.toNative("&cYou don't have any pending rewards to claim."), false)
+            );
+            return;
           }
-        }
 
-        for (Storage storage : removeList) {
-          DataBaseFactory.dataBaseUsers.removeStorage(storage, targetUUID);
-        }
-
-        claimAll.applyTemplate(template, claimAll.getButton(action -> {
-          var player = action.getPlayer();
-
-          CompletableFuture.runAsync(() -> {
-              var data = DataBaseFactory.dataBaseUsers.findUserByUUID(targetUUID);
-              if (data == null) return;
-
-              var storageList = new ArrayList<>(data.getStorageList());
-              if (storageList.isEmpty()) {
-                CobbleUtils.server.execute(() ->
-                  player.sendMessage(AdventureTranslator.toNative("&cYou don't have any pending rewards to claim."), false)
-                );
-                return;
-              }
-
-              int claimed = 0;
-              for (Storage storage : storageList) {
-                try {
-                  DataBaseFactory.dataBaseUsers.removeStorage(storage, player.getUuid());
-                  CobbleUtils.server.execute(() -> storage.giveToPlayer(player));
-                  claimed++;
-                } catch (Exception e) {
-                  e.printStackTrace();
-                }
-              }
-
-              int finalClaimed = claimed;
-              player.sendMessage(AdventureTranslator.toNative("&aYou have successfully claimed &e" + finalClaimed + " &arewards!"), false);
-              CobbleUtils.server.execute(() -> CobbleUtils.language.getStorageMenu().open(player, player.getUuid()));
-            }, CobbleUtils.EXECUTOR_COBBLEUTILS)
-            .orTimeout(5, TimeUnit.SECONDS)
-            .exceptionally(e -> {
+          int claimed = 0;
+          for (Storage storage : storageList) {
+            try {
+              DataBaseFactory.dataBaseUsers.removeStorage(storage, player.getUuid());
+              CobbleUtils.server.execute(() -> storage.giveToPlayer(player));
+              claimed++;
+            } catch (Exception e) {
               e.printStackTrace();
-              return null;
-            });
+            }
+          }
 
-        }, 1, TimeUnit.SECONDS, 1));
+          int finalClaimed = claimed;
+          player.sendMessage(AdventureTranslator.toNative("&aYou have successfully claimed &e" + finalClaimed + " &arewards!"), false);
+          CobbleUtils.server.execute(() -> CobbleUtils.language.getStorageMenu().open(player, player.getUuid()));
+        });
+      }, 1, TimeUnit.SECONDS, 1));
 
-        previousPage.applyTemplate(template, previousPage.getLinkedPageButton(LinkType.Next));
-        close.applyTemplate(template, close.getButton(action -> UIManager.closeUI(action.getPlayer()), 1, TimeUnit.SECONDS, 1));
-        nextPage.applyTemplate(template, nextPage.getLinkedPageButton(LinkType.Next));
+      previousPage.applyTemplate(template, previousPage.getLinkedPageButton(LinkType.Next));
+      close.applyTemplate(template, close.getButton(action -> UIManager.closeUI(action.getPlayer()), 1, TimeUnit.SECONDS, 1));
+      nextPage.applyTemplate(template, nextPage.getLinkedPageButton(LinkType.Next));
 
-        GooeyPage page = PaginationHelper.createPagesFromPlaceholders(
-          template,
-          buttons,
-          LinkedPage.builder().title(AdventureTranslator.toNative(title))
-        );
-        CobbleUtils.server.execute(() -> UIManager.openUIForcefully(executer, page));
-      }, CobbleUtils.EXECUTOR_COBBLEUTILS)
-      .orTimeout(5, TimeUnit.SECONDS)
-      .exceptionally(e -> {
-        e.printStackTrace();
-        return null;
-      });
+      GooeyPage page = PaginationHelper.createPagesFromPlaceholders(
+        template,
+        buttons,
+        LinkedPage.builder().title(AdventureTranslator.toNative(title))
+      );
+      CobbleUtils.server.execute(() -> UIManager.openUIForcefully(executer, page));
+    });
   }
 }

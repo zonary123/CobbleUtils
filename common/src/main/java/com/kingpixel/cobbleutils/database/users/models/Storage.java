@@ -11,7 +11,6 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import org.bson.Document;
 
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
 
 /**
  * @author Carlos Varas Alonso - 06/10/2025 5:11
@@ -35,16 +34,12 @@ public abstract class Storage {
   public GooeyButton getButton() {
     return GooeyButton.builder()
       .display(getDisplay())
-      .onClick(action -> CompletableFuture.runAsync(() -> {
-          ServerPlayerEntity player = action.getPlayer();
-          DataBaseFactory.dataBaseUsers.removeStorage(this, player.getUuid());
-          this.giveToPlayer(player);
-          CobbleUtils.language.getStorageMenu().open(player, player.getUuid());
-        }, CobbleUtils.EXECUTOR_COBBLEUTILS)
-        .exceptionally(e -> {
-          e.printStackTrace();
-          return null;
-        }))
+      .onClick(action -> CobbleUtils.runAsync(() -> {
+        ServerPlayerEntity player = action.getPlayer();
+        DataBaseFactory.dataBaseUsers.removeStorage(this, player.getUuid());
+        this.giveToPlayer(player);
+        CobbleUtils.language.getStorageMenu().open(player, player.getUuid());
+      }))
       .build();
   }
 

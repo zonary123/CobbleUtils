@@ -232,7 +232,7 @@ public class AdvancedItemChance {
 
   public void openMenu(ServerPlayerEntity player, Consumer<ChestTemplate> templateConsumer) {
     if (!showMenu) return;
-    CobbleUtils.EXECUTOR_COBBLEUTILS.execute(() -> {
+    CobbleUtils.runAsync(() -> {
       int rows = CobbleUtils.language.getAdvancedRewardsGUI().getRows();
       ChestTemplate template = ChestTemplate.builder(rows <= 0 ? 6 : rows)
         .build();
@@ -250,7 +250,7 @@ public class AdvancedItemChance {
   public void openMenu(ServerPlayerEntity player, Consumer<ChestTemplate> templateConsumer,
                        Consumer<ButtonAction> close) {
     if (!showMenu) return;
-    CobbleUtils.EXECUTOR_COBBLEUTILS.execute(() -> {
+    CobbleUtils.runAsync(() -> {
       int rows = CobbleUtils.language.getAdvancedRewardsGUI().getRows();
       ChestTemplate template = ChestTemplate.builder(rows)
         .build();
@@ -266,7 +266,7 @@ public class AdvancedItemChance {
   @Deprecated
   public void openMenu(ServerPlayerEntity player) {
     if (!showMenu) return;
-    CobbleUtils.EXECUTOR_COBBLEUTILS.execute(() -> {
+    CobbleUtils.runAsync(() -> {
       int rows = CobbleUtils.language.getAdvancedRewardsGUI().getRows();
       ChestTemplate template = ChestTemplate.builder(rows)
         .build();

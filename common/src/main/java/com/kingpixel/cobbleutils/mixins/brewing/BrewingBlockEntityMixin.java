@@ -17,7 +17,6 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
 
 @Mixin(BrewingStandBlockEntity.class)
 public abstract class BrewingBlockEntityMixin {
@@ -64,7 +63,6 @@ public abstract class BrewingBlockEntityMixin {
       }
       return;
     }
-    CompletableFuture.runAsync(() -> CobbleUtilsEvents.BREWING_EVENT.emit(new
-      EventBrewing(player, world, pos, slots)), CobbleUtils.EXECUTOR_COBBLEUTILS);
+    CobbleUtils.runAsync(() -> CobbleUtilsEvents.BREWING_EVENT.emit(new EventBrewing(player, world, pos, slots)));
   }
 }

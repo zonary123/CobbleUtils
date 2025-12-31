@@ -13,7 +13,6 @@ import net.minecraft.sound.SoundEvents;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ThreadLocalRandom;
 
 public class CSGOAnimation {
@@ -27,62 +26,58 @@ public class CSGOAnimation {
   private static final double decayFactor = 1.1; // Increases how fast it slows down the animation
 
   public static void start(ServerPlayerEntity player, List<ItemStack> showAllRewards, List<ItemStack> showRewards) {
-    CompletableFuture.runAsync(() -> {
-        player.playSoundToPlayer(SoundEvents.BLOCK_CHEST_OPEN, player.getSoundCategory(), 1.0f, 1.0f);
+    CobbleUtils.runAsync(() -> {
+      player.playSoundToPlayer(SoundEvents.BLOCK_CHEST_OPEN, player.getSoundCategory(), 1.0f, 1.0f);
 
-        try {
-          ChestTemplate template = ChestTemplate.builder(3).build();
-          fillGuiWithGlass(template);
+      try {
+        ChestTemplate template = ChestTemplate.builder(3).build();
+        fillGuiWithGlass(template);
 
-          ItemStack[] currentItems = new ItemStack[spinSlots.length];
-          for (int i = 0; i < spinSlots.length; i++) {
-            currentItems[i] = showAllRewards.get((currentIndex + i) % showAllRewards.size());
-          }
-
-          int rewardCycle = totalCycles - 4;
-          int spinSpeed = startSpinSpeed;
-          GooeyPage page = GooeyPage.builder()
-            .template(template)
-            .build();
-
-          CobbleUtils.server.executeSync(() -> {
-            UIManager.closeUI(player);
-            UIManager.openUIForcefully(player, page);
-          });
-          for (int i = 0; i < totalCycles; i++) {
-            double progress = (double) i / (totalCycles - 1);
-            double dynamicDecayFactor = i >= totalCycles - 10 ? 1.2 : decayFactor;
-            int spinSpeedNew = (int) (startSpinSpeed * Math.pow(dynamicDecayFactor, progress * 15));
-            spinSpeed = (int) Math.max(10, Math.abs(spinSpeedNew - spinSpeed) < 5
-              ? spinSpeedNew
-              : spinSpeed + Math.signum(spinSpeedNew - spinSpeed) * 5);
-
-            shiftItemsLeft(currentItems, showAllRewards);
-
-            if (i == rewardCycle) {
-              ItemStack reward = showRewards.get(random.nextInt(showRewards.size()));
-              currentItems[spinSlots.length - 1] = reward;
-            }
-
-            // Aquí solo la parte que toca MC en main thread
-            ItemStack[] finalItems = currentItems.clone();
-
-            for (int j = 0; j < spinSlots.length; j++) {
-              template.set(spinSlots[j], guiButtons(finalItems[j]));
-            }
-            player.playSoundToPlayer(SoundEvents.ENTITY_EXPERIENCE_ORB_PICKUP, player.getSoundCategory(), 1.0f, 1.0f);
-
-            Thread.sleep(spinSpeed);
-          }
-          UIManager.closeUI(player);
-        } catch (InterruptedException e) {
-          e.printStackTrace();
+        ItemStack[] currentItems = new ItemStack[spinSlots.length];
+        for (int i = 0; i < spinSlots.length; i++) {
+          currentItems[i] = showAllRewards.get((currentIndex + i) % showAllRewards.size());
         }
-      }, CobbleUtils.EXECUTOR_COBBLEUTILS)
-      .exceptionally(e -> {
+
+        int rewardCycle = totalCycles - 4;
+        int spinSpeed = startSpinSpeed;
+        GooeyPage page = GooeyPage.builder()
+          .template(template)
+          .build();
+
+        CobbleUtils.server.executeSync(() -> {
+          UIManager.closeUI(player);
+          UIManager.openUIForcefully(player, page);
+        });
+        for (int i = 0; i < totalCycles; i++) {
+          double progress = (double) i / (totalCycles - 1);
+          double dynamicDecayFactor = i >= totalCycles - 10 ? 1.2 : decayFactor;
+          int spinSpeedNew = (int) (startSpinSpeed * Math.pow(dynamicDecayFactor, progress * 15));
+          spinSpeed = (int) Math.max(10, Math.abs(spinSpeedNew - spinSpeed) < 5
+            ? spinSpeedNew
+            : spinSpeed + Math.signum(spinSpeedNew - spinSpeed) * 5);
+
+          shiftItemsLeft(currentItems, showAllRewards);
+
+          if (i == rewardCycle) {
+            ItemStack reward = showRewards.get(random.nextInt(showRewards.size()));
+            currentItems[spinSlots.length - 1] = reward;
+          }
+
+          // Aquí solo la parte que toca MC en main thread
+          ItemStack[] finalItems = currentItems.clone();
+
+          for (int j = 0; j < spinSlots.length; j++) {
+            template.set(spinSlots[j], guiButtons(finalItems[j]));
+          }
+          player.playSoundToPlayer(SoundEvents.ENTITY_EXPERIENCE_ORB_PICKUP, player.getSoundCategory(), 1.0f, 1.0f);
+
+          Thread.sleep(spinSpeed);
+        }
+        UIManager.closeUI(player);
+      } catch (InterruptedException e) {
         e.printStackTrace();
-        return null;
-      });
+      }
+    });
   }
 
 

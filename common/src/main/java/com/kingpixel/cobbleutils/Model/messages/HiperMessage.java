@@ -185,47 +185,43 @@ public class HiperMessage implements JsonSerializer<HiperMessage>, JsonDeseriali
                           Map<String, String> placeholders, String modifiedContent) {
     if (rawMessage == null || rawMessage.isEmpty()) return;
     this.modifiedContent = Objects.requireNonNullElseGet(modifiedContent, () -> rawMessage);
-    CompletableFuture.runAsync(() -> {
-        if (content == null || content.isEmpty() || modifiedContent != null || type == null) {
-          String[] parts;
-          if (modifiedContent != null) {
-            parts = modifiedContent.split(":", 2);
-          } else {
-            parts = rawMessage.split(":", 2);
-          }
-          if (parts.length < 2) return;
-
-          type = MessageType.fromString(parts[0]);
-          content = parts[1];
-          if (type == null) {
-            type = MessageType.CHAT;
-            CobbleUtils.LOGGER.info("[HiperMessage] Unknown message type in rawMessage: " + rawMessage + ". Defaulting " +
-              "to CHAT." +
-              " Valid types are: " + MessageType.defaults());
-          }
+    CobbleUtils.runAsync(() -> {
+      if (content == null || content.isEmpty() || modifiedContent != null || type == null) {
+        String[] parts;
+        if (modifiedContent != null) {
+          parts = modifiedContent.split(":", 2);
+        } else {
+          parts = rawMessage.split(":", 2);
         }
+        if (parts.length < 2) return;
 
-        String finalContent = placeholders != null && !placeholders.isEmpty()
-          ? replacePlaceholders(content, placeholders)
-          : content;
-
-        switch (type) {
-          case CHAT -> sendChat(playerUUID, finalContent, prefix, cache, receivedFromRedis);
-          case CHAT_BROADCAST, BROADCAST -> sendBroadcast(finalContent, prefix, cache, receivedFromRedis);
-          case ACTIONBAR -> sendActionBar(playerUUID, finalContent, prefix, cache, receivedFromRedis);
-          case ACTIONBAR_BROADCAST -> sendActionBarBroadcast(finalContent, prefix, cache, receivedFromRedis);
-          case BOSSBAR -> sendBossBar(playerUUID, finalContent, prefix, cache, receivedFromRedis);
-          case BOSSBAR_BROADCAST -> sendBossBarBroadcast(finalContent, prefix, cache, receivedFromRedis);
-          case TITLE_SUBTITLE -> sendTitleSubtitle(playerUUID, finalContent, prefix, cache, receivedFromRedis);
-          case TITLE_SUBTITLE_BROADCAST -> sendTitleSubtitleBroadcast(finalContent, prefix, cache, receivedFromRedis);
-          default -> CobbleUtils.LOGGER.warn("Unknown message type: " + type);
+        type = MessageType.fromString(parts[0]);
+        content = parts[1];
+        if (type == null) {
+          type = MessageType.CHAT;
+          CobbleUtils.LOGGER.info("[HiperMessage] Unknown message type in rawMessage: " + rawMessage + ". Defaulting " +
+            "to CHAT." +
+            " Valid types are: " + MessageType.defaults());
         }
-        this.modifiedContent = null;
-      }, CobbleUtils.EXECUTOR_COBBLEUTILS)
-      .exceptionally(e -> {
-        e.printStackTrace();
-        return null;
-      });
+      }
+
+      String finalContent = placeholders != null && !placeholders.isEmpty()
+        ? replacePlaceholders(content, placeholders)
+        : content;
+
+      switch (type) {
+        case CHAT -> sendChat(playerUUID, finalContent, prefix, cache, receivedFromRedis);
+        case CHAT_BROADCAST, BROADCAST -> sendBroadcast(finalContent, prefix, cache, receivedFromRedis);
+        case ACTIONBAR -> sendActionBar(playerUUID, finalContent, prefix, cache, receivedFromRedis);
+        case ACTIONBAR_BROADCAST -> sendActionBarBroadcast(finalContent, prefix, cache, receivedFromRedis);
+        case BOSSBAR -> sendBossBar(playerUUID, finalContent, prefix, cache, receivedFromRedis);
+        case BOSSBAR_BROADCAST -> sendBossBarBroadcast(finalContent, prefix, cache, receivedFromRedis);
+        case TITLE_SUBTITLE -> sendTitleSubtitle(playerUUID, finalContent, prefix, cache, receivedFromRedis);
+        case TITLE_SUBTITLE_BROADCAST -> sendTitleSubtitleBroadcast(finalContent, prefix, cache, receivedFromRedis);
+        default -> CobbleUtils.LOGGER.warn("Unknown message type: " + type);
+      }
+      this.modifiedContent = null;
+    });
   }
 
 

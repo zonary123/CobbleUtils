@@ -26,8 +26,6 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import org.joml.Vector4f;
 
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 /**
@@ -387,86 +385,80 @@ public class FilterPokemons {
 
   public void open(ServerPlayerEntity player, String modId, String id, Consumer<ButtonAction> pokemonAction, int pos,
                    boolean showBanneds) {
-    CompletableFuture.runAsync(() -> {
-        final int ROWS = 6;
-        final int RECTANGLE_SIZE = new Rectangle(ROWS).getTotalSlots();
+    CobbleUtils.runAsync(() -> {
+      final int ROWS = 6;
+      final int RECTANGLE_SIZE = new Rectangle(ROWS).getTotalSlots();
 
-        ChestTemplate template = ChestTemplate.builder(ROWS).build();
-        List<GooeyButton> buttons = new ArrayList<>();
+      ChestTemplate template = ChestTemplate.builder(ROWS).build();
+      List<GooeyButton> buttons = new ArrayList<>();
 
-        List<String> lore = new ArrayList<>(CobbleUtils.language.getLorepokemon());
-        lore.add("&fLeft Click Blacklist pokemon");
-        lore.add("&fRight Click Blacklist labels");
-        lore.add("&fShift + Left Click Blacklist forms");
-        lore.add("&fShift + Right Click Blacklist aspects");
+      List<String> lore = new ArrayList<>(CobbleUtils.language.getLorepokemon());
+      lore.add("&fLeft Click Blacklist pokemon");
+      lore.add("&fRight Click Blacklist labels");
+      lore.add("&fShift + Left Click Blacklist forms");
+      lore.add("&fShift + Right Click Blacklist aspects");
 
-        //List<Pokemon> pokemons = getCachePokemons(modId, id);
-        List<Pokemon> pokemons;
-        if (showBanneds) {
-          pokemons = getAllPokemons();
-        } else {
-          pokemons = getAllowedPokemons();
-        }
-        int totalPokemons = pokemons.size();
-        int totalPages = (int) Math.ceil((double) totalPokemons / RECTANGLE_SIZE);
-        int currentPage = (int) Math.ceil((double) (pos + 1) / RECTANGLE_SIZE);
+      //List<Pokemon> pokemons = getCachePokemons(modId, id);
+      List<Pokemon> pokemons;
+      if (showBanneds) {
+        pokemons = getAllPokemons();
+      } else {
+        pokemons = getAllowedPokemons();
+      }
+      int totalPokemons = pokemons.size();
+      int totalPages = (int) Math.ceil((double) totalPokemons / RECTANGLE_SIZE);
+      int currentPage = (int) Math.ceil((double) (pos + 1) / RECTANGLE_SIZE);
 
-        // Validar índices para evitar excepciones
-        int startIndex = Math.min(pos, totalPokemons);
-        int endIndex = Math.min(pos + RECTANGLE_SIZE, totalPokemons);
-        if (startIndex > endIndex) {
-          CobbleUtils.LOGGER.error("Invalid indices for pagination: startIndex > endIndex");
-          return;
-        }
-        pokemons = pokemons.subList(startIndex, endIndex);
+      // Validar índices para evitar excepciones
+      int startIndex = Math.min(pos, totalPokemons);
+      int endIndex = Math.min(pos + RECTANGLE_SIZE, totalPokemons);
+      if (startIndex > endIndex) {
+        CobbleUtils.LOGGER.error("Invalid indices for pagination: startIndex > endIndex");
+        return;
+      }
+      pokemons = pokemons.subList(startIndex, endIndex);
 
-        // Crear botones para los Pokémon
-        for (Pokemon pokemon : pokemons) {
-          buttons.add(createPokemonButton(player, modId, id, pokemonAction, pokemon, lore, pos, showBanneds));
-        }
+      // Crear botones para los Pokémon
+      for (Pokemon pokemon : pokemons) {
+        buttons.add(createPokemonButton(player, modId, id, pokemonAction, pokemon, lore, pos, showBanneds));
+      }
 
-        // Aplicar botones al template
-        new Rectangle(ROWS).apply(template, buttons);
+      // Aplicar botones al template
+      new Rectangle(ROWS).apply(template, buttons);
 
-        // Botón "Anterior"
-        if (pos > 0) {
-          template.set(45, UIUtils.getPreviousButton(buttonAction -> open(player, modId, id, pokemonAction,
-            Math.max(pos - RECTANGLE_SIZE, 0), showBanneds)));
-        }
+      // Botón "Anterior"
+      if (pos > 0) {
+        template.set(45, UIUtils.getPreviousButton(buttonAction -> open(player, modId, id, pokemonAction,
+          Math.max(pos - RECTANGLE_SIZE, 0), showBanneds)));
+      }
 
-        // Botón "Cerrar"
-        template.set(49, UIUtils.getCloseButton(buttonAction -> UIManager.closeUI(buttonAction.getPlayer())));
+      // Botón "Cerrar"
+      template.set(49, UIUtils.getCloseButton(buttonAction -> UIManager.closeUI(buttonAction.getPlayer())));
 
-        template.set(51, GooeyButton
-          .builder()
-          .display(Items.PAPER.getDefaultStack())
-          .with(DataComponentTypes.CUSTOM_NAME, AdventureTranslator.toNative("Show Banned: " + (showBanneds ?
-            CobbleUtils.language.getYes() : CobbleUtils.language.getNo())))
-          .onClick(action -> {
-            open(player, modId, id, pokemonAction, pos, !showBanneds);
-          })
-          .build()
-        );
+      template.set(51, GooeyButton
+        .builder()
+        .display(Items.PAPER.getDefaultStack())
+        .with(DataComponentTypes.CUSTOM_NAME, AdventureTranslator.toNative("Show Banned: " + (showBanneds ?
+          CobbleUtils.language.getYes() : CobbleUtils.language.getNo())))
+        .onClick(action -> {
+          open(player, modId, id, pokemonAction, pos, !showBanneds);
+        })
+        .build()
+      );
 
-        // Botón "Siguiente"
-        if (totalPokemons > endIndex) {
-          template.set(53, UIUtils.getNextButton(buttonAction -> open(player, modId, id, pokemonAction, Math.min(pos + RECTANGLE_SIZE, totalPokemons), showBanneds)));
-        }
+      // Botón "Siguiente"
+      if (totalPokemons > endIndex) {
+        template.set(53, UIUtils.getNextButton(buttonAction -> open(player, modId, id, pokemonAction, Math.min(pos + RECTANGLE_SIZE, totalPokemons), showBanneds)));
+      }
 
-        // Crear y abrir la página
-        var page = GooeyPage.builder()
-          .template(template)
-          .title(AdventureTranslator.toNative("Filter Pokemons " + currentPage + " of " + totalPages))
-          .build();
+      // Crear y abrir la página
+      var page = GooeyPage.builder()
+        .template(template)
+        .title(AdventureTranslator.toNative("Filter Pokemons " + currentPage + " of " + totalPages))
+        .build();
 
-        UIManager.openUIForcefully(player, page);
-      }, CobbleUtils.EXECUTOR_COBBLEUTILS)
-      .orTimeout(30, TimeUnit.SECONDS)
-      .exceptionally(throwable -> {
-        CobbleUtils.LOGGER.error("Error opening filter pokemons -> ");
-        throwable.printStackTrace();
-        return null;
-      });
+      CobbleUtils.server.execute(() -> UIManager.openUIForcefully(player, page));
+    });
   }
 
   // Método auxiliar para crear botones de Pokémon

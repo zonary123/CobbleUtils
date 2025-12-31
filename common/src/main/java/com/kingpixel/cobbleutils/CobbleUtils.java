@@ -52,10 +52,10 @@ public class CobbleUtils {
   public static Lang language = new Lang();
   public static List<String> modsInUse = new ArrayList<>();
   public static final ExecutorService EXECUTOR_COBBLEUTILS = new ThreadPoolExecutor(
-    1,
-    4,
+    2,
+    6,
     60L, TimeUnit.SECONDS,
-    new ArrayBlockingQueue<>(200),
+    new ArrayBlockingQueue<>(1000),
     new ThreadFactoryBuilder()
       .setNameFormat("CobbleUtils General Executor-%d")
       .build(),
@@ -193,31 +193,23 @@ public class CobbleUtils {
       shutdownAndAwait(SCHEDULER_COBBLEUTILS);
     });
 
-    PlayerEvent.PLAYER_JOIN.register((player) -> CompletableFuture.runAsync(() -> {
-        UserModel user = DataBaseFactory.dataBaseUsers.findUserByUUID(player.getUuid());
-        if (user == null) user = new UserModel(player);
-        user.connect(player);
-        user.fix();
-        DataBaseFactory.dataBaseUsers.saveOrUpdateUser(user);
-        DataBaseUsers.users.put(player.getUuid(), user);
-      }, EXECUTOR_COBBLEUTILS)
-      .exceptionally(e -> {
-        e.printStackTrace();
-        return null;
-      }));
+    PlayerEvent.PLAYER_JOIN.register((player) -> runAsync(() -> {
+      UserModel user = DataBaseFactory.dataBaseUsers.findUserByUUID(player.getUuid());
+      if (user == null) user = new UserModel(player);
+      user.connect(player);
+      user.fix();
+      DataBaseFactory.dataBaseUsers.saveOrUpdateUser(user);
+      DataBaseUsers.users.put(player.getUuid(), user);
+    }));
 
-    PlayerEvent.PLAYER_QUIT.register((player) -> CompletableFuture.runAsync(() -> {
-        UserModel user = DataBaseFactory.dataBaseUsers.findUserByUUID(player.getUuid());
-        if (user != null) {
-          user.disconnect();
-          DataBaseFactory.dataBaseUsers.saveOrUpdateUser(user);
-        }
-        DataBaseFactory.dataBaseUsers.removeIfNecessary(player.getUuid());
-      }, EXECUTOR_COBBLEUTILS)
-      .exceptionally(e -> {
-        e.printStackTrace();
-        return null;
-      }));
+    PlayerEvent.PLAYER_QUIT.register((player) -> runAsync(() -> {
+      UserModel user = DataBaseFactory.dataBaseUsers.findUserByUUID(player.getUuid());
+      if (user != null) {
+        user.disconnect();
+        DataBaseFactory.dataBaseUsers.saveOrUpdateUser(user);
+      }
+      DataBaseFactory.dataBaseUsers.removeIfNecessary(player.getUuid());
+    }));
 
     CommandRegistrationEvent.EVENT.register((dispatcher, registry, selection) -> {
       CustomPokemonProperty.Companion.register(MinIvsPropertyType.INSTANCE);
@@ -246,5 +238,18 @@ public class CobbleUtils {
     }
   }
 
+  public static void runAsync(Runnable runnable) {
+    if (EXECUTOR_COBBLEUTILS.isShutdown() || EXECUTOR_COBBLEUTILS.isTerminated()) {
+      runnable.run();
+      return;
+    }
+    CompletableFuture.runAsync(runnable, EXECUTOR_COBBLEUTILS)
+      .orTimeout(1, TimeUnit.MINUTES)
+      .exceptionally(e -> {
+        e.printStackTrace();
+        return null;
+      });
+
+  }
 
 }
