@@ -115,6 +115,7 @@ public class PlayerUtils {
           return null;
         });
     } else {
+      if (CobbleUtils.server == null) return;
       ServerPlayerEntity player = CobbleUtils.server.getPlayerManager().getPlayer(playerUUID);
       if (player != null) {
         sendMessage(player, message, prefix, typeMessage);
@@ -176,6 +177,7 @@ public class PlayerUtils {
           case CHAT -> sendMessage(player, message, prefix);
           case ACTIONBAR -> player.sendMessage(AdventureTranslator.toNative(message, prefix, player), true);
           case ACTIONBAR_BROADCAST -> {
+            if (CobbleUtils.server == null) return;
             var text = AdventureTranslator.toNative(message, prefix);
             var playerList = CobbleUtils.server.getPlayerManager().getPlayerList();
             for (ServerPlayerEntity serverPlayerEntity : playerList) {
@@ -197,6 +199,7 @@ public class PlayerUtils {
       if (CobbleUtils.config.isRedisMessaging()) {
         RedisManager.sendMessage(message);
       } else {
+        if (CobbleUtils.server == null) return;
         var playerList = CobbleUtils.server.getPlayerManager().getPlayerList();
         playerList.forEach(player -> sendMessage(player, message));
       }
@@ -210,6 +213,7 @@ public class PlayerUtils {
         RedisManager.sendMessage(message, prefix);
       } else {
         var text = AdventureTranslator.toNative(message, prefix);
+        if (CobbleUtils.server == null) return;
         var playerList = CobbleUtils.server.getPlayerManager().getPlayerList();
         playerList.forEach(player -> player.sendMessage(text));
       }

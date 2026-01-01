@@ -38,9 +38,6 @@ public class EconomyApi {
           return true;
         }
       } catch (NoClassDefFoundError | IncompatibleClassChangeError | Exception e) {
-        if (CobbleUtils.config.isDebug()) {
-          e.printStackTrace();
-        }
         CobbleUtils.LOGGER.info("Economy not found: " + economy.getIdentify());
         return true;
       }
