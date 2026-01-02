@@ -228,6 +228,7 @@ public class PokemonFormula {
    */
   public Double getPokemonValue(Pokemon pokemon) {
     try {
+      if (formula == null || formula.isEmpty()) return 0.0;
       return getPokemonExpression(pokemon).evaluate();
     } catch (Exception e) {
       e.printStackTrace();
@@ -283,7 +284,7 @@ public class PokemonFormula {
       registerVariables();
 
       // Creamos el builder y registramos todas las variables disponibles
-      baseBuilder = new ExpressionBuilder(formula);
+      baseBuilder = new ExpressionBuilder(formula.isEmpty() ? "0" : formula);
       variableResolvers.keySet().forEach(baseBuilder::variable);
 
       if (showVariablesInConsole) {
