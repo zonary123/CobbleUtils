@@ -49,7 +49,7 @@ public class CobbleUtils {
   // Lang
   public static Lang language = new Lang();
   private static final ExecutorService EXECUTOR_COBBLEUTILS = new ThreadPoolExecutor(
-    2,
+    1,
     6,
     60L, TimeUnit.SECONDS,
     new ArrayBlockingQueue<>(1000),
@@ -166,7 +166,11 @@ public class CobbleUtils {
 
   private static void events() {
     files();
-    RedisManager.init();
+    try {
+      RedisManager.init();
+    } catch (NoClassDefFoundError | NoSuchMethodError | Exception ignored) {
+      LOGGER.error("Error while trying to initialize RedisManager");
+    }
 
     LifecycleEvent.SERVER_LEVEL_LOAD.register(level -> {
       server = level.getServer();

@@ -1,13 +1,12 @@
 package com.kingpixel.cobbleutils.network;
 
-import com.kingpixel.cobbleutils.CobbleUtils;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 
 public class CrossServerManager {
 
   public static void register() {
-    if (!CobbleUtils.config.isRedisMessaging()) return;
+    if (true) return;
     // Registro del codec del ProxyPacket
     PayloadTypeRegistry.playS2C().register(ProxyPacket.PACKET_ID, ProxyPacket.codec);
 
