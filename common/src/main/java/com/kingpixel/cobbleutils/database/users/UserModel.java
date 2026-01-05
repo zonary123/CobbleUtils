@@ -118,6 +118,14 @@ public class UserModel {
 
   public boolean fix() {
     boolean changed = false;
+    if (rewardsClaimed == null) {
+      rewardsClaimed = new HashMap<>();
+      changed = true;
+    }
+    if (storageList == null) {
+      storageList = new HashSet<>();
+      changed = true;
+    }
     Iterator<Map.Entry<String, RewardInfo>> it = rewardsClaimed.entrySet().iterator();
 
     Instant now = Instant.now();
@@ -125,21 +133,16 @@ public class UserModel {
     while (it.hasNext()) {
       Map.Entry<String, RewardInfo> entry = it.next();
       RewardInfo info = entry.getValue();
-
-      if (info.finishCooldown != null) {
-        // Si lastClaimed en realidad ya es la fecha de expiración:
-        if (now.isAfter(info.finishCooldown)) {
-          it.remove(); // remover del map
-          changed = true;
-        }
+      if (info == null) {
+        it.remove();
+        changed = true;
+        continue;
+      }
+      if (info.getFinishCooldown() != null && now.isAfter(info.getFinishCooldown())) {
+        it.remove();
+        changed = true;
       }
     }
-
-    if (storageList == null) {
-      storageList = new HashSet<>();
-      changed = true;
-    }
-
     return changed;
   }
 

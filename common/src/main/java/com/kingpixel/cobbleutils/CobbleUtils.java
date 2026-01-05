@@ -48,37 +48,14 @@ public class CobbleUtils {
   public static SpawnRates spawnRates = new SpawnRates();
   // Lang
   public static Lang language = new Lang();
-  private static final ExecutorService EXECUTOR_COBBLEUTILS = new ThreadPoolExecutor(
-    1,
-    6,
-    60L, TimeUnit.SECONDS,
-    new ArrayBlockingQueue<>(1000),
-    new ThreadFactoryBuilder()
-      .setNameFormat("CobbleUtils General Executor-%d")
-      .build(),
-    (r, executor) -> {
-      // Log a warning when the pool is saturated
-      CobbleUtils.LOGGER.warn("[CobbleUtils] Executor is overloaded! " +
-        "ActiveThreads=" + executor.getActiveCount() +
-        ", PoolSize=" + executor.getPoolSize() +
-        ", QueueSize=" + executor.getQueue().size() +
-        ", Task=" + r.toString());
-    }
-  );
-  public static final ScheduledExecutorService SCHEDULER_COBBLEUTILS = new ScheduledThreadPoolExecutor(
-    1,
-    new ThreadFactoryBuilder()
-      .setNameFormat("CobbleUtils Scheduled Executor-%d")
-      .build(),
-    (r, executor) -> {
-      // Log a warning when the pool is saturated
-      CobbleUtils.LOGGER.warn("[CobbleUtils] Scheduled Executor is overloaded! " +
-        "ActiveThreads=" + executor.getActiveCount() +
-        ", PoolSize=" + executor.getPoolSize() +
-        ", QueueSize=" + executor.getQueue().size() +
-        ", Task=" + r.toString());
-    }
-  );
+  private static final ExecutorService EXECUTOR_COBBLEUTILS = Executors.newFixedThreadPool(1, new ThreadFactoryBuilder()
+    .setDaemon(true)
+    .setNameFormat("CobbleUtils Executor-%d")
+    .build());
+  public static final ScheduledExecutorService SCHEDULER_COBBLEUTILS = Executors.newScheduledThreadPool(1, new ThreadFactoryBuilder()
+    .setDaemon(true)
+    .setNameFormat("CobbleUtils Scheduled Executor-%d")
+    .build());
 
 
   public static void init() {
@@ -239,21 +216,20 @@ public class CobbleUtils {
   }
 
   public static CompletableFuture<Void> runAsync(Runnable runnable) {
-    if (EXECUTOR_COBBLEUTILS.isShutdown() || EXECUTOR_COBBLEUTILS.isTerminated()) {
-      return CompletableFuture.runAsync(runnable)
-        .orTimeout(1, TimeUnit.MINUTES)
-        .exceptionally(e -> {
-          e.printStackTrace();
-          return null;
-        });
-    }
-    return CompletableFuture.runAsync(runnable, EXECUTOR_COBBLEUTILS)
-      .orTimeout(1, TimeUnit.MINUTES)
-      .exceptionally(e -> {
-        e.printStackTrace();
-        return null;
-      });
+    Executor executor = (EXECUTOR_COBBLEUTILS.isShutdown() || EXECUTOR_COBBLEUTILS.isTerminated())
+      ? ForkJoinPool.commonPool()
+      : EXECUTOR_COBBLEUTILS;
 
+    return CompletableFuture.runAsync(() -> {
+        try {
+          runnable.run();
+        } catch (Throwable t) {
+          t.printStackTrace();
+          throw t;
+        }
+      }, executor)
+      .orTimeout(1, TimeUnit.MINUTES);
   }
+
 
 }

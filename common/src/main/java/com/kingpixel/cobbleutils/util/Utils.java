@@ -49,6 +49,7 @@ import java.nio.file.StandardOpenOption;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
 public abstract class Utils {
@@ -115,6 +116,7 @@ public abstract class Utils {
       .registerTypeAdapter(Storage.class, StorageAdapter.INSTANCE)
       .registerTypeAdapter(HiperMessage.class, HiperMessage.EMPTY)
       .registerTypeAdapter(Vec3d.class, Vec3dAdapter.INSTANCE)
+      .registerTypeAdapter(AtomicReference.class, AtomicReferenceAdapter.INSTANCE)
       .registerTypeAdapter(Box.class, BoxAdapter.INSTANCE);
   }
 
