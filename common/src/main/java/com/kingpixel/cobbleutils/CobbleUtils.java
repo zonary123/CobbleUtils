@@ -198,22 +198,29 @@ public class CobbleUtils {
     InteractionEvent.RIGHT_CLICK_ITEM.register(ItemRightClickEvents::register);
   }
 
-  public static void shutdownAndAwait(ExecutorService executorService) {
-    executorService.shutdown();
+  public static void shutdownAndAwait(ExecutorService executor) {
+    if (executor == null || executor.isShutdown()) {
+      return;
+    }
+    executor.shutdown();
     try {
-      if (!executorService.awaitTermination(1, TimeUnit.MINUTES)) {
-        executorService.shutdownNow();
-        if (!executorService.awaitTermination(1, TimeUnit.MINUTES)) {
-          LOGGER.info("CobbleUtils executor was force shutdown");
+      // Espera apagado normal
+      if (!executor.awaitTermination(15, TimeUnit.SECONDS)) {
+        LOGGER.warn("Executor did not terminate in time, forcing shutdown...");
+        executor.shutdownNow();
+
+        // Espera apagado forzado
+        if (!executor.awaitTermination(30, TimeUnit.SECONDS)) {
+          LOGGER.error("Executor did not terminate after forced shutdown");
         }
       }
     } catch (InterruptedException e) {
-      executorService.shutdownNow();
-      Thread.currentThread().interrupt();
-      LOGGER.info("CobbleUtils executor was interrupted during shutdown");
+      LOGGER.error("Executor shutdown was interrupted");
       e.printStackTrace();
+      executor.shutdownNow();
     }
   }
+
 
   public static CompletableFuture<Void> runAsync(Runnable runnable) {
     Executor executor = (EXECUTOR_COBBLEUTILS.isShutdown() || EXECUTOR_COBBLEUTILS.isTerminated())
