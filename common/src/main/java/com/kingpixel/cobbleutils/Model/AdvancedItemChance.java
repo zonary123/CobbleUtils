@@ -7,6 +7,7 @@ import ca.landonjw.gooeylibs2.api.button.GooeyButton;
 import ca.landonjw.gooeylibs2.api.button.linked.LinkType;
 import ca.landonjw.gooeylibs2.api.button.linked.LinkedPageButton;
 import ca.landonjw.gooeylibs2.api.helpers.PaginationHelper;
+import ca.landonjw.gooeylibs2.api.page.GooeyPage;
 import ca.landonjw.gooeylibs2.api.page.LinkedPage;
 import ca.landonjw.gooeylibs2.api.template.types.ChestTemplate;
 import com.kingpixel.cobbleutils.CobbleUtils;
@@ -293,11 +294,14 @@ public class AdvancedItemChance {
     } else {
       finish = this;
     }
-    List<Button> buttons = finish.getButtons(player, finish);
 
+
+    PanelsConfig.applyConfig(template, CobbleUtils.language.getAdvancedRewardsGUI().getPanels());
     Rectangle rectangle = new Rectangle(1, 1, 4, 7);
     rectangle.apply(template);
 
+    List<Button> buttons = finish.getButtons(player, finish);
+    
     int freeSlots = rectangle.getSlotsFree(template.getRows());
 
     ItemModel info = CobbleUtils.language.getItemAdvancedRewardsInfo();
@@ -332,15 +336,12 @@ public class AdvancedItemChance {
         .build());
     }
 
-    // Apply panels configuration (fill items)
-    PanelsConfig.applyConfig(template, CobbleUtils.language.getAdvancedRewardsGUI().getPanels());
-
     LinkedPage.Builder linkedPageBuilder = LinkedPage.builder()
       .title(AdventureTranslator.toNative(title == null || title.isEmpty() ? CobbleUtils.language.getTitleLoot() : title));
 
+    GooeyPage page = PaginationHelper.createPagesFromPlaceholders(template, buttons, linkedPageBuilder);
 
-    CobbleUtils.server.execute(() -> UIManager.openUIForcefully(player, PaginationHelper.createPagesFromPlaceholders(template, buttons,
-      linkedPageBuilder)));
+    CobbleUtils.server.execute(() -> UIManager.openUIForcefully(player, page));
   }
 
   // Add this field to your class
