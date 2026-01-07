@@ -22,6 +22,7 @@ import java.util.concurrent.CompletableFuture;
 @ToString
 public class Config {
   private boolean debug;
+  private boolean adminServer = true;
   private boolean useDefault;
   private String lang;
   private String prefix;
