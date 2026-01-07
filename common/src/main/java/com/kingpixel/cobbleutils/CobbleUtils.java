@@ -204,15 +204,9 @@ public class CobbleUtils {
     }
     executor.shutdown();
     try {
-      // Espera apagado normal
-      if (!executor.awaitTermination(15, TimeUnit.SECONDS)) {
+      if (!executor.awaitTermination(5, TimeUnit.SECONDS)) {
         LOGGER.warn("Executor did not terminate in time, forcing shutdown...");
         executor.shutdownNow();
-
-        // Espera apagado forzado
-        if (!executor.awaitTermination(30, TimeUnit.SECONDS)) {
-          LOGGER.error("Executor did not terminate after forced shutdown");
-        }
       }
     } catch (InterruptedException e) {
       LOGGER.error("Executor shutdown was interrupted");
@@ -238,5 +232,24 @@ public class CobbleUtils {
       .orTimeout(1, TimeUnit.MINUTES);
   }
 
+  public static CompletableFuture<Void> runAsync(Runnable runnable, ExecutorService executor) {
+    Executor exec = (executor == null || executor.isShutdown() || executor.isTerminated())
+      ? ForkJoinPool.commonPool()
+      : executor;
+
+    return CompletableFuture.runAsync(() -> {
+        try {
+          runnable.run();
+        } catch (Throwable t) {
+          t.printStackTrace();
+          throw t;
+        }
+      }, exec)
+      .orTimeout(1, TimeUnit.MINUTES)
+      .exceptionally(e -> {
+        e.printStackTrace();
+        return null;
+      });
+  }
 
 }
