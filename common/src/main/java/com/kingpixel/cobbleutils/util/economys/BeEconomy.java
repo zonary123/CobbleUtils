@@ -3,8 +3,8 @@ package com.kingpixel.cobbleutils.util.economys;
 import com.kingpixel.cobbleutils.CobbleUtils;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import org.beconomy.api.BEconomy;
-import org.beconomy.api.EconomyAPI;
+import org.krripe.beconomy.api.BEconomy;
+import org.krripe.beconomy.api.EconomyAPI;
 
 import java.math.BigDecimal;
 import java.util.UUID;
