@@ -2,6 +2,7 @@ package com.kingpixel.cobbleutils.database.blocks.manager;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.RemovalCause;
 import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.database.blocks.model.ChunkBlockData;
 import com.kingpixel.cobbleutils.util.Utils;
@@ -15,217 +16,260 @@ import net.minecraft.world.World;
 import net.minecraft.world.chunk.Chunk;
 
 import java.io.*;
-import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
+/**
+ * Handles chunk-based storage of player-placed blocks.
+ * Uses Caffeine cache + async disk IO.
+ */
 public class ChunkBlockStorageManager {
 
   private static File storageDir;
 
-  // Cache chunks: key = world_sanitized + "_" + chunkX + "_" + chunkZ
-  private static final Cache<String, ChunkBlockData> CHUNK_CACHE = Caffeine.newBuilder()
-    .expireAfterAccess(1, TimeUnit.MINUTES)
-    .expireAfterWrite(5, TimeUnit.MINUTES)
-    .removalListener((key, value, cause) -> {
-      if (CobbleUtils.server.isStopped() || CobbleUtils.server.isStopping()) return;
-      switch (cause) {
-        case EXPLICIT -> {
-          // No hacer nada si se elimina explícitamente
-        }
-        default -> {
-          // Guardar en disco si se expulsa por expiración o tamaño
-          if (key != null && value != null) {
-            saveChunkByKey((String) key, (ChunkBlockData) value);
-          }
-        }
-      }
-    })
-    .build();
+  /**
+   * Cache key format: worldName_chunkX_chunkZ
+   */
+  private static final Cache<String, ChunkBlockData> CHUNK_CACHE =
+    Caffeine.newBuilder()
+      .expireAfterAccess(5, TimeUnit.MINUTES)
+      .maximumSize(10_000)
+      .removalListener((String key, ChunkBlockData value, RemovalCause cause) -> {
+        if (key == null || value == null) return;
 
-  // Cache de nombres de mundos saneados
-  private static final Cache<World, String> WORLD_NAME_CACHE = Caffeine.newBuilder().build();
+        debug("Chunk evicted from cache: " + key + " | cause=" + cause);
 
-  // Inicializar carpeta principal
+        if (value.isDirty()) {
+          debug("Evicted chunk is dirty, saving to disk: " + key);
+          saveChunkByKeyAsync(key, value);
+        }
+      })
+      .build();
+
+  /**
+   * Cache sanitized world names (weak keys to avoid memory leaks).
+   */
+  private static final Cache<World, String> WORLD_NAME_CACHE =
+    Caffeine.newBuilder().weakKeys().build();
+
+  /**
+   * Initializes storage directory.
+   */
   public static void init(MinecraftServer server) {
-    storageDir = new File(server.getSavePath(WorldSavePath.ROOT).toFile(), "cobbleutils_blocks");
-    if (!storageDir.exists()) storageDir.mkdirs();
+    storageDir = new File(
+      server.getSavePath(WorldSavePath.ROOT).toFile(),
+      "cobbleutils_blocks"
+    );
+
+    if (!storageDir.exists()) {
+      storageDir.mkdirs();
+    }
+
+    debug("Storage initialized at: " + storageDir.getAbsolutePath());
   }
 
   // ===========================
-  // MÉTODOS PRINCIPALES
+  // BLOCK OPERATIONS
   // ===========================
+
   public static void markPlaced(World world, Chunk chunk, BlockPos pos, BlockState state) {
     BlockPos target = pos;
 
-    // If the block is a FallingBlock, find the last replaceable position below
+    // Handle falling blocks (sand, gravel, etc.)
     if (state.getBlock() instanceof FallingBlock) {
       int steps = 0;
-      int maxSteps = 256; // maximum distance to avoid infinite loops
-      BlockPos down = target.down();
-      while (world.getBlockState(down).isReplaceable() && steps < maxSteps) {
-        target = down;
-        down = target.down();
-        steps++;
+      while (world.getBlockState(target.down()).isReplaceable() && steps++ < 256) {
+        target = target.down();
       }
     }
-    if (CobbleUtils.config.isDebug()) {
-      CobbleUtils.LOGGER.info("Marking block as placed by player at " + target.getX() + ", " + target.getY() + ", " + target.getZ()
-        + " in world " + getSanitizedWorldName(world));
-    }
+
     getChunkData(world, chunk).add(target.asLong());
+
+    debug("Block placed at " + target +
+      " | chunk=(" + chunk.getPos().x + "," + chunk.getPos().z + ")" +
+      " | world=" + getSanitizedWorldName(world));
   }
 
   public static boolean removePlaced(World world, Chunk chunk, BlockPos pos, BlockState state) {
-    boolean removed = getChunkData(world, chunk).remove(pos.asLong());
+    ChunkBlockData data = getChunkData(world, chunk);
+    boolean removed = data.remove(pos.asLong());
 
-    BlockPos current = pos.up(); // block directly above
+    debug("Block removed at " + pos +
+      " | chunk=(" + chunk.getPos().x + "," + chunk.getPos().z + ")" +
+      " | world=" + getSanitizedWorldName(world) +
+      " | success=" + removed);
+
+    // Handle falling blocks stacked above
+    BlockPos current = pos.up();
     int steps = 0;
-    int maxSteps = 256; // maximum iterations to avoid infinite loops
 
-    while (steps < maxSteps) {
-      BlockState aboveState = world.getBlockState(current);
+    while (steps++ < 256) {
+      BlockState above = world.getBlockState(current);
+      if (!(above.getBlock() instanceof FallingBlock)) break;
 
-      // Stop if the block above is not a FallingBlock
-      if (!(aboveState.getBlock() instanceof FallingBlock)) break;
+      if (data.contains(current.asLong())) {
+        data.remove(current.asLong());
+        data.add(current.down().asLong());
 
-      Chunk chunkAbove = world.getChunk(current);
-      if (isPlacedByPlayer(world, chunkAbove, current)) {
-        // Move the block above down by one position
-        markPlaced(world, chunkAbove, current.down(), aboveState);
-        removePlaced(world, chunkAbove, current, aboveState); // optional: clear the old position
+        debug("Falling block adjusted from " + current + " to " + current.down());
       }
 
-      current = current.up(); // next block in the stack
-      steps++;
+      current = current.up();
     }
 
     return removed;
   }
 
-
   public static boolean isPlacedByPlayer(World world, Chunk chunk, BlockPos pos) {
-    return getChunkData(world, chunk).contains(pos.asLong());
+    boolean result = getChunkData(world, chunk).contains(pos.asLong());
+
+    debug("Check placed-by-player at " + pos +
+      " | chunk=(" + chunk.getPos().x + "," + chunk.getPos().z + ")" +
+      " | result=" + result);
+
+    return result;
   }
 
-
   // ===========================
-  // CACHE Y CARGA/SALVADO
+  // CACHE ACCESS
   // ===========================
 
   private static ChunkBlockData getChunkData(World world, Chunk chunk) {
     String key = getKey(world, chunk);
-    ChunkBlockData data = CHUNK_CACHE.getIfPresent(key);
-    if (data != null) return data;
-    try {
-      data = loadChunk(world, chunk).get();
-    } catch (Exception e) {
-      e.printStackTrace();
-      data = new ChunkBlockData();
-    }
-    CHUNK_CACHE.put(key, data);
-    return data;
-  }
 
-  private static String getKey(World world, Chunk chunk) {
-    return getSanitizedWorldName(world) + "_" + chunk.getPos().x + "_" + chunk.getPos().z;
-  }
-
-  private static String getSanitizedWorldName(World world) {
-    return WORLD_NAME_CACHE.get(world, w -> sanitizeWorldName(w.getRegistryKey().getValue().toString()));
-  }
-
-  private static String sanitizeWorldName(String worldName) {
-    // Reemplaza todo lo que no sea letra, número, guion o guion bajo
-    return worldName.replaceAll("[^a-zA-Z0-9-_]", "_");
-  }
-
-  public static Future<ChunkBlockData> loadChunk(World world, Chunk chunk) {
-    return Utils.IO_EXECUTOR.submit(() -> {
-      File worldDir = new File(storageDir, getSanitizedWorldName(world));
-      if (!worldDir.exists()) worldDir.mkdirs();
-
-      File chunkFile = new File(worldDir, "chunk_" + chunk.getPos().x + "_" + chunk.getPos().z + ".dat");
-      ChunkBlockData chunkBlockData = new ChunkBlockData();
-
-      if (chunkFile.exists()) {
-        try (FileInputStream fis = new FileInputStream(chunkFile);
-             GZIPInputStream gzip = new GZIPInputStream(fis);
-             DataInputStream dis = new DataInputStream(gzip)) {
-
-          int size = dis.readInt();
-          for (int i = 0; i < size; i++) {
-            chunkBlockData.add(dis.readLong());
-          }
-
-        } catch (EOFException e) {
-          CobbleUtils.LOGGER.error("Chunk file is corrupt or incomplete: " + chunkFile.getName() + ". Skipping it.");
-          // Opcional: eliminar archivo corrupto para regenerarlo
-          try {
-            if (!chunkFile.delete()) {
-              CobbleUtils.LOGGER.warn("Failed to delete corrupted chunk file: " + chunkFile.getName());
-            }
-          } catch (Exception ex) {
-            CobbleUtils.LOGGER.error("Error deleting corrupted chunk file: " + chunkFile.getName());
-          }
-        } catch (IOException e) {
-          CobbleUtils.LOGGER.error("Error reading chunk file: " + chunkFile.getName());
-        }
-      }
-
-      return chunkBlockData;
+    return CHUNK_CACHE.get(key, k -> {
+      debug("Cache miss for chunk: " + k);
+      ChunkBlockData data = new ChunkBlockData();
+      loadChunkAsync(world, chunk, data);
+      return data;
     });
   }
 
-
-  public static void saveChunk(World world, Chunk chunk) {
-    String key = getKey(world, chunk);
-    ChunkBlockData data = CHUNK_CACHE.getIfPresent(key);
-    if (data != null) saveChunkByKey(key, data);
+  private static String getKey(World world, Chunk chunk) {
+    return getSanitizedWorldName(world) + "_" +
+      chunk.getPos().x + "_" +
+      chunk.getPos().z;
   }
 
-  private static void saveChunkByKey(String key, ChunkBlockData data) {
-    Utils.IO_EXECUTOR.execute(() -> saveChunkByKeySync(key, data));
+  private static String getSanitizedWorldName(World world) {
+    return WORLD_NAME_CACHE.get(world,
+      w -> w.getRegistryKey().getValue().toString().replaceAll("[^a-zA-Z0-9-_]", "_")
+    );
+  }
+
+  // ===========================
+  // ASYNC LOAD & SAVE
+  // ===========================
+
+  private static void loadChunkAsync(World world, Chunk chunk, ChunkBlockData target) {
+    Utils.IO_EXECUTOR.execute(() -> {
+      String key = getKey(world, chunk);
+      debug("Loading chunk async from disk: " + key);
+
+      ChunkBlockData loaded = loadChunkSync(world, chunk);
+      target.mergeFrom(loaded);
+
+      debug("Chunk loaded: " + key +
+        " | blocks=" + loaded.getBlocks().size());
+    });
+  }
+
+  private static ChunkBlockData loadChunkSync(World world, Chunk chunk) {
+    File worldDir = new File(storageDir, getSanitizedWorldName(world));
+    if (!worldDir.exists()) worldDir.mkdirs();
+
+    File file = new File(
+      worldDir,
+      "chunk_" + chunk.getPos().x + "_" + chunk.getPos().z + ".dat"
+    );
+
+    ChunkBlockData data = new ChunkBlockData();
+
+    if (!file.exists()) {
+      debug("Chunk file not found, starting empty: " + file.getName());
+      return data;
+    }
+
+    try (DataInputStream in = new DataInputStream(
+      new GZIPInputStream(new FileInputStream(file))
+    )) {
+      int size = in.readInt();
+      for (int i = 0; i < size; i++) {
+        data.add(in.readLong());
+      }
+      data.clearDirty();
+
+    } catch (IOException e) {
+      CobbleUtils.LOGGER.warn("Failed to load chunk file: " + file.getName());
+      e.printStackTrace();
+    }
+
+    return data;
+  }
+
+  private static void saveChunkByKeyAsync(String key, ChunkBlockData data) {
+    CobbleUtils.runAsync(() -> saveChunkByKeySync(key, data), Utils.IO_EXECUTOR);
   }
 
   private static void saveChunkByKeySync(String key, ChunkBlockData data) {
+    if (!data.isDirty()) return;
+
+    debug("Saving chunk to disk: " + key +
+      " | blocks=" + data.getBlocks().size());
+
     try {
-      // La key = sanitizedWorld + "_" + chunkX + "_" + chunkZ
-      int lastUnderscore = key.lastIndexOf('_');
-      int secondLastUnderscore = key.lastIndexOf('_', lastUnderscore - 1);
-      if (secondLastUnderscore == -1 || lastUnderscore == -1) return;
+      int last = key.lastIndexOf('_');
+      int mid = key.lastIndexOf('_', last - 1);
 
-      String worldName = key.substring(0, secondLastUnderscore);
-      int chunkX = Integer.parseInt(key.substring(secondLastUnderscore + 1, lastUnderscore));
-      int chunkZ = Integer.parseInt(key.substring(lastUnderscore + 1));
+      String world = key.substring(0, mid);
+      int x = Integer.parseInt(key.substring(mid + 1, last));
+      int z = Integer.parseInt(key.substring(last + 1));
 
-      File worldDir = new File(storageDir, worldName);
+      File worldDir = new File(storageDir, world);
       if (!worldDir.exists()) worldDir.mkdirs();
 
-      File chunkFile = new File(worldDir, "chunk_" + chunkX + "_" + chunkZ + ".dat");
+      File file = new File(worldDir, "chunk_" + x + "_" + z + ".dat");
 
-      try (FileOutputStream fos = new FileOutputStream(chunkFile);
-           GZIPOutputStream gzip = new GZIPOutputStream(fos);
-           DataOutputStream dos = new DataOutputStream(gzip)) {
-
+      try (DataOutputStream out = new DataOutputStream(
+        new GZIPOutputStream(new FileOutputStream(file))
+      )) {
         LongOpenHashSet blocks = data.getBlocks();
-        dos.writeInt(blocks.size());
-        for (long block : blocks) {
-          dos.writeLong(block);
+        out.writeInt(blocks.size());
+        for (long b : blocks) {
+          out.writeLong(b);
         }
       }
 
-    } catch (IOException | NumberFormatException e) {
+      data.clearDirty();
+      debug("Chunk saved successfully: " + key);
+
+    } catch (Exception e) {
+      CobbleUtils.LOGGER.warn("Failed to save chunk: " + key);
       e.printStackTrace();
     }
+  }
+
+  // ===========================
+  // DEBUG
+  // ===========================
+
+  /**
+   * Logs debug messages only if debug mode is enabled.
+   */
+  private static void debug(String message) {
+    if (!CobbleUtils.config.isDebug()) return;
+    CobbleUtils.LOGGER.info("[ChunkBlockStorage] " + message);
   }
 
   // ===========================
   // SHUTDOWN
   // ===========================
+
   public static void shutdown() {
-    CobbleUtils.LOGGER.info("ChunkBlockStorageManager: Saving all cached chunk data to disk on shutdown...");
+    CobbleUtils.LOGGER.info(
+      "ChunkBlockStorageManager: Saving all cached chunks..."
+    );
     CHUNK_CACHE.asMap().forEach(ChunkBlockStorageManager::saveChunkByKeySync);
   }
 }

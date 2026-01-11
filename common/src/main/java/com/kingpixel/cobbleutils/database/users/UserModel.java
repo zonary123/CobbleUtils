@@ -30,11 +30,9 @@ public class UserModel {
   private Instant lastLogin;
   private Instant disconnectTime;
   private String ip;
-
-  // Map: ItemChance UUID -> RewardInfo
   private Map<String, RewardInfo> rewardsClaimed = new HashMap<>();
-
   private Set<Storage> storageList = new HashSet<>();
+  private transient boolean dirty = false;
 
   public UserModel(ServerPlayerEntity player) {
     this.playerUUID = player.getUuid();

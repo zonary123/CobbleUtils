@@ -11,6 +11,7 @@ import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.UpdateOptions;
+import net.minecraft.server.network.ServerPlayerEntity;
 import org.bson.Document;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -51,7 +52,7 @@ public class DataBaseUsersMongoDB extends DataBaseUsers {
 
   @Override
   public @Nullable UserModel findUserByUUID(@NotNull UUID uuid) {
-    return DataBaseUsers.users.get(uuid, k -> {
+    return DataBaseUsers.USERS.get(uuid, k -> {
       UserModel userModel = new UserModel(uuid);
       Document document = collectionUser.find(Filters.eq("playerUUID", uuid.toString()))
         .first();
@@ -137,13 +138,22 @@ public class DataBaseUsersMongoDB extends DataBaseUsers {
     return inactiveUsers;
   }
 
+  @Override public void disconnected(ServerPlayerEntity player) {
+    UUID playerUUID = player.getUuid();
+    collectionUser.updateOne(
+      Filters.eq("playerUUID", playerUUID.toString()),
+      new Document("$set", new Document("isOnline", false)
+        .append("disconnectTime", DateTimeFormatter.ISO_INSTANT.format(Instant.now())))
+    );
+  }
+
   @Override
   public void addStorage(Storage storage, UUID playerUUID) {
     collectionUser.updateOne(
       Filters.eq("playerUUID", playerUUID.toString()),
       new Document("$push", new Document("storageList", storage.toDocument()))
     );
-    DataBaseUsers.users.invalidate(playerUUID);
+    DataBaseUsers.USERS.invalidate(playerUUID);
   }
 
   @Override

@@ -176,15 +176,11 @@ public class CobbleUtils {
       user.connect(player);
       user.fix();
       DataBaseFactory.dataBaseUsers.saveOrUpdateUser(user);
-      DataBaseUsers.users.put(player.getUuid(), user);
+      DataBaseUsers.USERS.put(player.getUuid(), user);
     }));
 
     PlayerEvent.PLAYER_QUIT.register((player) -> runAsync(() -> {
-      UserModel user = DataBaseFactory.dataBaseUsers.findUserByUUID(player.getUuid());
-      if (user != null) {
-        user.disconnect();
-        DataBaseFactory.dataBaseUsers.saveOrUpdateUser(user);
-      }
+      DataBaseFactory.dataBaseUsers.disconnected(player);
       DataBaseFactory.dataBaseUsers.removeIfNecessary(player.getUuid());
     }));
 
@@ -215,23 +211,25 @@ public class CobbleUtils {
     }
   }
 
-
+  /**
+   * Run async with CobbleUtils executor
+   *
+   * @param runnable
+   *
+   * @return CompletableFuture<Void>
+   */
   public static CompletableFuture<Void> runAsync(Runnable runnable) {
-    Executor executor = (EXECUTOR_COBBLEUTILS.isShutdown() || EXECUTOR_COBBLEUTILS.isTerminated())
-      ? ForkJoinPool.commonPool()
-      : EXECUTOR_COBBLEUTILS;
-
-    return CompletableFuture.runAsync(() -> {
-        try {
-          runnable.run();
-        } catch (Throwable t) {
-          t.printStackTrace();
-          throw t;
-        }
-      }, executor)
-      .orTimeout(1, TimeUnit.MINUTES);
+    return runAsync(runnable, EXECUTOR_COBBLEUTILS);
   }
 
+  /**
+   * Run async with custom executor
+   *
+   * @param runnable
+   * @param executor
+   *
+   * @return CompletableFuture<Void>
+   */
   public static CompletableFuture<Void> runAsync(Runnable runnable, ExecutorService executor) {
     Executor exec = (executor == null || executor.isShutdown() || executor.isTerminated())
       ? ForkJoinPool.commonPool()
@@ -245,7 +243,7 @@ public class CobbleUtils {
           throw t;
         }
       }, exec)
-      .orTimeout(1, TimeUnit.MINUTES)
+      .orTimeout(1, TimeUnit.SECONDS)
       .exceptionally(e -> {
         e.printStackTrace();
         return null;

@@ -5,6 +5,7 @@ import com.kingpixel.cobbleutils.Model.DataBaseConfig;
 import com.kingpixel.cobbleutils.database.users.models.Storage;
 import com.kingpixel.cobbleutils.util.Utils;
 import net.minecraft.entity.Entity;
+import net.minecraft.server.network.ServerPlayerEntity;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
@@ -33,7 +34,7 @@ public class DataBaseUsersJson extends DataBaseUsers {
 
   @Override
   public UserModel findUserByUUID(@NotNull UUID uuid) {
-    return DataBaseUsers.users.get(uuid, k -> {
+    return DataBaseUsers.USERS.get(uuid, k -> {
       File file = Utils.getAbsolutePath(PATH_USERS + k + ".json");
       if (!file.exists()) return null;
       return readUserFile(file);
@@ -94,6 +95,14 @@ public class DataBaseUsersJson extends DataBaseUsers {
       .map(this::readUserFile)
       .filter(user -> isInactive(user, currentTime, millis))
       .toList();
+  }
+
+  @Override public void disconnected(ServerPlayerEntity player) {
+    if (player == null) return;
+    UserModel user = findUserByUUID(player.getUuid());
+    if (user == null) return;
+    user.disconnect();
+    saveOrUpdateUser(user);
   }
 
   @Override

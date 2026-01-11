@@ -39,6 +39,7 @@ public class StorageCommand {
   public static void register(CommandDispatcher<ServerCommandSource> dispatcher, CommandRegistryAccess registry, LiteralArgumentBuilder<ServerCommandSource> base) {
     dispatcher.register(
       base
+        .requires(source -> PermissionApi.hasPermission(source, List.of("cobbleutils.storage.base"), 1))
         .executes(context -> {
           ServerPlayerEntity player = context.getSource().getPlayerOrThrow();
           CobbleUtils.language.getStorageMenu().open(player, player.getUuid());

@@ -4,7 +4,6 @@ import com.cobblemon.mod.common.api.pokemon.PokemonProperties;
 import com.cobblemon.mod.common.api.pokemon.egg.EggGroup;
 import com.cobblemon.mod.common.api.types.ElementalType;
 import com.cobblemon.mod.common.pokemon.Pokemon;
-import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.util.PokemonUtils;
 import com.kingpixel.cobbleutils.util.Utils;
 import lombok.Getter;
@@ -154,9 +153,6 @@ public class PokemonBlackList {
 
     // Check cached result first to avoid redundant computation
     String showdownId = pokemon.showdownId();
-    if (CobbleUtils.config.isDebug()) {
-      CobbleUtils.LOGGER.info("Checking blacklist for Pokémon: " + showdownId);
-    }
     Boolean cached = resultsCache.get(showdownId);
     if (cached != null) return cached;
 
@@ -203,9 +199,6 @@ public class PokemonBlackList {
     // Check types
     for (ElementalType type : form.getTypes()) {
       String typeName = type.getName().toLowerCase();
-      if (CobbleUtils.config.isDebug()) {
-        CobbleUtils.LOGGER.info("Checking type: " + typeName);
-      }
       if (types.contains(typeName)) return true;
     }
 
@@ -219,9 +212,6 @@ public class PokemonBlackList {
 
   public boolean cacheResult(String showdownId, boolean result) {
     resultsCache.putIfAbsent(showdownId, result);
-    if (CobbleUtils.config.isDebug()) {
-      CobbleUtils.LOGGER.info("Caching blacklist result for " + showdownId + ": " + result);
-    }
     return result;
   }
 }

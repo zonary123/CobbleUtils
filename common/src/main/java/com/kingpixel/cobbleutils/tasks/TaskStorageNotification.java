@@ -34,7 +34,8 @@ public class TaskStorageNotification {
           if (size > 0) {
             PlayerUtils.sendMessage(
               player,
-              "§e[§6CobbleUtils§e] §aYou have §e" + size + " §astorage item(s). Use §b/storage §ato claim them!",
+              CobbleUtils.language.getMessageStorageNotify()
+                .replace("%amount%", String.valueOf(size)),
               CobbleUtils.config.getPrefix(),
               TypeMessage.CHAT
             );

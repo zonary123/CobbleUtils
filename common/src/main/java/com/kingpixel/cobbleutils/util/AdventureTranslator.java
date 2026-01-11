@@ -2,7 +2,6 @@ package com.kingpixel.cobbleutils.util;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
-import com.github.benmanes.caffeine.cache.RemovalCause;
 import com.kingpixel.cobbleutils.CobbleUtils;
 import eu.pb4.placeholders.api.PlaceholderContext;
 import eu.pb4.placeholders.api.Placeholders;
@@ -48,11 +47,6 @@ public class AdventureTranslator {
   private static final Cache<String, Text> cache = Caffeine.newBuilder()
     .maximumSize(250_000)
     .expireAfterAccess(1, TimeUnit.MINUTES)
-    .removalListener((String key, Text value, RemovalCause cause) -> {
-      if (CobbleUtils.config.isDebug()) {
-        CobbleUtils.LOGGER.info("Removed key from cache: " + key + ", cause: " + cause);
-      }
-    })
     .build();
 
   // Mapping Minecraft color codes to MiniMessage tags
@@ -180,7 +174,7 @@ public class AdventureTranslator {
   public static MutableText toNativeComponent(String messageContent) {
     return Text.empty().append(toNative(messageContent));
   }
-  
+
   // Helper to get server registry wrapper
   private static RegistryWrapper.WrapperLookup getWrapper() {
     if (CobbleUtils.server != null) {

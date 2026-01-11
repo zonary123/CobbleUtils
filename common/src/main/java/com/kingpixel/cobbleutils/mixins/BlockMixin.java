@@ -32,6 +32,7 @@ public abstract class BlockMixin {
     try {
       if (placer == null) return;
       if (!(placer instanceof ServerPlayerEntity player)) return;
+      if (!shouldEmit()) return;
       boolean placed = ChunkBlockStorageManager.isPlacedByPlayer(world, world.getChunk(pos), pos);
       ChunkBlockStorageManager.markPlaced(world, world.getChunk(pos), pos, state);
       CobbleUtilsEvents.BLOCK_PLACED_EVENT.emit(new EventBlockPlaced(
@@ -51,6 +52,7 @@ public abstract class BlockMixin {
                                    CallbackInfoReturnable<BlockState> cir) {
     try {
       if (!(playerEntity instanceof ServerPlayerEntity player)) return;
+      if (!shouldEmit()) return;
       boolean isPlaced = BlocksApi.isBlockPlaceByPlayer(world, pos);
       CobbleUtilsEvents.BLOCK_BREAK_EVENT.emit(new EventBlockBreak(
         world,
@@ -68,10 +70,6 @@ public abstract class BlockMixin {
         .pos(pos)
         .build();
       if (evt.getAmount() > 0) {
-        /*if (isPlaced) {
-          int adjustedAmount = Math.max(0, evt.getAmount() - 1);
-          evt.setAmount(adjustedAmount);
-        }*/
         CobbleUtilsEvents.COLLECT_EVENT.emit(
           evt
         );
@@ -80,5 +78,9 @@ public abstract class BlockMixin {
     } catch (Exception e) {
       e.printStackTrace();
     }
+  }
+
+  private boolean shouldEmit() {
+    return !CobbleUtilsEvents.BLOCK_BREAK_EVENT.isEmpty() || !CobbleUtilsEvents.BLOCK_PLACED_EVENT.isEmpty() || !CobbleUtilsEvents.COLLECT_EVENT.isEmpty();
   }
 }

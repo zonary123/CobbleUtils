@@ -28,6 +28,7 @@ public class Lang {
   private String titleconfirm;
   private String messageCooldownMenu;
   private String messageCooldownCommand;
+  private String messageStorageNotify = "%prefix% &aYou have &6%amount% &arewards in your storage. Use &e/storage &ato claim them.";
   private String HA;
   private String confirm;
   private String cancel;

@@ -6,7 +6,6 @@ import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.Model.DataBaseConfig;
 import com.kingpixel.cobbleutils.Model.ItemChance;
 import com.kingpixel.cobbleutils.api.RewardsApi;
-import com.kingpixel.cobbleutils.database.DataBaseFactory;
 import com.kingpixel.cobbleutils.database.users.models.Storage;
 import com.mojang.authlib.GameProfile;
 import net.minecraft.network.packet.c2s.common.SyncedClientOptions;
@@ -22,14 +21,8 @@ import java.util.concurrent.TimeUnit;
  * @author Carlos Varas Alonso - 27/08/2025 15:11
  */
 public abstract class DataBaseUsers {
-  public static final Cache<UUID, UserModel> users = Caffeine.newBuilder()
+  public static final Cache<UUID, UserModel> USERS = Caffeine.newBuilder()
     .expireAfterAccess(5, TimeUnit.SECONDS)
-    .removalListener((o, o2, removalCause) -> {
-      if (o2 != null) {
-        UserModel user = (UserModel) o2;
-        DataBaseFactory.dataBaseUsers.saveOrUpdateUser(user);
-      }
-    })
     .build();
 
   public abstract void connect(DataBaseConfig config);
@@ -122,8 +115,10 @@ public abstract class DataBaseUsers {
   }
 
   public void removeIfNecessary(UUID uuid) {
-    users.invalidate(uuid);
+    USERS.invalidate(uuid);
   }
+
+  public abstract void disconnected(ServerPlayerEntity player);
 
   public abstract void addStorage(Storage storage, UUID playerUUID);
 
