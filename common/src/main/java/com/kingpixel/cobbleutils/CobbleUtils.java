@@ -238,9 +238,8 @@ public class CobbleUtils {
     return CompletableFuture.runAsync(() -> {
         try {
           runnable.run();
-        } catch (Throwable t) {
-          t.printStackTrace();
-          throw t;
+        } catch (Exception e) {
+          e.printStackTrace();
         }
       }, exec)
       .orTimeout(30, TimeUnit.SECONDS)
