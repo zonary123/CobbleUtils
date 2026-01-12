@@ -1,5 +1,6 @@
 package com.kingpixel.cobbleutils.database.users.models;
 
+import ca.landonjw.gooeylibs2.api.UIManager;
 import ca.landonjw.gooeylibs2.api.button.GooeyButton;
 import com.google.gson.JsonElement;
 import com.kingpixel.cobbleutils.CobbleUtils;
@@ -34,12 +35,15 @@ public abstract class Storage {
   public GooeyButton getButton() {
     return GooeyButton.builder()
       .display(getDisplay())
-      .onClick(action -> CobbleUtils.runAsync(() -> {
-        ServerPlayerEntity player = action.getPlayer();
-        DataBaseFactory.dataBaseUsers.removeStorage(this, player.getUuid());
-        this.giveToPlayer(player);
-        CobbleUtils.language.getStorageMenu().open(player, player.getUuid());
-      }))
+      .onClick(action -> {
+        UIManager.closeUI(action.getPlayer());
+        CobbleUtils.runAsync(() -> {
+          ServerPlayerEntity player = action.getPlayer();
+          DataBaseFactory.dataBaseUsers.removeStorage(this, player.getUuid());
+          this.giveToPlayer(player);
+          CobbleUtils.language.getStorageMenu().open(player, player.getUuid());
+        });
+      })
       .build();
   }
 

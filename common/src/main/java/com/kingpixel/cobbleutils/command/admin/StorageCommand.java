@@ -80,7 +80,6 @@ public class StorageCommand {
                               UUID targetUUID = getPlayerUUID(context);
                               String targetName = getTargetName(context);
                               Pokemon pokemon = PokemonPropertiesArgumentType.Companion.getPokemonProperties(context, ARG_POKEMON).create();
-
                               DataBaseFactory.dataBaseUsers.addStorage(new StoragePokemon(pokemon), targetUUID);
                               sendFeedback(source, "✅ Added Pokémon " + pokemon.getDisplayName(false).getString() +
                                 " to " + targetName + "'s storage.");
@@ -121,7 +120,10 @@ public class StorageCommand {
                                   String targetName = getTargetName(context);
                                   int amount = IntegerArgumentType.getInteger(context, ARG_AMOUNT);
                                   var itemStack = ItemStackArgumentType.getItemStackArgument(context, ARG_ITEM).createStack(amount, true);
-
+                                  if (itemStack.isEmpty()) {
+                                    sendFeedback(source, "⚠️ The specified item stack is empty.");
+                                    return 0;
+                                  }
                                   DataBaseFactory.dataBaseUsers.addStorage(new StorageItemStack(itemStack), targetUUID);
                                   sendFeedback(source, "✅ Added " + amount + "x " + itemStack.getName().getString() + " to " + targetName + "'s storage.");
                                   return 1;
@@ -146,6 +148,10 @@ public class StorageCommand {
                             itemChance = RewardsApi.getReward(id);
                           } else {
                             itemChance = new ItemChance(data, 100);
+                          }
+                          if (itemChance == null) {
+                            sendFeedback(source, "⚠️ Reward '" + data + "' not found.");
+                            return 0;
                           }
 
                           DataBaseFactory.dataBaseUsers.addStorage(new StorageRewards(itemChance), targetUUID);

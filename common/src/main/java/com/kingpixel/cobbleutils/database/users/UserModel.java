@@ -17,6 +17,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * User model for CobbleUtils
@@ -109,21 +110,24 @@ public class UserModel {
     if (rewardInfo.getTimesClaimed() == maxClaims && itemChance.getCooldown() != null) {
       rewardInfo.setFinishCooldown(Instant.now().plus(itemChance.getCooldown().toMillis(), ChronoUnit.MILLIS));
     }
-
     DataBaseFactory.dataBaseUsers.saveOrUpdateUser(this);
     return true;
   }
 
   public boolean fix() {
-    boolean changed = false;
+    AtomicBoolean changed = new AtomicBoolean(false);
     if (rewardsClaimed == null) {
       rewardsClaimed = new HashMap<>();
-      changed = true;
+      changed.set(true);
     }
     if (storageList == null) {
       storageList = new HashSet<>();
-      changed = true;
+      changed.set(true);
     }
+    storageList.stream().filter(Objects::isNull).toList().forEach(storage -> {
+      storageList.remove(storage);
+      changed.set(true);
+    });
     Iterator<Map.Entry<String, RewardInfo>> it = rewardsClaimed.entrySet().iterator();
 
     Instant now = Instant.now();
@@ -133,15 +137,15 @@ public class UserModel {
       RewardInfo info = entry.getValue();
       if (info == null) {
         it.remove();
-        changed = true;
+        changed.set(true);
         continue;
       }
       if (info.getFinishCooldown() != null && now.isAfter(info.getFinishCooldown())) {
         it.remove();
-        changed = true;
+        changed.set(true);
       }
     }
-    return changed;
+    return changed.get();
   }
 
   public void addStorage(Storage storage) {

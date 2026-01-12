@@ -25,10 +25,11 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 /**
- * @author Carlos Varas Alonso - 06/10/2025 5:14
+ * @author Carlos Varas Alonso
  */
 @Data
 public class StorageMenu {
+
   private int rows;
   private String title;
   private Rectangle rectangle;
@@ -42,17 +43,21 @@ public class StorageMenu {
     this.rows = 6;
     this.title = "Storage";
     this.rectangle = new Rectangle(rows);
+
     this.nextPage = new ItemModel("minecraft:arrow", "&aNext Page");
     this.nextPage.setSlot(53);
-    this.close = new ItemModel("minecraft:barrier", "&cClose");
-    this.close.setSlot(49);
+
     this.previousPage = new ItemModel("minecraft:arrow", "&aPrevious Page");
     this.previousPage.setSlot(45);
-    this.claimAll = new ItemModel("minecraft:chest", "&eClaim All Rewards"); // 👈 botón genérico
+
+    this.claimAll = new ItemModel("minecraft:chest", "&eClaim All Rewards");
     this.claimAll.setSlot(47);
-    this.panels = List.of(
-      new PanelsConfig(rows)
-    );
+
+    this.close = new ItemModel("minecraft:barrier", "&cClose");
+    this.close.setSlot(49);
+
+    this.panels = List.of(new PanelsConfig(rows));
+
     int totalSlots = rows * 9;
     for (PanelsConfig panel : panels) {
       panel.getSlots().removeIf(slot -> slot < 0 || slot >= totalSlots);
@@ -61,76 +66,86 @@ public class StorageMenu {
 
   public void open(ServerPlayerEntity executer, UUID targetUUID) {
     CobbleUtils.runAsync(() -> {
-      ChestTemplate template = ChestTemplate
-        .builder(rows)
-        .build();
 
-      PanelsConfig.applyConfig(template, panels);
-      rectangle.apply(template);
       UserModel userModel = DataBaseFactory.dataBaseUsers.findUserByUUID(targetUUID);
       if (userModel == null) return;
-      var list = userModel.getStorageList();
-      if (list == null) {
+
+      if (userModel.getStorageList() == null) {
         userModel.setStorageList(new HashSet<>());
-        list = userModel.getStorageList();
       }
-      int size = list.size();
-      List<Button> buttons = new ArrayList<>(size);
-      List<Storage> removeList = new ArrayList<>();
-      for (Storage storage : list) {
+
+      ChestTemplate template = ChestTemplate.builder(rows).build();
+      PanelsConfig.applyConfig(template, panels);
+      rectangle.apply(template);
+
+      List<Button> buttons = new ArrayList<>();
+      List<Storage> invalidStorages = new ArrayList<>();
+
+      for (Storage storage : userModel.getStorageList()) {
         try {
           buttons.add(storage.getButton());
         } catch (Exception e) {
           e.printStackTrace();
-          removeList.add(storage);
+          invalidStorages.add(storage);
         }
       }
 
-      for (Storage storage : removeList) {
+      // Limpieza de storages inválidos
+      for (Storage storage : invalidStorages) {
         DataBaseFactory.dataBaseUsers.removeStorage(storage, targetUUID);
       }
 
+      // CLAIM ALL
       claimAll.applyTemplate(template, claimAll.getButton(action -> {
-        var player = action.getPlayer();
-
+        ServerPlayerEntity player = action.getPlayer();
+        UIManager.closeUI(player);
         CobbleUtils.runAsync(() -> {
-          var data = DataBaseFactory.dataBaseUsers.findUserByUUID(targetUUID);
-          if (data == null) return;
-
-          var storageList = new ArrayList<>(data.getStorageList());
-          if (storageList.isEmpty()) {
-            CobbleUtils.server.execute(() ->
-              player.sendMessage(AdventureTranslator.toNative("&cYou don't have any pending rewards to claim."), false)
+          UserModel data = DataBaseFactory.dataBaseUsers.findUserByUUID(targetUUID);
+          if (data == null || data.getStorageList().isEmpty()) {
+            player.sendMessage(
+              AdventureTranslator.toNative("&cYou don't have any pending rewards to claim."),
+              false
             );
             return;
           }
 
-          int claimed = 0;
-          for (Storage storage : storageList) {
+          List<Storage> toClaim = new ArrayList<>(data.getStorageList());
+
+          // Limpieza segura
+          data.getStorageList().clear();
+
+          for (Storage storage : toClaim) {
             try {
-              DataBaseFactory.dataBaseUsers.removeStorage(storage, player.getUuid());
+              DataBaseFactory.dataBaseUsers.removeStorage(storage, targetUUID);
               CobbleUtils.server.execute(() -> storage.giveToPlayer(player));
-              claimed++;
             } catch (Exception e) {
               e.printStackTrace();
             }
           }
 
-          int finalClaimed = claimed;
-          player.sendMessage(AdventureTranslator.toNative("&aYou have successfully claimed &e" + finalClaimed + " &arewards!"), false);
-          CobbleUtils.server.execute(() -> CobbleUtils.language.getStorageMenu().open(player, player.getUuid()));
+          int claimed = toClaim.size();
+          player.sendMessage(
+            AdventureTranslator.toNative("&aYou have successfully claimed &e" + claimed + " &arewards!"),
+            false
+          );
+          CobbleUtils.server.execute(() -> CobbleUtils.language.getStorageMenu().open(player, targetUUID));
         });
+
       }, 1, TimeUnit.SECONDS, 1));
 
-      previousPage.applyTemplate(template, previousPage.getLinkedPageButton(LinkType.Next));
-      close.applyTemplate(template, close.getButton(action -> UIManager.closeUI(action.getPlayer()), 1, TimeUnit.SECONDS, 1));
+      // Navegación
+      previousPage.applyTemplate(template, previousPage.getLinkedPageButton(LinkType.Previous));
       nextPage.applyTemplate(template, nextPage.getLinkedPageButton(LinkType.Next));
+      close.applyTemplate(template,
+        close.getButton(action -> UIManager.closeUI(action.getPlayer()), 1, TimeUnit.SECONDS, 1)
+      );
 
       GooeyPage page = PaginationHelper.createPagesFromPlaceholders(
         template,
         buttons,
         LinkedPage.builder().title(AdventureTranslator.toNative(title))
       );
+
       CobbleUtils.server.execute(() -> UIManager.openUIForcefully(executer, page));
     });
   }
