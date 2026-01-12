@@ -243,7 +243,7 @@ public class CobbleUtils {
           throw t;
         }
       }, exec)
-      .orTimeout(1, TimeUnit.SECONDS)
+      .orTimeout(30, TimeUnit.SECONDS)
       .exceptionally(e -> {
         e.printStackTrace();
         return null;

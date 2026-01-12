@@ -5,6 +5,7 @@ import ca.landonjw.gooeylibs2.api.button.GooeyButton;
 import com.google.gson.JsonElement;
 import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.database.DataBaseFactory;
+import com.kingpixel.cobbleutils.database.users.UserModel;
 import com.kingpixel.cobbleutils.util.Utils;
 import lombok.Data;
 import net.minecraft.item.ItemStack;
@@ -32,15 +33,16 @@ public abstract class Storage {
 
   public abstract void giveToPlayer(ServerPlayerEntity playerEntity);
 
-  public GooeyButton getButton() {
+  public GooeyButton getButton(UserModel userModel) {
     return GooeyButton.builder()
       .display(getDisplay())
       .onClick(action -> {
-        UIManager.closeUI(action.getPlayer());
+        ServerPlayerEntity player = action.getPlayer();
+        UIManager.closeUI(player);
+        userModel.getStorageList().remove(this);
+        this.giveToPlayer(player);
         CobbleUtils.runAsync(() -> {
-          ServerPlayerEntity player = action.getPlayer();
           DataBaseFactory.dataBaseUsers.removeStorage(this, player.getUuid());
-          this.giveToPlayer(player);
           CobbleUtils.language.getStorageMenu().open(player, player.getUuid());
         });
       })

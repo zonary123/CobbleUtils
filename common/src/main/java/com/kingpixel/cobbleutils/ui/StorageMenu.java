@@ -83,7 +83,7 @@ public class StorageMenu {
 
       for (Storage storage : userModel.getStorageList()) {
         try {
-          buttons.add(storage.getButton());
+          buttons.add(storage.getButton(userModel));
         } catch (Exception e) {
           e.printStackTrace();
           invalidStorages.add(storage);
@@ -92,6 +92,7 @@ public class StorageMenu {
 
       // Limpieza de storages inválidos
       for (Storage storage : invalidStorages) {
+        userModel.getStorageList().remove(storage);
         DataBaseFactory.dataBaseUsers.removeStorage(storage, targetUUID);
       }
 
@@ -130,7 +131,6 @@ public class StorageMenu {
           );
           CobbleUtils.server.execute(() -> CobbleUtils.language.getStorageMenu().open(player, targetUUID));
         });
-
       }, 1, TimeUnit.SECONDS, 1));
 
       // Navegación
