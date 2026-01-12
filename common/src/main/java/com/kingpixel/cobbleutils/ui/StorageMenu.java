@@ -112,13 +112,18 @@ public class StorageMenu {
 
           List<Storage> toClaim = new ArrayList<>(data.getStorageList());
 
-          // Limpieza segura
-          data.getStorageList().clear();
 
           for (Storage storage : toClaim) {
             try {
-              DataBaseFactory.dataBaseUsers.removeStorage(storage, targetUUID);
-              CobbleUtils.server.execute(() -> storage.giveToPlayer(player));
+              if (storage.giveToPlayer(player)) {
+                data.getStorageList().remove(storage);
+                DataBaseFactory.dataBaseUsers.removeStorage(storage, targetUUID);
+              } else {
+                player.sendMessage(
+                  AdventureTranslator.toNative("&cCould not claim reward: &e" + storage.getDisplay().getName().getString()),
+                  false
+                );
+              }
             } catch (Exception e) {
               e.printStackTrace();
             }

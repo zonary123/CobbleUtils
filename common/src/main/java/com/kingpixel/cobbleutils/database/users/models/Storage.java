@@ -31,7 +31,7 @@ public abstract class Storage {
 
   public abstract ItemStack getDisplay();
 
-  public abstract void giveToPlayer(ServerPlayerEntity playerEntity);
+  public abstract boolean giveToPlayer(ServerPlayerEntity playerEntity);
 
   public GooeyButton getButton(UserModel userModel) {
     return GooeyButton.builder()

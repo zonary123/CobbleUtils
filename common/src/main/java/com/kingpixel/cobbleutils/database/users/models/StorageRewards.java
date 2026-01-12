@@ -34,8 +34,12 @@ public class StorageRewards extends Storage {
   }
 
   @Override
-  public void giveToPlayer(ServerPlayerEntity playerEntity) {
-    reward.giveReward(playerEntity);
+  public boolean giveToPlayer(ServerPlayerEntity player) {
+    if (reward.getType().equals(ItemChance.ItemChanceType.ITEM) && player.getInventory().getEmptySlot() == -1) {
+      return false;
+    }
+    reward.giveReward(player);
+    return true;
   }
 
 }

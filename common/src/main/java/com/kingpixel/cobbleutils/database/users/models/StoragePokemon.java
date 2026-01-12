@@ -47,8 +47,9 @@ public class StoragePokemon extends Storage {
   }
 
   @Override
-  public void giveToPlayer(ServerPlayerEntity player) {
+  public boolean giveToPlayer(ServerPlayerEntity player) {
     CobbleUtils.server.execute(() -> Cobblemon.INSTANCE.getStorage().getParty(player).add(pokemon));
+    return true;
   }
 
 
