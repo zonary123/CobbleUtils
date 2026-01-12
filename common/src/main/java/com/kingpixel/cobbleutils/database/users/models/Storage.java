@@ -39,12 +39,11 @@ public abstract class Storage {
       .onClick(action -> {
         ServerPlayerEntity player = action.getPlayer();
         UIManager.closeUI(player);
-        userModel.getStorageList().remove(this);
-        this.giveToPlayer(player);
-        CobbleUtils.runAsync(() -> {
-          DataBaseFactory.dataBaseUsers.removeStorage(this, player.getUuid());
+        if (this.giveToPlayer(player)) {
+          userModel.getStorageList().remove(this);
+          CobbleUtils.runAsync(() -> DataBaseFactory.dataBaseUsers.removeStorage(this, player.getUuid()));
           CobbleUtils.language.getStorageMenu().open(player, player.getUuid());
-        });
+        }
       })
       .build();
   }
