@@ -167,7 +167,7 @@ public abstract class Utils {
     }
 
     try {
-      return CompletableFuture.supplyAsync(() -> writeFileSyncSafe(file, data), IO_EXECUTOR);
+      return UtilsAsync.supplyAsync(() -> writeFileSyncSafe(file, data), IO_EXECUTOR);
     } catch (RejectedExecutionException e) {
       // Fallback absoluto
       return CompletableFuture.completedFuture(
@@ -208,7 +208,7 @@ public abstract class Utils {
     }
 
     // Optional: Add timeout handling
-    return CompletableFuture.supplyAsync(() -> {
+    return UtilsAsync.supplyAsync(() -> {
       Path path = Paths.get(new File("").getAbsolutePath() + filePath, filename);
       File file = path.toFile();
 
@@ -269,7 +269,7 @@ public abstract class Utils {
       return CompletableFuture.completedFuture(false);
     }
 
-    return CompletableFuture.supplyAsync(() -> {
+    return UtilsAsync.supplyAsync(() -> {
       try {
         Files.writeString(file.toPath(), content, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
         return true;

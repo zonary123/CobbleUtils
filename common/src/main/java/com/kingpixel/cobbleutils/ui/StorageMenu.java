@@ -113,9 +113,11 @@ public class StorageMenu {
           List<Storage> toClaim = new ArrayList<>(data.getStorageList());
 
 
+          int claimed = 0;
           for (Storage storage : toClaim) {
             try {
               if (storage.giveToPlayer(player)) {
+                claimed++;
                 data.getStorageList().remove(storage);
                 DataBaseFactory.dataBaseUsers.removeStorage(storage, targetUUID);
               } else {
@@ -129,7 +131,6 @@ public class StorageMenu {
             }
           }
 
-          int claimed = toClaim.size();
           player.sendMessage(
             AdventureTranslator.toNative("&aYou have successfully claimed &e" + claimed + " &arewards!"),
             false

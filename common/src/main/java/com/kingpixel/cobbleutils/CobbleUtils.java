@@ -249,4 +249,28 @@ public class CobbleUtils {
       });
   }
 
+  public static CompletableFuture<?> supplyAsync(Runnable runnable) {
+    return supplyAsync(runnable, EXECUTOR_COBBLEUTILS);
+  }
+
+  public static CompletableFuture<?> supplyAsync(Runnable runnable, ExecutorService executor) {
+    Executor exec = (executor == null || executor.isShutdown() || executor.isTerminated())
+      ? ForkJoinPool.commonPool()
+      : executor;
+
+    return CompletableFuture.supplyAsync(() -> {
+        try {
+          runnable.run();
+        } catch (Exception e) {
+          e.printStackTrace();
+        }
+        return null;
+      }, exec)
+      .orTimeout(30, TimeUnit.SECONDS)
+      .exceptionally(e -> {
+        e.printStackTrace();
+        return null;
+      });
+  }
+
 }
