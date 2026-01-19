@@ -52,14 +52,16 @@ public class DataBaseUsersMongoDB extends DataBaseUsers {
 
   @Override
   public @Nullable UserModel findUserByUUID(@NotNull UUID uuid) {
-    return DataBaseUsers.USERS.get(uuid, k -> {
-      UserModel userModel = new UserModel(uuid);
-      Document document = collectionUser.find(Filters.eq("playerUUID", uuid.toString()))
-        .first();
-      if (document != null) userModel = Utils.newWithoutSpacingGson().fromJson(document.toJson(), UserModel.class);
-      userModel.fix();
-      return userModel;
-    });
+    UserModel userModel = DataBaseUsers.USERS.getIfPresent(uuid);
+    if (userModel != null) return userModel;
+    Document document = collectionUser.find(Filters.eq("playerUUID", uuid.toString()))
+      .first();
+    if (document != null) {
+      userModel = Utils.newWithoutSpacingGson().fromJson(document.toJson(), UserModel.class);
+    } else return null;
+    userModel.fix();
+    return userModel;
+
   }
 
   @Override
@@ -68,11 +70,9 @@ public class DataBaseUsersMongoDB extends DataBaseUsers {
     if (userModel != null) return userModel; // si está en la cache,
     Document document = collectionUser.find(Filters.eq("playerName", name))
       .first();
-    if (document != null) {
-      userModel = Utils.newWithoutSpacingGson().fromJson(document.toJson(), UserModel.class);
-      return userModel;
-    }
-    return null;
+    return document != null
+      ? Utils.newWithoutSpacingGson().fromJson(document.toJson(), UserModel.class)
+      : null;
   }
 
   @Override
@@ -83,7 +83,7 @@ public class DataBaseUsersMongoDB extends DataBaseUsers {
       // 1️⃣ Convertir UserModel a Document
       String json = Utils.newWithoutSpacingGson().toJson(user, UserModel.class);
       Document document = Utils.newWithoutSpacingGson().fromJson(json, Document.class);
-      document.remove("storageList"); // campo que no queremos guardar
+      document.remove("storageList");
 
       // 2️⃣ Actualizar solo los campos existentes o crear si no existe
       collectionUser.updateOne(

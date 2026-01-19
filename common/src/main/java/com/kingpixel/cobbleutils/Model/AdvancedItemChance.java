@@ -191,9 +191,7 @@ public class AdvancedItemChance {
         for (ItemChance reward : obtainedRewards) {
           DataBaseFactory.dataBaseUsers.addStorage(new StorageRewards(reward), playerUUID);
         }
-        DataBaseFactory.dataBaseUsers.saveOrUpdateUser(DataBaseFactory.dataBaseUsers.findUserByUUID(playerUUID));
       }
-
     } catch (Exception e) {
       e.printStackTrace();
       PlayerUtils.sendMessage(player,
@@ -301,7 +299,7 @@ public class AdvancedItemChance {
     rectangle.apply(template);
 
     List<Button> buttons = finish.getButtons(player, finish);
-    
+
     int freeSlots = rectangle.getSlotsFree(template.getRows());
 
     ItemModel info = CobbleUtils.language.getItemAdvancedRewardsInfo();
