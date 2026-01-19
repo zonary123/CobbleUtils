@@ -66,7 +66,6 @@ public class StorageMenu {
 
   public void open(ServerPlayerEntity executer, UUID targetUUID) {
     CobbleUtils.runAsync(() -> {
-
       UserModel userModel = DataBaseFactory.dataBaseUsers.findUserByUUID(targetUUID);
       if (userModel == null) return;
 
