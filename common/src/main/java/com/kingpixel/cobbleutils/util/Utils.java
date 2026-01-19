@@ -151,10 +151,7 @@ public abstract class Utils {
     String filename,
     String data
   ) {
-    if (filePath == null || filename == null || data == null) {
-      CobbleUtils.LOGGER.error("Invalid input: filePath, filename, or data is null.");
-      return CompletableFuture.completedFuture(false);
-    }
+    if (filePath == null || filename == null || data == null) return CompletableFuture.completedFuture(false);
 
     File file = Paths
       .get(new File("").getAbsolutePath() + filePath, filename)
@@ -203,7 +200,6 @@ public abstract class Utils {
 
   public static CompletableFuture<Boolean> readFileAsync(String filePath, String filename, Consumer<String> callback) {
     if (filePath == null || filename == null || callback == null) {
-      CobbleUtils.LOGGER.error("Invalid input: filePath, filename, or callback is null.");
       return CompletableFuture.completedFuture(false);
     }
 
@@ -212,17 +208,13 @@ public abstract class Utils {
       Path path = Paths.get(new File("").getAbsolutePath() + filePath, filename);
       File file = path.toFile();
 
-      if (!file.exists()) {
-        CobbleUtils.LOGGER.warn("File does not exist: " + file.getPath());
-        return false;
-      }
+      if (!file.exists()) return false;
 
       try {
         String content = Files.readString(path, charset);
         callback.accept(content);
         return true;
       } catch (IOException e) {
-        CobbleUtils.LOGGER.error("Error reading file: " + file.getPath() + ". " + e);
         return false;
       }
     }, IO_EXECUTOR);
@@ -239,7 +231,6 @@ public abstract class Utils {
       callback.accept(content);
       return true;
     } catch (MalformedInputException mie) {
-      System.err.println("[CobbleUtils] File is not UTF-8 encoded, trying ISO-8859-1: " + file.getName());
       try {
         List<String> lines = Files.readAllLines(file.toPath(), StandardCharsets.ISO_8859_1);
         String content = String.join("\n", lines);
@@ -257,24 +248,20 @@ public abstract class Utils {
 
 
   public static String readFileSync(File file) throws IOException {
-    if (!file.exists() || !file.isFile()) {
-      throw new IllegalArgumentException("El archivo no existe o no es válido: " + file.getPath());
-    }
+    if (!file.exists() || !file.isFile())
+      throw new IllegalArgumentException("File does not exist or is not a file: " + file.getPath());
     return Files.readString(file.toPath(), charset);
   }
 
   public static CompletableFuture<Boolean> writeFileAsync(File file, String content) {
-    if (file == null || content == null) {
-      CobbleUtils.LOGGER.error("Invalid input: file or content is null.");
-      return CompletableFuture.completedFuture(false);
-    }
+    if (file == null || content == null) return CompletableFuture.completedFuture(false);
 
     return UtilsAsync.supplyAsync(() -> {
       try {
         Files.writeString(file.toPath(), content, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
         return true;
       } catch (IOException e) {
-        CobbleUtils.LOGGER.error("Error al escribir el archivo: " + file.getPath() + ". " + e);
+        CobbleUtils.LOGGER.error("Error writing to file: " + file.getPath());
         return false;
       }
     }, IO_EXECUTOR);
@@ -437,11 +424,7 @@ public abstract class Utils {
   public static void createDirectoryIfNeeded(String directoryPath) {
     File directory = getAbsolutePath(directoryPath);
     if (!directory.exists()) {
-      if (directory.mkdirs()) {
-        CobbleUtils.LOGGER.info("Created directory: " + directoryPath);
-      } else {
-        CobbleUtils.LOGGER.error("Failed to create directory: " + directoryPath);
-      }
+      directory.mkdirs();
     }
   }
 
