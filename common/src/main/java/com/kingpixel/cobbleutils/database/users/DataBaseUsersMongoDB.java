@@ -52,27 +52,39 @@ public class DataBaseUsersMongoDB extends DataBaseUsers {
 
   @Override
   public @Nullable UserModel findUserByUUID(@NotNull UUID uuid) {
-    UserModel userModel = DataBaseUsers.USERS.getIfPresent(uuid);
-    if (userModel != null) return userModel;
-    Document document = collectionUser.find(Filters.eq("playerUUID", uuid.toString()))
-      .first();
-    if (document != null) {
-      userModel = Utils.newWithoutSpacingGson().fromJson(document.toJson(), UserModel.class);
-    } else return null;
-    userModel.fix();
-    return userModel;
+    try {
+      UserModel userModel = DataBaseUsers.USERS.getIfPresent(uuid);
+      if (userModel != null) return userModel;
+      Document document = collectionUser.find(Filters.eq("playerUUID", uuid.toString()))
+        .first();
+      if (document != null) {
+        userModel = Utils.newWithoutSpacingGson().fromJson(document.toJson(), UserModel.class);
+      } else return null;
+      userModel.fix();
+      return userModel;
 
+    } catch (Exception e) {
+      System.err.println("❌ Failed to find user by UUID: " + uuid);
+      e.printStackTrace();
+      return null;
+    }
   }
 
   @Override
   public @Nullable UserModel findUserByName(@NotNull String name) {
-    UserModel userModel = super.findUserByName(name);
-    if (userModel != null) return userModel; // si está en la cache,
-    Document document = collectionUser.find(Filters.eq("playerName", name))
-      .first();
-    return document != null
-      ? Utils.newWithoutSpacingGson().fromJson(document.toJson(), UserModel.class)
-      : null;
+    try {
+      UserModel userModel = super.findUserByName(name);
+      if (userModel != null) return userModel; // si está en la cache,
+      Document document = collectionUser.find(Filters.eq("playerName", name))
+        .first();
+      return document != null
+        ? Utils.newWithoutSpacingGson().fromJson(document.toJson(), UserModel.class)
+        : null;
+    } catch (Exception e) {
+      System.err.println("❌ Failed to find user by name: " + name);
+      e.printStackTrace();
+      return null;
+    }
   }
 
   @Override

@@ -15,7 +15,7 @@ import java.util.Set;
 import java.util.UUID;
 
 /**
- * StorageAdapter en modo auditoría extrema
+ * StorageAdapter with strict auditing and validation
  */
 public class StorageAdapter implements JsonSerializer<Storage>, JsonDeserializer<Storage> {
 
@@ -32,25 +32,25 @@ public class StorageAdapter implements JsonSerializer<Storage>, JsonDeserializer
     throws JsonParseException {
 
     // ===============================
-    // VALIDACIÓN NIVEL 0 (JSON BASE)
+    // LEVEL 0 VALIDATION (BASE JSON)
     // ===============================
 
     if (json == null) {
-      throw new JsonParseException("Storage es null");
+      throw new JsonParseException("Storage JSON element is null");
     }
 
     if (!json.isJsonObject()) {
-      throw new JsonParseException("Storage no es JsonObject: " + json);
+      throw new JsonParseException("Storage must be a JsonObject, found: " + json);
     }
 
     JsonObject obj = json.getAsJsonObject();
 
     if (obj.entrySet().isEmpty()) {
-      throw new JsonParseException("Storage vacío: {}");
+      throw new JsonParseException("Storage JSON object is empty: {}");
     }
 
     // ===============================
-    // VALIDACIÓN NIVEL 1 (CAMPOS BASE)
+    // LEVEL 1 VALIDATION (BASE FIELDS)
     // ===============================
 
     assertFieldExists(obj, "type");
@@ -60,24 +60,29 @@ public class StorageAdapter implements JsonSerializer<Storage>, JsonDeserializer
     String idRaw = assertString(obj, "id");
 
     if (!VALID_TYPES.contains(type)) {
-      throw new JsonParseException("Tipo de Storage inválido: '" + type + "' → " + obj);
+      throw new JsonParseException(
+        "Invalid Storage type '" + type + "'. Allowed values: " + VALID_TYPES + " → " + obj
+      );
     }
 
     UUID id;
     try {
       id = UUID.fromString(idRaw);
     } catch (Exception e) {
-      throw new JsonParseException("UUID inválido: '" + idRaw + "' → " + obj, e);
+      throw new JsonParseException(
+        "Invalid UUID format for field 'id': '" + idRaw + "' → " + obj,
+        e
+      );
     }
 
     // ===============================
-    // VALIDACIÓN NIVEL 2 (CAMPOS SOBRANTES)
+    // LEVEL 2 VALIDATION (UNKNOWN FIELDS)
     // ===============================
 
     validateNoUnknownFields(obj, type);
 
     // ===============================
-    // VALIDACIÓN NIVEL 3 (POR TIPO)
+    // LEVEL 3 VALIDATION (BY TYPE)
     // ===============================
 
     return switch (type) {
@@ -95,12 +100,15 @@ public class StorageAdapter implements JsonSerializer<Storage>, JsonDeserializer
           );
         } catch (Exception e) {
           throw new JsonParseException(
-            "Error deserializando Pokemon → " + pokemonObj, e
+            "Failed to deserialize Pokemon object → " + pokemonObj,
+            e
           );
         }
 
         if (pokemon == null) {
-          throw new JsonParseException("Pokemon deserializado es null → " + obj);
+          throw new JsonParseException(
+            "Deserialized Pokemon is null → " + obj
+          );
         }
 
         yield new StoragePokemon(id, pokemon);
@@ -119,13 +127,14 @@ public class StorageAdapter implements JsonSerializer<Storage>, JsonDeserializer
           );
         } catch (Exception e) {
           throw new JsonParseException(
-            "Error deserializando ItemStack → " + itemStackObj, e
+            "Failed to deserialize ItemStack → " + itemStackObj,
+            e
           );
         }
 
         if (stack == null || stack.isEmpty()) {
           throw new JsonParseException(
-            "ItemStack vacío o null → " + obj
+            "ItemStack is null or empty → " + obj
           );
         }
 
@@ -145,34 +154,43 @@ public class StorageAdapter implements JsonSerializer<Storage>, JsonDeserializer
           );
         } catch (Exception e) {
           throw new JsonParseException(
-            "Error deserializando Reward → " + rewardObj, e
+            "Failed to deserialize Reward object → " + rewardObj,
+            e
           );
         }
 
         if (reward == null) {
-          throw new JsonParseException("Reward es null → " + obj);
+          throw new JsonParseException(
+            "Reward object is null → " + obj
+          );
         }
 
         yield new StorageRewards(id, reward);
       }
 
-      default -> throw new AssertionError("Nunca debería llegar aquí");
+      default -> throw new AssertionError(
+        "Unreachable code: unsupported Storage type"
+      );
     };
   }
 
   // =====================================================
-  // =================== SERIALIZE =======================
+  // =================== SERIALIZATION ===================
   // =====================================================
 
   @Override
   public JsonElement serialize(Storage src, Type typeOfSrc, JsonSerializationContext context) {
 
     if (src == null) {
-      throw new IllegalStateException("Intento de serializar Storage null");
+      throw new IllegalStateException(
+        "Attempted to serialize a null Storage instance"
+      );
     }
 
     if (src.getId() == null) {
-      throw new IllegalStateException("Storage sin ID: " + src.getClass().getName());
+      throw new IllegalStateException(
+        "Storage instance has no ID: " + src.getClass().getName()
+      );
     }
 
     JsonObject obj = new JsonObject();
@@ -182,7 +200,9 @@ public class StorageAdapter implements JsonSerializer<Storage>, JsonDeserializer
 
       case StoragePokemon p -> {
         if (p.getPokemon() == null) {
-          throw new IllegalStateException("StoragePokemon sin Pokemon");
+          throw new IllegalStateException(
+            "StoragePokemon contains a null Pokemon"
+          );
         }
         obj.addProperty("type", "pokemon");
         obj.add("pokemon",
@@ -190,12 +210,15 @@ public class StorageAdapter implements JsonSerializer<Storage>, JsonDeserializer
             p.getPokemon(),
             Pokemon.class,
             null
-          ));
+          )
+        );
       }
 
       case StorageItemStack s -> {
         if (s.getItemStack() == null || s.getItemStack().isEmpty()) {
-          throw new IllegalStateException("StorageItemStack vacío");
+          throw new IllegalStateException(
+            "StorageItemStack contains a null or empty ItemStack"
+          );
         }
         obj.addProperty("type", "itemStack");
         obj.add("itemStack",
@@ -203,12 +226,15 @@ public class StorageAdapter implements JsonSerializer<Storage>, JsonDeserializer
             s.getItemStack(),
             ItemStack.class,
             null
-          ));
+          )
+        );
       }
 
       case StorageRewards r -> {
         if (r.getReward() == null) {
-          throw new IllegalStateException("StorageRewards sin reward");
+          throw new IllegalStateException(
+            "StorageRewards contains a null reward"
+          );
         }
         obj.addProperty("type", "reward");
         obj.add("reward",
@@ -216,11 +242,12 @@ public class StorageAdapter implements JsonSerializer<Storage>, JsonDeserializer
             r.getReward(),
             null,
             null
-          ));
+          )
+        );
       }
 
       default -> throw new IllegalStateException(
-        "Storage no soportado: " + src.getClass().getName()
+        "Unsupported Storage implementation: " + src.getClass().getName()
       );
     }
 
@@ -233,10 +260,14 @@ public class StorageAdapter implements JsonSerializer<Storage>, JsonDeserializer
 
   private static void assertFieldExists(JsonObject obj, String field) {
     if (!obj.has(field)) {
-      throw new JsonParseException("Falta campo obligatorio '" + field + "' → " + obj);
+      throw new JsonParseException(
+        "Missing required field '" + field + "' → " + obj
+      );
     }
     if (obj.get(field).isJsonNull()) {
-      throw new JsonParseException("Campo '" + field + "' es null → " + obj);
+      throw new JsonParseException(
+        "Field '" + field + "' must not be null → " + obj
+      );
     }
   }
 
@@ -244,7 +275,7 @@ public class StorageAdapter implements JsonSerializer<Storage>, JsonDeserializer
     JsonElement e = obj.get(field);
     if (!e.isJsonPrimitive() || !e.getAsJsonPrimitive().isString()) {
       throw new JsonParseException(
-        "Campo '" + field + "' no es String → " + obj
+        "Field '" + field + "' must be a String → " + obj
       );
     }
     return e.getAsString();
@@ -254,7 +285,7 @@ public class StorageAdapter implements JsonSerializer<Storage>, JsonDeserializer
     JsonElement e = obj.get(field);
     if (!e.isJsonObject()) {
       throw new JsonParseException(
-        "Campo '" + field + "' no es JsonObject → " + obj
+        "Field '" + field + "' must be a JsonObject → " + obj
       );
     }
     return e.getAsJsonObject();
@@ -271,7 +302,7 @@ public class StorageAdapter implements JsonSerializer<Storage>, JsonDeserializer
     for (Map.Entry<String, JsonElement> entry : obj.entrySet()) {
       if (!allowed.contains(entry.getKey())) {
         throw new JsonParseException(
-          "Campo desconocido '" + entry.getKey() + "' → " + obj
+          "Unknown field '" + entry.getKey() + "' is not allowed → " + obj
         );
       }
     }
