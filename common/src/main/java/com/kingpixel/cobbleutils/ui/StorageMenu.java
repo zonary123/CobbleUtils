@@ -143,7 +143,7 @@ public class StorageMenu {
       previousPage.applyTemplate(template, previousPage.getLinkedPageButton(LinkType.Previous));
       nextPage.applyTemplate(template, nextPage.getLinkedPageButton(LinkType.Next));
       close.applyTemplate(template,
-        close.getButton(action -> UIManager.closeUI(action.getPlayer()), 1, TimeUnit.SECONDS, 1)
+        close.getButton(action -> UIManager.closeUI(action.getPlayer()))
       );
 
       GooeyPage page = PaginationHelper.createPagesFromPlaceholders(

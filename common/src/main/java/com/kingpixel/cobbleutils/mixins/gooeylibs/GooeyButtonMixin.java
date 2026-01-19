@@ -1,4 +1,4 @@
-package com.kingpixel.cobbleutils.mixins;
+package com.kingpixel.cobbleutils.mixins.gooeylibs;
 
 import ca.landonjw.gooeylibs2.api.button.ButtonAction;
 import ca.landonjw.gooeylibs2.api.button.GooeyButton;

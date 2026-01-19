@@ -9,7 +9,7 @@ import ca.landonjw.gooeylibs2.api.template.types.ChestTemplate;
 import com.cobblemon.mod.common.api.pokemon.PokemonProperties;
 import com.cobblemon.mod.common.item.PokemonItem;
 import com.kingpixel.cobbleutils.CobbleUtils;
-import com.kingpixel.cobbleutils.mixins.GooeyButtonMixin;
+import com.kingpixel.cobbleutils.mixins.gooeylibs.GooeyButtonMixin;
 import com.kingpixel.cobbleutils.util.AdventureTranslator;
 import com.kingpixel.cobbleutils.util.UIUtils;
 import com.kingpixel.cobbleutils.util.Utils;

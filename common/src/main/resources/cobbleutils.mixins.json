@@ -8,12 +8,13 @@
   },
   "mixins": [
     "BlockMixin",
-    "GooeyButtonMixin",
     "UserCacheMixin",
     "brewing.BrewingBlockEntityMixin",
     "brewing.BrewingBlockMixin",
     "collect.BeehiveBlockMixin",
     "collect.CaveVinesMixin",
-    "collect.SweetBerriesMixin"
+    "collect.SweetBerriesMixin",
+    "gooeylibs.GooeyButtonMixin",
+    "gooeylibs.GooeyUIManagerMixin"
   ]
 }

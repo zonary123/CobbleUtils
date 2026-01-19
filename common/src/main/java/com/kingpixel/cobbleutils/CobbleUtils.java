@@ -231,46 +231,8 @@ public class CobbleUtils {
    * @return CompletableFuture<Void>
    */
   public static CompletableFuture<Void> runAsync(Runnable runnable, ExecutorService executor) {
-    Executor exec = (executor == null || executor.isShutdown() || executor.isTerminated())
-      ? ForkJoinPool.commonPool()
-      : executor;
-
-    return CompletableFuture.runAsync(() -> {
-        try {
-          runnable.run();
-        } catch (Exception e) {
-          e.printStackTrace();
-        }
-      }, exec)
-      .orTimeout(30, TimeUnit.SECONDS)
-      .exceptionally(e -> {
-        e.printStackTrace();
-        return null;
-      });
+    return UtilsAsync.runAsync(runnable, executor);
   }
 
-  public static CompletableFuture<?> supplyAsync(Runnable runnable) {
-    return supplyAsync(runnable, EXECUTOR_COBBLEUTILS);
-  }
-
-  public static CompletableFuture<?> supplyAsync(Runnable runnable, ExecutorService executor) {
-    Executor exec = (executor == null || executor.isShutdown() || executor.isTerminated())
-      ? ForkJoinPool.commonPool()
-      : executor;
-
-    return CompletableFuture.supplyAsync(() -> {
-        try {
-          runnable.run();
-        } catch (Exception e) {
-          e.printStackTrace();
-        }
-        return null;
-      }, exec)
-      .orTimeout(30, TimeUnit.SECONDS)
-      .exceptionally(e -> {
-        e.printStackTrace();
-        return null;
-      });
-  }
 
 }
