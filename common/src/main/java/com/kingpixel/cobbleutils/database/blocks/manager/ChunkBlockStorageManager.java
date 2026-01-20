@@ -31,21 +31,20 @@ public class ChunkBlockStorageManager {
   /**
    * Cache key format: worldName_chunkX_chunkZ
    */
-  private static final Cache<String, ChunkBlockData> CHUNK_CACHE =
-    Caffeine.newBuilder()
-      .expireAfterAccess(5, TimeUnit.MINUTES)
-      .maximumSize(10_000)
-      .removalListener((String key, ChunkBlockData value, RemovalCause cause) -> {
-        if (key == null || value == null) return;
+  private static final Cache<String, ChunkBlockData> CHUNK_CACHE = Caffeine.newBuilder()
+    .expireAfterAccess(5, TimeUnit.MINUTES)
+    .maximumSize(10_000)
+    .removalListener((String key, ChunkBlockData value, RemovalCause cause) -> {
+      if (key == null || value == null) return;
 
-        debug("Chunk evicted from cache: " + key + " | cause=" + cause);
+      debug("Chunk evicted from cache: " + key + " | cause=" + cause);
 
-        if (value.isDirty()) {
-          debug("Evicted chunk is dirty, saving to disk: " + key);
-          saveChunkByKeyAsync(key, value);
-        }
-      })
-      .build();
+      if (value.isDirty()) {
+        debug("Evicted chunk is dirty, saving to disk: " + key);
+        saveChunkByKeyAsync(key, value);
+      }
+    })
+    .build();
 
   /**
    * Cache sanitized world names (weak keys to avoid memory leaks).
@@ -216,8 +215,7 @@ public class ChunkBlockStorageManager {
   private static void saveChunkByKeySync(String key, ChunkBlockData data) {
     if (!data.isDirty()) return;
 
-    debug("Saving chunk to disk: " + key +
-      " | blocks=" + data.getBlocks().size());
+    debug("Saving chunk to disk: " + key + " | blocks=" + data.getBlocks().size());
 
     try {
       int last = key.lastIndexOf('_');
@@ -268,10 +266,7 @@ public class ChunkBlockStorageManager {
   // ===========================
 
   public static void shutdown() {
-    if (CobbleUtils.config.isDebug())
-      CobbleUtils.LOGGER.info(
-        "ChunkBlockStorageManager: Saving all cached chunks..."
-      );
+    debug("Saving all cached chunks...");
     CHUNK_CACHE.asMap().forEach(ChunkBlockStorageManager::saveChunkByKeySync);
   }
 }

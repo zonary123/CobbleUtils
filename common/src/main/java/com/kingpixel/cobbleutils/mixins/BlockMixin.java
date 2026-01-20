@@ -21,66 +21,91 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 /**
- * @author Carlos Varas Alonso - 23/08/2025 8:29
+ * @author Carlos Varas Alonso
  */
 @Mixin(Block.class)
 public abstract class BlockMixin {
+
+  /* -------------------- PLACE -------------------- */
+
   @Inject(method = "onPlaced", at = @At("HEAD"))
-  private void CobbleUtils$onPlaced(World world, BlockPos pos, BlockState state, LivingEntity placer,
-                                    ItemStack itemStack,
-                                    CallbackInfo ci) {
+  private void cobbleutils$onPlaced(
+    World world,
+    BlockPos pos,
+    BlockState state,
+    LivingEntity placer,
+    ItemStack stack,
+    CallbackInfo ci
+  ) {
+    if (!(placer instanceof ServerPlayerEntity player)) return;
+    if (CobbleUtilsEvents.BLOCK_PLACED_EVENT.isEmpty()) return;
+
     try {
-      if (placer == null) return;
-      if (!(placer instanceof ServerPlayerEntity player)) return;
-      if (!shouldEmit()) return;
-      boolean placed = ChunkBlockStorageManager.isPlacedByPlayer(world, world.getChunk(pos), pos);
-      ChunkBlockStorageManager.markPlaced(world, world.getChunk(pos), pos, state);
-      CobbleUtilsEvents.BLOCK_PLACED_EVENT.emit(new EventBlockPlaced(
-        world,
-        pos,
-        state,
-        player,
-        placed
-      ));
+      var chunk = world.getChunk(pos);
+
+      boolean alreadyPlaced = ChunkBlockStorageManager
+        .isPlacedByPlayer(world, chunk, pos);
+
+      ChunkBlockStorageManager.markPlaced(world, chunk, pos, state);
+
+      CobbleUtilsEvents.BLOCK_PLACED_EVENT.emit(
+        new EventBlockPlaced(world, pos, state, player, alreadyPlaced)
+      );
+
     } catch (Exception e) {
       e.printStackTrace();
     }
   }
+
+  /* -------------------- BREAK -------------------- */
 
   @Inject(method = "onBreak", at = @At("HEAD"))
-  private void CobbleUtils$onBreak(World world, BlockPos pos, BlockState state, PlayerEntity playerEntity,
-                                   CallbackInfoReturnable<BlockState> cir) {
-    try {
-      if (!(playerEntity instanceof ServerPlayerEntity player)) return;
-      if (!shouldEmit()) return;
-      boolean isPlaced = BlocksApi.isBlockPlaceByPlayer(world, pos);
-      CobbleUtilsEvents.BLOCK_BREAK_EVENT.emit(new EventBlockBreak(
-        world,
-        pos,
-        state,
-        player,
-        isPlaced
-      ));
+  private void cobbleutils$onBreak(
+    World world,
+    BlockPos pos,
+    BlockState state,
+    PlayerEntity entity,
+    CallbackInfoReturnable<BlockState> cir
+  ) {
+    if (!(entity instanceof ServerPlayerEntity player)) return;
 
-      var evt = EventCollect.builder()
-        .player(player)
-        .playerPlaced(isPlaced)
-        .world(world)
-        .state(state)
-        .pos(pos)
-        .build();
-      if (evt.getAmount() > 0) {
-        CobbleUtilsEvents.COLLECT_EVENT.emit(
-          evt
+    boolean hasBreak = !CobbleUtilsEvents.BLOCK_BREAK_EVENT.isEmpty();
+    boolean hasCollect = !CobbleUtilsEvents.COLLECT_EVENT.isEmpty();
+
+    if (!hasBreak && !hasCollect) return;
+
+    try {
+      boolean isPlaced = BlocksApi.isBlockPlaceByPlayer(world, pos);
+
+      if (hasBreak) {
+        CobbleUtilsEvents.BLOCK_BREAK_EVENT.emit(
+          new EventBlockBreak(world, pos, state, player, isPlaced)
         );
       }
-      ChunkBlockStorageManager.removePlaced(world, world.getChunk(pos), pos, state);
+
+      if (hasCollect) {
+        var collectEvent = EventCollect.builder()
+          .player(player)
+          .playerPlaced(isPlaced)
+          .world(world)
+          .state(state)
+          .pos(pos)
+          .build();
+
+        if (collectEvent.getAmount() > 0) {
+          CobbleUtilsEvents.COLLECT_EVENT.emit(collectEvent);
+        }
+      }
+
+      ChunkBlockStorageManager.removePlaced(
+        world,
+        world.getChunk(pos),
+        pos,
+        state
+      );
+
     } catch (Exception e) {
       e.printStackTrace();
     }
-  }
-
-  private boolean shouldEmit() {
-    return !CobbleUtilsEvents.BLOCK_BREAK_EVENT.isEmpty() || !CobbleUtilsEvents.BLOCK_PLACED_EVENT.isEmpty() || !CobbleUtilsEvents.COLLECT_EVENT.isEmpty();
   }
 }
