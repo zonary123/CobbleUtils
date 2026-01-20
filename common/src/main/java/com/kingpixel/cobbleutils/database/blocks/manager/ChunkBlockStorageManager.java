@@ -50,8 +50,9 @@ public class ChunkBlockStorageManager {
   /**
    * Cache sanitized world names (weak keys to avoid memory leaks).
    */
-  private static final Cache<World, String> WORLD_NAME_CACHE =
-    Caffeine.newBuilder().weakKeys().build();
+  private static final Cache<World, String> WORLD_NAME_CACHE = Caffeine.newBuilder()
+    .weakKeys()
+    .build();
 
   /**
    * Initializes storage directory.
@@ -267,9 +268,10 @@ public class ChunkBlockStorageManager {
   // ===========================
 
   public static void shutdown() {
-    CobbleUtils.LOGGER.info(
-      "ChunkBlockStorageManager: Saving all cached chunks..."
-    );
+    if (CobbleUtils.config.isDebug())
+      CobbleUtils.LOGGER.info(
+        "ChunkBlockStorageManager: Saving all cached chunks..."
+      );
     CHUNK_CACHE.asMap().forEach(ChunkBlockStorageManager::saveChunkByKeySync);
   }
 }
