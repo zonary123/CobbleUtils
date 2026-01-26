@@ -26,7 +26,6 @@
     "fabric": "*",
     "minecraft": "1.21.1",
     "cobblemon": "*",
-    "architectury": ">=13.0.8",
-    "cobbleutils": "*"
+    "architectury": ">=13.0.8"
   }
 }
