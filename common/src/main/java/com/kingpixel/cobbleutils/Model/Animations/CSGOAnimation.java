@@ -44,7 +44,7 @@ public class CSGOAnimation {
           .template(template)
           .build();
 
-        CobbleUtils.server.executeSync(() -> {
+        CobbleUtils.server.execute(() -> {
           UIManager.closeUI(player);
           UIManager.openUIForcefully(player, page);
         });
@@ -73,7 +73,7 @@ public class CSGOAnimation {
 
           Thread.sleep(spinSpeed);
         }
-        UIManager.closeUI(player);
+        CobbleUtils.server.execute(() -> UIManager.closeUI(player));
       } catch (InterruptedException e) {
         e.printStackTrace();
       }
