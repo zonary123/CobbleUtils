@@ -4,7 +4,6 @@ import com.cobblemon.mod.common.api.properties.CustomPokemonProperty;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.kingpixel.cobbleutils.Model.properties.LegendaryPropertyType;
 import com.kingpixel.cobbleutils.Model.properties.MinIvsPropertyType;
-import com.kingpixel.cobbleutils.api.EconomyApi;
 import com.kingpixel.cobbleutils.command.CommandTree;
 import com.kingpixel.cobbleutils.command.suggests.CobbleUtilsSuggests;
 import com.kingpixel.cobbleutils.config.AdvancedRewardsConfig;
@@ -78,7 +77,6 @@ public class CobbleUtils {
   public static void load() {
     files();
     sign();
-    EconomyApi.setEconomyType();
     try {
       if (config.isGtsSupport()) {
         new CobbleUtilsBridgeGTS();
@@ -215,7 +213,6 @@ public class CobbleUtils {
    * Run async with CobbleUtils executor
    *
    * @param runnable
-   *
    * @return CompletableFuture<Void>
    */
   public static CompletableFuture<Void> runAsync(Runnable runnable) {
@@ -227,7 +224,6 @@ public class CobbleUtils {
    *
    * @param runnable
    * @param executor
-   *
    * @return CompletableFuture<Void>
    */
   public static CompletableFuture<Void> runAsync(Runnable runnable, ExecutorService executor) {
