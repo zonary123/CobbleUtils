@@ -51,7 +51,7 @@ public class ItemRightClickEvents {
       })
       .setBlackList(CobbleUtils.config.getShinytokenBlacklist())
       .build();
-    // Use the default menu API - this will force default menus if useDefault is true
+
     PartyPcMenu.openDefaultParty(builder);
   }
 }

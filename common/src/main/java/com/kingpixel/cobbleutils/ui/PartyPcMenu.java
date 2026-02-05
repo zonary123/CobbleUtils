@@ -87,11 +87,11 @@ public class PartyPcMenu {
    * This is the recommended way to open party menus when using CobbleUtils as an API.
    *
    * @param builder The PartyPcMenuBuilder with the configuration
-   *
    * @return true if the default menu was used, false if custom implementation should be used
    */
   public static boolean openDefaultParty(PartyPcMenuBuilder builder) {
     if (!CobbleUtils.config.isUseDefault()) {
+      CobbleUtils.language.getPartyPcMenu().openParty(builder);
       return false;
     }
     // Force the use of default menu
@@ -109,7 +109,6 @@ public class PartyPcMenu {
    *
    * @param builder The PartyPcMenuBuilder with the configuration
    * @param pos     The starting position in the PC
-   *
    * @return true if the default menu was used, false if custom implementation should be used
    */
   public static boolean openDefaultPc(PartyPcMenuBuilder builder, int pos) {
@@ -184,7 +183,7 @@ public class PartyPcMenu {
         .template(template)
         .build();
 
-      UIManager.openUIForcefully(builder.getPlayer(), page);
+      CobbleUtils.server.execute(() -> UIManager.openUIForcefully(builder.getPlayer(), page));
 
       long endTime = System.currentTimeMillis();
       if (CobbleUtils.config.isDebug()) {
@@ -195,12 +194,8 @@ public class PartyPcMenu {
 
 
   public void openParty(PartyPcMenuBuilder builder) {
+    if (isOnCooldown(builder.getPlayer())) return;
     CobbleUtils.runAsync(() -> {
-      if (isOnCooldown(builder.getPlayer())) {
-        if (CobbleUtils.config.isDebug())
-          CobbleUtils.LOGGER.warn("Player " + builder.getPlayer().getName().getString() + " is on cooldown for opening Party menu.");
-        return;
-      }
       long startTime = System.currentTimeMillis();
       ChestTemplate template = ChestTemplate
         .builder(rowsParty)
