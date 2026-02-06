@@ -169,6 +169,10 @@ public class UserModel {
     this.disconnectTime = Instant.now();
   }
 
+  public void addStorage(List<Storage> storage) {
+    storageList.addAll(storage);
+  }
+
 
   /**
    * Stores information about claimed rewards for a user.

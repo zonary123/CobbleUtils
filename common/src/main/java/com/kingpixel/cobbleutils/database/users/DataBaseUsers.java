@@ -122,6 +122,8 @@ public abstract class DataBaseUsers {
 
   public abstract void addStorage(Storage storage, UUID playerUUID);
 
+  public abstract void addStorage(List<Storage> storage, UUID playerUUID);
+
   @Nullable
   public abstract Storage removeStorage(Storage storage, UUID playerUUID);
 

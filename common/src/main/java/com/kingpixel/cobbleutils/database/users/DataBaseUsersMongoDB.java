@@ -150,7 +150,8 @@ public class DataBaseUsersMongoDB extends DataBaseUsers {
     return inactiveUsers;
   }
 
-  @Override public void disconnected(ServerPlayerEntity player) {
+  @Override
+  public void disconnected(ServerPlayerEntity player) {
     UUID playerUUID = player.getUuid();
     collectionUser.updateOne(
       Filters.eq("playerUUID", playerUUID.toString()),
@@ -169,6 +170,20 @@ public class DataBaseUsersMongoDB extends DataBaseUsers {
   }
 
   @Override
+  public void addStorage(List<Storage> storage, UUID playerUUID) {
+    List<Document> storageDocs = new ArrayList<>();
+    for (Storage s : storage) {
+      storageDocs.add(s.toDocument());
+    }
+    collectionUser.updateOne(
+      Filters.eq("playerUUID", playerUUID.toString()),
+      new Document("$push", new Document("storageList", new Document("$each", storageDocs)))
+    );
+    DataBaseUsers.USERS.invalidate(playerUUID);
+
+  }
+
+  @Override
   public Storage removeStorage(Storage storage, UUID playerUUID) {
     UUID id = storage.getId();
     if (id == null) return null;
@@ -181,7 +196,8 @@ public class DataBaseUsersMongoDB extends DataBaseUsers {
     return user.removeStorage(id);
   }
 
-  @Override public List<UUID> getOnlinePlayers() {
+  @Override
+  public List<UUID> getOnlinePlayers() {
     var filter = Filters.eq("isOnline", true);
     return collectionUser.find(filter)
       .map(doc -> {

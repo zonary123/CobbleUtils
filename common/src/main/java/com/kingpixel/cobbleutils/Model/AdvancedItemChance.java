@@ -18,6 +18,7 @@ import com.kingpixel.cobbleutils.Model.Animations.CircleAnimation;
 import com.kingpixel.cobbleutils.api.PermissionApi;
 import com.kingpixel.cobbleutils.command.suggests.CobbleUtilsSuggests;
 import com.kingpixel.cobbleutils.database.DataBaseFactory;
+import com.kingpixel.cobbleutils.database.users.models.Storage;
 import com.kingpixel.cobbleutils.database.users.models.StorageRewards;
 import com.kingpixel.cobbleutils.util.AdventureTranslator;
 import com.kingpixel.cobbleutils.util.PlayerUtils;
@@ -121,8 +122,9 @@ public class AdvancedItemChance {
   }
 
   public void giveRewards(UUID playerUUID) {
+    var player = CobbleUtils.server.getPlayerManager().getPlayer(playerUUID);
     CobbleUtilsSuggests.SUGGESTS_PLAYER_OFFLINE_AND_ONLINE.getPlayer(playerUUID)
-      .ifPresent(dataResultPlayer -> giveRewardsInternal(dataResultPlayer.player(), dataResultPlayer.isOnline(), playerUUID));
+      .ifPresent(dataResultPlayer -> giveRewardsInternal(dataResultPlayer.player(), player != null, playerUUID));
   }
 
   public void giveRewards(ServerPlayerEntity player) {
@@ -140,7 +142,7 @@ public class AdvancedItemChance {
     try {
       AdvancedItemChance finish = this;
       if (finish.getId() != null && !finish.getId().isEmpty()) {
-        finish = CobbleUtils.advancedRewardsConfig.getRewards().get(finish.getId());
+        finish = CobbleUtils.advancedRewardsConfig.getTEMPLATE_REWARDS().get(finish.getId());
         if (finish == null) {
           PlayerUtils.sendMessage(player,
             "%prefix% &cThe Advanced Reward Template with id &e" + this.getId() + " &cdoes not exist, please notify the " +
@@ -148,17 +150,15 @@ public class AdvancedItemChance {
               " of the error",
             "&7[&cERROR&7]",
             TypeMessage.CHAT);
-          return;
+          finish = this;
         }
       }
 
-      // Check configuration errors before proceeding
       checker(player);
 
       List<ItemChance> obtainedRewards = finish.getList(player);
       List<ItemChance> allRewards = new ArrayList<>(obtainedRewards);
 
-      // Calculamos las recompensas finales
       if (giveAll) {
         obtainedRewards = ItemChance.getAllRewards(obtainedRewards, player);
       } else {
@@ -174,23 +174,23 @@ public class AdvancedItemChance {
       }
 
       if (online) {
-        // Entregamos las recompensas directamente
         for (ItemChance reward : obtainedRewards) {
           reward.giveReward(player);
         }
 
-        // Animaciones y visualización
         List<ItemStack> showAllRewards = finish.getListDisplay(allRewards);
         List<ItemStack> showObtainedRewards = finish.getListDisplay(obtainedRewards);
 
-        if (getNewSound() != null) getNewSound().start(player);
-        if (particle != null) particle.sendParticles(player, player);
-        initAnimation(animation, player, showAllRewards, showObtainedRewards);
+        if (finish.getNewSound() != null) finish.getNewSound().start(player);
+        if (finish.getParticle() != null) finish.getParticle().sendParticles(player, player);
+        initAnimation(finish.getAnimation(), player, showAllRewards, showObtainedRewards);
 
       } else if (playerUUID != null) {
+        List<Storage> storageList = new ArrayList<>();
         for (ItemChance reward : obtainedRewards) {
-          DataBaseFactory.dataBaseUsers.addStorage(new StorageRewards(reward), playerUUID);
+          storageList.add(new StorageRewards(reward));
         }
+        DataBaseFactory.dataBaseUsers.addStorage(storageList, playerUUID);
       }
     } catch (Exception e) {
       e.printStackTrace();
@@ -279,7 +279,7 @@ public class AdvancedItemChance {
   private void applyTemplate(ServerPlayerEntity player, ChestTemplate template) {
     AdvancedItemChance finish;
     if (getId() != null && !getId().isEmpty()) {
-      finish = CobbleUtils.advancedRewardsConfig.getRewards().get(getId());
+      finish = CobbleUtils.advancedRewardsConfig.getTEMPLATE_REWARDS().get(getId());
       if (finish == null) {
         PlayerUtils.sendMessage(player,
           "%prefix% &cThe Advanced Reward Template with id &e" + this.getId() + " &cdoes not exist, please notify the" +

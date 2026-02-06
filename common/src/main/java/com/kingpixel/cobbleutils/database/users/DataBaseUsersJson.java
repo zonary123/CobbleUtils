@@ -97,7 +97,8 @@ public class DataBaseUsersJson extends DataBaseUsers {
       .toList();
   }
 
-  @Override public void disconnected(ServerPlayerEntity player) {
+  @Override
+  public void disconnected(ServerPlayerEntity player) {
     if (player == null) return;
     UserModel user = findUserByUUID(player.getUuid());
     if (user == null) return;
@@ -114,6 +115,14 @@ public class DataBaseUsersJson extends DataBaseUsers {
   }
 
   @Override
+  public void addStorage(List<Storage> storage, UUID playerUUID) {
+    if (storage == null || playerUUID == null) return;
+    UserModel user = findUserByUUID(playerUUID);
+    if (user == null) return;
+    user.addStorage(storage);
+  }
+
+  @Override
   public Storage removeStorage(Storage storage, UUID playerUUID) {
     if (storage == null || playerUUID == null) return null;
     UserModel user = findUserByUUID(playerUUID);
@@ -121,7 +130,8 @@ public class DataBaseUsersJson extends DataBaseUsers {
     return user.removeStorage(storage.getId());
   }
 
-  @Override public List<UUID> getOnlinePlayers() {
+  @Override
+  public List<UUID> getOnlinePlayers() {
     return CobbleUtils.server.getPlayerManager().getPlayerList().stream()
       .map(Entity::getUuid)
       .toList();

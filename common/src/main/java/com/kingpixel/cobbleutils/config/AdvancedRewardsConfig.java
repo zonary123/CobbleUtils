@@ -17,10 +17,10 @@ import java.util.Map;
 @Data
 public class AdvancedRewardsConfig {
   private static final String PATH = CobbleUtils.PATH + "/advancedRewards/";
-  private final Map<String, AdvancedItemChance> rewards = new HashMap<>();
+  private final Map<String, AdvancedItemChance> TEMPLATE_REWARDS = new HashMap<>();
 
   public void init() {
-    rewards.clear();
+    TEMPLATE_REWARDS.clear();
     File folder = Utils.getAbsolutePath(PATH);
     if (folder.exists()) {
       List<File> files = getAllJsonFilesRecursive(folder);
@@ -29,10 +29,10 @@ public class AdvancedRewardsConfig {
           AdvancedItemChance advancedItemChance = Utils.newGson().fromJson(Utils.readFileSync(f), AdvancedItemChance.class);
           String id = f.getName().replace(".json", "");
           Utils.writeFileSync(f, Utils.newGson().toJson(advancedItemChance, AdvancedItemChance.class));
-          if (rewards.containsKey(id)) {
+          if (TEMPLATE_REWARDS.containsKey(id)) {
             CobbleUtils.LOGGER.error("Duplicate reward id found: " + id + " in file: " + f.getPath());
           } else {
-            rewards.put(id, advancedItemChance);
+            TEMPLATE_REWARDS.put(id, advancedItemChance);
           }
         } catch (Exception e) {
           CobbleUtils.LOGGER.error("Error loading reward file: " + f.getPath() + " - " + e.getMessage());
@@ -42,7 +42,7 @@ public class AdvancedRewardsConfig {
       folder.mkdirs();
       createDefaultFiles();
     }
-    CobbleUtils.LOGGER.info("Loaded " + rewards.size() + " reward files.");
+    CobbleUtils.LOGGER.info("Loaded " + TEMPLATE_REWARDS.size() + " reward files.");
   }
 
   private List<File> getAllJsonFilesRecursive(File folder) {
@@ -66,7 +66,7 @@ public class AdvancedRewardsConfig {
 
   private void createFile(String fileName, AdvancedItemChance advancedItemChance) {
     String id = fileName.replace(".json", "");
-    rewards.put(id, advancedItemChance);
+    TEMPLATE_REWARDS.put(id, advancedItemChance);
     File file = Utils.getAbsolutePath(PATH + fileName + ".json");
     Utils.writeFileSync(file, Utils.newGson().toJson(advancedItemChance,
       AdvancedItemChance.class));
