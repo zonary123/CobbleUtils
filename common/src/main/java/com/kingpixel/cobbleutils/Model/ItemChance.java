@@ -214,7 +214,6 @@ public class ItemChance {
    * Gets the ItemStack of the item with a specific amount.
    *
    * @param amount The amount of the item.
-   *
    * @return The ItemStack of the item.
    */
   public ItemStack getItemStack(int amount) {
@@ -265,7 +264,6 @@ public class ItemChance {
    *
    * @param player The player to give the reward to.
    * @param amount The amount of the item to give.
-   *
    * @return True if the reward was given successfully, false otherwise.
    */
   public static boolean giveReward(ServerPlayerEntity player, ItemChance itemChance, int amount) {
@@ -297,17 +295,16 @@ public class ItemChance {
         for (String commandPart : commandParts) {
           String command = commandPart.replace(PREFIX_COMMAND, "").trim();
 
-          // Support for Base64 encoded commands to avoid quote issues
           if (command.startsWith("base64:")) {
             String base64Command = command.replace("base64:", "");
             try {
               command = new String(java.util.Base64.getDecoder().decode(base64Command));
             } catch (IllegalArgumentException e) {
               CobbleUtils.LOGGER.error("Failed to decode Base64 command: " + base64Command);
+              e.printStackTrace();
               continue;
             }
           } else {
-            // Replace single quotes with double quotes for easier command writing
             command = command.replace("'", "\"");
           }
 
@@ -443,7 +440,6 @@ public class ItemChance {
    * Constructs a GooeyButton instance representing the item button.
    *
    * @param percentage The percentage to display in the lore.
-   *
    * @return The constructed GooeyButton instance.
    */
   public GooeyButton getButton(String percentage) {
@@ -464,7 +460,6 @@ public class ItemChance {
    *
    * @param item   The item to get the ItemStack of.
    * @param amount The amount of the item.
-   *
    * @return The ItemStack of the reward.
    */
   private static ItemStack getRewardItemStack(String item, int amount) {
@@ -694,7 +689,6 @@ public class ItemChance {
    *
    * @param itemChances The list of item chances to choose from.
    * @param player      The player to give the reward to.
-   *
    * @throws IllegalArgumentException If the list of item chances is empty.
    */
   @Deprecated
@@ -734,7 +728,6 @@ public class ItemChance {
    * @param itemChances     The list of item chances to choose from.
    * @param player          The player to give the reward to.
    * @param numberOfRewards The number of rewards to give.
-   *
    * @throws IllegalArgumentException If the list of item chances is empty or the
    *                                  number of rewards is less than or equal to
    *                                  zero.
@@ -760,7 +753,6 @@ public class ItemChance {
    * @param itemChances     The list of item chances to choose from.
    * @param player          The player to give the rewards to.
    * @param numberOfRewards The number of rewards to give.
-   *
    * @return The list of rewards given to the player.
    */
   public static List<ItemChance> getRewards(List<ItemChance> itemChances, ServerPlayerEntity player, int numberOfRewards) {
@@ -848,7 +840,6 @@ public class ItemChance {
    * Gets a list of GooeyButton instances representing the item chances.
    *
    * @param itemChances The list of item chances to get the buttons for.
-   *
    * @return The list of GooeyButton instances representing the item chances.
    */
   public static List<GooeyButton> getButtons(List<ItemChance> itemChances) {
