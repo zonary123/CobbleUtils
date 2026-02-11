@@ -198,6 +198,7 @@ public class CobbleUtils {
     InteractionEvent.RIGHT_CLICK_ITEM.register(ItemRightClickEvents::register);
   }
 
+  @Deprecated(forRemoval = true)
   public static void shutdownAndAwait(ExecutorService executor) {
     if (executor == null || executor.isShutdown()) {
       return;

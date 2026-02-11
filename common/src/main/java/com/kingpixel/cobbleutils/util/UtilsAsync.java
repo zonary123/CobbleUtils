@@ -12,6 +12,7 @@ import java.util.function.Supplier;
  * - Usa el executor si está activo
  * - Si el executor está muerto o shutdown → ejecuta en el hilo principal
  */
+@Deprecated(forRemoval = true)
 public final class UtilsAsync {
 
   private static final long DEFAULT_TIMEOUT = 30;
@@ -24,6 +25,7 @@ public final class UtilsAsync {
   /**
    * Ejecuta una tarea sin valor de retorno
    */
+  @Deprecated(forRemoval = true)
   public static CompletableFuture<Void> runAsync(Runnable task, ExecutorService executor) {
     if (executor == null || executor.isShutdown() || executor.isTerminated()) {
       // Ejecutar en hilo principal
@@ -47,6 +49,7 @@ public final class UtilsAsync {
   /**
    * Ejecuta una tarea con valor de retorno
    */
+  @Deprecated(forRemoval = true)
   public static <T> CompletableFuture<T> supplyAsync(Supplier<T> supplier, ExecutorService executor) {
     if (executor == null || executor.isShutdown() || executor.isTerminated()) {
       // Ejecutar en hilo principal
