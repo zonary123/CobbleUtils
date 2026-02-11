@@ -81,6 +81,9 @@ public final class UtilsFile {
     );
   }
 
+  private static volatile Gson GSON;
+  private static final ConcurrentMap<Type, Object> ADAPTERS = new ConcurrentHashMap<>();
+
   static {
     registerAdapter(NbtCompound.class, NbtCompoundAdapter.INSTANCE);
     registerAdapter(NbtCompoundAdapter.class, NbtCompoundAdapter.INSTANCE);
@@ -95,21 +98,18 @@ public final class UtilsFile {
     registerAdapter(Vec3d.class, Vec3dAdapter.INSTANCE);
     registerAdapter(AtomicReference.class, AtomicReferenceAdapter.INSTANCE);
     registerAdapter(Box.class, BoxAdapter.INSTANCE);
-    // Cobblemon adapters
     registerAdapter(Pokemon.class, PokemonAdapter.INSTANCE);
     registerAdapter(Move.class, MoveTemplateAdapter.INSTANCE);
     registerAdapter(IntRange.class, IntRangeAdapter.INSTANCE);
     registerAdapter(ElementalType.class, ElementalTypeAdapter.INSTANCE);
   }
 
+
   /* -------------------------------------------------------------------------- */
   /* Gson                                                                        */
   /* -------------------------------------------------------------------------- */
 
-  private static volatile Gson GSON;
-  private static final ConcurrentMap<Type, Object> ADAPTERS = new ConcurrentHashMap<>();
-
-  private UtilsFile() {
+  public UtilsFile() {
   }
 
   public static void registerAdapter(

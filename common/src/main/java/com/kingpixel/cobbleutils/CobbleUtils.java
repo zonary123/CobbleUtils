@@ -60,6 +60,7 @@ public class CobbleUtils {
 
 
   public static void init() {
+    new UtilsFile();
     try {
       Class.forName("org.bson.conversions.Bson");
     } catch (ClassNotFoundException e) {
@@ -219,8 +220,12 @@ public class CobbleUtils {
   private static Path path;
 
   public static Path getPath() {
-    if (path == null) path = new File("").toPath().resolve("mods");
+    if (path == null) path = new File("").toPath().resolve("config");
     return path;
+  }
+
+  public static Path getPathMod() {
+    return getPath().resolve(MOD_ID);
   }
 
   /**
