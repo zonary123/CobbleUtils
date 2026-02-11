@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Consumer;
@@ -39,7 +40,10 @@ public final class UtilsFile {
   private static final AsyncContext IO_CONTEXT = new AsyncContext(
     "ZUtils-IO",
     2,
-    8
+    8,
+    100,
+    60L,
+    TimeUnit.SECONDS
   );
 
   /* -------------------------------------------------------------------------- */

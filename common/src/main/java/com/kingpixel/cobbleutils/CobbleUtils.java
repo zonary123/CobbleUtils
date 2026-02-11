@@ -29,6 +29,8 @@ import net.fabricmc.loader.api.metadata.Person;
 import net.minecraft.command.CommandRegistryAccess;
 import net.minecraft.server.MinecraftServer;
 
+import java.io.File;
+import java.nio.file.Path;
 import java.util.concurrent.*;
 
 public class CobbleUtils {
@@ -162,10 +164,14 @@ public class CobbleUtils {
       DataBaseFactory.close();
       RedisManager.close();
       ChunkBlockStorageManager.shutdown();
+    });
+
+    LifecycleEvent.SERVER_STOPPED.register(server -> {
       shutdownAndAwait(EXECUTOR_COBBLEUTILS);
       shutdownAndAwait(Utils.IO_EXECUTOR);
       shutdownAndAwait(RedisManager.EXECUTOR_REDIS);
       shutdownAndAwait(SCHEDULER_COBBLEUTILS);
+      com.kingpixel.cobbleutils.util.async.UtilsAsync.shutdownAll();
     });
 
     PlayerEvent.PLAYER_JOIN.register((player) -> runAsync(() -> {
@@ -207,6 +213,13 @@ public class CobbleUtils {
       e.printStackTrace();
       executor.shutdownNow();
     }
+  }
+
+  private static Path path;
+
+  public static Path getPath() {
+    if (path == null) path = new File("").toPath().resolve("mods");
+    return path;
   }
 
   /**

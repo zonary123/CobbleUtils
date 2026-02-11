@@ -4,6 +4,8 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import lombok.NonNull;
 
+import java.util.concurrent.TimeUnit;
+
 /**
  * UtilsAsync is a centralized manager for per-mod AsyncContexts.
  * - Each mod can have its own AsyncContext (executor + scheduler)
@@ -21,7 +23,7 @@ public class UtilsAsync {
     int maxThreads
   ) {
     return contexts.get(modId, id ->
-      new AsyncContext(threadName, minThreads, maxThreads)
+      new AsyncContext(threadName, minThreads, maxThreads, 1000, 30, TimeUnit.SECONDS)
     );
   }
 
