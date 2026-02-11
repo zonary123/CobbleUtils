@@ -65,26 +65,30 @@ public abstract class Utils {
     return ThreadLocalRandom.current();
   }
 
+  @Deprecated(forRemoval = true)
   private static final class GsonPrettyHolder {
     private static final Gson gsonPretty = adapters()
       .setPrettyPrinting()
       .create();
   }
 
+  @Deprecated(forRemoval = true)
   public static Gson newGson() {
     return GsonPrettyHolder.gsonPretty;
   }
 
+  @Deprecated(forRemoval = true)
   private static final class GsonNotPrettyHolder {
     private static final Gson gsonNotPretty = adapters()
       .create();
   }
 
+  @Deprecated(forRemoval = true)
   public static Gson newWithoutSpacingGson() {
     return GsonNotPrettyHolder.gsonNotPretty;
   }
 
-
+  @Deprecated(forRemoval = true)
   private static GsonBuilder adapters() {
     return addAdapters(new GsonBuilder()
       .disableHtmlEscaping());
@@ -145,7 +149,7 @@ public abstract class Utils {
     .setNameFormat("CobbleUtils IO - %d")
     .build());
 
-
+  @Deprecated(forRemoval = true)
   public static CompletableFuture<Boolean> writeFileAsync(
     String filePath,
     String filename,
@@ -173,6 +177,7 @@ public abstract class Utils {
     }
   }
 
+  @Deprecated(forRemoval = true)
   private static boolean writeFileSyncSafe(File file, String data) {
     try {
       Path parent = file.toPath().getParent();
@@ -188,6 +193,7 @@ public abstract class Utils {
     return writeFileSync(file, data); // ⬅ método legacy intacto
   }
 
+  @Deprecated(forRemoval = true)
   public static boolean writeFileSync(File file, String data) {
     try (FileWriter writer = new FileWriter(file, charset)) {
       writer.write(data);
@@ -198,6 +204,7 @@ public abstract class Utils {
     }
   }
 
+  @Deprecated(forRemoval = true)
   public static CompletableFuture<Boolean> readFileAsync(String filePath, String filename, Consumer<String> callback) {
     if (filePath == null || filename == null || callback == null) {
       return CompletableFuture.completedFuture(false);
@@ -220,6 +227,7 @@ public abstract class Utils {
     }, IO_EXECUTOR);
   }
 
+  @Deprecated(forRemoval = true)
   public static boolean readFileSync(File file, Consumer<String> callback) {
     if (!file.exists() || !file.isFile()) {
       return false;
@@ -246,13 +254,14 @@ public abstract class Utils {
     }
   }
 
-
+  @Deprecated(forRemoval = true)
   public static String readFileSync(File file) throws IOException {
     if (!file.exists() || !file.isFile())
       throw new IllegalArgumentException("File does not exist or is not a file: " + file.getPath());
     return Files.readString(file.toPath(), charset);
   }
 
+  @Deprecated(forRemoval = true)
   public static CompletableFuture<Boolean> writeFileAsync(File file, String content) {
     if (file == null || content == null) return CompletableFuture.completedFuture(false);
 
@@ -318,10 +327,12 @@ public abstract class Utils {
     return new ItemStack(Registries.ITEM.get(Identifier.of(id)), amount);
   }
 
+  @Deprecated(forRemoval = true)
   public static File getAbsolutePath(String directoryPath) {
     return new File(Paths.get(new File("").getAbsolutePath()) + directoryPath);
   }
 
+  @Deprecated(forRemoval = true)
   public static List<File> getFiles(File directory) {
     List<File> fileList = new ArrayList<>();
     if (directory.exists() && directory.isDirectory()) {
