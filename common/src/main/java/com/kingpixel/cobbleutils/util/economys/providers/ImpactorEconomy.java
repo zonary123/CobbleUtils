@@ -1,9 +1,11 @@
-package com.kingpixel.cobbleutils.util.economys;
+package com.kingpixel.cobbleutils.util.economys.providers;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.util.AdventureTranslator;
+import com.kingpixel.cobbleutils.util.economys.Economy;
+import com.kingpixel.cobbleutils.util.economys.EconomyResult;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import net.impactdev.impactor.api.economy.EconomyService;
@@ -16,6 +18,7 @@ import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -33,7 +36,7 @@ import java.util.concurrent.TimeUnit;
  */
 @EqualsAndHashCode(callSuper = true)
 @Data
-public class ImpactorEconomy extends EconomyAbstract {
+public class ImpactorEconomy extends Economy {
 
   // The unique identifier for the Impactor economy implementation.
   public static final String IDENTIFY = "IMPACTOR";
@@ -75,7 +78,6 @@ public class ImpactorEconomy extends EconomyAbstract {
    * @param playerUuid The UUID of the player.
    * @param money      The amount of money to deposit.
    * @param currency   The currency type in which to deposit the money.
-   *
    * @return True if the deposit is successful, false otherwise.
    */
   @Override
@@ -90,7 +92,6 @@ public class ImpactorEconomy extends EconomyAbstract {
    * @param playerUuid The UUID of the player.
    * @param money      The amount of money to withdraw.
    * @param currency   The currency type from which to withdraw the money.
-   *
    * @return True if the withdrawal is successful, false otherwise.
    */
   @Override
@@ -99,17 +100,96 @@ public class ImpactorEconomy extends EconomyAbstract {
     return account.withdraw(money).successful();
   }
 
+  @Override
+  public BigDecimal getBalance(UUID playerUuid, String currency) {
+    return null;
+  }
+
   /**
    * Gets the current balance of the player's account in the specified currency.
    *
    * @param playerUuid The UUID of the player.
    * @param currency   The currency type for which to fetch the balance.
-   *
    * @return The current balance of the account.
    */
   @Override
-  public BigDecimal getBalance(UUID playerUuid, String currency) {
-    return getAccount(playerUuid, currency).balance();
+  public CompletableFuture<EconomyResult> getBalanceAsync(UUID playerUuid, String currency) {
+    return getAccountAsync(playerUuid, currency)
+      .thenApply(account -> {
+        if (account == null) {
+          return EconomyResult.fail("Account not found");
+        } else {
+          return EconomyResult.success(account.balance(), account.balance(), "Get balance successful");
+        }
+      });
+  }
+
+  @Override
+  public CompletableFuture<EconomyResult> setBalance(UUID playerId, String currencyId, BigDecimal amount, String reason) {
+    return getAccountAsync(playerId, currencyId)
+      .thenApply(account -> {
+        if (account == null) {
+          return EconomyResult.fail("Account not found");
+        } else {
+          boolean success = account.set(amount).successful();
+          if (success) {
+            return EconomyResult.success(amount, amount, "Set balance successful");
+          } else {
+            return EconomyResult.fail("Failed to set balance");
+          }
+        }
+      });
+  }
+
+  @Override
+  public CompletableFuture<EconomyResult> deposit(UUID playerId, String currencyId, BigDecimal amount, String reason) {
+    return getAccountAsync(playerId, currencyId)
+      .thenApply(account -> {
+        if (account == null) {
+          return EconomyResult.fail("Account not found");
+        } else {
+          boolean success = account.deposit(amount).successful();
+          if (success) {
+            return EconomyResult.success(account.balance(), account.balance(), "Deposit successful");
+          } else {
+            return EconomyResult.fail("Failed to deposit");
+          }
+        }
+      });
+  }
+
+  @Override
+  public CompletableFuture<EconomyResult> withdraw(UUID playerId, String currencyId, BigDecimal amount, String reason) {
+    return getAccountAsync(playerId, currencyId)
+      .thenApply(account -> {
+        if (account == null) {
+          return EconomyResult.fail("Account not found");
+        } else {
+          boolean success = account.withdraw(amount).successful();
+          if (success) {
+            return EconomyResult.success(account.balance(), account.balance(), "Withdrawal successful");
+          } else {
+            return EconomyResult.fail("Failed to withdraw");
+          }
+        }
+      });
+  }
+
+  @Override
+  public CompletableFuture<Boolean> hasBalance(UUID playerId, String currencyId, BigDecimal amount) {
+    return getAccountAsync(playerId, currencyId)
+      .thenApply(account -> {
+        if (account == null) {
+          return false;
+        } else {
+          return account.balance().compareTo(amount) >= 0;
+        }
+      });
+  }
+
+  @Override
+  public String formatCurrency(String currencyId, BigDecimal amount) {
+    return "";
   }
 
   /**
@@ -132,7 +212,6 @@ public class ImpactorEconomy extends EconomyAbstract {
    *
    * @param money    The amount of money to format.
    * @param currency The currency in which to format the money.
-   *
    * @return The formatted string representation of the money.
    */
   @Override
@@ -149,7 +228,6 @@ public class ImpactorEconomy extends EconomyAbstract {
    * @param playerUuid The UUID of the player.
    * @param money      The new balance to set.
    * @param currency   The currency type in which to set the balance.
-   *
    * @return True if the balance is successfully set, false otherwise.
    */
   @Override
@@ -168,7 +246,6 @@ public class ImpactorEconomy extends EconomyAbstract {
    * Gets the symbol for the specified currency.
    *
    * @param currency The currency type for which to fetch the symbol.
-   *
    * @return The symbol of the currency, serialized as a string.
    */
   @Override
@@ -187,7 +264,6 @@ public class ImpactorEconomy extends EconomyAbstract {
    *
    * @param uuid     The UUID of the account.
    * @param currency The currency type of the account.
-   *
    * @return The account associated with the UUID and currency.
    */
   private Account getAccount(UUID uuid, String currency) {
@@ -206,6 +282,21 @@ public class ImpactorEconomy extends EconomyAbstract {
     return service.account(getCurrency(currency), uuid).join();
   }
 
+  /**
+   * Asynchronously retrieves an account from the Impactor API, creating a new account if necessary.
+   *
+   * @param uuid     The UUID of the account.
+   * @param currency The currency type of the account.
+   * @return A CompletableFuture that will complete with the account associated with the UUID and currency.
+   */
+  private CompletableFuture<Account> getAccountAsync(UUID uuid, String currency) {
+    return service.hasAccount(uuid)
+      .thenCompose(hasAccount -> {
+        if (!hasAccount) return service.account(uuid);
+        return service.account(getCurrency(currency), uuid);
+      });
+  }
+
   // Cache for storing currencies to avoid redundant lookups.
   private final Map<String, Currency> currencies = new HashMap<>();
 
@@ -214,7 +305,6 @@ public class ImpactorEconomy extends EconomyAbstract {
    * If the currency is not already cached, it will be fetched from the Impact API.
    *
    * @param currency The string representation of the currency (e.g., "impactor:currencyName").
-   *
    * @return The Currency object corresponding to the specified currency.
    */
   private Currency getCurrency(String currency) {
@@ -243,7 +333,6 @@ public class ImpactorEconomy extends EconomyAbstract {
    * Retrieves the number of decimal places for the specified currency.
    *
    * @param currency The currency for which to retrieve the number of decimals.
-   *
    * @return The number of decimal places for the specified currency.
    */
   @Override

@@ -2,98 +2,49 @@ package com.kingpixel.cobbleutils.api;
 
 import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.Model.EconomyUse;
-import com.kingpixel.cobbleutils.Model.Priority;
-import com.kingpixel.cobbleutils.Model.PriorityEconomy;
-import com.kingpixel.cobbleutils.util.economys.*;
+import com.kingpixel.cobbleutils.util.economys.Economy;
+import com.kingpixel.cobbleutils.util.economys.EconomyResult;
+import com.kingpixel.cobbleutils.util.economys.providers.*;
 import lombok.Data;
-import lombok.Getter;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.math.BigDecimal;
-import java.util.*;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @author Carlos Varas Alonso - 05/11/2024 23:58
  */
 @Data
 public class EconomyApi {
-  @Getter private static Set<EconomyAbstract> economys = new HashSet<>();
+  private static final Map<String, Economy> ECONOMIES = new ConcurrentHashMap<>();
+  private static Economy DEFAULT_ECONOMY;
 
   public static void setEconomyType() {
-    economys.clear();
-    economys.add(new UltraEEconomy());
-    economys.add(new ImpactorEconomy());
-    economys.add(new CobbleDollarsEconomy());
-    economys.add(new BeEconomy());
-    economys.add(new PebbleEconomy());
-    economys.add(new SDMEconomy());
-    economys.add(new VaultEconomy());
-
-    economys.removeIf(economy -> {
+    var economies = List.of(
+      new UltraEEconomy(),
+      new ImpactorEconomy(),
+      new CobbleDollarsEconomy(),
+      new BeEconomy(),
+      new PebbleEconomy(),
+      new SDMEconomy(),
+      new VaultEconomy()
+    );
+    for (Economy economy : economies) {
       try {
-        if (economy.isPresent()) {
+        if (!economy.isPresent()) {
           CobbleUtils.LOGGER.info("Economy found: " + economy.getIdentify());
-          return false;
-        } else {
-          CobbleUtils.LOGGER.info("Economy not found: " + economy.getIdentify());
-          return true;
+          continue;
         }
+        ECONOMIES.put(economy.getIdentify(), economy);
       } catch (NoClassDefFoundError | IncompatibleClassChangeError | Exception e) {
         CobbleUtils.LOGGER.info("Economy not found: " + economy.getIdentify());
-        return true;
-      }
-    });
-  }
-
-
-  private static EconomyAbstract getEconomy(String EconomyId) {
-    if (economys.isEmpty()) {
-      setEconomyType();
-      if (economys.isEmpty()) {
-        throw new RuntimeException("You dont have any economys, Supported: " +
-          "BeEconomy, CobbleDollarsEconomy, ImpactorEconomy, PebbleEconomy, SDMEconomy, VaultEconomy");
       }
     }
-    if (economys.size() == 1) {
-      return economys.iterator().next();
-    } else {
-      for (EconomyAbstract economy : economys) {
-        if (economy.getIdentify().equalsIgnoreCase(EconomyId)) {
-          return economy;
-        }
-      }
-    }
-
-    EconomyAbstract economy = getHighestPriorityEconomy();
-    if (economy == null) throw new RuntimeException("CobbleUtils could not find any economys with that id");
-    return economy;
-  }
-
-  private static EconomyAbstract getHighestPriorityEconomy() {
-    List<EconomyAbstract> economyList = new ArrayList<>(economys);
-    economyList.sort((e1, e2) -> {
-      Priority p1 = CobbleUtils.config.getPriorityEconomy().stream()
-        .filter(pe -> pe.getEconomyId().equals(e1.getIdentify()))
-        .findFirst()
-        .map(PriorityEconomy::getPriority)
-        .orElse(Priority.LOWEST);
-      Priority p2 = CobbleUtils.config.getPriorityEconomy().stream()
-        .filter(pe -> pe.getEconomyId().equals(e2.getIdentify()))
-        .findFirst()
-        .map(PriorityEconomy::getPriority)
-        .orElse(Priority.LOWEST);
-      return p1.compareTo(p2);
-    });
-    return economyList.isEmpty() ? null : economyList.getFirst();
-  }
-
-
-  /**
-   * Add a new economys
-   *
-   * @param economy The economys to add
-   */
-  public static void addEconomy(EconomyAbstract economy) {
-    economys.add(economy);
   }
 
   /**
@@ -102,15 +53,15 @@ public class EconomyApi {
    * @param playerUuid The player to add the money
    * @param money      The amount of money
    * @param currency   The currency to add
-   *
    * @return If the money was added
    */
-  @Deprecated
+  @Deprecated(forRemoval = true)
   public static boolean addMoney(UUID playerUuid, BigDecimal money, String currency,
                                  String economyId) {
     return getEconomy(economyId).deposit(playerUuid, money, currency);
   }
 
+  @Deprecated(forRemoval = true)
   public static boolean addMoney(UUID playerUuid, BigDecimal money, EconomyUse economy) {
     return addMoney(playerUuid, money, economy.getCurrency(), economy.getEconomyId());
   }
@@ -121,7 +72,6 @@ public class EconomyApi {
    * @param playerUuid The player to remove the money
    * @param money      The amount of money
    * @param currency   The currency to remove
-   *
    * @return If the money was removed
    */
   @Deprecated(forRemoval = true)
@@ -130,6 +80,7 @@ public class EconomyApi {
     return getEconomy(economyId).withdraw(playerUuid, money, currency);
   }
 
+  @Deprecated(forRemoval = true)
   public static boolean removeMoney(UUID playerUuid, BigDecimal money, EconomyUse economy) {
     return removeMoney(playerUuid, money, economy.getCurrency(), economy.getEconomyId());
   }
@@ -139,7 +90,6 @@ public class EconomyApi {
    *
    * @param playerUuid The player to get the money
    * @param currency   The currency to get
-   *
    * @return The amount of money
    */
   @Deprecated(forRemoval = true)
@@ -147,6 +97,7 @@ public class EconomyApi {
     return getEconomy(economyId).getBalance(playerUuid, currency);
   }
 
+  @Deprecated(forRemoval = true)
   public static BigDecimal getBalance(UUID playerUuid, EconomyUse economy) {
     return getBalance(playerUuid, economy.getCurrency(), economy.getEconomyId());
   }
@@ -163,6 +114,7 @@ public class EconomyApi {
     return getEconomy(economyId).setBalance(playerUuid, money, currency);
   }
 
+  @Deprecated(forRemoval = true)
   public static boolean setBalance(UUID playerUuid, BigDecimal money, EconomyUse economy) {
     return setBalance(playerUuid, money, economy.getCurrency(), economy.getEconomyId());
   }
@@ -175,6 +127,7 @@ public class EconomyApi {
    * @param money          The amount of money to transfer
    * @param economy        The economy to use for the transfer
    */
+  @Deprecated(forRemoval = true)
   public static boolean transferMoney(UUID fromPlayerUuid, UUID toPlayerUuid, BigDecimal money, EconomyUse economy,
                                       boolean needHasEnough) {
     if (needHasEnough && !hasEnoughMoney(fromPlayerUuid, money, economy, true)) {
@@ -203,7 +156,6 @@ public class EconomyApi {
    *
    * @param money    The amount of money
    * @param currency The currency to format
-   *
    * @return The formatted money
    */
   @Deprecated(forRemoval = false)
@@ -211,6 +163,7 @@ public class EconomyApi {
     return getEconomy(economyId).format(money, currency);
   }
 
+  @Deprecated(forRemoval = true)
   public static String formatMoney(BigDecimal money, EconomyUse economy) {
     return formatMoney(money, economy.getCurrency(), economy.getEconomyId());
   }
@@ -222,7 +175,6 @@ public class EconomyApi {
    * @param money      The amount of money
    * @param currency   The currency to check
    * @param economyId  The economys to check
-   *
    * @return If the player has enough money
    */
   @Deprecated(forRemoval = true)
@@ -231,6 +183,7 @@ public class EconomyApi {
     return getEconomy(economyId).hasEnough(playerUuid, money, currency, removeMoney);
   }
 
+  @Deprecated(forRemoval = true)
   public static boolean hasEnoughMoney(UUID playerUuid, BigDecimal money, EconomyUse economy, boolean removeMoney) {
     return hasEnoughMoney(playerUuid, money, economy.getCurrency(), removeMoney, economy.getEconomyId());
   }
@@ -239,7 +192,6 @@ public class EconomyApi {
    * Get the symbol of the currency
    *
    * @param currency The currency to get the symbol
-   *
    * @return The symbol of the currency
    */
   @Deprecated(forRemoval = true)
@@ -247,11 +199,124 @@ public class EconomyApi {
     return getEconomy(economyId).getSymbol(currency);
   }
 
+  @Deprecated(forRemoval = true)
   public static String getSymbol(EconomyUse economy) {
     return getSymbol(economy.getCurrency(), economy.getEconomyId());
   }
 
+  @Deprecated(forRemoval = true)
   public static int getDecimals(EconomyUse economy) {
     return getEconomy(economy.getEconomyId()).getDecimals(economy.getCurrency());
+  }
+
+  /* -------------------------------------------------------------------------- */
+  /* New Methods                                                                */
+  /* -------------------------------------------------------------------------- */
+
+  public static void registerEconomy(@Nonnull EconomyUse economyUse) {
+    String economyId = economyUse.getEconomyId();
+    Economy economy = ECONOMIES.get(economyId);
+    try {
+      if (ECONOMIES.putIfAbsent(economyId, economy) != null) {
+        CobbleUtils.LOGGER.warn("Economy with ID '%s' is already registered.".formatted(economyId));
+        return;
+      }
+      UUID testPlayer = UUID.randomUUID();
+      String currencyId = "";
+
+      economyUse.getBalance(testPlayer)
+        .whenComplete((result, ex) -> {
+          if (ex == null) {
+            CobbleUtils.LOGGER.warn("Economy '%s' registered successfully.".formatted(economyId));
+            if (DEFAULT_ECONOMY == null) {
+              DEFAULT_ECONOMY = economy;
+              CobbleUtils.LOGGER.warn("Economy '%s' set as default economy.".formatted(economyId));
+            }
+          } else {
+            ECONOMIES.remove(economyId);
+          }
+        });
+    } catch (NoClassDefFoundError | NoSuchMethodError | Exception e) {
+      ECONOMIES.remove(economyId);
+    }
+  }
+
+  @Nullable
+  public static Economy getEconomy(@Nonnull String economyId) {
+    if (ECONOMIES.size() == 1) return DEFAULT_ECONOMY;
+    Economy economy = ECONOMIES.get(economyId);
+    if (economy == null) {
+      economy = DEFAULT_ECONOMY;
+    }
+    return economy;
+  }
+
+  @Nonnull
+  public static Map<String, Economy> getEconomies() {
+    return ECONOMIES;
+  }
+
+
+  @Nonnull
+  public static CompletableFuture<EconomyResult> getBalanceAsync(@Nonnull UUID playerId, @Nonnull EconomyUse selector) {
+    return resolveEconomy(selector).getBalanceAsync(playerId, selector.getCurrency());
+  }
+
+  @Nonnull
+  public static CompletableFuture<EconomyResult> setBalance(@Nonnull UUID playerId, @Nonnull String economyId, @Nonnull String currencyId, @Nonnull BigDecimal amount, @Nonnull String reason) {
+    return setBalance(playerId, new EconomyUse(economyId, currencyId), amount, reason);
+  }
+
+  @Nonnull
+  public static CompletableFuture<EconomyResult> setBalance(@Nonnull UUID playerId, @Nonnull EconomyUse selector, @Nonnull BigDecimal amount, @Nonnull String reason) {
+    return resolveEconomy(selector).setBalance(playerId, selector.getCurrency(), amount, reason);
+  }
+
+  @Nonnull
+  public static CompletableFuture<EconomyResult> deposit(@Nonnull UUID playerId, @Nonnull String economyId, @Nonnull String currencyId, @Nonnull BigDecimal amount, @Nonnull String reason) {
+    return deposit(playerId, new EconomyUse(economyId, currencyId), amount, reason);
+  }
+
+  @Nonnull
+  public static CompletableFuture<EconomyResult> deposit(@Nonnull UUID playerId, @Nonnull EconomyUse selector, @Nonnull BigDecimal amount, @Nonnull String reason) {
+    return resolveEconomy(selector).deposit(playerId, selector.getCurrency(), amount, reason);
+  }
+
+  @Nonnull
+  public static CompletableFuture<EconomyResult> withdraw(@Nonnull UUID playerId, @Nonnull String economyId, @Nonnull String currencyId, @Nonnull BigDecimal amount, @Nonnull String reason) {
+    return withdraw(playerId, new EconomyUse(economyId, currencyId), amount, reason);
+  }
+
+  @Nonnull
+  public static CompletableFuture<EconomyResult> withdraw(@Nonnull UUID playerId, @Nonnull EconomyUse selector, @Nonnull BigDecimal amount, @Nonnull String reason) {
+    return resolveEconomy(selector).withdraw(playerId, selector.getCurrency(), amount, reason);
+  }
+
+  public static CompletableFuture<Boolean> hasBalance(@Nonnull UUID playerId, @Nonnull String economyId, @Nonnull String currencyId, @Nonnull BigDecimal amount) {
+    return hasBalance(playerId, new EconomyUse(economyId, currencyId), amount);
+  }
+
+  public static CompletableFuture<Boolean> hasBalance(@Nonnull UUID playerId, @Nonnull EconomyUse selector, @Nonnull BigDecimal amount) {
+    return resolveEconomy(selector).hasBalance(playerId, selector.getCurrency(), amount);
+  }
+
+  @Nonnull
+  public static CompletableFuture<EconomyResult> transfer(@Nonnull UUID fromPlayerId, @Nonnull UUID toPlayerId, @Nonnull EconomyUse selector, @Nonnull BigDecimal amount, @Nonnull String reason) {
+    return resolveEconomy(selector).transfer(fromPlayerId, toPlayerId, selector.getCurrency(), amount, reason);
+  }
+
+  /* -------------------------------------------------------------------------- */
+  /* Internal                                                                    */
+  /* -------------------------------------------------------------------------- */
+
+  @Nonnull
+  private static Economy resolveEconomy(@Nonnull EconomyUse selector) {
+    Economy economy = getEconomy(selector.getEconomyId());
+    if (economy == null) throw new IllegalArgumentException("Economy not found: " + selector.getEconomyId());
+    return economy;
+  }
+
+  public static Map<String, Economy> getEconomys() {
+    return ECONOMIES;
   }
 }

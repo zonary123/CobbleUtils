@@ -28,7 +28,7 @@ public class EconomyIdCommand {
             ))
             .executes(context -> {
               List<String> economys = new ArrayList<>();
-              EconomyApi.getEconomys().forEach(economy -> economys.add(economy.getIdentify()));
+              EconomyApi.getEconomys().forEach((economyId, economy) -> economys.add(economy.getIdentify()));
               context.getSource().sendMessage(
                 Text.literal("Economys -> " + economys)
               );
