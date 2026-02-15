@@ -6,6 +6,7 @@ import com.kingpixel.cobbleutils.util.economys.Economy;
 import com.kingpixel.cobbleutils.util.economys.EconomyResult;
 import com.kingpixel.cobbleutils.util.economys.providers.*;
 import lombok.Data;
+import org.jetbrains.annotations.UnknownNullability;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -24,7 +25,8 @@ public class EconomyApi {
   private static final Map<String, Economy> ECONOMIES = new ConcurrentHashMap<>();
   private static Economy DEFAULT_ECONOMY;
 
-  public static void setEconomyType() {
+  public synchronized static void loadEconomies() {
+    if (!ECONOMIES.isEmpty()) return;
     var economies = List.of(
       new UltraEEconomy(),
       new ImpactorEconomy(),
@@ -40,7 +42,7 @@ public class EconomyApi {
           CobbleUtils.LOGGER.info("Economy found: " + economy.getIdentify());
           continue;
         }
-        ECONOMIES.put(economy.getIdentify(), economy);
+        registerEconomy(economy);
       } catch (NoClassDefFoundError | IncompatibleClassChangeError | Exception e) {
         CobbleUtils.LOGGER.info("Economy not found: " + economy.getIdentify());
       }
@@ -213,9 +215,8 @@ public class EconomyApi {
   /* New Methods                                                                */
   /* -------------------------------------------------------------------------- */
 
-  public static void registerEconomy(@Nonnull EconomyUse economyUse) {
-    String economyId = economyUse.getEconomyId();
-    Economy economy = ECONOMIES.get(economyId);
+  public static void registerEconomy(@Nonnull @UnknownNullability Economy economy) {
+    String economyId = economy.getIdentify();
     try {
       if (ECONOMIES.putIfAbsent(economyId, economy) != null) {
         CobbleUtils.LOGGER.warn("Economy with ID '%s' is already registered.".formatted(economyId));
@@ -224,7 +225,7 @@ public class EconomyApi {
       UUID testPlayer = UUID.randomUUID();
       String currencyId = "";
 
-      economyUse.getBalance(testPlayer)
+      economy.getBalanceAsync(testPlayer, currencyId)
         .whenComplete((result, ex) -> {
           if (ex == null) {
             CobbleUtils.LOGGER.warn("Economy '%s' registered successfully.".formatted(economyId));
@@ -245,9 +246,7 @@ public class EconomyApi {
   public static Economy getEconomy(@Nonnull String economyId) {
     if (ECONOMIES.size() == 1) return DEFAULT_ECONOMY;
     Economy economy = ECONOMIES.get(economyId);
-    if (economy == null) {
-      economy = DEFAULT_ECONOMY;
-    }
+    if (economy == null) economy = DEFAULT_ECONOMY;
     return economy;
   }
 

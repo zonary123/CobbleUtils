@@ -14,6 +14,7 @@
     "collect.BeehiveBlockMixin",
     "collect.CaveVinesMixin",
     "collect.SweetBerriesMixin",
+    "events.PlayTimeMixin",
     "gooeylibs.GooeyButtonMixin"
   ]
 }

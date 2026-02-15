@@ -18,7 +18,8 @@ import org.spongepowered.asm.mixin.injection.At;
 @Mixin(SweetBerryBushBlock.class)
 public abstract class SweetBerriesMixin {
 
-  @Unique @WrapOperation(
+  @Unique
+  @WrapOperation(
     method = "onUse",
     at = @At(
       value = "INVOKE",
@@ -32,6 +33,7 @@ public abstract class SweetBerriesMixin {
     Operation<Void> original,
     @Local(argsOnly = true) PlayerEntity player
   ) {
+    if (CobbleUtilsEvents.COLLECT_EVENT.isEmpty()) return;
     CobbleUtilsEvents.COLLECT_EVENT.emit(
       EventCollect.builder()
         .world(world)

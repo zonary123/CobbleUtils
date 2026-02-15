@@ -4,6 +4,7 @@ import com.cobblemon.mod.common.api.properties.CustomPokemonProperty;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.kingpixel.cobbleutils.Model.properties.LegendaryPropertyType;
 import com.kingpixel.cobbleutils.Model.properties.MinIvsPropertyType;
+import com.kingpixel.cobbleutils.api.EconomyApi;
 import com.kingpixel.cobbleutils.command.CommandTree;
 import com.kingpixel.cobbleutils.command.suggests.CobbleUtilsSuggests;
 import com.kingpixel.cobbleutils.config.AdvancedRewardsConfig;
@@ -159,6 +160,7 @@ public class CobbleUtils {
       spawnRates.init();
       load();
       CobbleUtilsSuggests.SUGGESTS_PLAYER_OFFLINE_AND_ONLINE.refreshIfNeeded();
+      EconomyApi.loadEconomies();
     });
 
     LifecycleEvent.SERVER_STOPPING.register(server1 -> {

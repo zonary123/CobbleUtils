@@ -4,6 +4,7 @@ import com.kingpixel.cobbleutils.events.models.EventBlockBreak;
 import com.kingpixel.cobbleutils.events.models.EventBlockPlaced;
 import com.kingpixel.cobbleutils.events.models.EventBrewing;
 import com.kingpixel.cobbleutils.events.models.EventCollect;
+import net.minecraft.server.network.ServerPlayerEntity;
 
 /**
  * @author Carlos Varas Alonso - 26/08/2025 14:42
@@ -13,5 +14,5 @@ public class CobbleUtilsEvents {
   public static final EventChannel<EventBlockBreak> BLOCK_BREAK_EVENT = new EventChannel<>();
   public static final EventChannel<EventBlockPlaced> BLOCK_PLACED_EVENT = new EventChannel<>();
   public static final EventChannel<EventCollect> COLLECT_EVENT = new EventChannel<>();
-
+  public static final EventChannel<ServerPlayerEntity> PLAY_TIME_EVENT = new EventChannel<>();
 }

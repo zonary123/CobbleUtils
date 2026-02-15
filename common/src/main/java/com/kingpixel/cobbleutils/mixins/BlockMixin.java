@@ -38,7 +38,7 @@ public abstract class BlockMixin {
     CallbackInfo ci
   ) {
     if (!(placer instanceof ServerPlayerEntity player)) return;
-    if (CobbleUtilsEvents.BLOCK_PLACED_EVENT.isEmpty()) return;
+    if (CobbleUtilsEvents.BLOCK_PLACED_EVENT.isEmpty() && CobbleUtilsEvents.BLOCK_BREAK_EVENT.isEmpty()) return;
 
     try {
       var chunk = world.getChunk(pos);

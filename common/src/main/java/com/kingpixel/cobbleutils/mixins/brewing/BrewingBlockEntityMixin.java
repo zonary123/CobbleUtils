@@ -22,6 +22,7 @@ import java.util.UUID;
 public abstract class BrewingBlockEntityMixin {
   @Inject(method = "craft", at = @At("HEAD"))
   private static void cobbleUtils$craft(World world, BlockPos pos, DefaultedList<ItemStack> slots, CallbackInfo ci) {
+    if (CobbleUtilsEvents.BREWING_EVENT.isEmpty()) return;
     BlockEntity blockEntity = world.getBlockEntity(pos);
     if (blockEntity == null) {
       if (CobbleUtils.config.isDebug()) {

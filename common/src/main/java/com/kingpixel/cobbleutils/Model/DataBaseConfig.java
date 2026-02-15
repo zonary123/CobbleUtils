@@ -1,21 +1,26 @@
 package com.kingpixel.cobbleutils.Model;
 
-import lombok.Getter;
-import lombok.Setter;
+import lombok.Builder;
+import lombok.Data;
 import lombok.ToString;
 
 /**
  * @author Carlos Varas Alonso - 27/07/2024 13:13
  */
-@Getter
-@Setter
+@Data
 @ToString
+@Builder
 public class DataBaseConfig {
-  private DataBaseType type;
-  private String database;
-  private String url;
-  private String user;
-  private String password;
+  @Builder.Default
+  private DataBaseType type = DataBaseType.JSON;
+  @Builder.Default
+  private String database = "";
+  @Builder.Default
+  private String url = "";
+  @Builder.Default
+  private String user = "admin";
+  @Builder.Default
+  private String password = "admin";
 
   public DataBaseConfig() {
     this.type = DataBaseType.JSON;
