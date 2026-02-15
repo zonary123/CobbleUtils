@@ -1,9 +1,6 @@
 package com.kingpixel.cobbleutils.events;
 
-import com.kingpixel.cobbleutils.events.models.EventBlockBreak;
-import com.kingpixel.cobbleutils.events.models.EventBlockPlaced;
-import com.kingpixel.cobbleutils.events.models.EventBrewing;
-import com.kingpixel.cobbleutils.events.models.EventCollect;
+import com.kingpixel.cobbleutils.events.models.*;
 import net.minecraft.server.network.ServerPlayerEntity;
 
 /**
@@ -15,4 +12,17 @@ public class CobbleUtilsEvents {
   public static final EventChannel<EventBlockPlaced> BLOCK_PLACED_EVENT = new EventChannel<>();
   public static final EventChannel<EventCollect> COLLECT_EVENT = new EventChannel<>();
   public static final EventChannel<ServerPlayerEntity> PLAY_TIME_EVENT = new EventChannel<>();
+  public static final EventChannel<EventItemStack> ARCHEOLOGY_EVENT = new EventChannel<>();
+  public static final EventChannel<EventEntity> BRED_EVENT = new EventChannel<>();
+  public static final EventChannel<EventItemStack> CAMPFIRE_POT_EVENT = new EventChannel<>();
+  public static final EventChannel<EventItemStack> EATING_EVENT = new EventChannel<>();
+  public static final EventChannel<EventEntity> ENTITY_KILLED_EVENT = new EventChannel<>();
+  public static final EventChannel<EventItemStack> FISHING_EVENT = new EventChannel<>();
+  public static final EventChannel<ServerPlayerEntity> MILKING_EVENT = new EventChannel<>();
+  public static final EventChannel<EventBlock> STRIPPED_LOG_EVENT = new EventChannel<>();
+  public static final EventChannel<EventEntity> TAMING_EVENT = new EventChannel<>();
+  public static final EventChannel<EventItemStack> TRADE_EVENT = new EventChannel<>();
+  public static final EventChannel<EventTravel> TRAVEL_EVENT = new EventChannel<>();
+  public static final EventChannel<EventEntity> INTERACT_ENTITY_EVENT = new EventChannel<>();
+  public static final EventChannel<EventEnchant> ENCHANT_EVENT = new EventChannel<>();
 }

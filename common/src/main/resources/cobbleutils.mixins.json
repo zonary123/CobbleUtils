@@ -14,7 +14,20 @@
     "collect.BeehiveBlockMixin",
     "collect.CaveVinesMixin",
     "collect.SweetBerriesMixin",
+    "events.ArcheologyMixin",
+    "events.BredMixin",
+    "events.CampfirePotMixin",
+    "events.EatMixin",
+    "events.EnchantMixin",
+    "events.FishingMixin",
+    "events.InteractEntityMixin",
+    "events.KillEntityMixin",
+    "events.MilkMixin",
     "events.PlayTimeMixin",
+    "events.StripLogMixin",
+    "events.TamedMixin",
+    "events.TravelMixin",
+    "events.VillagerTradeMixin",
     "gooeylibs.GooeyButtonMixin"
   ]
 }
