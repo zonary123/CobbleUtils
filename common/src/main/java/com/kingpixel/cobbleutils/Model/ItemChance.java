@@ -333,6 +333,16 @@ public class ItemChance {
       }
       ItemStack finalItemStack = itemStack;
       CobbleUtils.server.executeSync(() -> player.getInventory().offerOrDrop(finalItemStack));
+      if (CobbleUtils.config.isNotifyRewards()) {
+        PlayerUtils.sendMessage(
+          player,
+          CobbleUtils.language.getMessageRewardItemStack()
+            .replace("%item%", ItemUtils.getTranslatedName(itemStack))
+            .replace("%amount%", String.valueOf(itemStack.getCount())),
+          CobbleUtils.config.getPrefix(),
+          TypeMessage.CHAT
+        );
+      }
       return true;
     } catch (Exception e) {
       CobbleUtils.LOGGER.error("Error giving reward: " + e.getMessage());

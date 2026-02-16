@@ -352,15 +352,11 @@ public class RedisManager {
 
   private static void handleIncomingMessage(String message) {
     try {
-      if (CobbleUtils.server == null) {
-        CobbleUtils.LOGGER.warn("Server is null, cannot handle Redis message");
-        return;
-      }
+      if (CobbleUtils.server == null) return;
 
       JsonObject json = JsonParser.parseString(message).getAsJsonObject();
       String type = json.get("type").getAsString();
 
-      // Manejar mensajes de HiperMessage
       if ("hipermessage".equals(type)) {
         HiperMessage.handleRedisMessage(json);
         return;
@@ -385,7 +381,9 @@ public class RedisManager {
 
         case "player":
           if (!json.has("uuid")) {
-            CobbleUtils.LOGGER.warn("Player message missing UUID");
+            if (CobbleUtils.config.isDebug()) {
+              CobbleUtils.LOGGER.warn("Player message missing UUID");
+            }
             return;
           }
           UUID playerUUID = UUID.fromString(json.get("uuid").getAsString());
@@ -408,7 +406,9 @@ public class RedisManager {
 
         case "actionbar_player":
           if (!json.has("uuid")) {
-            CobbleUtils.LOGGER.warn("Actionbar player message missing UUID");
+            if (CobbleUtils.config.isDebug()) {
+              CobbleUtils.LOGGER.warn("Actionbar player message missing UUID");
+            }
             return;
           }
           UUID actionbarPlayerUUID = UUID.fromString(json.get("uuid").getAsString());
@@ -419,7 +419,6 @@ public class RedisManager {
             CobbleUtils.LOGGER.info("Sent actionbar message to player: " + actionbarPlayer.getGameProfile().getName());
           }
           break;
-
         default:
           CobbleUtils.LOGGER.warn("Unknown message type: " + type);
           break;

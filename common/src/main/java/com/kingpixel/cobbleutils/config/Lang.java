@@ -52,7 +52,7 @@ public class Lang {
   private String messageHaveRewards;
   private String messageThisPokemonIsShiny;
   private String messageNoPokemon;
-  private String messageReceiveReward;
+  private String messageRewardItemStack = "&aYou receive reward &f%item% &6%amount%&a!";
   private String messageReceiveMoney;
   private String messagePokeShout;
 
@@ -150,7 +150,6 @@ public class Lang {
     messageThisPokemonIsShiny = "&aThis Pokemon is shiny!";
     messageNoPokemon = "&cNo Pokemon";
     messageCooldownMenu = "&cYou have cooldown to open this menu.";
-    messageReceiveReward = "&aYou receive a reward!";
     messageReceiveMoney = "&aYou receive %amount%$!";
     messagePokeShout = "§e[PokeShout] &6%player% &ashouted &e%pokemon% %gender% &f(&b%form%&f) &f(&b%level%&f) &a!";
     lorepokemon = List.of(

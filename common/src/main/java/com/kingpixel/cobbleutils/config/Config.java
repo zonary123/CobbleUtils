@@ -23,6 +23,7 @@ import java.util.concurrent.CompletableFuture;
 public class Config {
   private boolean debug;
   private boolean adminServer = true;
+  private boolean notifyRewards = true;
   private boolean useDefault;
   private String lang;
   private String prefix;

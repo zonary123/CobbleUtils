@@ -24,6 +24,8 @@
     "events.KillEntityMixin",
     "events.MilkMixin",
     "events.PlayTimeMixin",
+    "events.SheepShearMixin",
+    "events.SmithingTableMixin",
     "events.StripLogMixin",
     "events.TamedMixin",
     "events.TravelMixin",
