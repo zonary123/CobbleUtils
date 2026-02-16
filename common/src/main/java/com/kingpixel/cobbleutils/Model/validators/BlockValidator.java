@@ -18,7 +18,11 @@ import java.util.Set;
 @AllArgsConstructor
 public class BlockValidator {
   private Set<String> blockIds = new HashSet<>(
-    Set.of("*")
+    Set.of(
+      "*",
+      "regex:.*",
+      "minecraft:stone"
+    )
   );
 
   /**

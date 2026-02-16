@@ -18,7 +18,11 @@ import java.util.Set;
 @AllArgsConstructor
 public class EntityValidator {
   private Set<String> entityIds = new HashSet<>(
-    Set.of("*")
+    Set.of(
+      "*",
+      "regex:.*",
+      "minecraft:pig"
+    )
   );
 
   public boolean isValid(@NonNull String entityId) {

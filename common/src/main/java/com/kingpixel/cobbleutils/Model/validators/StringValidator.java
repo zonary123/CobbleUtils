@@ -17,7 +17,11 @@ import java.util.Set;
 @AllArgsConstructor
 public class StringValidator {
   private Set<String> ids = new HashSet<>(
-    Set.of("*")
+    Set.of(
+      "*",
+      "regex:.*",
+      "example_string"
+    )
   );
 
   /**

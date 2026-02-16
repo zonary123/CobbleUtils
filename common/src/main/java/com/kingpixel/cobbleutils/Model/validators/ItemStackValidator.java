@@ -19,7 +19,11 @@ import java.util.Set;
 @AllArgsConstructor
 public class ItemStackValidator {
   private Set<String> itemIds = new HashSet<>(
-    Set.of("*")
+    Set.of(
+      "*",
+      "regex:.*",
+      "minecraft:stone"
+    )
   );
 
 

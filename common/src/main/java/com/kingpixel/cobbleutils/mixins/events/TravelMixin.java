@@ -100,8 +100,7 @@ public abstract class TravelMixin {
 
       Vec3d currentPos = player.getPos();
       Vec3d lastPos = cobbleutils$lastPos.get(uuid, key -> currentPos);
-      double distance = currentPos.squaredDistanceTo(lastPos);
-      if (distance <= MOVEMENT_THRESHOLD * MOVEMENT_THRESHOLD) {
+      if (currentPos.squaredDistanceTo(lastPos) <= MOVEMENT_THRESHOLD * MOVEMENT_THRESHOLD) {
         cobbleutils$lastPos.put(uuid, currentPos);
         return;
       }
@@ -109,7 +108,7 @@ public abstract class TravelMixin {
 
       cobbleutils$lastPos.put(uuid, currentPos);
       CobbleUtilsEvents.TRAVEL_EVENT.emit(EventTravel.builder()
-        .distance(distance)
+        .distance(lastPos.distanceTo(currentPos))
         .player(player)
         .build());
     } catch (Exception e) {
