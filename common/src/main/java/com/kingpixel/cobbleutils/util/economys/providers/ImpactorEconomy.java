@@ -82,8 +82,7 @@ public class ImpactorEconomy extends Economy {
    */
   @Override
   public boolean deposit(UUID playerUuid, BigDecimal money, String currency) {
-    Account account = getAccount(playerUuid, currency);
-    return account.deposit(money).successful();
+    return getAccount(playerUuid, currency).deposit(money).successful();
   }
 
   /**
@@ -96,13 +95,12 @@ public class ImpactorEconomy extends Economy {
    */
   @Override
   public boolean withdraw(UUID playerUuid, BigDecimal money, String currency) {
-    Account account = getAccount(playerUuid, currency);
-    return account.withdraw(money).successful();
+    return getAccount(playerUuid, currency).withdraw(money).successful();
   }
 
   @Override
   public BigDecimal getBalance(UUID playerUuid, String currency) {
-    return null;
+    return getAccount(playerUuid, currency).balance();
   }
 
   /**
@@ -189,7 +187,7 @@ public class ImpactorEconomy extends Economy {
 
   @Override
   public String formatCurrency(String currencyId, BigDecimal amount) {
-    return "";
+    return format(amount, currencyId);
   }
 
   /**
@@ -216,9 +214,11 @@ public class ImpactorEconomy extends Economy {
    */
   @Override
   public String format(BigDecimal money, String currency) {
+    if (money == null) money = BigDecimal.ZERO;
     String key = money.toPlainString() + "|" + currency;
+    BigDecimal finalMoney = money;
     return formatCache.get(key, k -> AdventureTranslator.legacyComponentSerializer.serialize(
-      getCurrency(currency).format(money)
+      getCurrency(currency).format(finalMoney)
     ));
   }
 
