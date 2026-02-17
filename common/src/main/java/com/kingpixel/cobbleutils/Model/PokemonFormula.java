@@ -223,7 +223,6 @@ public class PokemonFormula {
    * Gets the cached or calculated value of a Pokemon. (Pokemon not have a hashCode method so we cant use that for cache)
    *
    * @param pokemon The Pokemon to evaluate.
-   *
    * @return The computed value.
    */
   public Double getPokemonValue(Pokemon pokemon) {
@@ -240,7 +239,6 @@ public class PokemonFormula {
    * Builds the Pokemon-specific expression with dynamic variables set.
    *
    * @param pokemon The Pokemon to evaluate.
-   *
    * @return Expression ready to evaluate.
    */
   public Expression getPokemonExpression(Pokemon pokemon) {

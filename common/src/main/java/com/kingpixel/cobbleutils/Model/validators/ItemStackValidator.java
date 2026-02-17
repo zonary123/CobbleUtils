@@ -5,10 +5,15 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
+import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+import net.minecraft.registry.Registries;
+import net.minecraft.registry.tag.TagKey;
+import net.minecraft.util.Identifier;
 
 import java.util.HashSet;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  *
@@ -25,7 +30,19 @@ public class ItemStackValidator {
       "minecraft:stone"
     )
   );
+  private Set<String> tags = new HashSet<>();
 
+
+  private transient Set<TagKey<Item>> tagKeys;
+
+  private Set<TagKey<Item>> getTagKeysLazy() {
+    if (tagKeys == null) {
+      tagKeys = tags.stream()
+        .map(t -> TagKey.of(Registries.ITEM.getKey(), Identifier.tryParse(t)))
+        .collect(Collectors.toSet());
+    }
+    return tagKeys;
+  }
 
   /**
    * Check if the given item ID is valid according to the validator's criteria.
@@ -45,9 +62,12 @@ public class ItemStackValidator {
    */
   public boolean isValid(@NonNull ItemStack itemStack) {
     try {
-      //var tags = itemStack.streamTags();
-
-      return isValid(itemStack.getItem().toString());
+      Item item = itemStack.getItem();
+      var keys = getTagKeysLazy();
+      for (TagKey<Item> key : keys) {
+        if (Registries.ITEM.getEntry(item).isIn(key)) return true;
+      }
+      return isValid(item.toString());
     } catch (Exception e) {
       e.printStackTrace();
       return false;
