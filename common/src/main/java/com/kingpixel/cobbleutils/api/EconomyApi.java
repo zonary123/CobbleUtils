@@ -60,7 +60,11 @@ public class EconomyApi {
   @Deprecated(forRemoval = true)
   public static boolean addMoney(UUID playerUuid, BigDecimal money, String currency,
                                  String economyId) {
-    return getEconomy(economyId).deposit(playerUuid, money, currency);
+    Economy economy = getEconomy(economyId);
+    if (economy == null) {
+      throw new IllegalArgumentException("Economy not found: " + economyId);
+    }
+    return economy.deposit(playerUuid, money, currency);
   }
 
   @Deprecated(forRemoval = true)
@@ -244,7 +248,7 @@ public class EconomyApi {
 
   @Nullable
   public static Economy getEconomy(@Nonnull String economyId) {
-    if (ECONOMIES.size() == 1) return DEFAULT_ECONOMY;
+    if (ECONOMIES.size() == 1) return ECONOMIES.values().iterator().next();
     Economy economy = ECONOMIES.get(economyId);
     if (economy == null) economy = DEFAULT_ECONOMY;
     return economy;
