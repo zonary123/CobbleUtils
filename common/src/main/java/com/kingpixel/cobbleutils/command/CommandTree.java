@@ -44,6 +44,8 @@ public class CommandTree {
       LiteralArgumentBuilder<ServerCommandSource> base = CommandManager.literal(literal).requires(source ->
         LuckPermsUtil.checkPermission(source, 2, List.of("cobbleutils.admin")));
 
+      AdvancedRewardsCommand.register(dispatcher, base);
+
       base.then(
         CommandManager.literal("teleport")
           .then(
