@@ -221,10 +221,6 @@ public abstract class LuckPermsUtil {
 
         if (metaData == null) yield null;
 
-        if (CobbleUtils.config.isDebug()) {
-          CobbleUtils.LOGGER.info("MetaData for permission " + permission + " is " + metaData);
-        }
-
         // Intentar detectar tipo
         try {
           if (metaData.contains(".")) {

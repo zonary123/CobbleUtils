@@ -47,7 +47,6 @@ public class PlayerUtils {
    * Method to check if a player is in a battle.
    *
    * @param player The player to check.
-   *
    * @return true if the player is in a battle.
    */
   public static boolean isBattle(ServerPlayerEntity player) {
@@ -71,7 +70,6 @@ public class PlayerUtils {
    * @param player        The player to check.
    * @param menu          The menu to check.
    * @param durationValue The duration value to check.
-   *
    * @return true if the player has a cooldown for the specific menu.
    */
   public static boolean isCooldownMenu(ServerPlayerEntity player, String menu, DurationValue duration) {
@@ -226,7 +224,6 @@ public class PlayerUtils {
    * @param cooldowns       The cooldowns to check.
    * @param defaultCooldown The default cooldown.
    * @param player          The player to check.
-   *
    * @return The cooldown.
    */
   public static int getCooldown(Map<String, Integer> cooldowns, int defaultCooldown, ServerPlayerEntity player) {
@@ -269,7 +266,6 @@ public class PlayerUtils {
    * Method to get the cooldown in a human-readable format.
    *
    * @param timestamp The timestamp to check.
-   *
    * @return The cooldown in a human-readable format.
    */
   public static String getCooldown(long timestamp) {
@@ -305,7 +301,6 @@ public class PlayerUtils {
    * Method to get the head item of a player by UUID.
    *
    * @param playerUUID The UUID of the player.
-   *
    * @return The head item of the player.
    */
   public static ItemStack getHeadItem(UUID playerUUID) {
@@ -327,7 +322,6 @@ public class PlayerUtils {
    * Method to get the head item of a player.
    *
    * @param player The player.
-   *
    * @return The head item of the player.
    */
   public static ItemStack getHeadItem(ServerPlayerEntity player) {
@@ -339,7 +333,6 @@ public class PlayerUtils {
    * Method to check if a cooldown is active.
    *
    * @param cooldown The cooldown to check.
-   *
    * @return true if the cooldown is active.
    */
   public static boolean isCooldown(Date cooldown) {
@@ -351,7 +344,6 @@ public class PlayerUtils {
    * Method to check if a cooldown is active.
    *
    * @param cooldown The cooldown to check.
-   *
    * @return true if the cooldown is active.
    */
   public static boolean isCooldown(Long cooldown) {
@@ -359,18 +351,19 @@ public class PlayerUtils {
     return isCooldown(new Date(cooldown));
   }
 
+  private static ServerCommandSource silentCommandSource = null;
+
   /**
    * Execute a command
    *
    * @param command The command to execute
-   *
    * @return If the command was executed successfully
    */
   public static boolean executeCommand(String command, ServerPlayerEntity player) {
     command = command.replace("%player%", player.getGameProfile().getName());
     CommandDispatcher<ServerCommandSource> disparador = CobbleUtils.server.getCommandManager().getDispatcher();
-    ServerCommandSource serverSource = CobbleUtils.server.getCommandSource();
-    ParseResults<ServerCommandSource> parse = disparador.parse(command, serverSource);
+    if (silentCommandSource == null) silentCommandSource = CobbleUtils.server.getCommandSource().withSilent();
+    ParseResults<ServerCommandSource> parse = disparador.parse(command, silentCommandSource);
     String finalCommand = command;
     CobbleUtils.server.execute(() -> {
       try {
@@ -387,7 +380,6 @@ public class PlayerUtils {
    * Method to cast a PlayerEntity to a ServerPlayerEntity.
    *
    * @param player The player to cast.
-   *
    * @return The ServerPlayerEntity.
    */
   public static ServerPlayerEntity castPlayer(PlayerEntity player) {
@@ -404,7 +396,6 @@ public class PlayerUtils {
    * Method to get the GameProfile of a player by name using Mojang API.
    *
    * @param name The name of the player.
-   *
    * @return The GameProfile of the player or null if not found.
    */
   public static GameProfile getGameProfile(String name) {

@@ -14,6 +14,7 @@ import java.util.List;
  */
 @Getter
 @ToString
+@Deprecated(forRemoval = true)
 public class PokemonChance {
   private String pokemon;
   private int chance;

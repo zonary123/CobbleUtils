@@ -14,6 +14,7 @@ import com.kingpixel.cobbleutils.Model.DataBaseType;
 import com.kingpixel.cobbleutils.Model.DurationValue;
 import com.kingpixel.cobbleutils.Model.ItemChance;
 import com.kingpixel.cobbleutils.Model.messages.HiperMessage;
+import com.kingpixel.cobbleutils.Model.rewards.Reward;
 import com.kingpixel.cobbleutils.adapter.*;
 import com.kingpixel.cobbleutils.database.users.models.Storage;
 import com.kingpixel.cobbleutils.util.async.AsyncContext;
@@ -75,10 +76,7 @@ public final class UtilsFile {
     new ConcurrentHashMap<>();
 
   private static ReadWriteLock lock(Path path) {
-    return FILE_LOCKS.computeIfAbsent(
-      path.toAbsolutePath().normalize(),
-      p -> new ReentrantReadWriteLock()
-    );
+    return FILE_LOCKS.computeIfAbsent(path.toAbsolutePath().normalize(), p -> new ReentrantReadWriteLock());
   }
 
   private static volatile Gson GSON;
@@ -98,6 +96,8 @@ public final class UtilsFile {
     registerAdapter(Vec3d.class, Vec3dAdapter.INSTANCE);
     registerAdapter(AtomicReference.class, AtomicReferenceAdapter.INSTANCE);
     registerAdapter(Box.class, BoxAdapter.INSTANCE);
+    registerAdapter(Reward.class, RewardAdapter.INSTANCE);
+    // Cobblemon adapters
     registerAdapter(Pokemon.class, PokemonAdapter.INSTANCE);
     registerAdapter(Move.class, MoveTemplateAdapter.INSTANCE);
     registerAdapter(IntRange.class, IntRangeAdapter.INSTANCE);

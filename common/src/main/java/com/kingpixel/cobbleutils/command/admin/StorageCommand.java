@@ -6,7 +6,7 @@ import com.cobblemon.mod.common.pokemon.Pokemon;
 import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.Model.ItemChance;
 import com.kingpixel.cobbleutils.api.PermissionApi;
-import com.kingpixel.cobbleutils.api.RewardsApi;
+import com.kingpixel.cobbleutils.api.RewardsAPI;
 import com.kingpixel.cobbleutils.command.suggests.CobbleUtilsSuggests;
 import com.kingpixel.cobbleutils.database.DataBaseFactory;
 import com.kingpixel.cobbleutils.database.users.models.StorageItemStack;
@@ -145,7 +145,7 @@ public class StorageCommand {
                           ItemChance itemChance = null;
                           if (data.startsWith("id:")) {
                             String id = data.substring(3);
-                            itemChance = RewardsApi.getReward(id);
+                            itemChance = RewardsAPI.getReward(id);
                           } else {
                             itemChance = new ItemChance(data, 100);
                           }

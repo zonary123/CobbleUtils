@@ -6,6 +6,7 @@ import lombok.Getter;
  * @author Carlos Varas Alonso - 21/07/2024 5:58
  */
 @Getter
+@Deprecated(forRemoval = true)
 public class CobbleUtilsTags {
   public static final String BREEDABLE_TAG = "breedable";
   public static final String POKERUS_TAG = "pokerus";

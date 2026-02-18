@@ -12,6 +12,7 @@ import lombok.*;
 @ToString
 @EqualsAndHashCode
 @Data
+@Deprecated(forRemoval = true)
 public class PokemonData {
   private String pokename;
   private String form;

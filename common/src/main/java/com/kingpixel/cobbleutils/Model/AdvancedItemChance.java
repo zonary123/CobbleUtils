@@ -37,10 +37,12 @@ import java.util.function.Consumer;
 
 /**
  * @author Carlos Varas Alonso - 21/11/2024 3:15
+ * @deprecated {@link com.kingpixel.cobbleutils.Model.rewards.AdvancedReward}
  */
 @Getter
 @Setter
 @ToString
+@Deprecated(forRemoval = true)
 public class AdvancedItemChance {
   // TODO: Add queue for the ANIMATIONS
   private String id;

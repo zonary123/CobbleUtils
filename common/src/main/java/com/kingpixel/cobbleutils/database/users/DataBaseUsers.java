@@ -5,7 +5,7 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.Model.DataBaseConfig;
 import com.kingpixel.cobbleutils.Model.ItemChance;
-import com.kingpixel.cobbleutils.api.RewardsApi;
+import com.kingpixel.cobbleutils.api.RewardsAPI;
 import com.kingpixel.cobbleutils.database.users.models.Storage;
 import com.mojang.authlib.GameProfile;
 import net.minecraft.network.packet.c2s.common.SyncedClientOptions;
@@ -103,7 +103,7 @@ public abstract class DataBaseUsers {
   public boolean isAvailableReward(UUID playerUUID, ItemChance itemChance) {
     UserModel user = findUserByUUID(playerUUID);
     if (itemChance.getItem().startsWith("id:")) {
-      ItemChance idChance = RewardsApi.getReward(itemChance.getItem().substring(3));
+      ItemChance idChance = RewardsAPI.getReward(itemChance.getItem().substring(3));
       if (idChance != null) {
         itemChance = idChance;
       } else {

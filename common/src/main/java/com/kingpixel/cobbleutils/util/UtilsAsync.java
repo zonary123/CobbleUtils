@@ -11,6 +11,8 @@ import java.util.function.Supplier;
  * Ejecuta tareas de forma segura:
  * - Usa el executor si está activo
  * - Si el executor está muerto o shutdown → ejecuta en el hilo principal
+ *
+ * @deprecated {@link com.kingpixel.cobbleutils.util.async.UtilsAsync}
  */
 @Deprecated(forRemoval = true)
 public final class UtilsAsync {

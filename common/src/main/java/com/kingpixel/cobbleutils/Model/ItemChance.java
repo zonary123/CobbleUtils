@@ -15,8 +15,9 @@ import com.cobblemon.mod.common.api.storage.NoPokemonStoreException;
 import com.cobblemon.mod.common.item.PokemonItem;
 import com.cobblemon.mod.common.pokemon.Pokemon;
 import com.kingpixel.cobbleutils.CobbleUtils;
+import com.kingpixel.cobbleutils.Model.rewards.Reward;
 import com.kingpixel.cobbleutils.api.EconomyApi;
-import com.kingpixel.cobbleutils.api.RewardsApi;
+import com.kingpixel.cobbleutils.api.RewardsAPI;
 import com.kingpixel.cobbleutils.database.DataBaseFactory;
 import com.kingpixel.cobbleutils.util.*;
 import lombok.*;
@@ -33,10 +34,16 @@ import java.util.regex.Pattern;
 
 /**
  * Represents an item chance model with methods to handle rewards.
+ *
+ * @deprecated {@link com.kingpixel.cobbleutils.Model.rewards.Reward}
  */
 @Data
 @EqualsAndHashCode
 @ToString
+@Builder
+@AllArgsConstructor
+
+@Deprecated(forRemoval = true)
 public class ItemChance {
   public static final Map<String, List<ItemMod>> modItems = new HashMap<>();
   // Required properties
@@ -167,6 +174,18 @@ public class ItemChance {
     }
   }
 
+  public Reward toReward() {
+    return Reward.builder()
+      .reward(item)
+      .weight(chance)
+      .unique(unique != null ? unique : false)
+      .identifier(identifier)
+      .amount(amount)
+      .cooldown(cooldown)
+      .display(display)
+      .build();
+  }
+
   /**
    * Determines the type of item chance.
    *
@@ -269,7 +288,7 @@ public class ItemChance {
       String item = itemChance.getItem();
       if (item.startsWith("id:")) {
         String id = item.replace("id:", "");
-        ItemChance ic = RewardsApi.getReward(id);
+        ItemChance ic = RewardsAPI.getReward(id);
         if (ic != null) {
           return giveReward(player, ic, amount);
         } else return false;
@@ -403,7 +422,9 @@ public class ItemChance {
     itemStack = Utils.parseItemId(iditem, amount);
     if (split.length < 2) return itemStack;
     String nbt = split[1];
-    itemStack = ItemUtils.applyNbt(iditem, itemStack, nbt, amount);
+    if (!nbt.isEmpty()) {
+      itemStack = ItemUtils.applyNbt(iditem, itemStack, nbt, amount);
+    }
     return itemStack;
   }
 
@@ -496,7 +517,7 @@ public class ItemChance {
 
     if (item.startsWith("id:")) {
       String id = item.replace("id:", "");
-      ItemChance ic = RewardsApi.getReward(id);
+      ItemChance ic = RewardsAPI.getReward(id);
 
       if (ic != null) {
         String nestedItem = ic.getItem();

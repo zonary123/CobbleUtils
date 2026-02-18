@@ -52,6 +52,7 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
+@Deprecated(forRemoval = true)
 public abstract class Utils {
   /**
    * @deprecated Use {@link Utils#getRandom()} instead.
@@ -125,6 +126,12 @@ public abstract class Utils {
   }
 
 
+  /**
+   * @param element The NbtElement to convert.
+   * @return Unboxed value of the NbtElement, or null if it's not a primitive type.
+   * @deprecated Use {@link NbtUtils#convertNbtValue(NbtElement)} instead.
+   */
+  @Deprecated(forRemoval = true)
   public static Object convertNbtValue(NbtElement element) {
     return switch (element) {
       case null -> null;
@@ -149,6 +156,13 @@ public abstract class Utils {
     .setNameFormat("CobbleUtils IO - %d")
     .build());
 
+  /**
+   * @param filePath
+   * @param filename
+   * @param data
+   * @return
+   * @deprecated Use {@link UtilsFile#writeAsync(Path, Object)} instead.
+   */
   @Deprecated(forRemoval = true)
   public static CompletableFuture<Boolean> writeFileAsync(
     String filePath,
@@ -177,6 +191,9 @@ public abstract class Utils {
     }
   }
 
+  /**
+   * @deprecated Use {@link UtilsFile#writeAsync(Path, Object)} instead.
+   */
   @Deprecated(forRemoval = true)
   private static boolean writeFileSyncSafe(File file, String data) {
     try {
@@ -193,6 +210,12 @@ public abstract class Utils {
     return writeFileSync(file, data); // ⬅ método legacy intacto
   }
 
+  /**
+   * @param file
+   * @param data
+   * @return
+   * @deprecated Use {@link UtilsFile#writeAsync(Path, Object)} instead.
+   */
   @Deprecated(forRemoval = true)
   public static boolean writeFileSync(File file, String data) {
     try (FileWriter writer = new FileWriter(file, charset)) {
