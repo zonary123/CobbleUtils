@@ -16,6 +16,7 @@ import lombok.NoArgsConstructor;
 import net.minecraft.component.DataComponentTypes;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
+import net.minecraft.text.Text;
 import org.jetbrains.annotations.Nullable;
 
 import java.math.BigDecimal;
@@ -107,6 +108,14 @@ public class RewardRegistry {
     EXECUTORS.put("item", (player, reward, data) -> {
       try {
         ItemStack itemStack = getItemStack(data);
+        if (itemStack == null) {
+          player.sendMessage(
+            Text.literal(
+              "Invalid item reward data: " + data
+            )
+          );
+          return;
+        }
         CobbleUtils.server.execute(() -> {
           if (player.getInventory().getEmptySlot() == -1) {
             reward.giveToPlayerDisconnected(player.getUuid());
@@ -114,6 +123,17 @@ public class RewardRegistry {
             player.getInventory().offerOrDrop(itemStack);
           }
         });
+
+        
+        if (CobbleUtils.config.isNotifyRewards()) {
+          player.sendMessage(
+            AdventureTranslator.toNative(
+              CobbleUtils.language.getMessageRewardItemStack()
+                .replace("%item%", ItemUtils.getTranslatedName(itemStack))
+                .replace("%amount%", itemStack.getCount() + "")
+            )
+          );
+        }
       } catch (Exception e) {
         e.printStackTrace();
       }

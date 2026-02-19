@@ -7,6 +7,7 @@ import lombok.*;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.text.Text;
 
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -63,6 +64,10 @@ public class Reward {
     }
   }
 
+  public boolean canGive(ServerPlayerEntity player) {
+    return true;
+  }
+
   /**
    * Obtiene el ícono para el GUI de manera segura
    */
@@ -101,7 +106,9 @@ public class Reward {
 
         String[] rewardParts = singleReward.split(":", 2);
         if (rewardParts.length < 2) {
-          CobbleUtils.LOGGER.error("Invalid reward format: {}", singleReward);
+          player.sendMessage(
+            Text.literal("Invalid reward format: " + singleReward)
+          );
           continue;
         }
 
@@ -110,6 +117,11 @@ public class Reward {
 
         RewardExecutor executor = RewardRegistry.getRewardExecutor(type);
         if (executor == null) {
+          player.sendMessage(
+            Text.literal(
+              "Unknown reward type: " + type + " for reward: " + singleReward
+            )
+          );
           continue;
         }
 

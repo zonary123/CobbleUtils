@@ -27,6 +27,10 @@ public class ItemUtils {
     return nbtOps;
   }
 
+  public static boolean equals(ItemStack itemStack, ItemStack otherStack) {
+    return ItemStack.areItemsAndComponentsEqual(itemStack, otherStack);
+  }
+
   public static String itemstackToString(ItemStack itemStack) {
     JsonObject jsonObject = new JsonObject();
     jsonObject.addProperty("itemId", itemStack.getRegistryEntry().getIdAsString());

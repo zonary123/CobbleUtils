@@ -12,10 +12,14 @@ import ca.landonjw.gooeylibs2.api.template.types.ChestTemplate;
 import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.Model.Rectangle;
 import com.kingpixel.cobbleutils.api.PermissionApi;
+import com.kingpixel.cobbleutils.util.AdventureTranslator;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import net.minecraft.component.DataComponentTypes;
+import net.minecraft.component.type.LoreComponent;
+import net.minecraft.item.ItemStack;
 import net.minecraft.server.network.ServerPlayerEntity;
 
 import java.util.*;
@@ -53,16 +57,17 @@ public class AdvancedReward {
   ));
 
   private static final List<Reward> EXAMPLE_REWARD_LIST = List.of(
-    Reward.builder().reward("item:1:minecraft:stone").weight(1.0).build(),
+    Reward.builder().reward("item:1:cobblemon:poke_ball").weight(1.0).build(),
     Reward.builder().reward("item:1:minecraft:stone#[minecraft:custom_model_data=1]").weight(1.0).build(),
     Reward.builder().reward("item:1:minecraft:stone#[minecraft:custom_model_data=2]").weight(-1.0).build(),
     Reward.builder().reward("command:give %player% minecraft:stone").weight(1.0).build(),
     Reward.builder().reward("money:1").weight(1.0).build(),
-    Reward.builder().reward("money:1-1").weight(1.0).build(),
+    Reward.builder().reward("money:1-1.1").weight(1.0).build(),
     Reward.builder().reward("money:1:IMPACTOR:dollars:Example Reason %money%").weight(1.0).build(),
-    Reward.builder().reward("money:1-1:IMPACTOR:dollars:Example Reason %money%").weight(1.0).build(),
+    Reward.builder().reward("money:1-1.1:IMPACTOR:dollars:Example Reason %money%").weight(1.0).build(),
     Reward.builder().reward("message:You got a reward!").weight(1.0).build(),
-    Reward.builder().reward("pokemon:rattata").weight(1.0).build()
+    Reward.builder().reward("pokemon:rattata").weight(1.0).build(),
+    Reward.builder().reward("pokemon:rattata|command:give %player% minecraft:stone|money:1|message:Test linkeds rewards").build()
   );
 
   private int getTotalAmount(UUID playerUUID) {
@@ -193,9 +198,38 @@ public class AdvancedReward {
       rectangle.apply(template);
       List<Button> buttons = new ArrayList<>();
       List<Reward> rewards = getRewardsForPlayer(player.getUuid());
+
+      double totalWeight = rewards.stream()
+        .mapToDouble(Reward::getWeight)
+        .filter(weight -> weight > 0)
+        .sum();
+
+
       for (Reward reward : rewards) {
-        buttons.add(GooeyButton.of(reward.getIcon()));
+
+        ItemStack icon = reward.getIcon().copy();
+
+        double percentage;
+
+        if (reward.getWeight() <= 0) {
+          percentage = 100D;
+        } else {
+          percentage = totalWeight > 0
+            ? (reward.getWeight() / totalWeight) * 100D
+            : 0D;
+        }
+
+        String formatted = String.format("%.2f", percentage);
+
+        icon.set(DataComponentTypes.LORE, new LoreComponent(
+          AdventureTranslator.toNativeL(
+            List.of("&7Chance: &a" + formatted + "%")
+          )
+        ));
+
+        buttons.add(GooeyButton.of(icon));
       }
+
 
       template.set(45, CobbleUtils.language.getItemPrevious().getLinkedPageButton(LinkType.Previous));
       template.set(49, CobbleUtils.language.getItemClose().getButton(closeAction));
