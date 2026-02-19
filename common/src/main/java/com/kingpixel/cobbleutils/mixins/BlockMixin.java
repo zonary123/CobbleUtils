@@ -1,6 +1,6 @@
 package com.kingpixel.cobbleutils.mixins;
 
-import com.kingpixel.cobbleutils.api.BlocksApi;
+import com.kingpixel.cobbleutils.api.BlocksAPI;
 import com.kingpixel.cobbleutils.database.blocks.ChunkBlockStorageManager;
 import com.kingpixel.cobbleutils.events.CobbleUtilsEvents;
 import com.kingpixel.cobbleutils.events.models.EventBlockBreak;
@@ -75,7 +75,7 @@ public abstract class BlockMixin {
     if (!hasBreak && !hasCollect) return;
 
     try {
-      boolean isPlaced = BlocksApi.isBlockPlaceByPlayer(world, pos);
+      boolean isPlaced = BlocksAPI.isBlockPlaceByPlayer(world, pos);
 
       if (hasBreak) {
         CobbleUtilsEvents.BLOCK_BREAK_EVENT.emit(

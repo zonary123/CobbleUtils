@@ -13,7 +13,7 @@ import net.minecraft.world.World;
  * API para calcular la cantidad de bloques de cultivo o tipo columna
  * que deben recolectarse automáticamente.
  */
-public class BlocksApi {
+public class BlocksAPI {
 
   /**
    * Check if a block was placed by a player (not naturally generated).
