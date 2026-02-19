@@ -7,6 +7,7 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.server.network.ServerPlayerEntity;
 
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * @author Carlos Varas Alonso - 06/10/2025 5:11
@@ -34,12 +35,14 @@ public class StorageItemStack extends Storage {
   }
 
   @Override
-  public boolean giveToPlayer(ServerPlayerEntity player) {
-    if (player.getInventory().getEmptySlot() != -1) {
-      CobbleUtils.server.execute(() -> player.getInventory().offerOrDrop(itemStack.copy()));
-      return true;
-    }
-    return false;
+  public CompletableFuture<Boolean> giveToPlayer(ServerPlayerEntity player) {
+    return CompletableFuture.supplyAsync(() -> {
+      if (player.getInventory().getEmptySlot() != -1) {
+        CobbleUtils.server.execute(() -> player.getInventory().offerOrDrop(itemStack.copy()));
+        return true;
+      }
+      return false;
+    });
   }
 
 }

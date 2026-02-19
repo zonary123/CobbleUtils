@@ -23,7 +23,7 @@ public class DataBaseFactory {
       case MONGODB -> new DataBaseUsersMongoDB();
       default -> new DataBaseUsersJson();
     };
-    if (dataBaseUsers != null) dataBaseUsers.connect(config);
+    dataBaseUsers.connect(config);
   }
 
   public static void close() {

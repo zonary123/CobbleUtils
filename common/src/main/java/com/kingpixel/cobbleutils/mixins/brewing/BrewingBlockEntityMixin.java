@@ -64,6 +64,6 @@ public abstract class BrewingBlockEntityMixin {
       }
       return;
     }
-    CobbleUtils.runAsync(() -> CobbleUtilsEvents.BREWING_EVENT.emit(new EventBrewing(player, world, pos, slots)));
+    CobbleUtilsEvents.BREWING_EVENT.emit(new EventBrewing(player, world, pos, slots));
   }
 }

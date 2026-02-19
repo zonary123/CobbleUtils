@@ -223,7 +223,7 @@ public class ItemModel {
    * @param action The action of the button
    * @return The button of the item
    */
-  @Deprecated
+  @Deprecated(forRemoval = true)
   public GooeyButton getButton(Consumer<ButtonAction> action) {
     return getButton(1, null, null, action);
   }
@@ -234,7 +234,7 @@ public class ItemModel {
    * @param action The action of the button
    * @return The button of the item
    */
-  @Deprecated
+  @Deprecated(forRemoval = true)
   public GooeyButton getButton(int amount, Consumer<ButtonAction> action) {
     return getButton(amount, null, null, action);
   }
@@ -246,7 +246,7 @@ public class ItemModel {
    * @param amount The amount of the item
    * @return The button of the item
    */
-  @Deprecated
+  @Deprecated(forRemoval = true)
   public GooeyButton getButton(int amount, String name, Consumer<ButtonAction> action) {
     return getButton(amount, name, null, action);
   }
@@ -258,7 +258,7 @@ public class ItemModel {
    * @param amount The amount of the item
    * @return The button of the item
    */
-  @Deprecated
+  @Deprecated(forRemoval = true)
   public GooeyButton getButton(int amount, String name,
                                List<String> lore, Consumer<ButtonAction> action) {
     ItemStack itemStack = this.getItemStack(amount);
@@ -291,7 +291,6 @@ public class ItemModel {
     return builder
       .build();
   }
-
 
   public RateLimitedButton getButton(Consumer<ButtonAction> action,
                                      long delay, TimeUnit timeUnit, @Nullable Integer limit) {

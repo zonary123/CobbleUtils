@@ -55,6 +55,12 @@ public class RewardsAPI {
     } else rewardToGive.giveToPlayer(player);
   }
 
+  public static @Nullable Reward getRewardTemplate(String id) {
+    Reward reward = REWARDS_TEMPLATE.getOrDefault(id, null);
+    if (reward == null) CobbleUtils.LOGGER.error("Reward with id " + id + " not found!");
+    return reward;
+  }
+
   public static @Nullable ItemChance getReward(String id) {
     ItemChance itemChance = CobbleUtils.rewardsConfig.getRewards().getOrDefault(id, null);
     if (itemChance == null) CobbleUtils.LOGGER.error("Reward with id " + id + " not found!");

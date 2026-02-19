@@ -1,4 +1,4 @@
-package com.kingpixel.cobbleutils.database.blocks.model;
+package com.kingpixel.cobbleutils.database.blocks;
 
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import lombok.Getter;

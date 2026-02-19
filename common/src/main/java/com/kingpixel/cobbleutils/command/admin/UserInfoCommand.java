@@ -11,6 +11,7 @@ import net.minecraft.command.argument.UuidArgumentType;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.text.Text;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.UUID;
@@ -33,8 +34,17 @@ public class UserInfoCommand {
                     .suggestPlayerName("target", List.of("cobbleutils.admin", "cobbleutils.command.userinfo"), 2)
                     .executes(context -> {
                       String target = StringArgumentType.getString(context, "target");
-                      UserModel user = DataBaseFactory.dataBaseUsers.findUserByName(target);
-                      info(target, user, context);
+                      DataBaseFactory.dataBaseUsers.findUserModel(target)
+                        .whenComplete((userModel, throwable) -> {
+                          if (throwable != null) {
+                            context.getSource().sendMessage(
+                              Text.literal("An error occurred while fetching the user data.")
+                            );
+                            throwable.printStackTrace();
+                            return;
+                          }
+                          info(target, userModel, context);
+                        });
                       return 1;
                     })
                 )
@@ -45,8 +55,17 @@ public class UserInfoCommand {
                     .suggestPlayerUUID("target", List.of("cobbleutils.admin", "cobbleutils.command.userinfo"), 2)
                     .executes(context -> {
                       UUID target = UuidArgumentType.getUuid(context, "target");
-                      UserModel user = DataBaseFactory.dataBaseUsers.findUserByUUID(target);
-                      info(target.toString(), user, context);
+                      DataBaseFactory.dataBaseUsers.findUserModel(target)
+                        .whenComplete((userModel, throwable) -> {
+                          if (throwable != null) {
+                            context.getSource().sendMessage(
+                              Text.literal("An error occurred while fetching the user data.")
+                            );
+                            throwable.printStackTrace();
+                            return;
+                          }
+                          info(target.toString(), userModel, context);
+                        });
                       return 1;
                     })
                 )
@@ -85,7 +104,7 @@ public class UserInfoCommand {
     );
   }
 
-  private static void info(String target, UserModel user, CommandContext<ServerCommandSource> context) {
+  private static void info(String target, @Nullable UserModel user, CommandContext<ServerCommandSource> context) {
     if (user == null) {
       context.getSource().sendMessage(
         Text.literal("The user " + target + " does not exist in the database.")

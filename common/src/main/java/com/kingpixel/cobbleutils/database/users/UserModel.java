@@ -6,9 +6,11 @@ import com.kingpixel.cobbleutils.Model.ItemChance;
 import com.kingpixel.cobbleutils.database.DataBaseFactory;
 import com.kingpixel.cobbleutils.database.users.models.Storage;
 import com.kingpixel.cobbleutils.util.PlayerUtils;
+import com.kingpixel.cobbleutils.util.UtilsFile;
 import lombok.Data;
 import net.minecraft.server.network.ServerPlayerEntity;
-import org.jetbrains.annotations.NotNull;
+import org.bson.Document;
+import org.jetbrains.annotations.Nullable;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -17,6 +19,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -33,7 +36,7 @@ public class UserModel {
   private String ip;
   private Map<String, RewardInfo> rewardsClaimed = new HashMap<>();
   private Set<Storage> storageList = new HashSet<>();
-  private transient boolean dirty = false;
+  private transient AtomicBoolean dirty = new AtomicBoolean(false);
 
   public UserModel(ServerPlayerEntity player) {
     this.playerUUID = player.getUuid();
@@ -47,14 +50,12 @@ public class UserModel {
     this.ip = null;
   }
 
-  public UserModel(@NotNull UUID uuid) {
-    this.playerUUID = uuid;
-    this.lastLogin = null;
-    this.ip = null;
-    this.online = false;
-    this.disconnectTime = null;
-    this.storageList = new HashSet<>();
-    this.rewardsClaimed = new HashMap<>();
+  public UserModel() {
+
+  }
+
+  public static @Nullable UserModel fromDocument(Document doc) {
+    return UtilsFile.getGson().fromJson(doc.toJson(), UserModel.class);
   }
 
   public void connect(ServerPlayerEntity player) {
@@ -65,6 +66,18 @@ public class UserModel {
     this.disconnectTime = null;
     if (rewardsClaimed == null) rewardsClaimed = new HashMap<>();
     if (storageList == null) storageList = new HashSet<>();
+    if (dirty == null) dirty = new AtomicBoolean(false);
+    markDirty();
+  }
+
+  public void markDirty() {
+    if (dirty == null) dirty = new AtomicBoolean(false);
+    dirty.set(true);
+  }
+
+  public CompletableFuture<Void> save() {
+    if (dirty.getAndSet(false)) return DataBaseFactory.dataBaseUsers.saveUserModel(this);
+    return CompletableFuture.completedFuture(null);
   }
 
   /**
@@ -110,23 +123,21 @@ public class UserModel {
     if (rewardInfo.getTimesClaimed() == maxClaims && itemChance.getCooldown() != null) {
       rewardInfo.setFinishCooldown(Instant.now().plus(itemChance.getCooldown().toMillis(), ChronoUnit.MILLIS));
     }
-    DataBaseFactory.dataBaseUsers.saveOrUpdateUser(this);
     return true;
   }
 
-  public boolean fix() {
-    AtomicBoolean changed = new AtomicBoolean(false);
+  public void fix(ServerPlayerEntity player) {
     if (rewardsClaimed == null) {
       rewardsClaimed = new HashMap<>();
-      changed.set(true);
+      markDirty();
     }
     if (storageList == null) {
       storageList = new HashSet<>();
-      changed.set(true);
+      markDirty();
     }
     storageList.stream().filter(Objects::isNull).toList().forEach(storage -> {
       storageList.remove(storage);
-      changed.set(true);
+      markDirty();
     });
     Iterator<Map.Entry<String, RewardInfo>> it = rewardsClaimed.entrySet().iterator();
 
@@ -137,19 +148,19 @@ public class UserModel {
       RewardInfo info = entry.getValue();
       if (info == null) {
         it.remove();
-        changed.set(true);
+        markDirty();
         continue;
       }
       if (info.getFinishCooldown() != null && now.isAfter(info.getFinishCooldown())) {
         it.remove();
-        changed.set(true);
+        markDirty();
       }
     }
-    return changed.get();
   }
 
   public void addStorage(Storage storage) {
     storageList.add(storage);
+    markDirty();
   }
 
   public Storage removeStorage(UUID storageId) {
@@ -160,17 +171,28 @@ public class UserModel {
         break;
       }
     }
-    if (toRemove != null) storageList.remove(toRemove);
+    if (toRemove != null) {
+      storageList.remove(toRemove);
+      markDirty();
+    }
     return toRemove;
   }
 
   public void disconnect() {
     this.online = false;
     this.disconnectTime = Instant.now();
+    markDirty();
   }
 
   public void addStorage(List<Storage> storage) {
     storageList.addAll(storage);
+    markDirty();
+  }
+
+  public Document toDocument() {
+    Document document = Document.parse(UtilsFile.getGson().toJson(this, UserModel.class));
+    document.remove("storageList"); // Remove storageList to avoid MongoDB size issues
+    return document;
   }
 
 
@@ -214,7 +236,5 @@ public class UserModel {
 
       return Math.max(0, remaining);
     }
-
-
   }
 }

@@ -97,8 +97,8 @@ public class Reward {
     }
   }
 
-  public CompletableFuture<Void> giveToPlayer(@NonNull ServerPlayerEntity player) {
-    return CobbleUtils.ASYNC.runAsync(() -> {
+  public CompletableFuture<Boolean> giveToPlayer(@NonNull ServerPlayerEntity player) {
+    return CobbleUtils.ASYNC.supply(() -> {
       String[] allRewards = reward.split("\\|");
       for (String singleReward : allRewards) {
         singleReward = singleReward.trim();
@@ -127,6 +127,7 @@ public class Reward {
 
         executor.execute(player, this, data);
       }
+      return true;
     });
   }
 
@@ -136,4 +137,7 @@ public class Reward {
   }
 
 
+  public boolean existType() {
+    return RewardRegistry.getRewardExecutor(reward.split(":")[0]) != null;
+  }
 }

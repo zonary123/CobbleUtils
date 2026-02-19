@@ -14,6 +14,7 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.server.network.ServerPlayerEntity;
 
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * @author Carlos Varas Alonso - 06/10/2025 5:11
@@ -47,9 +48,15 @@ public class StoragePokemon extends Storage {
   }
 
   @Override
-  public boolean giveToPlayer(ServerPlayerEntity player) {
-    CobbleUtils.server.execute(() -> Cobblemon.INSTANCE.getStorage().getParty(player).add(pokemon));
-    return true;
+  public CompletableFuture<Boolean> giveToPlayer(ServerPlayerEntity player) {
+    return CompletableFuture.supplyAsync(() -> {
+      var party = Cobblemon.INSTANCE.getStorage().getParty(player);
+      if (party.size() < 6) {
+        CobbleUtils.server.execute(() -> party.add(pokemon));
+        return true;
+      }
+      return false;
+    });
   }
 
 

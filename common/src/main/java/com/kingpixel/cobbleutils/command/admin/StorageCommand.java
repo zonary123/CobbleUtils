@@ -4,7 +4,7 @@ import com.cobblemon.mod.common.command.argument.PartySlotArgumentType;
 import com.cobblemon.mod.common.command.argument.PokemonPropertiesArgumentType;
 import com.cobblemon.mod.common.pokemon.Pokemon;
 import com.kingpixel.cobbleutils.CobbleUtils;
-import com.kingpixel.cobbleutils.Model.ItemChance;
+import com.kingpixel.cobbleutils.Model.rewards.Reward;
 import com.kingpixel.cobbleutils.api.PermissionApi;
 import com.kingpixel.cobbleutils.api.RewardsAPI;
 import com.kingpixel.cobbleutils.command.suggests.CobbleUtilsSuggests;
@@ -12,6 +12,7 @@ import com.kingpixel.cobbleutils.database.DataBaseFactory;
 import com.kingpixel.cobbleutils.database.users.models.StorageItemStack;
 import com.kingpixel.cobbleutils.database.users.models.StoragePokemon;
 import com.kingpixel.cobbleutils.database.users.models.StorageRewards;
+import com.mojang.authlib.GameProfile;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
@@ -27,6 +28,7 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 public class StorageCommand {
@@ -142,19 +144,23 @@ public class StorageCommand {
                           UUID targetUUID = getPlayerUUID(context);
                           String targetName = getTargetName(context);
                           String data = StringArgumentType.getString(context, "data");
-                          ItemChance itemChance = null;
+                          Reward reward;
                           if (data.startsWith("id:")) {
                             String id = data.substring(3);
-                            itemChance = RewardsAPI.getReward(id);
+                            reward = RewardsAPI.getRewardTemplate(id);
                           } else {
-                            itemChance = new ItemChance(data, 100);
+                            reward = Reward.builder().reward(data).build();
                           }
-                          if (itemChance == null) {
+                          if (reward == null) {
+                            sendFeedback(source, "⚠️ Invalid reward data: '" + data + "'.");
+                            return 0;
+                          }
+                          if (reward.existType()) {
                             sendFeedback(source, "⚠️ Reward '" + data + "' not found.");
                             return 0;
                           }
 
-                          DataBaseFactory.dataBaseUsers.addStorage(new StorageRewards(itemChance), targetUUID);
+                          DataBaseFactory.dataBaseUsers.addStorage(new StorageRewards(reward), targetUUID);
                           sendFeedback(source, "✅ Added reward '" + data + "' to " + targetName + "'s storage.");
                           return 1;
                         })
@@ -172,13 +178,21 @@ public class StorageCommand {
                   ServerPlayerEntity player = context.getSource().getPlayerOrThrow();
                   UUID playerUUID = getPlayerUUID(context);
                   String targetName = getTargetName(context);
+                  var userCache = CobbleUtils.server.getUserCache();
+                  if (userCache == null) return 0;
 
-                  var user = DataBaseFactory.dataBaseUsers.findUserByUUID(playerUUID);
-                  if (user != null) {
-                    CobbleUtils.language.getStorageMenu().open(player, playerUUID);
-                    sendFeedback(context.getSource(), "📦 Displaying storage for " + targetName + ".");
+                  Optional<GameProfile> cachedProfile = userCache.findByName(targetName);
+                  if (cachedProfile.isPresent()) {
+                    CobbleUtils.language.getStorageMenu().open(player, cachedProfile.get().getId());
                   } else {
-                    sendFeedback(context.getSource(), "⚠️ Player " + targetName + " was not found.");
+                    DataBaseFactory.dataBaseUsers.findUserModel(playerUUID)
+                      .whenComplete((userModel, throwable) -> {
+                        if (userModel == null) {
+                          sendFeedback(context.getSource(), "⚠️ Player " + targetName + " was not found in the database.");
+                          return;
+                        }
+                        CobbleUtils.language.getStorageMenu().open(player, userModel.getPlayerUUID());
+                      });
                   }
                   return 1;
                 })

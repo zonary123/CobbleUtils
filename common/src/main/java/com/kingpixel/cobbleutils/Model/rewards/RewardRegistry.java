@@ -8,7 +8,10 @@ import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.Model.EconomySelector;
 import com.kingpixel.cobbleutils.Model.ItemModel;
 import com.kingpixel.cobbleutils.api.RewardsAPI;
-import com.kingpixel.cobbleutils.util.*;
+import com.kingpixel.cobbleutils.util.AdventureTranslator;
+import com.kingpixel.cobbleutils.util.ItemUtils;
+import com.kingpixel.cobbleutils.util.PlayerUtils;
+import com.kingpixel.cobbleutils.util.TypeMessage;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -79,27 +82,64 @@ public class RewardRegistry {
       .build();
   }
 
-  @Nullable
-  private static ItemStack getItemStack(String data) {
+  @Data
+  @Builder
+  @NoArgsConstructor
+  @AllArgsConstructor
+  private static class ItemStackRewardData {
+    private int minAmount;
+    private int maxAmount;
+    private int finalAmount;
+    private ItemStack itemStack;
+
+  }
+
+  private static ItemStackRewardData parseItemStackRewardData(String data) {
+    if (data == null || data.isEmpty()) return null;
+
     String[] nbtSplit = data.split("#", 2);
-    String nbt = nbtSplit.length > 1 ? nbtSplit[1] : null;
+    String base = nbtSplit[0];
+    String nbt = nbtSplit.length == 2 && !nbtSplit[1].isEmpty() ? nbtSplit[1] : null;
 
-    String[] parts = nbtSplit[0].split(":", 2);
-    if (parts.length < 2) return null;
+    String[] parts = base.split(":", 2);
+    if (parts.length != 2) return null;
 
-    int finalAmount = parts[0].contains("-")
-      ? ThreadLocalRandom.current().nextInt(Integer.parseInt(parts[0].split("-")[0]), Integer.parseInt(parts[0].split("-")[1]) + 1)
-      : Integer.parseInt(parts[0]);
+    String amountPart = parts[0];
     String itemId = parts[1];
 
-    ItemStack itemStack;
-    if (nbt != null && !nbt.isEmpty()) {
-      itemStack = ItemUtils.applyNbt(itemId, Utils.parseItemId(itemId, finalAmount), nbt, finalAmount);
+    int min;
+    int max;
+    int finalAmount;
+
+    if (amountPart.indexOf('-') > 0) {
+      String[] range = amountPart.split("-", 2);
+      min = Integer.parseInt(range[0]);
+      max = Integer.parseInt(range[1]);
+      finalAmount = ThreadLocalRandom.current().nextInt(min, max + 1);
     } else {
-      itemStack = Utils.parseItemId(itemId, finalAmount);
+      min = max = finalAmount = Integer.parseInt(amountPart);
     }
-    return itemStack;
+
+    ItemStack itemStack;
+    if (nbt != null) {
+      itemStack = ItemUtils.applyNbt(
+        itemId,
+        ItemUtils.parseItemId(itemId, finalAmount),
+        nbt,
+        finalAmount
+      );
+    } else {
+      itemStack = ItemUtils.parseItemId(itemId, finalAmount);
+    }
+
+    return ItemStackRewardData.builder()
+      .minAmount(min)
+      .maxAmount(max)
+      .finalAmount(finalAmount)
+      .itemStack(itemStack)
+      .build();
   }
+
 
   static {
     // ----------------- EXECUTORS -----------------
@@ -107,7 +147,8 @@ public class RewardRegistry {
     EXECUTORS.put("mod", (player, reward, data) -> Items.BARRIER.getDefaultStack());
     EXECUTORS.put("item", (player, reward, data) -> {
       try {
-        ItemStack itemStack = getItemStack(data);
+        ItemStackRewardData itemStackRewardData = parseItemStackRewardData(data);
+        ItemStack itemStack = itemStackRewardData.getItemStack();
         if (itemStack == null) {
           player.sendMessage(
             Text.literal(
@@ -124,7 +165,7 @@ public class RewardRegistry {
           }
         });
 
-        
+
         if (CobbleUtils.config.isNotifyRewards()) {
           player.sendMessage(
             AdventureTranslator.toNative(
@@ -178,8 +219,20 @@ public class RewardRegistry {
     // ----------------- ICON_PROVIDERS -----------------
     ICON_PROVIDERS.put("mod", (data) -> Items.BARRIER.getDefaultStack());
     ICON_PROVIDERS.put("item", (data) -> {
-      ItemStack itemStack = getItemStack(data);
-      return itemStack == null ? Items.BARRIER.getDefaultStack() : itemStack;
+      ItemStackRewardData itemStackRewardData = parseItemStackRewardData(data);
+      ItemStack itemStack = itemStackRewardData.getItemStack();
+      int min = itemStackRewardData.getMinAmount();
+      int max = itemStackRewardData.getMaxAmount();
+      if (min != max) {
+        itemStack.set(DataComponentTypes.CUSTOM_NAME, AdventureTranslator.toNative(
+          "Amount: " + min + " - " + max
+        ));
+      } else {
+        itemStack.set(DataComponentTypes.CUSTOM_NAME, AdventureTranslator.toNative(
+          "Amount: " + min
+        ));
+      }
+      return itemStack;
     });
 
 
@@ -192,7 +245,8 @@ public class RewardRegistry {
         .item("item:1:minecraft:gold_ingot")
         .build());
       String display = itemModel.getItem().split(":", 2)[1];
-      ItemStack itemStack = getItemStack(display);
+      ItemStackRewardData itemStackRewardData = parseItemStackRewardData(display);
+      ItemStack itemStack = itemStackRewardData.getItemStack();
       if (itemStack == null) itemStack = new ItemStack(Items.GOLD_INGOT);
       String name;
       boolean sameAmount = moneyData.getMinAmount() == moneyData.getMaxAmount();

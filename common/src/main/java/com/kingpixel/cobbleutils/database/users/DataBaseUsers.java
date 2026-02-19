@@ -2,130 +2,70 @@ package com.kingpixel.cobbleutils.database.users;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
-import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.Model.DataBaseConfig;
 import com.kingpixel.cobbleutils.Model.ItemChance;
-import com.kingpixel.cobbleutils.api.RewardsAPI;
+import com.kingpixel.cobbleutils.Model.rewards.Reward;
 import com.kingpixel.cobbleutils.database.users.models.Storage;
-import com.mojang.authlib.GameProfile;
-import net.minecraft.network.packet.c2s.common.SyncedClientOptions;
 import net.minecraft.server.network.ServerPlayerEntity;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * @author Carlos Varas Alonso - 27/08/2025 15:11
  */
 public abstract class DataBaseUsers {
   public static final Cache<UUID, UserModel> USERS = Caffeine.newBuilder()
-    .expireAfterAccess(5, TimeUnit.SECONDS)
     .build();
 
   public abstract void connect(DataBaseConfig config);
 
   public abstract void disconnect();
 
-  @Nullable
-  public abstract UserModel findUserByUUID(@NotNull UUID uuid);
-
-  @Nullable
-  public UserModel findUserByName(@NotNull String name) {
-    var userCache = CobbleUtils.server.getUserCache();
-    if (userCache == null) return null;
-    var gameProfile = userCache.findByName(name);
-    return gameProfile.map(profile -> findUserByUUID(profile.getId())).orElse(null);
+  public @Nullable UserModel getUserModel(ServerPlayerEntity player) {
+    return getUserModel(player.getUuid());
   }
 
-  public abstract void saveOrUpdateUser(UserModel user);
+  public @Nullable UserModel getUserModel(UUID uuid) {
+    return USERS.getIfPresent(uuid);
+  }
 
-  public abstract List<UserModel> getAllUsers();
+  public abstract CompletableFuture<@Nullable UserModel> findUserModel(UUID uuid);
 
-  public abstract List<UserModel> getUsersInactiveSince(long millis);
+  public abstract CompletableFuture<@Nullable UserModel> findUserModel(String username);
 
-  @Nullable
-  public ServerPlayerEntity getPlayerOfflineOrOnline(String playerName) {
-    ServerPlayerEntity player = CobbleUtils.server.getPlayerManager().getPlayer(playerName);
-    if (player != null) return player;
+  public abstract CompletableFuture<@Nullable Set<Storage>> findUserStorage(UUID uuid);
 
-    var user = findUserByName(playerName);
-    if (user != null) {
-      return getPlayerOfflineOrOnline(user.getPlayerUUID());
+  public abstract CompletableFuture<Void> saveUserModel(UserModel userModel);
+
+  public CompletableFuture<Void> saveAll() {
+    var users = DataBaseUsers.USERS.asMap().values();
+    List<CompletableFuture<Void>> futures = new ArrayList<>();
+    for (UserModel user : users) {
+      futures.add(user.save());
     }
-
-    return null;
+    return CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
   }
 
-  @Nullable
-  public ServerPlayerEntity getPlayerOfflineOrOnline(UUID playerUUID) {
-    // Obtener perfil del jugador del argumento del comando
-    var userCache = CobbleUtils.server.getUserCache();
-    if (userCache == null) return null;
-    var minecraftServer = CobbleUtils.server;
-    if (minecraftServer == null) return null;
-    var gameProfileOpt = userCache.getByUuid(playerUUID);
-    if (gameProfileOpt.isEmpty()) return null;
-    GameProfile requestedProfile = gameProfileOpt.get();
-    ServerPlayerEntity requestedPlayer = minecraftServer.getPlayerManager().getPlayer(requestedProfile.getName());
+  public abstract boolean isAvailableReward(ServerPlayerEntity player, ItemChance itemChance);
 
-    // Si el jugador está online
-    if (requestedPlayer != null) {
-      return requestedPlayer;
-    }
-
-    // Crear jugador temporal
-    requestedPlayer = new ServerPlayerEntity(
-      minecraftServer,
-      minecraftServer.getOverworld(),
-      requestedProfile,
-      SyncedClientOptions.createDefault()
-    );
-
-    // Intentar cargar datos del jugador offline
-    var readViewOpt = minecraftServer.getPlayerManager()
-      .loadPlayerData(requestedPlayer);
-
-    if (readViewOpt.isPresent()) {
-      requestedPlayer.readNbt(readViewOpt.get());
-    }
-
-    return requestedPlayer;
-  }
+  public abstract CompletableFuture<Boolean> isAvailableReward(UUID playerUUID, Reward reward);
 
 
-  public boolean isAvailableReward(ServerPlayerEntity player, ItemChance itemChance) {
-    return isAvailableReward(player.getUuid(), itemChance);
-  }
+  public abstract CompletableFuture<Boolean> addStorage(Storage storage, UUID targetUUID);
 
-  public boolean isAvailableReward(UUID playerUUID, ItemChance itemChance) {
-    UserModel user = findUserByUUID(playerUUID);
-    if (itemChance.getItem().startsWith("id:")) {
-      ItemChance idChance = RewardsAPI.getReward(itemChance.getItem().substring(3));
-      if (idChance != null) {
-        itemChance = idChance;
-      } else {
-        CobbleUtils.LOGGER.error("Reward with id " + itemChance.getItem() + " not found!");
-        return false;
-      }
-    }
-    return user != null && user.isAvailableReward(itemChance);
-  }
+  public abstract CompletableFuture<Boolean> addStorage(List<Storage> storage, UUID targetUUID);
 
-  public void removeIfNecessary(UUID uuid) {
-    USERS.invalidate(uuid);
-  }
+  public abstract CompletableFuture<Boolean> removeStorage(Storage storage, UUID targetUUID);
 
-  public abstract void disconnected(ServerPlayerEntity player);
+  public abstract CompletableFuture<Boolean> removeStorage(List<Storage> storage, UUID targetUUID);
 
-  public abstract void addStorage(Storage storage, UUID playerUUID);
 
-  public abstract void addStorage(List<Storage> storage, UUID playerUUID);
+  public abstract CompletableFuture<List<UserModel>> findUsersInactiveSince(long millis);
 
-  @Nullable
-  public abstract Storage removeStorage(Storage storage, UUID playerUUID);
-
-  public abstract List<UUID> getOnlinePlayers();
+  public abstract CompletableFuture<List<UUID>> getOnlinePlayers();
 }

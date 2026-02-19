@@ -2,7 +2,7 @@ package com.kingpixel.cobbleutils.adapter;
 
 import com.cobblemon.mod.common.pokemon.Pokemon;
 import com.google.gson.*;
-import com.kingpixel.cobbleutils.Model.ItemChance;
+import com.kingpixel.cobbleutils.Model.rewards.Reward;
 import com.kingpixel.cobbleutils.database.users.models.Storage;
 import com.kingpixel.cobbleutils.database.users.models.StorageItemStack;
 import com.kingpixel.cobbleutils.database.users.models.StoragePokemon;
@@ -145,9 +145,9 @@ public class StorageAdapter implements JsonSerializer<Storage>, JsonDeserializer
         assertFieldExists(obj, "reward");
         JsonObject rewardObj = assertObject(obj, "reward");
 
-        ItemChance reward;
+        Reward reward;
         try {
-          reward = ItemChanceAdapter.INSTANCE.deserialize(
+          reward = RewardAdapter.INSTANCE.deserialize(
             rewardObj,
             null,
             context
@@ -238,7 +238,7 @@ public class StorageAdapter implements JsonSerializer<Storage>, JsonDeserializer
         }
         obj.addProperty("type", "reward");
         obj.add("reward",
-          ItemChanceAdapter.INSTANCE.serialize(
+          RewardAdapter.INSTANCE.serialize(
             r.getReward(),
             null,
             null

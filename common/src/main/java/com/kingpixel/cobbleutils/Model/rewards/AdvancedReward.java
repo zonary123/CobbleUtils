@@ -25,6 +25,7 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 @Data
@@ -143,8 +144,7 @@ public class AdvancedReward {
   private Reward weightedPick(List<Reward> pool, double totalWeight) {
     double rnd = ThreadLocalRandom.current().nextDouble(totalWeight);
     double acc = 0;
-    for (int i = 0; i < pool.size(); i++) {
-      Reward r = pool.get(i);
+    for (Reward r : pool) {
       if (r.getWeight() <= 0) continue;
       acc += r.getWeight();
       if (rnd <= acc) return r;
@@ -186,53 +186,70 @@ public class AdvancedReward {
    */
   public CompletableFuture<Void> open(GUIAdvancedReward gui) {
     return CobbleUtils.ASYNC.runAsync(() -> {
-      ChestTemplate template = ChestTemplate.builder(6)
-        .build();
+
+      ChestTemplate template = ChestTemplate.builder(6).build();
 
       ServerPlayerEntity player = gui.getPlayer();
       Consumer<ButtonAction> closeAction = gui.getCloseAction();
       Consumer<ChestTemplate> templateConsumer = gui.getTemplate();
-      if (templateConsumer != null) templateConsumer.accept(template);
 
-      Rectangle rectangle = new Rectangle(6);
-      rectangle.apply(template);
-      List<Button> buttons = new ArrayList<>();
-      List<Reward> rewards = getRewardsForPlayer(player.getUuid());
+      if (templateConsumer != null) {
+        templateConsumer.accept(template);
+      }
 
-      double totalWeight = rewards.stream()
-        .mapToDouble(Reward::getWeight)
-        .filter(weight -> weight > 0)
-        .sum();
+      new Rectangle(6).apply(template);
 
+      List<Reward> rewards = new ArrayList<>(getRewardsForPlayer(player.getUuid()));
+      int size = rewards.size();
 
-      for (Reward reward : rewards) {
+      int insertIndex = 0;
+      double totalWeight = 0;
+
+      for (int i = 0; i < size; i++) {
+        Reward reward = rewards.get(i);
+        double weight = reward.getWeight();
+
+        if (weight <= 0) {
+          Reward temp = rewards.get(insertIndex);
+          rewards.set(insertIndex, reward);
+          rewards.set(i, temp);
+          insertIndex++;
+        } else {
+          totalWeight += weight;
+        }
+      }
+
+      rewards.subList(insertIndex, size)
+        .sort((a, b) -> Double.compare(b.getWeight(), a.getWeight()));
+
+      List<Button> buttons = new ArrayList<>(size);
+
+      for (int i = 0; i < size; i++) {
+        Reward reward = rewards.get(i);
+        double weight = reward.getWeight();
 
         ItemStack icon = reward.getIcon().copy();
 
         double percentage;
-
-        if (reward.getWeight() <= 0) {
+        if (weight <= 0) {
           percentage = 100D;
         } else {
           percentage = totalWeight > 0
-            ? (reward.getWeight() / totalWeight) * 100D
+            ? (weight / totalWeight) * 100D
             : 0D;
         }
 
-        String formatted = String.format("%.2f", percentage);
-
         icon.set(DataComponentTypes.LORE, new LoreComponent(
           AdventureTranslator.toNativeL(
-            List.of("&7Chance: &a" + formatted + "%")
+            List.of("&7Chance: &a" + String.format("%.2f", percentage) + "%")
           )
         ));
 
         buttons.add(GooeyButton.of(icon));
       }
 
-
       template.set(45, CobbleUtils.language.getItemPrevious().getLinkedPageButton(LinkType.Previous));
-      template.set(49, CobbleUtils.language.getItemClose().getButton(closeAction));
+      template.set(49, CobbleUtils.language.getItemClose().getButton(closeAction, 1, TimeUnit.SECONDS, 1));
       template.set(53, CobbleUtils.language.getItemNext().getLinkedPageButton(LinkType.Next));
 
       LinkedPage.Builder builder = LinkedPage.builder()
@@ -244,4 +261,5 @@ public class AdvancedReward {
       CobbleUtils.server.execute(() -> UIManager.openUIForcefully(player, page));
     });
   }
+
 }

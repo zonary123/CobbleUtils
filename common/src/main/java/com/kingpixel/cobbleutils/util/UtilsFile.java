@@ -59,7 +59,7 @@ public final class UtilsFile {
   /* Async IO Context                                                            */
   /* -------------------------------------------------------------------------- */
 
-  private static final AsyncContext IO_CONTEXT = new AsyncContext(
+  public static final AsyncContext IO_CONTEXT = new AsyncContext(
     "ZUtils-IO",
     2,
     8,
@@ -72,8 +72,7 @@ public final class UtilsFile {
   /* File Locks (per-path)                                                       */
   /* -------------------------------------------------------------------------- */
 
-  private static final ConcurrentMap<Path, ReadWriteLock> FILE_LOCKS =
-    new ConcurrentHashMap<>();
+  private static final ConcurrentMap<Path, ReadWriteLock> FILE_LOCKS = new ConcurrentHashMap<>();
 
   private static ReadWriteLock lock(Path path) {
     return FILE_LOCKS.computeIfAbsent(path.toAbsolutePath().normalize(), p -> new ReentrantReadWriteLock());
@@ -229,7 +228,6 @@ public final class UtilsFile {
   /* -------------------------------------------------------------------------- */
 
   public static void write(@Nonnull Path path, @Nonnull Object object) throws IOException {
-
     ReadWriteLock lock = lock(path);
     lock.writeLock().lock();
     try {
@@ -268,13 +266,13 @@ public final class UtilsFile {
     @Nonnull Path path,
     @Nonnull Object object
   ) {
-    return CompletableFuture.runAsync(() -> {
+    return IO_CONTEXT.runAsync(() -> {
       try {
         write(path, object);
       } catch (IOException e) {
         throw new RuntimeException(e);
       }
-    }, IO_CONTEXT.getExecutor());
+    });
   }
 
   /* -------------------------------------------------------------------------- */

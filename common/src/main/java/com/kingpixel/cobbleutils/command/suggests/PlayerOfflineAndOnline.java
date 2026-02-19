@@ -16,10 +16,10 @@ import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.util.UserCache;
+import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 
@@ -33,8 +33,6 @@ public class PlayerOfflineAndOnline {
   private final List<String> playerNames = new CopyOnWriteArrayList<>();
   private final List<UUID> playerUUIDs = new CopyOnWriteArrayList<>();
   private final List<String> playerUUIDsString = new CopyOnWriteArrayList<>();
-
-  private CompletableFuture<Void> currentLoad = CompletableFuture.completedFuture(null);
 
   private List<String> getPlayerUUIDsAsString() {
     if (playerUUIDsString.size() != playerUUIDs.size()) {
@@ -96,16 +94,12 @@ public class PlayerOfflineAndOnline {
    * Carga los jugadores inactivos de forma asíncrona.
    */
   private void loadAsync() {
-    currentLoad = CobbleUtils.runAsync(() -> {
-      try {
-        var list = DataBaseFactory.dataBaseUsers.getUsersInactiveSince(
-          CobbleUtils.config.getTimeSinceLastLoginToSuggest().toMillis()
-        );
-
+    DataBaseFactory.dataBaseUsers.findUsersInactiveSince(CobbleUtils.config.getTimeSinceLastLoginToSuggest().toMillis())
+      .whenComplete((userModels, throwable) -> {
         List<String> names = new ArrayList<>();
         List<UUID> uuids = new ArrayList<>();
 
-        for (UserModel user : list) {
+        for (UserModel user : userModels) {
           names.add(user.getPlayerName());
           uuids.add(user.getPlayerUUID());
         }
@@ -115,11 +109,7 @@ public class PlayerOfflineAndOnline {
 
         playerUUIDs.clear();
         playerUUIDs.addAll(uuids);
-
-      } catch (Exception ex) {
-        CobbleUtils.LOGGER.error("Error fetching player data: ");
-      }
-    });
+      });
   }
 
   /**
@@ -171,7 +161,7 @@ public class PlayerOfflineAndOnline {
 
     // Si no está en caché, lo pedimos directamente a la DB
     try {
-      UserModel user = DataBaseFactory.dataBaseUsers.findUserByName(playerName);
+      UserModel user = DataBaseFactory.dataBaseUsers.findUserModel(playerName).join();
       return Optional.ofNullable(user);
     } catch (Exception ex) {
       CobbleUtils.LOGGER.error("Error fetching user by name: " + playerName);
@@ -198,7 +188,7 @@ public class PlayerOfflineAndOnline {
       uuid = null;
     }
     if (uuid == null) {
-      var userModel = DataBaseFactory.dataBaseUsers.findUserByName(playerName);
+      var userModel = DataBaseFactory.dataBaseUsers.findUserModel(playerName).join();
       uuid = userModel != null ? userModel.getPlayerUUID() : null;
     }
     return uuid;
@@ -217,7 +207,7 @@ public class PlayerOfflineAndOnline {
       name = null;
     }
     if (name == null) {
-      var userModel = DataBaseFactory.dataBaseUsers.findUserByUUID(uuid);
+      var userModel = DataBaseFactory.dataBaseUsers.findUserModel(uuid).join();
       name = userModel != null ? userModel.getPlayerName() : null;
     }
     return name;
@@ -228,8 +218,8 @@ public class PlayerOfflineAndOnline {
    */
   public Optional<DataResultPlayer> getPlayer(String playerName) {
     var online = CobbleUtils.server.getPlayerManager().getPlayer(playerName);
-    var userModel = DataBaseFactory.dataBaseUsers.findUserByName(playerName);
-    var offlineOrOnlineUser = DataBaseFactory.dataBaseUsers.getPlayerOfflineOrOnline(playerName);
+    var userModel = DataBaseFactory.dataBaseUsers.findUserModel(playerName).join();
+    ServerPlayerEntity offlineOrOnlineUser = getPlayerOfflineOrOnline(playerName);
     return Optional.ofNullable(offlineOrOnlineUser == null ? null : new DataResultPlayer(
         online != null,
         userModel,
@@ -240,14 +230,34 @@ public class PlayerOfflineAndOnline {
 
   public Optional<DataResultPlayer> getPlayer(UUID playerUUID) {
     var online = CobbleUtils.server.getPlayerManager().getPlayer(playerUUID);
-    var userModel = DataBaseFactory.dataBaseUsers.findUserByUUID(playerUUID);
-    var offlineOrOnlineUser = DataBaseFactory.dataBaseUsers.getPlayerOfflineOrOnline(playerUUID);
+    var userModel = DataBaseFactory.dataBaseUsers.findUserModel(playerUUID).join();
+    var offlineOrOnlineUser = getPlayerOfflineOrOnline(playerUUID);
     return Optional.ofNullable(offlineOrOnlineUser == null ? null : new DataResultPlayer(
         online != null,
         userModel,
         offlineOrOnlineUser
       )
     );
+  }
+
+  private ServerPlayerEntity getPlayerOfflineOrOnline(String playerName) {
+    Optional<GameProfile> optionalGameProfile = CobbleUtils.server.getUserCache().findByName(playerName);
+    if (optionalGameProfile.isEmpty()) {
+      var userModel = DataBaseFactory.dataBaseUsers.findUserModel(playerName).join();
+      if (userModel == null) return null;
+      optionalGameProfile = CobbleUtils.server.getUserCache().getByUuid(userModel.getPlayerUUID());
+    }
+    return optionalGameProfile.map(gameProfile -> CobbleUtils.server.getPlayerManager().getPlayer(gameProfile.getId())).orElse(null);
+  }
+
+  private ServerPlayerEntity getPlayerOfflineOrOnline(@NotNull UUID playerUUID) {
+    ServerPlayerEntity online = CobbleUtils.server.getPlayerManager().getPlayer(playerUUID);
+    if (online != null) return online;
+
+    String playerName = getPlayerNameWithUUID(playerUUID);
+    if (playerName == null) return null;
+
+    return CobbleUtils.server.getPlayerManager().getPlayer(playerName);
   }
 
 

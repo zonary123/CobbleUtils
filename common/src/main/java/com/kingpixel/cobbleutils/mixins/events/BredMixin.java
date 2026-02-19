@@ -27,6 +27,5 @@ public abstract class BredMixin {
       .player(player)
       .entity(child)
       .build());
-
   }
 }

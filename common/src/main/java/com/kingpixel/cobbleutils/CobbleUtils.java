@@ -12,7 +12,7 @@ import com.kingpixel.cobbleutils.config.Config;
 import com.kingpixel.cobbleutils.config.Lang;
 import com.kingpixel.cobbleutils.config.RewardsConfig;
 import com.kingpixel.cobbleutils.database.DataBaseFactory;
-import com.kingpixel.cobbleutils.database.blocks.manager.ChunkBlockStorageManager;
+import com.kingpixel.cobbleutils.database.blocks.ChunkBlockStorageManager;
 import com.kingpixel.cobbleutils.database.users.DataBaseUsers;
 import com.kingpixel.cobbleutils.database.users.UserModel;
 import com.kingpixel.cobbleutils.events.ItemRightClickEvents;
@@ -172,7 +172,7 @@ public class CobbleUtils {
     LifecycleEvent.SERVER_STOPPING.register(server1 -> {
       DataBaseFactory.close();
       RedisManager.close();
-      ChunkBlockStorageManager.shutdown();
+      ChunkBlockStorageManager.shutdownAsync().join();
     });
 
     LifecycleEvent.SERVER_STOPPED.register(server -> {
@@ -183,19 +183,23 @@ public class CobbleUtils {
       com.kingpixel.cobbleutils.util.async.UtilsAsync.shutdownAll();
     });
 
-    PlayerEvent.PLAYER_JOIN.register((player) -> runAsync(() -> {
-      UserModel user = DataBaseFactory.dataBaseUsers.findUserByUUID(player.getUuid());
-      if (user == null) user = new UserModel(player);
-      user.connect(player);
-      user.fix();
-      DataBaseFactory.dataBaseUsers.saveOrUpdateUser(user);
-      DataBaseUsers.USERS.put(player.getUuid(), user);
-    }));
+    PlayerEvent.PLAYER_JOIN.register((player) -> DataBaseFactory.dataBaseUsers.findUserModel(player.getUuid())
+      .whenComplete((user, throwable) -> {
+        if (user == null) user = new UserModel(player);
+        user.connect(player);
+        user.fix(player);
+        user.save();
+        DataBaseUsers.USERS.put(player.getUuid(), user);
+      }));
 
-    PlayerEvent.PLAYER_QUIT.register((player) -> runAsync(() -> {
-      DataBaseFactory.dataBaseUsers.disconnected(player);
-      DataBaseFactory.dataBaseUsers.removeIfNecessary(player.getUuid());
-    }));
+    PlayerEvent.PLAYER_QUIT.register((player) -> {
+      UserModel user = DataBaseFactory.dataBaseUsers.getUserModel(player.getUuid());
+      if (user != null) {
+        user.disconnect();
+        user.save();
+        DataBaseUsers.USERS.invalidate(player.getUuid());
+      }
+    });
 
     CommandRegistrationEvent.EVENT.register((dispatcher, registry, selection) -> {
       CustomPokemonProperty.Companion.register(MinIvsPropertyType.INSTANCE);

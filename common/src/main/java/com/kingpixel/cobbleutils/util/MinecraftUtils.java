@@ -28,13 +28,11 @@ public class MinecraftUtils {
   }
 
   public static List<UUID> getOnlinePlayerUUIDs() {
-    if (CobbleUtils.config.isRedisMessaging()) {
-      return DataBaseFactory.dataBaseUsers.getOnlinePlayers();
-    }
+    if (CobbleUtils.config.isRedisMessaging()) return DataBaseFactory.dataBaseUsers.getOnlinePlayers().join();
     return CobbleUtils.server.getPlayerManager().getPlayerList().stream()
       .map(Entity::getUuid)
       .toList();
   }
 
-  
+
 }

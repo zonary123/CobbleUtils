@@ -1,35 +1,38 @@
 package com.kingpixel.cobbleutils.database.users;
 
+import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.Model.DataBaseConfig;
+import com.kingpixel.cobbleutils.Model.ItemChance;
+import com.kingpixel.cobbleutils.Model.rewards.Reward;
 import com.kingpixel.cobbleutils.database.users.models.Storage;
-import com.kingpixel.cobbleutils.util.Utils;
 import com.mongodb.ConnectionString;
 import com.mongodb.MongoClientSettings;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
-import com.mongodb.client.model.Filters;
-import com.mongodb.client.model.UpdateOptions;
+import com.mongodb.client.model.ReplaceOptions;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.util.UserCache;
 import org.bson.Document;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.time.Instant;
-import java.time.format.DateTimeFormatter;
-import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 
-/**
- * @author Carlos Varas Alonso - 27/08/2025 15:11
- */
 public class DataBaseUsersMongoDB extends DataBaseUsers {
+
   private MongoClient mongoClient;
   private MongoDatabase database;
   private MongoCollection<Document> collectionUser;
+
+  private static final String KEY_PLAYER_UUID = "playerUUID";
+  private static final String KEY_PLAYER_NAME = "playerName";
+  private static final String KEY_STORAGE_LIST = "storageList";
+  private static final String KEY_DISCONNECT_TIME = "disconnectTime";
+  private static final String KEY_ONLINE = "online";
 
   @Override
   public void connect(DataBaseConfig config) {
@@ -37,7 +40,6 @@ public class DataBaseUsersMongoDB extends DataBaseUsers {
       .applyConnectionString(new ConnectionString(config.getUrl()))
       .applicationName("CobbleUtils-Users")
       .build();
-
     mongoClient = MongoClients.create(settings);
     database = mongoClient.getDatabase(config.getDatabase());
     collectionUser = database.getCollection("users");
@@ -45,175 +47,182 @@ public class DataBaseUsersMongoDB extends DataBaseUsers {
 
   @Override
   public void disconnect() {
-    if (mongoClient != null) {
-      mongoClient.close();
-    }
+    saveAll().join();
+    if (mongoClient != null) mongoClient.close();
   }
 
   @Override
-  public @Nullable UserModel findUserByUUID(@NotNull UUID uuid) {
-    try {
-      UserModel userModel = DataBaseUsers.USERS.getIfPresent(uuid);
-      if (userModel != null) return userModel;
-      Document document = collectionUser.find(Filters.eq("playerUUID", uuid.toString()))
-        .first();
-      if (document != null) {
-        userModel = Utils.newWithoutSpacingGson().fromJson(document.toJson(), UserModel.class);
-      } else return null;
-      userModel.fix();
-      return userModel;
+  public CompletableFuture<@Nullable UserModel> findUserModel(UUID uuid) {
+    final String uuidStr = uuid.toString();
+    return CobbleUtils.ASYNC.supply(() -> {
+      UserModel cachedUser = getUserModel(uuid);
+      if (cachedUser != null) return cachedUser;
 
-    } catch (Exception e) {
-      System.err.println("❌ Failed to find user by UUID: " + uuid);
-      e.printStackTrace();
-      return null;
-    }
+      Document doc = collectionUser.find(new Document(KEY_PLAYER_UUID, uuidStr)).first();
+      if (doc == null) return null;
+
+      return UserModel.fromDocument(doc);
+    });
   }
 
   @Override
-  public @Nullable UserModel findUserByName(@NotNull String name) {
-    try {
-      UserModel userModel = super.findUserByName(name);
-      if (userModel != null) return userModel; // si está en la cache,
-      Document document = collectionUser.find(Filters.eq("playerName", name))
-        .first();
-      return document != null
-        ? Utils.newWithoutSpacingGson().fromJson(document.toJson(), UserModel.class)
-        : null;
-    } catch (Exception e) {
-      System.err.println("❌ Failed to find user by name: " + name);
-      e.printStackTrace();
-      return null;
-    }
-  }
-
-  @Override
-  public void saveOrUpdateUser(UserModel user) {
-    if (user == null) return;
-
-    try {
-      // 1️⃣ Convertir UserModel a Document
-      String json = Utils.newWithoutSpacingGson().toJson(user, UserModel.class);
-      Document document = Utils.newWithoutSpacingGson().fromJson(json, Document.class);
-      document.remove("storageList");
-
-      // 2️⃣ Actualizar solo los campos existentes o crear si no existe
-      collectionUser.updateOne(
-        Filters.eq("playerUUID", user.getPlayerUUID().toString()),
-        new Document("$set", document),
-        new UpdateOptions().upsert(true)
-      );
-
-    } catch (Exception e) {
-      System.err.println("❌ Failed to save or update user: " + user);
-      e.printStackTrace();
-    }
-  }
-
-
-  @Override
-  public List<UserModel> getAllUsers() {
-    List<UserModel> userList = new ArrayList<>();
-    for (Document doc : collectionUser.find()) {
-      try {
-        UserModel user = Utils.newWithoutSpacingGson().fromJson(doc.toJson(), UserModel.class);
-        if (user != null) {
-          userList.add(user);
+  public CompletableFuture<@Nullable UserModel> findUserModel(String username) {
+    return CobbleUtils.ASYNC.supply(() -> {
+      UserCache userCache = CobbleUtils.server.getUserCache();
+      if (userCache != null) {
+        var optProfile = userCache.findByName(username);
+        if (optProfile.isPresent()) {
+          UUID uuid = optProfile.get().getId();
+          UserModel cachedUser = getUserModel(uuid);
+          if (cachedUser != null) return cachedUser;
         }
-      } catch (Exception e) {
-        System.err.println("Failed to parse user document: " + doc.toJson());
-        e.printStackTrace();
       }
-    }
-    return userList;
+
+      Document doc = collectionUser.find(new Document(KEY_PLAYER_NAME, username)).first();
+      if (doc == null) return null;
+
+      return UserModel.fromDocument(doc);
+    });
   }
 
   @Override
-  public List<UserModel> getUsersInactiveSince(long millis) {
-    Instant thresholdInstant = Instant.now().minus(millis, ChronoUnit.MILLIS);
-    String thresholdIso = DateTimeFormatter.ISO_INSTANT.format(thresholdInstant); // Ej: "2025-08-20T15:30:00Z"
+  public CompletableFuture<Set<Storage>> findUserStorage(UUID uuid) {
+    final String uuidStr = uuid.toString();
+    return CobbleUtils.ASYNC.supply(() -> {
+      Document doc = collectionUser
+        .find(new Document(KEY_PLAYER_UUID, uuidStr))
+        .projection(new Document(KEY_STORAGE_LIST, 1).append("_id", 0))
+        .first();
 
-    List<UserModel> inactiveUsers = new ArrayList<>();
-    var docs = collectionUser.find(Filters.gte("lastLogin", thresholdIso));
-    for (Document doc : docs) {
-      try {
-        UserModel user = Utils.newWithoutSpacingGson().fromJson(doc.toJson(), UserModel.class);
-        if (user != null) {
-          inactiveUsers.add(user);
-        }
-      } catch (Exception e) {
-        System.err.println("Failed to parse user document: " + doc.toJson());
-        e.printStackTrace();
-      }
-    }
+      if (doc == null) return Collections.emptySet();
 
-    return inactiveUsers;
+      List<Document> storageDocs = doc.getList(KEY_STORAGE_LIST, Document.class);
+      if (storageDocs == null || storageDocs.isEmpty()) return Collections.emptySet();
+
+      return storageDocs.stream()
+        .map(Storage::fromDocument)
+        .collect(Collectors.toSet());
+    });
   }
 
   @Override
-  public void disconnected(ServerPlayerEntity player) {
-    UUID playerUUID = player.getUuid();
-    collectionUser.updateOne(
-      Filters.eq("playerUUID", playerUUID.toString()),
-      new Document("$set", new Document("isOnline", false)
-        .append("disconnectTime", DateTimeFormatter.ISO_INSTANT.format(Instant.now())))
-    );
+  public boolean isAvailableReward(ServerPlayerEntity player, ItemChance itemChance) {
+    UserModel userModel = getUserModel(player.getUuid());
+    if (userModel == null) return false;
+    return userModel.isAvailableReward(itemChance);
   }
 
   @Override
-  public void addStorage(Storage storage, UUID playerUUID) {
-    collectionUser.updateOne(
-      Filters.eq("playerUUID", playerUUID.toString()),
-      new Document("$push", new Document("storageList", storage.toDocument()))
-    );
-    DataBaseUsers.USERS.invalidate(playerUUID);
+  public CompletableFuture<Boolean> isAvailableReward(UUID playerUUID, Reward reward) {
+    return CobbleUtils.ASYNC.supply(() -> {
+      UserModel userModel = getUserModel(playerUUID);
+      if (userModel == null) return false;
+      return userModel.isAvailableReward(reward.toItemChance());
+    });
   }
 
   @Override
-  public void addStorage(List<Storage> storage, UUID playerUUID) {
-    List<Document> storageDocs = new ArrayList<>();
-    for (Storage s : storage) {
-      storageDocs.add(s.toDocument());
-    }
-    collectionUser.updateOne(
-      Filters.eq("playerUUID", playerUUID.toString()),
-      new Document("$push", new Document("storageList", new Document("$each", storageDocs)))
-    );
-    DataBaseUsers.USERS.invalidate(playerUUID);
-
+  public CompletableFuture<Void> saveUserModel(UserModel userModel) {
+    return CobbleUtils.ASYNC.runAsync(() -> {
+      final String uuidStr = userModel.getPlayerUUID().toString();
+      Document filter = new Document(KEY_PLAYER_UUID, uuidStr);
+      Document doc = userModel.toDocument();
+      collectionUser.replaceOne(filter, doc, new ReplaceOptions().upsert(true));
+    });
   }
 
   @Override
-  public Storage removeStorage(Storage storage, UUID playerUUID) {
-    UUID id = storage.getId();
-    if (id == null) return null;
-    collectionUser.updateOne(
-      Filters.eq("playerUUID", playerUUID.toString()),
-      new Document("$pull", new Document("storageList", new Document("id", id.toString())))
-    );
-    UserModel user = findUserByUUID(playerUUID);
-    if (user == null) return null;
-    return user.removeStorage(id);
+  public CompletableFuture<Boolean> addStorage(Storage storage, UUID targetUUID) {
+    final String uuidStr = targetUUID.toString();
+    return CobbleUtils.ASYNC.supply(() -> {
+      Document filter = new Document(KEY_PLAYER_UUID, uuidStr);
+      Document update = new Document("$addToSet", new Document(KEY_STORAGE_LIST, storage.toDocument()));
+      var result = collectionUser.updateOne(filter, update);
+      return result.getModifiedCount() > 0;
+    });
   }
 
   @Override
-  public List<UUID> getOnlinePlayers() {
-    var filter = Filters.eq("isOnline", true);
-    return collectionUser.find(filter)
-      .map(doc -> {
-        try {
-          String uuidStr = doc.getString("playerUUID");
-          if (uuidStr != null) {
-            return UUID.fromString(uuidStr);
+  public CompletableFuture<Boolean> addStorage(List<Storage> storage, UUID targetUUID) {
+    final String uuidStr = targetUUID.toString();
+    return CobbleUtils.ASYNC.supply(() -> {
+      Document filter = new Document(KEY_PLAYER_UUID, uuidStr);
+      List<Document> storageDocs = storage.stream()
+        .map(Storage::toDocument)
+        .toList();
+      Document update = new Document("$addToSet", new Document(KEY_STORAGE_LIST, new Document("$each", storageDocs)));
+      var result = collectionUser.updateOne(filter, update);
+      return result.getModifiedCount() > 0;
+    });
+  }
+
+  @Override
+  public CompletableFuture<Boolean> removeStorage(Storage storage, UUID targetUUID) {
+    final String uuidStr = targetUUID.toString();
+    return CobbleUtils.ASYNC.supply(() -> {
+      Document filter = new Document(KEY_PLAYER_UUID, uuidStr);
+      Document update = new Document("$pull", new Document(KEY_STORAGE_LIST, storage.toDocument()));
+      var result = collectionUser.updateOne(filter, update);
+      return result.getModifiedCount() > 0;
+    });
+  }
+
+  @Override
+  public CompletableFuture<Boolean> removeStorage(List<Storage> storage, UUID targetUUID) {
+    final String uuidStr = targetUUID.toString();
+    return CobbleUtils.ASYNC.supply(() -> {
+      Document filter = new Document(KEY_PLAYER_UUID, uuidStr);
+      List<Document> storageDocs = storage.stream()
+        .map(Storage::toDocument)
+        .toList();
+      Document update = new Document("$pull", new Document(KEY_STORAGE_LIST, new Document("$in", storageDocs)));
+      var result = collectionUser.updateOne(filter, update);
+      return result.getModifiedCount() > 0;
+    });
+  }
+
+  @Override
+  public CompletableFuture<List<UserModel>> findUsersInactiveSince(long millis) {
+    return CobbleUtils.ASYNC.supply(() -> {
+      long cutoff = System.currentTimeMillis() - millis;
+      List<Document> docs = collectionUser.find()
+        .projection(new Document(KEY_PLAYER_UUID, 1)
+          .append(KEY_PLAYER_NAME, 1)
+          .append(KEY_DISCONNECT_TIME, 1)
+          .append("_id", 0))
+        .into(new ArrayList<>());
+
+      return docs.stream()
+        .filter(doc -> {
+          String disconnectStr = doc.getString(KEY_DISCONNECT_TIME);
+          if (disconnectStr == null) return false;
+          Instant disconnect = Instant.parse(disconnectStr);
+          return disconnect.toEpochMilli() < cutoff;
+        })
+        .map(doc -> {
+          UserModel userModel = new UserModel();
+          userModel.setPlayerUUID(UUID.fromString(doc.getString(KEY_PLAYER_UUID)));
+          userModel.setPlayerName(doc.getString(KEY_PLAYER_NAME));
+          String disconnectStr = doc.getString(KEY_DISCONNECT_TIME);
+          if (disconnectStr != null) {
+            userModel.setLastLogin(Instant.parse(disconnectStr));
           }
-        } catch (Exception e) {
-          System.err.println("Failed to parse online player document: " + doc.toJson());
-          e.printStackTrace();
-        }
-        return null;
-      })
-      .into(new ArrayList<>());
+          return userModel;
+        })
+        .toList();
+    });
   }
 
+  @Override
+  public CompletableFuture<List<UUID>> getOnlinePlayers() {
+    return CobbleUtils.ASYNC.supply(() -> {
+      List<Document> docs = collectionUser.find(new Document(KEY_ONLINE, true))
+        .projection(new Document(KEY_PLAYER_UUID, 1).append("_id", 0))
+        .into(new ArrayList<>());
 
+      return docs.stream()
+        .map(doc -> UUID.fromString(doc.getString(KEY_PLAYER_UUID)))
+        .toList();
+    });
+  }
 }

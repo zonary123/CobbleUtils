@@ -1,6 +1,7 @@
 package com.kingpixel.cobbleutils.adapter;
 
 import com.google.gson.*;
+import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.Model.DurationValue;
 import com.kingpixel.cobbleutils.Model.rewards.Reward;
 import com.kingpixel.cobbleutils.Model.rewards.RewardRegistry;
@@ -31,6 +32,7 @@ public class RewardAdapter implements JsonSerializer<Reward>, JsonDeserializer<R
       String type = part.contains(":") ? part.split(":", 2)[0] : "item";
       if (RewardRegistry.getRewardExecutor(type) == null) {
         parts[i] = "item:1:" + part;
+        CobbleUtils.LOGGER.warn("RewardAdapter", "Reward part '" + part + "' does not have a valid type prefix. Defaulting to 'item:1:'. Full reward: '" + rewardValue + "'");
       }
     }
     rewardValue = String.join("|", parts);

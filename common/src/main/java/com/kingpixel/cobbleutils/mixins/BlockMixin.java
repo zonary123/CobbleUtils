@@ -1,7 +1,7 @@
 package com.kingpixel.cobbleutils.mixins;
 
 import com.kingpixel.cobbleutils.api.BlocksApi;
-import com.kingpixel.cobbleutils.database.blocks.manager.ChunkBlockStorageManager;
+import com.kingpixel.cobbleutils.database.blocks.ChunkBlockStorageManager;
 import com.kingpixel.cobbleutils.events.CobbleUtilsEvents;
 import com.kingpixel.cobbleutils.events.models.EventBlockBreak;
 import com.kingpixel.cobbleutils.events.models.EventBlockPlaced;

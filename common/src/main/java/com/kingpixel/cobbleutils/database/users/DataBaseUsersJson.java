@@ -2,25 +2,22 @@ package com.kingpixel.cobbleutils.database.users;
 
 import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.Model.DataBaseConfig;
+import com.kingpixel.cobbleutils.Model.ItemChance;
+import com.kingpixel.cobbleutils.Model.rewards.Reward;
 import com.kingpixel.cobbleutils.database.users.models.Storage;
-import com.kingpixel.cobbleutils.util.Utils;
-import net.minecraft.entity.Entity;
+import com.kingpixel.cobbleutils.util.UtilsFile;
 import net.minecraft.server.network.ServerPlayerEntity;
-import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import java.io.File;
-import java.io.IOException;
-import java.time.Instant;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
-import java.util.UUID;
+import java.nio.file.Path;
+import java.util.*;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * @author Carlos Varas Alonso - 27/08/2025 15:11
  */
 public class DataBaseUsersJson extends DataBaseUsers {
-  private static final String PATH_USERS = CobbleUtils.PATH + "/users/";
+  private static final Path PATH = CobbleUtils.getPathMod().resolve("users");
 
   @Override
   public void connect(DataBaseConfig config) {
@@ -29,133 +26,189 @@ public class DataBaseUsersJson extends DataBaseUsers {
 
   @Override
   public void disconnect() {
+    saveAll().join();
     CobbleUtils.LOGGER.info("DataBaseUsersJson disconnected");
   }
 
   @Override
-  public UserModel findUserByUUID(@NotNull UUID uuid) {
-    return DataBaseUsers.USERS.get(uuid, k -> {
-      File file = Utils.getAbsolutePath(PATH_USERS + k + ".json");
-      if (!file.exists()) return null;
-      return readUserFile(file);
+  public CompletableFuture<@Nullable UserModel> findUserModel(UUID uuid) {
+    return CobbleUtils.ASYNC.supply(() -> {
+      UserModel userModel = DataBaseUsers.USERS.getIfPresent(uuid);
+      if (userModel != null) return userModel;
+      try {
+        userModel = UtilsFile.read(PATH, UserModel.class);
+      } catch (Exception e) {
+        return null;
+      }
+      return userModel;
     });
   }
 
   @Override
-  public UserModel findUserByName(@NotNull String name) {
-    UserModel userModel = super.findUserByName(name);
-    if (userModel != null) return userModel; // si está en la cache,
-    File folder = Utils.getAbsolutePath(PATH_USERS);
-    File[] files = folder.listFiles();
-    if (files == null) return null;
-    return Arrays.stream(files)
-      .parallel() // procesa en paralelo;
-      .map(file -> {
-        UserModel user = readUserFile(file);
-        if (user != null && name.equalsIgnoreCase(user.getPlayerName())) return user;
+  public CompletableFuture<@Nullable UserModel> findUserModel(String username) {
+    return CobbleUtils.ASYNC.supply(() -> {
+      var userCache = CobbleUtils.server.getUserCache();
+      if (userCache == null) return null;
+      var optional = userCache.findByName(username);
+      if (optional.isEmpty()) return null;
+      UUID uuid = optional.get().getId();
+      UserModel userModel = DataBaseUsers.USERS.getIfPresent(uuid);
+      if (userModel != null) return userModel;
+      try {
+        userModel = UtilsFile.read(PATH, UserModel.class);
+      } catch (Exception e) {
         return null;
-      })
-      .filter(Objects::nonNull) // elimina los nulls
-      .findFirst()
-      .orElse(null);
+      }
+      return userModel;
+    });
   }
 
   @Override
-  public void saveOrUpdateUser(UserModel user) {
-    if (user == null || user.getPlayerUUID() == null) return;
-    File folder = Utils.getAbsolutePath(PATH_USERS);
-    if (!folder.exists()) folder.mkdirs();
-    File file = Utils.getAbsolutePath(PATH_USERS + user.getPlayerUUID() + ".json");
-    String data = Utils.newWithoutSpacingGson().toJson(user);
-    Utils.writeFileAsync(file, data);
+  public CompletableFuture<Set<Storage>> findUserStorage(UUID uuid) {
+    return CobbleUtils.ASYNC.supply(() -> {
+      UserModel userModel = DataBaseUsers.USERS.getIfPresent(uuid);
+      if (userModel != null) return userModel.getStorageList();
+      try {
+        userModel = UtilsFile.read(PATH, UserModel.class);
+      } catch (Exception e) {
+        return Collections.emptySet();
+      }
+      if (userModel == null) return Collections.emptySet();
+      return userModel.getStorageList();
+    });
   }
 
   @Override
-  public List<UserModel> getAllUsers() {
-    File folder = Utils.getAbsolutePath(PATH_USERS);
-    File[] files = folder.listFiles();
-    if (files == null) return List.of();
-    return Arrays.stream(files)
-      .parallel() // procesa en paralelo;
-      .map(this::readUserFile)
-      .filter(Objects::nonNull) // elimina los nulls
-      .toList();
+  public boolean isAvailableReward(ServerPlayerEntity player, ItemChance itemChance) {
+    var userModel = getUserModel(player);
+    if (userModel == null) return false;
+    return userModel.isAvailableReward(itemChance);
   }
 
   @Override
-  public List<UserModel> getUsersInactiveSince(long millis) {
-    File folder = Utils.getAbsolutePath(PATH_USERS);
-    File[] files = folder.listFiles((dir, name) -> name.endsWith(".json")); // solo JSON
-    if (files == null || files.length == 0) return List.of();
-
-    long currentTime = System.currentTimeMillis();
-
-    return Arrays.stream(files)
-      .parallel()
-      .map(this::readUserFile)
-      .filter(user -> isInactive(user, currentTime, millis))
-      .toList();
-  }
-
-  @Override
-  public void disconnected(ServerPlayerEntity player) {
-    if (player == null) return;
-    UserModel user = findUserByUUID(player.getUuid());
-    if (user == null) return;
-    user.disconnect();
-    saveOrUpdateUser(user);
-  }
-
-  @Override
-  public void addStorage(Storage storage, UUID playerUUID) {
-    if (storage == null || playerUUID == null) return;
-    UserModel user = findUserByUUID(playerUUID);
-    if (user == null) return;
-    user.addStorage(storage);
-  }
-
-  @Override
-  public void addStorage(List<Storage> storage, UUID playerUUID) {
-    if (storage == null || playerUUID == null) return;
-    UserModel user = findUserByUUID(playerUUID);
-    if (user == null) return;
-    user.addStorage(storage);
-  }
-
-  @Override
-  public Storage removeStorage(Storage storage, UUID playerUUID) {
-    if (storage == null || playerUUID == null) return null;
-    UserModel user = findUserByUUID(playerUUID);
-    if (user == null) return null;
-    return user.removeStorage(storage.getId());
-  }
-
-  @Override
-  public List<UUID> getOnlinePlayers() {
-    return CobbleUtils.server.getPlayerManager().getPlayerList().stream()
-      .map(Entity::getUuid)
-      .toList();
-  }
-
-  // Método para leer un archivo JSON y convertirlo en UserModel
-  private UserModel readUserFile(File file) {
-    try {
-      String data = Utils.readFileSync(file);
-      return Utils.newWithoutSpacingGson().fromJson(data, UserModel.class);
-    } catch (IOException e) {
-      e.printStackTrace(); // debug de lectura
-    } catch (Exception e) {
-      System.err.println("Failed to parse user file: " + file.getName());
-      e.printStackTrace();
-    }
+  public CompletableFuture<Boolean> isAvailableReward(UUID playerUUID, Reward reward) {
     return null;
   }
 
-  // Método que determina si un usuario es inactivo
-  private boolean isInactive(UserModel user, long currentTime, long threshold) {
-    if (user == null) return false;
-    Instant lastLogin = user.getLastLogin();
-    return lastLogin == null || (currentTime - lastLogin.toEpochMilli() <= threshold);
+  @Override
+  public CompletableFuture<Void> saveUserModel(UserModel userModel) {
+    return CobbleUtils.ASYNC.runAsync(() -> {
+      try {
+        UtilsFile.write(PATH, userModel);
+      } catch (Exception e) {
+        e.printStackTrace();
+      }
+    });
+  }
+
+
+  @Override
+  public CompletableFuture<Boolean> addStorage(Storage storage, UUID targetUUID) {
+    return CobbleUtils.ASYNC.supply(() -> {
+      UserModel userModel = DataBaseUsers.USERS.getIfPresent(targetUUID);
+      if (userModel == null) {
+        try {
+          userModel = UtilsFile.read(PATH, UserModel.class);
+        } catch (Exception e) {
+          return false;
+        }
+        if (userModel == null) return false;
+      }
+      userModel.addStorage(storage);
+      userModel.save();
+      return true;
+    });
+  }
+
+  @Override
+  public CompletableFuture<Boolean> addStorage(List<Storage> storage, UUID targetUUID) {
+    return CobbleUtils.ASYNC.supply(() -> {
+      UserModel userModel = DataBaseUsers.USERS.getIfPresent(targetUUID);
+      if (userModel == null) {
+        try {
+          userModel = UtilsFile.read(PATH, UserModel.class);
+        } catch (Exception e) {
+          return false;
+        }
+        if (userModel == null) return false;
+      }
+      userModel.addStorage(storage);
+      userModel.save();
+      return true;
+    });
+  }
+
+  @Override
+  public CompletableFuture<Boolean> removeStorage(Storage storage, UUID targetUUID) {
+    return CobbleUtils.ASYNC.supply(() -> {
+      UserModel userModel = DataBaseUsers.USERS.getIfPresent(targetUUID);
+      if (userModel == null) {
+        try {
+          userModel = UtilsFile.read(PATH, UserModel.class);
+        } catch (Exception e) {
+          return false;
+        }
+        if (userModel == null) return false;
+      }
+      userModel.removeStorage(storage.getId());
+      userModel.save();
+      return true;
+    });
+  }
+
+  @Override
+  public CompletableFuture<Boolean> removeStorage(List<Storage> storage, UUID targetUUID) {
+    return CobbleUtils.ASYNC.supply(() -> {
+      UserModel userModel = DataBaseUsers.USERS.getIfPresent(targetUUID);
+      if (userModel == null) {
+        try {
+          userModel = UtilsFile.read(PATH, UserModel.class);
+        } catch (Exception e) {
+          return false;
+        }
+        if (userModel == null) return false;
+      }
+      for (Storage s : storage) {
+        userModel.removeStorage(s.getId());
+      }
+      userModel.save();
+      return true;
+    });
+  }
+
+  @Override
+  public CompletableFuture<List<UserModel>> findUsersInactiveSince(long millis) {
+    return CobbleUtils.ASYNC.supply(() -> {
+      List<UserModel> inactiveUsers = new ArrayList<>();
+      try {
+        var files = UtilsFile.getAllJsonFiles(PATH);
+        for (var file : files) {
+          try {
+            UserModel userModel = UtilsFile.read(file, UserModel.class);
+            if (userModel != null && userModel.getLastLogin().toEpochMilli() < millis) {
+              inactiveUsers.add(userModel);
+            }
+          } catch (Exception e) {
+            e.printStackTrace();
+          }
+        }
+      } catch (Exception e) {
+        e.printStackTrace();
+      }
+      return inactiveUsers;
+    });
+  }
+
+  @Override
+  public CompletableFuture<List<UUID>> getOnlinePlayers() {
+    return CobbleUtils.ASYNC.supply(() -> {
+      List<UUID> onlinePlayers = new ArrayList<>();
+      var userList = USERS.asMap().values();
+      for (var userModel : userList) {
+        onlinePlayers.add(userModel.getPlayerUUID());
+      }
+      return onlinePlayers;
+    });
   }
 
 

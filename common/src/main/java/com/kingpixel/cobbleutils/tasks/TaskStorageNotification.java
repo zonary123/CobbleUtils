@@ -2,6 +2,8 @@ package com.kingpixel.cobbleutils.tasks;
 
 import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.database.DataBaseFactory;
+import com.kingpixel.cobbleutils.database.users.DataBaseUsers;
+import com.kingpixel.cobbleutils.database.users.UserModel;
 import com.kingpixel.cobbleutils.util.PlayerUtils;
 import com.kingpixel.cobbleutils.util.TypeMessage;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -17,29 +19,26 @@ public class TaskStorageNotification {
     CobbleUtils.SCHEDULER_COBBLEUTILS.scheduleAtFixedRate(() -> {
       try {
         if (CobbleUtils.server == null) return;
-        var players = CobbleUtils.server.getPlayerManager().getPlayerList();
-        for (ServerPlayerEntity player : players) {
-          if (player == null) {
-            CobbleUtils.LOGGER.error("Player is null in scheduled task");
-            continue;
-          }
-          var user = DataBaseFactory.dataBaseUsers.findUserByUUID(player.getUuid());
-          if (user == null) {
-            CobbleUtils.LOGGER.error("UserModel is null for player " + player.getName().getString() + " (" + player.getUuid() + ")");
-            continue;
-          }
-          var storageList = user.getStorageList();
-          if (storageList == null) continue;
-          int size = storageList.size();
-          if (size > 0) {
-            PlayerUtils.sendMessage(
-              player,
-              CobbleUtils.language.getMessageStorageNotify()
-                .replace("%amount%", String.valueOf(size)),
-              CobbleUtils.config.getPrefix(),
-              TypeMessage.CHAT
-            );
-          }
+        var users = DataBaseUsers.USERS.asMap().values();
+        for (UserModel user : users) {
+          DataBaseFactory.dataBaseUsers.findUserStorage(user.getPlayerUUID())
+            .whenComplete((storages, throwable) -> {
+              if (storages == null) return;
+              int size = storages.size();
+              if (size > 0) {
+                CobbleUtils.server.execute(() -> {
+                  ServerPlayerEntity player = CobbleUtils.server.getPlayerManager().getPlayer(user.getPlayerUUID());
+                  if (player == null) return;
+                  PlayerUtils.sendMessage(
+                    player,
+                    CobbleUtils.language.getMessageStorageNotify()
+                      .replace("%amount%", String.valueOf(size)),
+                    CobbleUtils.config.getPrefix(),
+                    TypeMessage.CHAT
+                  );
+                });
+              }
+            });
         }
       } catch (Exception ignored) {
       }
