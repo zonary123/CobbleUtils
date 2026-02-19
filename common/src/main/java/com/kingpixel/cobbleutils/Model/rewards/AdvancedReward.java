@@ -39,7 +39,9 @@ public class AdvancedReward {
   @Builder.Default
   private boolean allowDuplicates = false;
   @Builder.Default
-  private Map<String, Integer> permissionsAmounts = new LinkedHashMap<>(Map.of(
+  private String animation = "NONE";
+  @Builder.Default
+  private Map<String, Integer> amountRewardsPermission = new LinkedHashMap<>(Map.of(
     "", 1,
     "cobbleutils.reward.advanced", 3
   ));
@@ -64,8 +66,8 @@ public class AdvancedReward {
   );
 
   private int getTotalAmount(UUID playerUUID) {
-    int total = permissionsAmounts.getOrDefault("", 1);
-    for (Map.Entry<String, Integer> entry : permissionsAmounts.entrySet()) {
+    int total = amountRewardsPermission.getOrDefault("", 1);
+    for (Map.Entry<String, Integer> entry : amountRewardsPermission.entrySet()) {
       String perm = entry.getKey();
       int amt = entry.getValue();
       if (amt > total && (perm.isEmpty() || PermissionApi.hasPermission(playerUUID, perm, 2))) {

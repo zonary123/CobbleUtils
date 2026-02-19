@@ -80,14 +80,6 @@ public abstract class Economy {
     return CobbleUtils.language.getDefaultSymbol();
   }
 
-  /**
-   * Format the money
-   *
-   * @param money    The amount of money to format
-   * @param currency The currency to format
-   * @return The formatted money
-   */
-  public abstract String format(BigDecimal money, String currency);
 
   /**
    * set the balance of the player
@@ -128,7 +120,14 @@ public abstract class Economy {
 
   public abstract CompletableFuture<Boolean> hasBalance(UUID playerId, String currencyId, BigDecimal amount);
 
-  public abstract String formatCurrency(String currencyId, BigDecimal amount);
+  /**
+   * Format the money
+   *
+   * @param money    The amount of money to format
+   * @param currency The currency to format
+   * @return The formatted money
+   */
+  public abstract String format(BigDecimal money, String currency);
 
   // =======================
   // Default business logic

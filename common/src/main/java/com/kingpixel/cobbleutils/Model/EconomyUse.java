@@ -25,6 +25,6 @@ public class EconomyUse {
   public String format(BigDecimal amount) {
     Economy eco = EconomyApi.getEconomy(EconomyId);
     if (eco == null) return amount.toString();
-    return eco.formatCurrency(currency, amount);
+    return eco.format(amount, currency);
   }
 }

@@ -4,6 +4,6 @@ import lombok.NonNull;
 import net.minecraft.item.ItemStack;
 import org.jetbrains.annotations.Nullable;
 
-public interface RewardIconProvider {
-  @Nullable ItemStack getIcon(@NonNull Reward reward, @NonNull String data);
+public interface IconProvider {
+  @Nullable ItemStack getIcon(@NonNull String data);
 }

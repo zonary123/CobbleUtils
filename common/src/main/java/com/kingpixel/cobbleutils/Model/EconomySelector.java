@@ -1,5 +1,6 @@
 package com.kingpixel.cobbleutils.Model;
 
+import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.api.EconomyApi;
 import com.kingpixel.cobbleutils.util.economys.Economy;
 import com.kingpixel.cobbleutils.util.economys.EconomyResult;
@@ -41,7 +42,10 @@ public class EconomySelector {
 
   public String format(BigDecimal amount) {
     Economy eco = EconomyApi.getEconomy(economy);
-    if (eco == null) return amount.toString();
-    return eco.formatCurrency(currency, amount);
+    if (eco == null) {
+      CobbleUtils.LOGGER.info("Economy " + economy + " not found, using default formatting for amount: " + amount);
+      return amount.toString();
+    }
+    return eco.format(amount, currency);
   }
 }

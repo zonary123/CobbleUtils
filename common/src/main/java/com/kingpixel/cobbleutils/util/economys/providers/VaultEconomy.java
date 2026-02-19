@@ -110,12 +110,7 @@ public class VaultEconomy extends Economy {
       return balance.compareTo(amount) >= 0;
     });
   }
-
-  @Override
-  public String formatCurrency(String currencyId, BigDecimal amount) {
-    return "";
-  }
-
+  
   @Override
   public String format(BigDecimal money, String currency) {
     return service.format(money.doubleValue());

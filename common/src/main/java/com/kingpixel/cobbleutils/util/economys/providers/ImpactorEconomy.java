@@ -185,11 +185,6 @@ public class ImpactorEconomy extends Economy {
       });
   }
 
-  @Override
-  public String formatCurrency(String currencyId, BigDecimal amount) {
-    return format(amount, currencyId);
-  }
-
   /**
    * Cache size for formatted currency strings. This cache stores previously formatted values
    * to avoid redundant formatting operations.

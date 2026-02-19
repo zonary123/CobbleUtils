@@ -109,11 +109,6 @@ public class CobbleDollarsEconomy extends Economy {
   }
 
   @Override
-  public String formatCurrency(String currencyId, BigDecimal amount) {
-    return "";
-  }
-
-  @Override
   public String format(BigDecimal money, String currency) {
     return CobbleUtils.config.getFormat(money);
   }

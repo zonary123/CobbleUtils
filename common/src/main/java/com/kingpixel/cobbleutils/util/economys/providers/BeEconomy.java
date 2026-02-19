@@ -142,8 +142,4 @@ public class BeEconomy extends Economy {
     });
   }
 
-  @Override
-  public String formatCurrency(String currencyId, BigDecimal amount) {
-    return "";
-  }
 }

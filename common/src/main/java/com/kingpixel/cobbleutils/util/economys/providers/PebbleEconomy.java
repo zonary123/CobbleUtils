@@ -124,11 +124,6 @@ public class PebbleEconomy extends Economy {
   }
 
   @Override
-  public String formatCurrency(String currencyId, BigDecimal amount) {
-    return "";
-  }
-
-  @Override
   public String format(BigDecimal money, String currency) {
     return CobbleUtils.language.getDefaultSymbol() + " " + CobbleUtils.config.getFormat(money);
   }

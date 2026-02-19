@@ -3,6 +3,7 @@ package com.kingpixel.cobbleutils.adapter;
 import com.google.gson.*;
 import com.kingpixel.cobbleutils.Model.DurationValue;
 import com.kingpixel.cobbleutils.Model.rewards.Reward;
+import com.kingpixel.cobbleutils.Model.rewards.RewardRegistry;
 
 import java.lang.reflect.Type;
 
@@ -28,7 +29,7 @@ public class RewardAdapter implements JsonSerializer<Reward>, JsonDeserializer<R
       if (part.isEmpty()) continue;
 
       String type = part.contains(":") ? part.split(":", 2)[0] : "item";
-      if (Reward.EXECUTORS.get(type) == null) {
+      if (RewardRegistry.getRewardExecutor(type) == null) {
         parts[i] = "item:1:" + part;
       }
     }

@@ -123,11 +123,6 @@ public class UltraEEconomy extends Economy {
   }
 
   @Override
-  public String formatCurrency(String currencyId, BigDecimal amount) {
-    return "";
-  }
-
-  @Override
   public String format(BigDecimal money, String currency) {
     Currency curr = Currencies.getCurrency(currency);
     if (curr == null) return money.toString();

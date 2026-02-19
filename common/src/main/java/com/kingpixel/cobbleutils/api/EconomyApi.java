@@ -249,7 +249,7 @@ public class EconomyApi {
 
   @Nullable
   public static Economy getEconomy(@Nonnull String economyId) {
-    if (ECONOMIES.size() == 1) return ECONOMIES.values().iterator().next();
+    if (ECONOMIES.size() == 1) return DEFAULT_ECONOMY;
     Economy economy = ECONOMIES.get(economyId);
     if (economy == null) economy = DEFAULT_ECONOMY;
     return economy;
