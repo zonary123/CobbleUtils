@@ -24,9 +24,6 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
-/**
- * @author Carlos Varas Alonso
- */
 @Data
 public class StorageMenu {
 
@@ -67,8 +64,18 @@ public class StorageMenu {
   public CompletableFuture<Void> open(ServerPlayerEntity executor, UUID targetUUID) {
     CobbleUtils.server.execute(() -> UIManager.closeUI(executor));
     return DataBaseFactory.dataBaseUsers.findUserStorage(targetUUID)
-      .thenCompose((storageList) -> {
+      .thenCompose(storageList -> {
         if (storageList == null) storageList = new HashSet<>();
+        if (storageList.isEmpty()) {
+          CobbleUtils.server.execute(() -> {
+            executor.sendMessage(
+              AdventureTranslator.toNative("&cYou don't have any pending rewards to claim."),
+              false
+            );
+            UIManager.closeUI(executor);
+          });
+          return CompletableFuture.completedFuture(null);
+        }
         ChestTemplate template = ChestTemplate.builder(rows).build();
         PanelsConfig.applyConfig(template, panels);
         rectangle.apply(template);
@@ -88,14 +95,12 @@ public class StorageMenu {
         invalidStorages.forEach(storageList::remove);
         DataBaseFactory.dataBaseUsers.removeStorage(invalidStorages, targetUUID);
 
-
-        // CLAIM ALL
         claimAll.applyTemplate(template, claimAll.getButton(action -> {
           ServerPlayerEntity player = action.getPlayer();
           UIManager.closeUI(player);
 
           DataBaseFactory.dataBaseUsers.findUserStorage(targetUUID)
-            .whenComplete((storages, throwable) -> {
+            .thenAccept(storages -> {
               if (storages == null || storages.isEmpty()) {
                 CobbleUtils.server.execute(() ->
                   player.sendMessage(
@@ -106,35 +111,22 @@ public class StorageMenu {
                 return;
               }
 
-
               List<CompletableFuture<Boolean>> futures = new ArrayList<>();
-
               for (Storage storage : storages) {
-                futures.add(removeStorage(executor, storage, targetUUID));
+                futures.add(removeStorage(player, storage, targetUUID));
               }
 
-              CompletableFuture
-                .allOf(futures.toArray(new CompletableFuture[0]))
+              CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
                 .thenRun(() -> {
                   long claimed = futures.stream()
                     .filter(CompletableFuture::join)
                     .count();
 
-                  CobbleUtils.server.execute(() -> {
-                    player.sendMessage(
-                      AdventureTranslator.toNative(
-                        "&aYou have successfully claimed &e" + claimed + " &arewards!"
-                      ),
-                      false
-                    );
-
-                    CobbleUtils.language.getStorageMenu().open(player, targetUUID);
-                  });
+                  CobbleUtils.server.execute(() -> CobbleUtils.language.getStorageMenu().open(player, targetUUID));
                 });
             });
         }, 1, TimeUnit.MINUTES, 1));
 
-        // Navegación
         previousPage.applyTemplate(template, previousPage.getLinkedPageButton(LinkType.Previous));
         nextPage.applyTemplate(template, nextPage.getLinkedPageButton(LinkType.Next));
         close.applyTemplate(template, close.getButton(action -> UIManager.closeUI(action.getPlayer()), 1, TimeUnit.SECONDS, 1));
@@ -150,53 +142,16 @@ public class StorageMenu {
       });
   }
 
-  public static CompletableFuture<Boolean> removeStorage(
-    ServerPlayerEntity player,
-    Storage storage,
-    UUID targetUUID) {
-
+  public static CompletableFuture<Boolean> removeStorage(ServerPlayerEntity player, Storage storage, UUID targetUUID) {
     return DataBaseFactory.dataBaseUsers.removeStorage(storage, targetUUID)
       .thenCompose(removed -> {
-        if (!removed) {
-          CobbleUtils.server.execute(() ->
-            player.sendMessage(
-              AdventureTranslator.toNative(
-                "&cCould not claim reward: &e" +
-                  storage.getDisplay().getName().getString()
-              ),
-              false
-            )
-          );
-          return CompletableFuture.completedFuture(false);
-        }
-        return storage.giveToPlayer(player)
-          .thenCompose(given -> {
-            if (!given) {
-              return DataBaseFactory.dataBaseUsers
-                .addStorage(storage, targetUUID)
-                .thenApply(r -> false);
-            }
-            CobbleUtils.language
-              .getStorageMenu()
-              .open(player, targetUUID);
-            return CompletableFuture.completedFuture(given);
-          });
+        if (!removed) return CompletableFuture.completedFuture(false);
+        return storage.giveToPlayer(player);
       })
       .exceptionally(throwable -> {
         throwable.printStackTrace();
         DataBaseFactory.dataBaseUsers.addStorage(storage, targetUUID);
-        CobbleUtils.server.execute(() ->
-          player.sendMessage(
-            AdventureTranslator.toNative(
-              "&cAn error occurred while claiming reward: &e" +
-                storage.getDisplay().getName().getString()
-            ),
-            false
-          )
-        );
         return false;
       });
   }
-
-
 }

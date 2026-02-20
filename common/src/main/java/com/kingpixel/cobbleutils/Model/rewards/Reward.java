@@ -146,15 +146,6 @@ public class Reward {
                     .build(),
                   player.getUuid()
                 );
-
-                CobbleUtils.server.execute(() ->
-                  player.sendMessage(
-                    Text.literal(
-                      "Failed to give reward: " + finalSingleReward +
-                        ". It has been saved and will be given to you when you log in again."
-                    )
-                  )
-                );
               }
             });
 

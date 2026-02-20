@@ -3,6 +3,7 @@ package com.kingpixel.cobbleutils.database.users.models;
 import ca.landonjw.gooeylibs2.api.button.GooeyButton;
 import ca.landonjw.gooeylibs2.api.button.RateLimitedButton;
 import com.google.gson.JsonElement;
+import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.ui.StorageMenu;
 import com.kingpixel.cobbleutils.util.UtilsFile;
 import lombok.Data;
@@ -39,7 +40,8 @@ public abstract class Storage {
         .display(getDisplay())
         .onClick(action -> {
           ServerPlayerEntity player = action.getPlayer();
-          StorageMenu.removeStorage(player, this, targetUUID);
+          StorageMenu.removeStorage(player, this, targetUUID)
+            .whenComplete((success, throwable) -> CobbleUtils.language.getStorageMenu().open(player, targetUUID));
         })
         .build())
       .interval(1, TimeUnit.SECONDS)

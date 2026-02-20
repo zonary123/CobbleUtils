@@ -207,10 +207,7 @@ public class RewardRegistry {
         return true;
       }
       var pc = Cobblemon.INSTANCE.getStorage().getPC(player);
-      if (pc.add(pokemon)) return true;
-
-      reward.giveToPlayerDisconnected(player.getUuid());
-      return false;
+      return pc.add(pokemon);
     }));
 
     EXECUTORS.put("message", (player, reward, data) -> {
