@@ -169,7 +169,7 @@ public class CobbleUtils {
       EconomyApi.loadEconomies();
     });
 
-    LifecycleEvent.SERVER_STOPPING.register(server1 -> {
+    LifecycleEvent.SERVER_STOPPING.register(server -> {
       DataBaseFactory.close();
       RedisManager.close();
       ChunkBlockStorageManager.shutdownAsync().join();

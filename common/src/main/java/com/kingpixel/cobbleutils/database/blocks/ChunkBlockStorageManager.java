@@ -29,6 +29,7 @@ public class ChunkBlockStorageManager {
     .maximumSize(10_000)
     .removalListener((String key, ChunkBlockData value, RemovalCause cause) -> {
       if (key == null || value == null) return;
+      if (CobbleUtils.server.isStopping() || CobbleUtils.server.isStopped()) return;
       if (value.isDirty()) saveChunkAsync(key, value);
     })
     .build();
@@ -75,9 +76,26 @@ public class ChunkBlockStorageManager {
     return getChunkData(world, chunk).contains(pos.asLong());
   }
 
+  /**
+   * Obtiene el ChunkBlockData de manera sincronizada.
+   * Si no existe, carga desde disco y lo cachea.
+   */
   private static ChunkBlockData getChunkData(World world, Chunk chunk) {
     String key = getKey(world, chunk);
-    return CHUNK_CACHE.get(key, k -> new ChunkBlockData());
+
+    ChunkBlockData cached = CHUNK_CACHE.getIfPresent(key);
+    if (cached != null) return cached;
+
+    cached = new ChunkBlockData();
+    CHUNK_CACHE.put(key, cached);
+
+    ChunkBlockData finalCached = cached;
+    CompletableFuture.runAsync(() -> {
+      ChunkBlockData loaded = loadChunkSync(world, chunk);
+      finalCached.mergeFrom(loaded);
+    }, UtilsFile.IO_CONTEXT.getExecutor());
+
+    return cached;
   }
 
   private static String getKey(World world, Chunk chunk) {
@@ -92,13 +110,21 @@ public class ChunkBlockStorageManager {
   // Async Load & Save con CompletableFuture
   // =========================================
 
+  /**
+   * Precarga async sin bloquear. El merge puede perder un bloque temporalmente.
+   */
   public static CompletableFuture<ChunkBlockData> loadChunkAsync(World world, Chunk chunk) {
     String key = getKey(world, chunk);
-    return CompletableFuture.supplyAsync(() -> loadChunkSync(world, chunk), UtilsFile.IO_CONTEXT.getExecutor())
-      .thenApply(data -> {
-        getChunkData(world, chunk).mergeFrom(data);
-        return data;
-      });
+
+    // obtenemos o creamos chunk vacío en cache
+    ChunkBlockData cached = CHUNK_CACHE.get(key, k -> new ChunkBlockData());
+
+    // carga async y merge en la cache
+    return CompletableFuture.supplyAsync(() -> {
+      ChunkBlockData loaded = loadChunkSync(world, chunk);
+      cached.mergeFrom(loaded);
+      return cached; // devolvemos la instancia de la cache
+    }, UtilsFile.IO_CONTEXT.getExecutor());
   }
 
   private static ChunkBlockData loadChunkSync(World world, Chunk chunk) {
