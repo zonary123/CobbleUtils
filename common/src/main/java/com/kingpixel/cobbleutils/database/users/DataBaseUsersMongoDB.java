@@ -11,6 +11,7 @@ import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
+import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.UpdateOptions;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.util.UserCache;
@@ -230,10 +231,14 @@ public class DataBaseUsersMongoDB extends DataBaseUsers {
   }
 
   @Override
-  public CompletableFuture<List<UserModel>> findUsersInactiveSince(long millis) {
+  public CompletableFuture<List<UserModel>> findUsersActiveBetween(Instant from, Instant to) {
     return CobbleUtils.ASYNC.supply(() -> {
-      long cutoff = System.currentTimeMillis() - millis;
-      List<Document> docs = collectionUser.find()
+      List<Document> docs = collectionUser.find(
+          Filters.and(
+            Filters.gte(KEY_DISCONNECT_TIME, from.toString()),
+            Filters.lte(KEY_DISCONNECT_TIME, to.toString())
+          )
+        )
         .projection(new Document(KEY_PLAYER_UUID, 1)
           .append(KEY_PLAYER_NAME, 1)
           .append(KEY_DISCONNECT_TIME, 1)
@@ -241,20 +246,11 @@ public class DataBaseUsersMongoDB extends DataBaseUsers {
         .into(new ArrayList<>());
 
       return docs.stream()
-        .filter(doc -> {
-          String disconnectStr = doc.getString(KEY_DISCONNECT_TIME);
-          if (disconnectStr == null) return false;
-          Instant disconnect = Instant.parse(disconnectStr);
-          return disconnect.toEpochMilli() < cutoff;
-        })
         .map(doc -> {
           UserModel userModel = new UserModel();
           userModel.setPlayerUUID(UUID.fromString(doc.getString(KEY_PLAYER_UUID)));
           userModel.setPlayerName(doc.getString(KEY_PLAYER_NAME));
-          String disconnectStr = doc.getString(KEY_DISCONNECT_TIME);
-          if (disconnectStr != null) {
-            userModel.setLastLogin(Instant.parse(disconnectStr));
-          }
+          userModel.setLastLogin(Instant.parse(doc.getString(KEY_DISCONNECT_TIME)));
           return userModel;
         })
         .toList();

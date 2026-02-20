@@ -19,6 +19,7 @@ import net.minecraft.util.UserCache;
 import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
+import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
@@ -95,7 +96,9 @@ public class PlayerOfflineAndOnline {
    * Carga los jugadores inactivos de forma asíncrona.
    */
   private void loadAsync() {
-    DataBaseFactory.dataBaseUsers.findUsersInactiveSince(CobbleUtils.config.getTimeSinceLastLoginToSuggest().toMillis())
+    Instant now = Instant.now().plus(24, TimeUnit.DAYS.toChronoUnit());
+    Instant from = now.minusMillis(CobbleUtils.config.getTimeSinceLastLoginToSuggest().toMillis());
+    DataBaseFactory.dataBaseUsers.findUsersActiveBetween(from, now)
       .whenComplete((userModels, throwable) -> {
         if (userModels == null || userModels.isEmpty()) {
           CobbleUtils.LOGGER.info("No inactive users found to suggest.");

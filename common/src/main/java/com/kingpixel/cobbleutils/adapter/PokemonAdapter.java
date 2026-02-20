@@ -2,52 +2,42 @@ package com.kingpixel.cobbleutils.adapter;
 
 import com.cobblemon.mod.common.pokemon.Pokemon;
 import com.google.gson.*;
-import com.kingpixel.cobbleutils.CobbleUtils;
 import com.mojang.datafixers.util.Pair;
 
 import java.lang.reflect.Type;
 
 public class PokemonAdapter implements JsonSerializer<Pokemon>, JsonDeserializer<Pokemon> {
+
   public static final PokemonAdapter INSTANCE = new PokemonAdapter();
 
   @Override
   public JsonElement serialize(Pokemon src, Type typeOfSrc, JsonSerializationContext context) {
     if (src == null) {
-      CobbleUtils.LOGGER.error("Attempted to serialize a null Pokemon.");
-      return JsonNull.INSTANCE;
+      throw new JsonParseException("Attempted to serialize a null Pokemon.");
     }
+
     try {
       return Pokemon.getCODEC().encodeStart(ItemStackAdapter.getOps(), src)
         .result()
-        .orElseGet(() -> {
-          CobbleUtils.LOGGER.error("Error serializing Pokemon: {}" + src);
-          return JsonNull.INSTANCE;
-        });
+        .orElseThrow(() -> new JsonParseException("Failed to serialize Pokemon: " + src));
     } catch (Exception e) {
-      CobbleUtils.LOGGER.error("Exception while serializing Pokemon: {}", e.getMessage());
-      e.printStackTrace();
-      return JsonNull.INSTANCE; // or throw a custom exception if needed
+      throw new JsonParseException("Exception while serializing Pokemon: " + e.getMessage(), e);
     }
   }
 
   @Override
   public Pokemon deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context) throws JsonParseException {
     if (json == null || json.isJsonNull()) {
-      CobbleUtils.LOGGER.error("Attempted to deserialize a null or empty Pokemon JSON.");
-      return null;
+      throw new JsonParseException("Attempted to deserialize a null or empty Pokemon JSON.");
     }
+
     try {
       return Pokemon.getCODEC().decode(ItemStackAdapter.getOps(), json)
         .result()
         .map(Pair::getFirst)
-        .orElseGet(() -> {
-          CobbleUtils.LOGGER.error("Error deserializing Pokemon: {}" + json);
-          return null;
-        });
+        .orElseThrow(() -> new JsonParseException("Failed to deserialize Pokemon: " + json));
     } catch (Exception e) {
-      CobbleUtils.LOGGER.error("Exception while deserializing Pokemon: {}", e.getMessage());
-      e.printStackTrace();
-      return null; // or throw a custom exception if needed
+      throw new JsonParseException("Exception while deserializing Pokemon: " + e.getMessage(), e);
     }
   }
 }

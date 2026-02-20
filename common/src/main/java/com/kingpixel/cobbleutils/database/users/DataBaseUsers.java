@@ -9,6 +9,7 @@ import com.kingpixel.cobbleutils.database.users.models.Storage;
 import net.minecraft.server.network.ServerPlayerEntity;
 import org.jetbrains.annotations.Nullable;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -64,8 +65,7 @@ public abstract class DataBaseUsers {
 
   public abstract CompletableFuture<Boolean> removeStorage(List<Storage> storage, UUID targetUUID);
 
-
-  public abstract CompletableFuture<List<UserModel>> findUsersInactiveSince(long millis);
+  public abstract CompletableFuture<List<UserModel>> findUsersActiveBetween(Instant from, Instant to);
 
   public abstract CompletableFuture<List<UUID>> getOnlinePlayers();
 }

@@ -10,6 +10,7 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import org.jetbrains.annotations.Nullable;
 
 import java.nio.file.Path;
+import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 
@@ -190,27 +191,19 @@ public class DataBaseUsersJson extends DataBaseUsers {
   }
 
   @Override
-  public CompletableFuture<List<UserModel>> findUsersInactiveSince(long millis) {
+  public CompletableFuture<List<UserModel>> findUsersActiveBetween(Instant from, Instant to) {
     return CobbleUtils.ASYNC.supply(() -> {
-      List<UserModel> inactiveUsers = new ArrayList<>();
-      try {
-        var files = UtilsFile.getAllJsonFiles(PATH);
-        for (var file : files) {
-          try {
-            UserModel userModel = UtilsFile.read(file, UserModel.class);
-            if (userModel != null && userModel.getLastLogin().toEpochMilli() < millis) {
-              inactiveUsers.add(userModel);
-            }
-          } catch (Exception e) {
-            e.printStackTrace();
-          }
+      List<UserModel> activeUsers = new ArrayList<>();
+      var userList = USERS.asMap().values();
+      for (var userModel : userList) {
+        if (userModel.getLastLogin() != null && !userModel.getLastLogin().isBefore(from) && !userModel.getLastLogin().isAfter(to)) {
+          activeUsers.add(userModel);
         }
-      } catch (Exception e) {
-        e.printStackTrace();
       }
-      return inactiveUsers;
+      return activeUsers;
     });
   }
+
 
   @Override
   public CompletableFuture<List<UUID>> getOnlinePlayers() {
