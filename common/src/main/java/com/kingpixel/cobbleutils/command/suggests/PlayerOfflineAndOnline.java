@@ -35,6 +35,7 @@ public class PlayerOfflineAndOnline {
   private final List<String> playerUUIDsString = new CopyOnWriteArrayList<>();
 
   private List<String> getPlayerUUIDsAsString() {
+    refreshIfNeeded();
     if (playerUUIDsString.size() != playerUUIDs.size()) {
       playerUUIDsString.clear();
       for (UUID uuid : playerUUIDs) {
@@ -96,6 +97,10 @@ public class PlayerOfflineAndOnline {
   private void loadAsync() {
     DataBaseFactory.dataBaseUsers.findUsersInactiveSince(CobbleUtils.config.getTimeSinceLastLoginToSuggest().toMillis())
       .whenComplete((userModels, throwable) -> {
+        if (userModels == null || userModels.isEmpty()) {
+          CobbleUtils.LOGGER.info("No inactive users found to suggest.");
+          return;
+        }
         List<String> names = new ArrayList<>();
         List<UUID> uuids = new ArrayList<>();
 

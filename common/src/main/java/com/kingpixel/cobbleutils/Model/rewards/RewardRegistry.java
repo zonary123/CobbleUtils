@@ -202,12 +202,7 @@ public class RewardRegistry {
     EXECUTORS.put("pokemon", (player, reward, data) -> CobbleUtils.server.submit(() -> {
       Pokemon pokemon = PokemonProperties.Companion.parse(data).create();
       var party = Cobblemon.INSTANCE.getStorage().getParty(player);
-      if (party.getFirstAvailablePosition() != null) {
-        party.add(pokemon);
-        return true;
-      }
-      var pc = Cobblemon.INSTANCE.getStorage().getPC(player);
-      return pc.add(pokemon);
+      return party.add(pokemon);
     }));
 
     EXECUTORS.put("message", (player, reward, data) -> {

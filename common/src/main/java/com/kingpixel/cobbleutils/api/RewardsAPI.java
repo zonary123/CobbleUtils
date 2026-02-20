@@ -65,4 +65,10 @@ public class RewardsAPI {
     if (itemChance == null) CobbleUtils.LOGGER.error("Reward with id " + id + " not found!");
     return itemChance;
   }
+
+  public static AdvancedReward getAdvancedRewardTemplate(String advancedRewardId) {
+    AdvancedReward advancedReward = ADVANCED_REWARDS_TEMPLATE.getOrDefault(advancedRewardId, null);
+    if (advancedReward == null) CobbleUtils.LOGGER.error("Advanced reward with id " + advancedRewardId + " not found!");
+    return advancedReward;
+  }
 }
