@@ -3,6 +3,7 @@ package com.kingpixel.cobbleutils.database.users;
 import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.Model.DurationValue;
 import com.kingpixel.cobbleutils.Model.ItemChance;
+import com.kingpixel.cobbleutils.Model.rewards.Reward;
 import com.kingpixel.cobbleutils.database.DataBaseFactory;
 import com.kingpixel.cobbleutils.database.users.models.Storage;
 import com.kingpixel.cobbleutils.util.PlayerUtils;
@@ -22,10 +23,6 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-/**
- * User model for CobbleUtils
- * Handles player info, last login, and claimed rewards.
- */
 @Data
 public class UserModel {
   private boolean online;
@@ -51,7 +48,6 @@ public class UserModel {
   }
 
   public UserModel() {
-
   }
 
   public static @Nullable UserModel fromDocument(Document doc) {
@@ -80,37 +76,27 @@ public class UserModel {
     return CompletableFuture.completedFuture(null);
   }
 
-  /**
-   * Returns a human-readable summary of the user.
-   */
   public String getUserInfo() {
     DateTimeFormatter formatter = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.FULL)
       .withLocale(Locale.getDefault())
       .withZone(ZoneId.systemDefault());
-
-    String formattedLastLogin = lastLogin != null
-      ? formatter.format(lastLogin)
-      : "never";
-
+    String formattedLastLogin = lastLogin != null ? formatter.format(lastLogin) : "never";
     return String.format("User Info:%n - Name: %s%n - UUID: %s%n - Last Login: %s%n - IP: %s",
       playerName, playerUUID, formattedLastLogin, ip);
   }
 
-  /**
-   * Checks if an ItemChance reward is available for the user.
-   */
-  public boolean isAvailableReward(ItemChance itemChance) {
-    String identifier = itemChance.getIdentifier();
-    if (identifier == null) return true; // Unlimited item
-    int maxClaims = itemChance.getAmount();
+  public boolean isAvailableReward(Reward reward) {
+    if (reward == null) return false;
+    if (Boolean.FALSE.equals(reward.getUnique()) || reward.getIdentifier() == null) return true;
+
+    String identifier = reward.getIdentifier();
+    int maxClaims = reward.getAmount();
     RewardInfo rewardInfo = rewardsClaimed.computeIfAbsent(identifier, k -> new RewardInfo());
 
-    // Cooldown check
-    if (rewardInfo.getTimesClaimed() >= maxClaims && itemChance.getCooldown() != null) {
-      if (rewardInfo.isOnCooldown(itemChance)) {
-        CobbleUtils.LOGGER.info("Item on cooldown. Remaining time: " +
-          PlayerUtils.getCooldown(rewardInfo.getRemainingCooldown(itemChance)) + " seconds"
-        );
+    if (rewardInfo.getTimesClaimed() >= maxClaims && reward.getCooldown() != null) {
+      if (rewardInfo.isOnCooldown(reward)) {
+        CobbleUtils.LOGGER.info("cobbleutils", "Reward on cooldown. Remaining time: " +
+          PlayerUtils.getCooldown(rewardInfo.getRemainingCooldown(reward)) + " seconds");
         return false;
       } else {
         rewardInfo.reset();
@@ -119,11 +105,17 @@ public class UserModel {
 
     rewardInfo.addTimesClaimed();
 
-    // Set cooldown if max reached
-    if (rewardInfo.getTimesClaimed() == maxClaims && itemChance.getCooldown() != null) {
-      rewardInfo.setFinishCooldown(Instant.now().plus(itemChance.getCooldown().toMillis(), ChronoUnit.MILLIS));
+    if (rewardInfo.getTimesClaimed() == maxClaims && reward.getCooldown() != null) {
+      rewardInfo.setFinishCooldown(Instant.now().plus(reward.getCooldown().toMillis(), ChronoUnit.MILLIS));
     }
+
+    markDirty();
     return true;
+  }
+
+  public boolean isAvailableReward(ItemChance itemChance) {
+    if (itemChance == null) return false;
+    return isAvailableReward(itemChance.toReward());
   }
 
   public void fix(ServerPlayerEntity player) {
@@ -135,27 +127,12 @@ public class UserModel {
       storageList = new HashSet<>();
       markDirty();
     }
-    storageList.stream().filter(Objects::isNull).toList().forEach(storage -> {
-      storageList.remove(storage);
-      markDirty();
-    });
-    Iterator<Map.Entry<String, RewardInfo>> it = rewardsClaimed.entrySet().iterator();
-
+    storageList.removeIf(Objects::isNull);
     Instant now = Instant.now();
-
-    while (it.hasNext()) {
-      Map.Entry<String, RewardInfo> entry = it.next();
+    rewardsClaimed.entrySet().removeIf(entry -> {
       RewardInfo info = entry.getValue();
-      if (info == null) {
-        it.remove();
-        markDirty();
-        continue;
-      }
-      if (info.getFinishCooldown() != null && now.isAfter(info.getFinishCooldown())) {
-        it.remove();
-        markDirty();
-      }
-    }
+      return info == null || (info.getFinishCooldown() != null && now.isAfter(info.getFinishCooldown()));
+    });
   }
 
   public void addStorage(Storage storage) {
@@ -178,27 +155,24 @@ public class UserModel {
     return toRemove;
   }
 
+  public void addStorage(List<Storage> storage) {
+    storageList.addAll(storage);
+    markDirty();
+  }
+
   public void disconnect() {
     this.online = false;
     this.disconnectTime = Instant.now();
     markDirty();
   }
 
-  public void addStorage(List<Storage> storage) {
-    storageList.addAll(storage);
-    markDirty();
-  }
-
   public Document toDocument() {
     Document document = Document.parse(UtilsFile.getGson().toJson(this, UserModel.class));
-    document.remove("storageList"); // Remove storageList to avoid MongoDB size issues
+    document.remove("storageList");
+    document.remove("rewardsClaimed");
     return document;
   }
 
-
-  /**
-   * Stores information about claimed rewards for a user.
-   */
   @Data
   private static class RewardInfo {
     private int timesClaimed;
@@ -206,7 +180,7 @@ public class UserModel {
 
     public RewardInfo() {
       this.timesClaimed = 0;
-      this.finishCooldown = null; // Start null to avoid premature cooldown
+      this.finishCooldown = null;
     }
 
     public void addTimesClaimed() {
@@ -218,23 +192,20 @@ public class UserModel {
       this.finishCooldown = null;
     }
 
-    public boolean isOnCooldown(ItemChance itemChance) {
-      DurationValue cooldown = itemChance.getCooldown();
+    public boolean isOnCooldown(Reward reward) {
+      DurationValue cooldown = reward.getCooldown();
       if (finishCooldown == null || cooldown == null) return false;
       if (cooldown.toMillis() <= 0) return true;
       Instant nextAvailable = finishCooldown.plusMillis(cooldown.toMillis());
       return Instant.now().isBefore(nextAvailable);
     }
 
-    public long getRemainingCooldown(ItemChance itemChance) {
-      DurationValue cooldown = itemChance.getCooldown();
+    public long getRemainingCooldown(Reward reward) {
+      DurationValue cooldown = reward.getCooldown();
       if (finishCooldown == null || cooldown == null) return 0;
-      if (cooldown.toMillis() <= 0) return Long.MAX_VALUE; // Cooldown infinito
-
+      if (cooldown.toMillis() <= 0) return Long.MAX_VALUE;
       Instant nextAvailable = finishCooldown.plusMillis(cooldown.toMillis());
-      long remaining = Duration.between(Instant.now(), nextAvailable).toMillis();
-
-      return Math.max(0, remaining);
+      return Math.max(0, Duration.between(Instant.now(), nextAvailable).toMillis());
     }
   }
 }

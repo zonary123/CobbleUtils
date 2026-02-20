@@ -8,6 +8,7 @@ import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.Model.EconomySelector;
 import com.kingpixel.cobbleutils.Model.ItemModel;
 import com.kingpixel.cobbleutils.api.RewardsAPI;
+import com.kingpixel.cobbleutils.database.DataBaseFactory;
 import com.kingpixel.cobbleutils.util.AdventureTranslator;
 import com.kingpixel.cobbleutils.util.ItemUtils;
 import com.kingpixel.cobbleutils.util.PlayerUtils;
@@ -143,73 +144,81 @@ public class RewardRegistry {
 
 
   static {
-    // ----------------- EXECUTORS -----------------
     EXECUTORS.put("id", (player, reward, data) -> RewardsAPI.giveReward(player.getUuid(), reward));
     EXECUTORS.put("mod", (player, reward, data) -> CompletableFuture.completedFuture(false));
-    EXECUTORS.put("item", (player, reward, data) -> {
-      ItemStackRewardData itemStackRewardData = parseItemStackRewardData(data);
-      ItemStack itemStack = itemStackRewardData.getItemStack();
-      return CobbleUtils.server.submit(() -> {
-        try {
 
-          if (itemStack == null) {
-            player.sendMessage(Text.literal("Invalid item reward data: " + data));
-            return false;
+    EXECUTORS.put("item", (player, reward, data) ->
+      DataBaseFactory.dataBaseUsers.isAvailableReward(player.getUuid(), reward)
+        .thenCompose(available -> {
+          if (!available) return CompletableFuture.completedFuture(true);
+          ItemStackRewardData itemStackRewardData = parseItemStackRewardData(data);
+          ItemStack itemStack = itemStackRewardData.getItemStack();
+          return CobbleUtils.server.submit(() -> {
+            if (itemStack == null) {
+              player.sendMessage(Text.literal("Invalid item reward data: " + data));
+              return false;
+            }
+            boolean given = false;
+            if (player.getInventory().getEmptySlot() != -1) {
+              player.getInventory().offerOrDrop(itemStack);
+              given = true;
+            }
+            if (given && CobbleUtils.config.isNotifyRewards()) {
+              player.sendMessage(
+                AdventureTranslator.toNative(
+                  CobbleUtils.language.getMessageRewardItemStack()
+                    .replace("%item%", ItemUtils.getTranslatedName(itemStack))
+                    .replace("%amount%", itemStack.getCount() + "")
+                )
+              );
+            }
+            return given;
+          });
+        })
+    );
+
+    EXECUTORS.put("command", (player, reward, data) ->
+      DataBaseFactory.dataBaseUsers.isAvailableReward(player.getUuid(), reward)
+        .thenCompose(available -> {
+          if (!available) return CompletableFuture.completedFuture(true);
+          return PlayerUtils.executeCommandCompletable(data, player);
+        })
+    );
+
+    EXECUTORS.put("money", (player, reward, data) ->
+      DataBaseFactory.dataBaseUsers.isAvailableReward(player.getUuid(), reward)
+        .thenCompose(available -> {
+          if (!available) return CompletableFuture.completedFuture(true);
+          try {
+            MoneyRewardData moneyData = parseMoneyRewardData(data);
+            if (moneyData == null) return CompletableFuture.completedFuture(false);
+            double finalAmount = moneyData.getFinalAmount();
+            return new EconomySelector(moneyData.getEconomy(), moneyData.getCurrency())
+              .deposit(player.getUuid(), BigDecimal.valueOf(finalAmount), moneyData.getReason().replace("%money%", finalAmount + ""))
+              .thenCompose(economyResult -> CompletableFuture.completedFuture(economyResult.isSuccess()));
+          } catch (Exception e) {
+            e.printStackTrace();
           }
+          return CompletableFuture.completedFuture(false);
+        })
+    );
 
-          boolean given = false;
-
-          if (player.getInventory().getEmptySlot() != -1) {
-            player.getInventory().offerOrDrop(itemStack);
-            given = true;
-          }
-
-          if (given && CobbleUtils.config.isNotifyRewards()) {
-            player.sendMessage(
-              AdventureTranslator.toNative(
-                CobbleUtils.language.getMessageRewardItemStack()
-                  .replace("%item%", ItemUtils.getTranslatedName(itemStack))
-                  .replace("%amount%", itemStack.getCount() + "")
-              )
-            );
-          }
-          return given;
-        } catch (Exception e) {
-          e.printStackTrace();
-          return false;
-        }
-      });
-    });
-
-
-    EXECUTORS.put("command", (player, reward, data) -> PlayerUtils.executeCommandCompletable(data, player));
-    EXECUTORS.put("money", (player, reward, data) -> {
-      try {
-        MoneyRewardData moneyData = parseMoneyRewardData(data);
-        if (moneyData == null) return CompletableFuture.completedFuture(false);
-        double finalAmount = moneyData.getFinalAmount();
-        return new EconomySelector(moneyData.getEconomy(), moneyData.getCurrency())
-          .deposit(player.getUuid(), BigDecimal.valueOf(finalAmount), moneyData.getReason()
-            .replace("%money%", finalAmount + ""))
-          .thenCompose(economyResult -> CompletableFuture.completedFuture(economyResult.isSuccess()));
-      } catch (Exception e) {
-        e.printStackTrace();
-      }
-      return CompletableFuture.completedFuture(false);
-    });
-
-
-    EXECUTORS.put("pokemon", (player, reward, data) -> CobbleUtils.server.submit(() -> {
-      Pokemon pokemon = PokemonProperties.Companion.parse(data).create();
-      var party = Cobblemon.INSTANCE.getStorage().getParty(player);
-      return party.add(pokemon);
-    }));
+    EXECUTORS.put("pokemon", (player, reward, data) ->
+      DataBaseFactory.dataBaseUsers.isAvailableReward(player.getUuid(), reward)
+        .thenCompose(available -> {
+          if (!available) return CompletableFuture.completedFuture(true);
+          return CobbleUtils.server.submit(() -> {
+            Pokemon pokemon = PokemonProperties.Companion.parse(data).create();
+            var party = Cobblemon.INSTANCE.getStorage().getParty(player);
+            return party.add(pokemon);
+          });
+        })
+    );
 
     EXECUTORS.put("message", (player, reward, data) -> {
       PlayerUtils.sendMessage(player, data, CobbleUtils.config.getPrefix(), TypeMessage.CHAT);
       return CompletableFuture.completedFuture(true);
     });
-
     // ----------------- ICON_PROVIDERS -----------------
     ICON_PROVIDERS.put("mod", (data) -> Items.BARRIER.getDefaultStack());
     ICON_PROVIDERS.put("item", (data) -> {

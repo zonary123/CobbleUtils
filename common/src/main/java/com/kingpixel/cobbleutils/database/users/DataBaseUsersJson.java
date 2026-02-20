@@ -87,7 +87,20 @@ public class DataBaseUsersJson extends DataBaseUsers {
 
   @Override
   public CompletableFuture<Boolean> isAvailableReward(UUID playerUUID, Reward reward) {
-    return null;
+    if (!Boolean.TRUE.equals(reward.getUnique()) || reward.getIdentifier() == null)
+      return CompletableFuture.completedFuture(true);
+
+    UserModel cached = getUserModel(playerUUID);
+    if (cached != null) {
+      return CompletableFuture.completedFuture(cached.isAvailableReward(reward));
+    }
+
+    return findUserModel(playerUUID).thenApply(model -> {
+      if (model == null) return false;
+      boolean result = model.isAvailableReward(reward);
+      if (result) model.save();
+      return result;
+    });
   }
 
   @Override
