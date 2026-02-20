@@ -11,7 +11,7 @@ import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
-import com.mongodb.client.model.ReplaceOptions;
+import com.mongodb.client.model.UpdateOptions;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.util.UserCache;
 import org.bson.Document;
@@ -125,11 +125,18 @@ public class DataBaseUsersMongoDB extends DataBaseUsers {
   public CompletableFuture<Void> saveUserModel(UserModel userModel) {
     return CobbleUtils.ASYNC.runAsync(() -> {
       final String uuidStr = userModel.getPlayerUUID().toString();
-      Document filter = new Document(KEY_PLAYER_UUID, uuidStr);
-      Document doc = userModel.toDocument();
-      collectionUser.replaceOne(filter, doc, new ReplaceOptions().upsert(true));
+      final Document filter = new Document(KEY_PLAYER_UUID, uuidStr);
+
+      final Document update = new Document("$set", userModel.toDocument());
+
+      collectionUser.updateOne(
+        filter,
+        update,
+        new UpdateOptions().upsert(true)
+      );
     });
   }
+
 
   @Override
   public CompletableFuture<Boolean> addStorage(Storage storage, UUID targetUUID) {

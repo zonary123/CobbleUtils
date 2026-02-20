@@ -3,6 +3,8 @@ package com.kingpixel.cobbleutils.Model.rewards;
 import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.Model.DurationValue;
 import com.kingpixel.cobbleutils.Model.ItemChance;
+import com.kingpixel.cobbleutils.database.DataBaseFactory;
+import com.kingpixel.cobbleutils.database.users.models.StorageRewards;
 import lombok.*;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
@@ -101,39 +103,76 @@ public class Reward {
     return CobbleUtils.ASYNC.supply(() -> {
       String[] allRewards = reward.split("\\|");
       for (String singleReward : allRewards) {
-        singleReward = singleReward.trim();
-        if (singleReward.isEmpty()) continue;
+        try {
+          singleReward = singleReward.trim();
+          if (singleReward.isEmpty()) continue;
 
-        String[] rewardParts = singleReward.split(":", 2);
-        if (rewardParts.length < 2) {
+          String[] rewardParts = singleReward.split(":", 2);
+          if (rewardParts.length < 2) {
+            player.sendMessage(
+              Text.literal("Invalid reward format: " + singleReward)
+            );
+            continue;
+          }
+
+          String type = rewardParts[0];
+          String data = rewardParts[1];
+
+          RewardExecutor executor = RewardRegistry.getRewardExecutor(type);
+          if (executor == null) {
+            player.sendMessage(
+              Text.literal(
+                "Unknown reward type: " + type + " for reward: " + singleReward
+              )
+            );
+            continue;
+          }
+
+          String finalSingleReward = singleReward;
+          executor.execute(player, this, data)
+            .whenComplete((success, throwable) -> {
+              if (throwable != null) {
+                throwable.printStackTrace();
+              }
+
+              if (throwable != null || Boolean.FALSE.equals(success)) {
+                final Reward finalReward = Reward.builder()
+                  .reward(finalSingleReward)
+                  .build();
+
+                DataBaseFactory.dataBaseUsers.addStorage(
+                  StorageRewards.builder()
+                    .reward(finalReward)
+                    .build(),
+                  player.getUuid()
+                );
+
+                CobbleUtils.server.execute(() ->
+                  player.sendMessage(
+                    Text.literal(
+                      "Failed to give reward: " + finalSingleReward +
+                        ". It has been saved and will be given to you when you log in again."
+                    )
+                  )
+                );
+              }
+            });
+
+
+        } catch (Exception e) {
+          e.printStackTrace();
           player.sendMessage(
-            Text.literal("Invalid reward format: " + singleReward)
+            Text.literal("Error giving reward: " + singleReward)
           );
-          continue;
         }
-
-        String type = rewardParts[0];
-        String data = rewardParts[1];
-
-        RewardExecutor executor = RewardRegistry.getRewardExecutor(type);
-        if (executor == null) {
-          player.sendMessage(
-            Text.literal(
-              "Unknown reward type: " + type + " for reward: " + singleReward
-            )
-          );
-          continue;
-        }
-
-        executor.execute(player, this, data);
       }
       return true;
     });
   }
 
 
-  public CompletableFuture<Void> giveToPlayerDisconnected(UUID playerUUID) {
-    return CompletableFuture.completedFuture(null);
+  public CompletableFuture<Boolean> giveToPlayerDisconnected(UUID playerUUID) {
+    return DataBaseFactory.dataBaseUsers.addStorage(StorageRewards.builder().reward(this).build(), playerUUID);
   }
 
 

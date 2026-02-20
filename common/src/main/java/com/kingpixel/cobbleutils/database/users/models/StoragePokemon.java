@@ -51,7 +51,7 @@ public class StoragePokemon extends Storage {
   public CompletableFuture<Boolean> giveToPlayer(ServerPlayerEntity player) {
     return CompletableFuture.supplyAsync(() -> {
       var party = Cobblemon.INSTANCE.getStorage().getParty(player);
-      if (party.size() < 6) {
+      if (party.occupied() < party.size()) {
         CobbleUtils.server.execute(() -> party.add(pokemon));
         return true;
       }

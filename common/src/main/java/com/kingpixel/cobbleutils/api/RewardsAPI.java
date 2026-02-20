@@ -9,6 +9,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -44,15 +45,13 @@ public class RewardsAPI {
     } else REWARDS_TEMPLATE.put(id, reward);
   }
 
-  public static void giveReward(UUID playerUUID, Reward reward) {
+  public static CompletableFuture<Boolean> giveReward(UUID playerUUID, Reward reward) {
     Reward rewardToGive = reward;
     if (rewardToGive.getId() != null && !rewardToGive.getId().isEmpty()) {
       rewardToGive = REWARDS_TEMPLATE.getOrDefault(reward.getId(), reward);
     }
     ServerPlayerEntity player = CobbleUtils.server.getPlayerManager().getPlayer(playerUUID);
-    if (player == null) {
-      rewardToGive.giveToPlayerDisconnected(playerUUID);
-    } else rewardToGive.giveToPlayer(player);
+    return player == null ? rewardToGive.giveToPlayerDisconnected(playerUUID) : rewardToGive.giveToPlayer(player);
   }
 
   public static @Nullable Reward getRewardTemplate(String id) {

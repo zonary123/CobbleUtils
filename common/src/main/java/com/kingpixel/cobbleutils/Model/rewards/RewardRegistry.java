@@ -24,6 +24,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.math.BigDecimal;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -144,77 +145,78 @@ public class RewardRegistry {
   static {
     // ----------------- EXECUTORS -----------------
     EXECUTORS.put("id", (player, reward, data) -> RewardsAPI.giveReward(player.getUuid(), reward));
-    EXECUTORS.put("mod", (player, reward, data) -> Items.BARRIER.getDefaultStack());
+    EXECUTORS.put("mod", (player, reward, data) -> CompletableFuture.completedFuture(false));
     EXECUTORS.put("item", (player, reward, data) -> {
-      try {
-        ItemStackRewardData itemStackRewardData = parseItemStackRewardData(data);
-        ItemStack itemStack = itemStackRewardData.getItemStack();
-        if (itemStack == null) {
-          player.sendMessage(
-            Text.literal(
-              "Invalid item reward data: " + data
-            )
-          );
-          return;
-        }
-        CobbleUtils.server.execute(() -> {
-          if (player.getInventory().getEmptySlot() == -1) {
-            reward.giveToPlayerDisconnected(player.getUuid());
-          } else {
+      ItemStackRewardData itemStackRewardData = parseItemStackRewardData(data);
+      ItemStack itemStack = itemStackRewardData.getItemStack();
+      return CobbleUtils.server.submit(() -> {
+        try {
+
+          if (itemStack == null) {
+            player.sendMessage(Text.literal("Invalid item reward data: " + data));
+            return false;
+          }
+
+          boolean given = false;
+
+          if (player.getInventory().getEmptySlot() != -1) {
             player.getInventory().offerOrDrop(itemStack);
+            given = true;
           }
-        });
 
-
-        if (CobbleUtils.config.isNotifyRewards()) {
-          player.sendMessage(
-            AdventureTranslator.toNative(
-              CobbleUtils.language.getMessageRewardItemStack()
-                .replace("%item%", ItemUtils.getTranslatedName(itemStack))
-                .replace("%amount%", itemStack.getCount() + "")
-            )
-          );
-        }
-      } catch (Exception e) {
-        e.printStackTrace();
-      }
-    });
-
-
-    EXECUTORS.put("command", (player, reward, data) -> PlayerUtils.executeCommand(data, player));
-    EXECUTORS.put("money", (player, reward, data) -> {
-      try {
-        MoneyRewardData moneyData = parseMoneyRewardData(data);
-        if (moneyData == null) return;
-        double finalAmount = moneyData.getFinalAmount();
-        new EconomySelector(moneyData.getEconomy(), moneyData.getCurrency())
-          .deposit(player.getUuid(), BigDecimal.valueOf(finalAmount), moneyData.getReason()
-            .replace("%money%", finalAmount + ""))
-          .whenComplete((res, err) -> {
-            if (err != null) err.printStackTrace();
-          });
-      } catch (Exception e) {
-        e.printStackTrace();
-      }
-    });
-
-
-    EXECUTORS.put("pokemon", (player, reward, data) -> {
-      Pokemon pokemon = PokemonProperties.Companion.parse(data).create();
-      CobbleUtils.server.execute(() -> {
-        var party = Cobblemon.INSTANCE.getStorage().getParty(player);
-        if (party.size() != 6) {
-          party.add(pokemon);
-        } else {
-          var pc = Cobblemon.INSTANCE.getStorage().getPC(player);
-          if (!pc.add(pokemon)) {
-            reward.giveToPlayerDisconnected(player.getUuid());
+          if (given && CobbleUtils.config.isNotifyRewards()) {
+            player.sendMessage(
+              AdventureTranslator.toNative(
+                CobbleUtils.language.getMessageRewardItemStack()
+                  .replace("%item%", ItemUtils.getTranslatedName(itemStack))
+                  .replace("%amount%", itemStack.getCount() + "")
+              )
+            );
           }
+          return given;
+        } catch (Exception e) {
+          e.printStackTrace();
+          return false;
         }
       });
     });
 
-    EXECUTORS.put("message", (player, reward, data) -> PlayerUtils.sendMessage(player, data, CobbleUtils.config.getPrefix(), TypeMessage.CHAT));
+
+    EXECUTORS.put("command", (player, reward, data) -> PlayerUtils.executeCommandCompletable(data, player));
+    EXECUTORS.put("money", (player, reward, data) -> {
+      try {
+        MoneyRewardData moneyData = parseMoneyRewardData(data);
+        if (moneyData == null) return CompletableFuture.completedFuture(false);
+        double finalAmount = moneyData.getFinalAmount();
+        return new EconomySelector(moneyData.getEconomy(), moneyData.getCurrency())
+          .deposit(player.getUuid(), BigDecimal.valueOf(finalAmount), moneyData.getReason()
+            .replace("%money%", finalAmount + ""))
+          .thenCompose(economyResult -> CompletableFuture.completedFuture(economyResult.isSuccess()));
+      } catch (Exception e) {
+        e.printStackTrace();
+      }
+      return CompletableFuture.completedFuture(false);
+    });
+
+
+    EXECUTORS.put("pokemon", (player, reward, data) -> CobbleUtils.server.submit(() -> {
+      Pokemon pokemon = PokemonProperties.Companion.parse(data).create();
+      var party = Cobblemon.INSTANCE.getStorage().getParty(player);
+      if (party.getFirstAvailablePosition() != null) {
+        party.add(pokemon);
+        return true;
+      }
+      var pc = Cobblemon.INSTANCE.getStorage().getPC(player);
+      if (pc.add(pokemon)) return true;
+
+      reward.giveToPlayerDisconnected(player.getUuid());
+      return false;
+    }));
+
+    EXECUTORS.put("message", (player, reward, data) -> {
+      PlayerUtils.sendMessage(player, data, CobbleUtils.config.getPrefix(), TypeMessage.CHAT);
+      return CompletableFuture.completedFuture(true);
+    });
 
     // ----------------- ICON_PROVIDERS -----------------
     ICON_PROVIDERS.put("mod", (data) -> Items.BARRIER.getDefaultStack());

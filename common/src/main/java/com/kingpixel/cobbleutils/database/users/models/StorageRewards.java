@@ -2,8 +2,7 @@ package com.kingpixel.cobbleutils.database.users.models;
 
 import com.kingpixel.cobbleutils.Model.ItemChance;
 import com.kingpixel.cobbleutils.Model.rewards.Reward;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
+import lombok.*;
 import net.minecraft.item.ItemStack;
 import net.minecraft.server.network.ServerPlayerEntity;
 
@@ -15,8 +14,11 @@ import java.util.concurrent.CompletableFuture;
  */
 @EqualsAndHashCode(callSuper = true)
 @Data
-
+@AllArgsConstructor
+@NoArgsConstructor
+@Builder
 public class StorageRewards extends Storage {
+  @Builder.Default
   private String type = "reward";
   private Reward reward;
 

@@ -150,9 +150,11 @@ public class StorageMenu {
       });
   }
 
-  public static CompletableFuture<Boolean> removeStorage(ServerPlayerEntity player,
-                                                         Storage storage,
-                                                         UUID targetUUID) {
+  public static CompletableFuture<Boolean> removeStorage(
+    ServerPlayerEntity player,
+    Storage storage,
+    UUID targetUUID) {
+
     return DataBaseFactory.dataBaseUsers.removeStorage(storage, targetUUID)
       .thenCompose(removed -> {
         if (!removed) {
@@ -168,28 +170,33 @@ public class StorageMenu {
           return CompletableFuture.completedFuture(false);
         }
         return storage.giveToPlayer(player)
-          .handle((given, throwable) -> {
-            if (throwable != null) {
-              throwable.printStackTrace();
-              DataBaseFactory.dataBaseUsers.addStorage(storage, targetUUID);
-
-              CobbleUtils.server.execute(() ->
-                player.sendMessage(
-                  AdventureTranslator.toNative(
-                    "&cAn error occurred while claiming reward: &e" +
-                      storage.getDisplay().getName().getString()
-                  ),
-                  false
-                )
-              );
-              return false;
+          .thenCompose(given -> {
+            if (!given) {
+              return DataBaseFactory.dataBaseUsers
+                .addStorage(storage, targetUUID)
+                .thenApply(r -> false);
             }
-
-            if (!given) DataBaseFactory.dataBaseUsers.addStorage(storage, targetUUID);
-            CobbleUtils.language.getStorageMenu().open(player, targetUUID);
-            return given;
+            CobbleUtils.language
+              .getStorageMenu()
+              .open(player, targetUUID);
+            return CompletableFuture.completedFuture(given);
           });
+      })
+      .exceptionally(throwable -> {
+        throwable.printStackTrace();
+        DataBaseFactory.dataBaseUsers.addStorage(storage, targetUUID);
+        CobbleUtils.server.execute(() ->
+          player.sendMessage(
+            AdventureTranslator.toNative(
+              "&cAn error occurred while claiming reward: &e" +
+                storage.getDisplay().getName().getString()
+            ),
+            false
+          )
+        );
+        return false;
       });
   }
+
 
 }

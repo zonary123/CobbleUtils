@@ -358,7 +358,9 @@ public class PlayerUtils {
    *
    * @param command The command to execute
    * @return If the command was executed successfully
+   * @deprecated {@link #executeCommandCompletable(String, ServerPlayerEntity)}
    */
+  @Deprecated(forRemoval = true)
   public static boolean executeCommand(String command, ServerPlayerEntity player) {
     command = command.replace("%player%", player.getGameProfile().getName());
     CommandDispatcher<ServerCommandSource> disparador = CobbleUtils.server.getCommandManager().getDispatcher();
@@ -374,6 +376,23 @@ public class PlayerUtils {
       }
     });
     return true;
+  }
+
+  public static CompletableFuture<Boolean> executeCommandCompletable(String command, ServerPlayerEntity player) {
+    command = command.replace("%player%", player.getGameProfile().getName());
+    CommandDispatcher<ServerCommandSource> disparador = CobbleUtils.server.getCommandManager().getDispatcher();
+    if (silentCommandSource == null) silentCommandSource = CobbleUtils.server.getCommandSource().withSilent();
+    ParseResults<ServerCommandSource> parse = disparador.parse(command, silentCommandSource);
+    String finalCommand = command;
+    return CobbleUtils.server.submit(() -> {
+      try {
+        return disparador.execute(parse) > 0;
+      } catch (CommandSyntaxException e) {
+        System.err.println("Error to execute command: " + finalCommand);
+        e.printStackTrace();
+      }
+      return false;
+    });
   }
 
   /**
