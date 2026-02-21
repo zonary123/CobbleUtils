@@ -2,9 +2,10 @@ package com.kingpixel.cobbleutils.api;
 
 import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.Model.EconomyUse;
+import com.kingpixel.cobbleutils.Model.economy.EconomyResult;
 import com.kingpixel.cobbleutils.Model.economy.EconomySelector;
+import com.kingpixel.cobbleutils.Model.economy.EconomyTransferResult;
 import com.kingpixel.cobbleutils.util.economys.Economy;
-import com.kingpixel.cobbleutils.util.economys.EconomyResult;
 import com.kingpixel.cobbleutils.util.economys.providers.*;
 import lombok.Data;
 import org.jetbrains.annotations.UnknownNullability;
@@ -263,64 +264,33 @@ public class EconomyApi {
 
   @Nonnull
   public static CompletableFuture<EconomyResult> getBalanceAsync(@Nonnull UUID playerId, @Nonnull EconomySelector selector) {
-    return resolveEconomy(selector).getBalanceAsync(playerId, selector.getCurrency());
+    return selector.getBalance(playerId);
   }
 
-  @Nonnull
-  public static CompletableFuture<EconomyResult> setBalance(@Nonnull UUID playerId, @Nonnull String economyId, @Nonnull String currencyId, @Nonnull BigDecimal amount, @Nonnull String reason) {
-    return setBalance(playerId, new EconomySelector(economyId, currencyId), amount, reason);
-  }
 
   @Nonnull
   public static CompletableFuture<EconomyResult> setBalance(@Nonnull UUID playerId, @Nonnull EconomySelector selector, @Nonnull BigDecimal amount, @Nonnull String reason) {
-    return resolveEconomy(selector).setBalance(playerId, selector.getCurrency(), amount, reason);
+    return selector.setBalance(playerId, amount, reason);
   }
 
   @Nonnull
-  public static CompletableFuture<EconomyResult> deposit(@Nonnull UUID playerId, @Nonnull String economyId, @Nonnull String currencyId, @Nonnull BigDecimal amount, @Nonnull String reason) {
-    return deposit(playerId, new EconomySelector(economyId, currencyId), amount, reason);
+  public static CompletableFuture<EconomyResult> deposit(@Nonnull UUID playerId, @Nonnull BigDecimal amount, @Nonnull String reason, @Nonnull EconomySelector selector) {
+    return selector.deposit(playerId, amount, reason);
   }
 
   @Nonnull
-  public static CompletableFuture<EconomyResult> deposit(@Nonnull UUID playerId, @Nonnull EconomySelector selector, @Nonnull BigDecimal amount, @Nonnull String reason) {
-    return resolveEconomy(selector).deposit(playerId, selector.getCurrency(), amount, reason);
+  public static CompletableFuture<EconomyResult> withdraw(@Nonnull UUID playerId, @Nonnull BigDecimal amount, @Nonnull String reason, @Nonnull EconomySelector selector) {
+    return selector.withdraw(playerId, amount, reason);
+  }
+
+
+  public static CompletableFuture<Boolean> hasEnoughMoney(@Nonnull UUID playerId, @Nonnull BigDecimal amount, @Nonnull EconomySelector selector) {
+    return selector.hasEnoughMoney(playerId, amount);
   }
 
   @Nonnull
-  public static CompletableFuture<EconomyResult> withdraw(@Nonnull UUID playerId, @Nonnull String economyId, @Nonnull String currencyId, @Nonnull BigDecimal amount, @Nonnull String reason) {
-    return withdraw(playerId, new EconomySelector(economyId, currencyId), amount, reason);
+  public static CompletableFuture<EconomyTransferResult> transfer(@Nonnull UUID fromPlayerId, @Nonnull UUID toPlayerId, @Nonnull BigDecimal amount, @Nonnull String reason, @Nonnull EconomySelector selector) {
+    return selector.transfer(fromPlayerId, toPlayerId, amount, reason);
   }
-
-  @Nonnull
-  public static CompletableFuture<EconomyResult> withdraw(@Nonnull UUID playerId, @Nonnull EconomySelector selector, @Nonnull BigDecimal amount, @Nonnull String reason) {
-    return resolveEconomy(selector).withdraw(playerId, selector.getCurrency(), amount, reason);
-  }
-
-  public static CompletableFuture<Boolean> hasBalance(@Nonnull UUID playerId, @Nonnull String economyId, @Nonnull String currencyId, @Nonnull BigDecimal amount) {
-    return hasBalance(playerId, new EconomySelector(economyId, currencyId), amount);
-  }
-
-  public static CompletableFuture<Boolean> hasBalance(@Nonnull UUID playerId, @Nonnull EconomySelector selector, @Nonnull BigDecimal amount) {
-    return resolveEconomy(selector).hasBalance(playerId, selector.getCurrency(), amount);
-  }
-
-  @Nonnull
-  public static CompletableFuture<EconomyResult> transfer(@Nonnull UUID fromPlayerId, @Nonnull UUID toPlayerId, @Nonnull EconomySelector selector, @Nonnull BigDecimal amount, @Nonnull String reason) {
-    return resolveEconomy(selector).transfer(fromPlayerId, toPlayerId, selector.getCurrency(), amount, reason);
-  }
-
-  /* -------------------------------------------------------------------------- */
-  /* Internal                                                                    */
-  /* -------------------------------------------------------------------------- */
-
-  @Nonnull
-  private static Economy resolveEconomy(@Nonnull EconomySelector selector) {
-    Economy economy = getEconomy(selector.getEconomy());
-    if (economy == null) throw new IllegalArgumentException("Economy not found: " + selector.getEconomy());
-    return economy;
-  }
-
-  public static Map<String, Economy> getEconomys() {
-    return ECONOMIES;
-  }
+  
 }

@@ -195,7 +195,7 @@ public class RewardRegistry {
             MoneyRewardData moneyData = parseMoneyRewardData(data);
             if (moneyData == null) return CompletableFuture.completedFuture(false);
             double finalAmount = moneyData.getFinalAmount();
-            return new EconomySelector(moneyData.getEconomy(), moneyData.getCurrency())
+            return moneyData.getEconomySelector()
               .deposit(player.getUuid(), BigDecimal.valueOf(finalAmount), moneyData.getReason().replace("%money%", finalAmount + ""))
               .thenCompose(economyResult -> CompletableFuture.completedFuture(economyResult.isSuccess()));
           } catch (Exception e) {
