@@ -1,5 +1,6 @@
 package com.kingpixel.cobbleutils.Model;
 
+import com.kingpixel.cobbleutils.Model.economy.EconomySelector;
 import com.kingpixel.cobbleutils.api.EconomyApi;
 import com.kingpixel.cobbleutils.util.economys.Economy;
 import lombok.Data;

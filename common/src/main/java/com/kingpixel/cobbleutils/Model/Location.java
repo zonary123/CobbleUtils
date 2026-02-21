@@ -4,9 +4,11 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.gson.JsonObject;
 import com.kingpixel.cobbleutils.CobbleUtils;
+import com.kingpixel.cobbleutils.network.ProxyPacket;
 import com.kingpixel.cobbleutils.util.RedisManager;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.network.packet.s2c.play.PositionFlag;
 import net.minecraft.registry.RegistryKey;
 import net.minecraft.registry.RegistryKeys;
@@ -74,7 +76,7 @@ public class Location {
   }
 
   public void teleportToCrossServer(ServerPlayerEntity player) {
-
+    ServerPlayNetworking.send(player, new ProxyPacket("Connect", server));
     JsonObject json = new JsonObject();
 
     json.addProperty("type", "teleport");

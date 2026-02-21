@@ -5,8 +5,8 @@ import com.cobblemon.mod.common.api.pokemon.PokemonProperties;
 import com.cobblemon.mod.common.item.PokemonItem;
 import com.cobblemon.mod.common.pokemon.Pokemon;
 import com.kingpixel.cobbleutils.CobbleUtils;
-import com.kingpixel.cobbleutils.Model.EconomySelector;
 import com.kingpixel.cobbleutils.Model.ItemModel;
+import com.kingpixel.cobbleutils.Model.economy.EconomySelector;
 import com.kingpixel.cobbleutils.api.RewardsAPI;
 import com.kingpixel.cobbleutils.database.DataBaseFactory;
 import com.kingpixel.cobbleutils.util.AdventureTranslator;
@@ -173,7 +173,7 @@ public class RewardRegistry {
               player.getInventory().offerOrDrop(itemStack);
               given = true;
             }
-            
+
             return given;
           });
         })

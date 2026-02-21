@@ -1,8 +1,8 @@
 package com.kingpixel.cobbleutils.api;
 
 import com.kingpixel.cobbleutils.CobbleUtils;
-import com.kingpixel.cobbleutils.Model.EconomySelector;
 import com.kingpixel.cobbleutils.Model.EconomyUse;
+import com.kingpixel.cobbleutils.Model.economy.EconomySelector;
 import com.kingpixel.cobbleutils.util.economys.Economy;
 import com.kingpixel.cobbleutils.util.economys.EconomyResult;
 import com.kingpixel.cobbleutils.util.economys.providers.*;

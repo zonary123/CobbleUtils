@@ -1,4 +1,4 @@
-package com.kingpixel.cobbleutils.Model;
+package com.kingpixel.cobbleutils.Model.economy;
 
 import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.api.EconomyApi;
