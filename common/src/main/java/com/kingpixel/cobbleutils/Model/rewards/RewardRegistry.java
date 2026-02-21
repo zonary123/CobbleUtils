@@ -160,18 +160,20 @@ public class RewardRegistry {
             }
             boolean given = false;
             if (player.getInventory().getEmptySlot() != -1) {
+              if (CobbleUtils.config.isNotifyRewards()) {
+                PlayerUtils.sendMessage(
+                  player,
+                  CobbleUtils.language.getMessageRewardItemStack()
+                    .replace("%item%", ItemUtils.getTranslatedName(itemStack))
+                    .replace("%amount%", itemStack.getCount() + ""),
+                  CobbleUtils.config.getPrefix(),
+                  TypeMessage.CHAT
+                );
+              }
               player.getInventory().offerOrDrop(itemStack);
               given = true;
             }
-            if (given && CobbleUtils.config.isNotifyRewards()) {
-              player.sendMessage(
-                AdventureTranslator.toNative(
-                  CobbleUtils.language.getMessageRewardItemStack()
-                    .replace("%item%", ItemUtils.getTranslatedName(itemStack))
-                    .replace("%amount%", itemStack.getCount() + "")
-                )
-              );
-            }
+            
             return given;
           });
         })

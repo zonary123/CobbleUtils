@@ -28,7 +28,7 @@ public abstract class BlockMixin {
 
   /* -------------------- PLACE -------------------- */
 
-  @Inject(method = "onPlaced", at = @At("HEAD"))
+  @Inject(method = "onPlaced", at = @At("RETURN"))
   private void cobbleutils$onPlaced(
     World world,
     BlockPos pos,
@@ -59,7 +59,7 @@ public abstract class BlockMixin {
 
   /* -------------------- BREAK -------------------- */
 
-  @Inject(method = "onBreak", at = @At("HEAD"))
+  @Inject(method = "onBreak", at = @At("RETURN"))
   private void cobbleutils$onBreak(
     World world,
     BlockPos pos,

@@ -14,7 +14,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(CookingPotResultSlot.class)
 public abstract class CampfirePotMixin {
-  @Inject(method = "onTakeItem", at = @At("HEAD"))
+  @Inject(method = "onTakeItem", at = @At("RETURN"))
   private void cobbleutils$onTakeItem(PlayerEntity playerEntity, ItemStack itemStack, CallbackInfo ci) {
     if (CobbleUtilsEvents.CAMPFIRE_POT_EVENT.isEmpty()) return;
     if (playerEntity == null || itemStack.isEmpty()) return;

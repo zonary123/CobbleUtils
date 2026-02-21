@@ -117,13 +117,7 @@ public class StorageMenu {
               }
 
               CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
-                .thenRun(() -> {
-                  long claimed = futures.stream()
-                    .filter(CompletableFuture::join)
-                    .count();
-
-                  CobbleUtils.server.execute(() -> CobbleUtils.language.getStorageMenu().open(player, targetUUID));
-                });
+                .thenRun(() -> CobbleUtils.language.getStorageMenu().open(player, targetUUID));
             });
         }, 1, TimeUnit.MINUTES, 1));
 
