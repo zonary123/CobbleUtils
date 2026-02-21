@@ -16,7 +16,7 @@ import com.kingpixel.cobbleutils.database.blocks.ChunkBlockStorageManager;
 import com.kingpixel.cobbleutils.database.users.DataBaseUsers;
 import com.kingpixel.cobbleutils.database.users.UserModel;
 import com.kingpixel.cobbleutils.events.ItemRightClickEvents;
-import com.kingpixel.cobbleutils.network.CrossServerManager;
+import com.kingpixel.cobbleutils.network.ProxyPacket;
 import com.kingpixel.cobbleutils.tasks.RegistryTasks;
 import com.kingpixel.cobbleutils.util.*;
 import com.kingpixel.cobbleutils.util.async.AsyncContext;
@@ -25,6 +25,9 @@ import dev.architectury.event.events.common.InteractionEvent;
 import dev.architectury.event.events.common.LifecycleEvent;
 import dev.architectury.event.events.common.PlayerEvent;
 import dev.architectury.injectables.targets.ArchitecturyTarget;
+import lombok.Getter;
+import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.loader.api.ModContainer;
 import net.fabricmc.loader.api.metadata.Person;
@@ -43,6 +46,9 @@ public class CobbleUtils {
   public static final String PATH_BREED = PATH + "/breed/";
   public static final String PATH_BREED_DATA = PATH_BREED + "data/";
   public static final UtilsLogger LOGGER = new UtilsLogger();
+
+  @Getter
+  private static String serverName = "default";
   public static CommandRegistryAccess commandRegistryAccess;
   public static MinecraftServer server;
   public static Config config = new Config();
@@ -51,15 +57,14 @@ public class CobbleUtils {
   public static SpawnRates spawnRates = new SpawnRates();
   // Lang
   public static Lang language = new Lang();
-  public static final AsyncContext ASYNC = com.kingpixel.cobbleutils.util.async.UtilsAsync.createContext(
-    MOD_ID,
-    MOD_NAME
-  );
+  public static final AsyncContext ASYNC = com.kingpixel.cobbleutils.util.async.UtilsAsync.createContext(MOD_ID, MOD_NAME);
 
+  @Deprecated(forRemoval = true)
   private static final ExecutorService EXECUTOR_COBBLEUTILS = Executors.newFixedThreadPool(1, new ThreadFactoryBuilder()
     .setDaemon(true)
     .setNameFormat("CobbleUtils Executor-%d")
     .build());
+  @Deprecated(forRemoval = true)
   public static final ScheduledExecutorService SCHEDULER_COBBLEUTILS = Executors.newScheduledThreadPool(1, new ThreadFactoryBuilder()
     .setDaemon(true)
     .setNameFormat("CobbleUtils Scheduled Executor-%d")
@@ -80,8 +85,47 @@ public class CobbleUtils {
     }
     tasks();
     events();
-    CrossServerManager.register();
+    if (config.isRedisMessaging()) {
+      PayloadTypeRegistry.playS2C().register(ProxyPacket.PACKET_ID, ProxyPacket.codec);
+      ServerPlayNetworking.registerGlobalReceiver(ProxyPacket.PACKET_ID, (payload, context) -> {
+        context.server().execute(() -> {
 
+          System.out.println("[ProxyDebug] Paquete recibido: " + payload);
+
+          String[] args = payload.args();
+
+          if (args == null) {
+            System.out.println("[ProxyDebug] Args es NULL");
+            return;
+          }
+
+          System.out.println("[ProxyDebug] Cantidad de argumentos: " + args.length);
+
+          if (args.length == 0) {
+            System.out.println("[ProxyDebug] No hay argumentos en el paquete.");
+            return;
+          }
+
+          String subChannel = args[0];
+
+          System.out.println("[ProxyDebug] SubChannel: " + subChannel);
+
+          if (subChannel.equalsIgnoreCase("Server")) {
+
+            if (args.length < 2) {
+              System.out.println("[ProxyDebug] ERROR: Falta el nombre del servidor.");
+              return;
+            }
+
+            serverName = args[1];
+
+            System.out.println("[ProxyDebug] ===========================");
+            System.out.println("[ProxyDebug] Servidor actual recibido: " + serverName);
+            System.out.println("[ProxyDebug] ===========================");
+          }
+        });
+      });
+    }
   }
 
   public static void load() {
@@ -183,14 +227,19 @@ public class CobbleUtils {
       com.kingpixel.cobbleutils.util.async.UtilsAsync.shutdownAll();
     });
 
-    PlayerEvent.PLAYER_JOIN.register((player) -> DataBaseFactory.dataBaseUsers.findUserModel(player.getUuid())
-      .whenComplete((user, throwable) -> {
-        if (user == null) user = new UserModel(player);
-        user.connect(player);
-        user.fix(player);
-        user.save();
-        DataBaseUsers.USERS.put(player.getUuid(), user);
-      }));
+    PlayerEvent.PLAYER_JOIN.register((player) -> {
+      if (serverName == null && config.isRedisMessaging()) {
+        ServerPlayNetworking.send(player, new ProxyPacket("GetServer"));
+      }
+      DataBaseFactory.dataBaseUsers.findUserModel(player.getUuid())
+        .whenComplete((user, throwable) -> {
+          if (user == null) user = new UserModel(player);
+          user.connect(player);
+          user.fix(player);
+          user.save();
+          DataBaseUsers.USERS.put(player.getUuid(), user);
+        });
+    });
 
     PlayerEvent.PLAYER_QUIT.register((player) -> {
       UserModel user = DataBaseFactory.dataBaseUsers.getUserModel(player.getUuid());
@@ -211,6 +260,18 @@ public class CobbleUtils {
     InteractionEvent.RIGHT_CLICK_ITEM.register(ItemRightClickEvents::register);
   }
 
+
+  private static Path path;
+
+  public static Path getPath() {
+    if (path == null) path = new File("").toPath().resolve("config");
+    return path;
+  }
+
+  public static Path getPathMod() {
+    return getPath().resolve(MOD_ID);
+  }
+
   @Deprecated(forRemoval = true)
   public static void shutdownAndAwait(ExecutorService executor) {
     if (executor == null || executor.isShutdown()) {
@@ -229,23 +290,13 @@ public class CobbleUtils {
     }
   }
 
-  private static Path path;
-
-  public static Path getPath() {
-    if (path == null) path = new File("").toPath().resolve("config");
-    return path;
-  }
-
-  public static Path getPathMod() {
-    return getPath().resolve(MOD_ID);
-  }
-
   /**
    * Run async with CobbleUtils executor
    *
    * @param runnable
    * @return CompletableFuture<Void>
    */
+  @Deprecated(forRemoval = true)
   public static CompletableFuture<Void> runAsync(Runnable runnable) {
     return runAsync(runnable, EXECUTOR_COBBLEUTILS);
   }
@@ -257,6 +308,7 @@ public class CobbleUtils {
    * @param executor
    * @return CompletableFuture<Void>
    */
+  @Deprecated(forRemoval = true)
   public static CompletableFuture<Void> runAsync(Runnable runnable, ExecutorService executor) {
     return UtilsAsync.runAsync(runnable, executor);
   }

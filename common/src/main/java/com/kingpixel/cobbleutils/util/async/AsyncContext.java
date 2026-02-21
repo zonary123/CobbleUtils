@@ -10,13 +10,18 @@ import java.util.function.Supplier;
 @Getter
 public class AsyncContext {
 
+  /* ========================================= */
+  /* =============== FIELDS ================== */
+  /* ========================================= */
+
   private final ThreadPoolExecutor executor;
   private final ScheduledExecutorService scheduler;
+  private final Executor fallbackExecutor;
 
   private final AtomicBoolean running = new AtomicBoolean(true);
 
-  private final long timeout;
-  private final TimeUnit timeoutUnit;
+  private final long defaultTimeout;
+  private final TimeUnit defaultTimeoutUnit;
 
   /* ========================================= */
   /* =============== CONSTRUCTOR ============= */
@@ -30,17 +35,18 @@ public class AsyncContext {
     long timeout,
     TimeUnit timeoutUnit
   ) {
-    this.timeout = timeout;
-    this.timeoutUnit = timeoutUnit;
+
+    this.defaultTimeout = timeout;
+    this.defaultTimeoutUnit = timeoutUnit;
 
     AtomicInteger counter = new AtomicInteger();
 
     ThreadFactory factory = r -> {
       Thread t = new Thread(r);
-      t.setName(threadName + "-Worker-" + counter.incrementAndGet());
+      t.setName(threadName + "-" + counter.incrementAndGet());
       t.setDaemon(true);
       t.setUncaughtExceptionHandler((thread, ex) -> {
-        System.err.println("[AsyncContext] Uncaught exception in " + thread.getName());
+        System.err.println("[AsyncContext] Error en " + thread.getName());
         ex.printStackTrace();
       });
       return t;
@@ -53,40 +59,47 @@ public class AsyncContext {
       TimeUnit.SECONDS,
       new LinkedBlockingQueue<>(queueSize),
       factory,
-      new ThreadPoolExecutor.CallerRunsPolicy()
+      new ThreadPoolExecutor.AbortPolicy()
     );
+
+    this.executor.prestartAllCoreThreads();
 
     this.scheduler = Executors.newSingleThreadScheduledExecutor(r -> {
       Thread t = factory.newThread(r);
       t.setName(threadName + "-Scheduler");
       return t;
     });
+
+    this.fallbackExecutor = Executors.newCachedThreadPool(factory);
   }
 
   /* ========================================= */
-  /* =============== ASYNC CALLS ============= */
+  /* =============== ASYNC =================== */
   /* ========================================= */
 
   public <T> CompletableFuture<T> supply(Supplier<T> supplier) {
+    return supply(supplier, defaultTimeout, defaultTimeoutUnit);
+  }
+
+  public <T> CompletableFuture<T> supply(
+    Supplier<T> supplier,
+    long timeout,
+    TimeUnit unit
+  ) {
+
     CompletableFuture<T> future = new CompletableFuture<>();
 
     Runnable task = () -> {
       try {
-        T result = supplier.get();
-        future.complete(result);
+        future.complete(supplier.get());
       } catch (Throwable t) {
         future.completeExceptionally(t);
       }
     };
 
-    submitOrFallback(task);
+    submit(task);
 
-    return future
-      .orTimeout(timeout, timeoutUnit)
-      .exceptionally(ex -> {
-        ex.printStackTrace();
-        return null;
-      });
+    return future.orTimeout(timeout, unit);
   }
 
   public CompletableFuture<Void> runAsync(Runnable runnable) {
@@ -100,110 +113,71 @@ public class AsyncContext {
   /* =============== SCHEDULER =============== */
   /* ========================================= */
 
-  public <T> CompletableFuture<T> schedule(Supplier<T> supplier, long delay, TimeUnit unit) {
-    CompletableFuture<T> future = new CompletableFuture<>();
-
-    Runnable task = () -> {
-      try {
-        future.complete(supplier.get());
-      } catch (Throwable t) {
-        future.completeExceptionally(t);
-      }
-    };
-
+  public void schedule(Runnable task, long delay, TimeUnit unit) {
     if (isSchedulerAlive()) {
-      runFallback(task);
+      scheduler.schedule(() -> safeRun(task), delay, unit);
     } else {
-      try {
-        scheduler.schedule(task, delay, unit);
-      } catch (RejectedExecutionException ex) {
-        runFallback(task);
-      }
+      fallbackExecutor.execute(task);
     }
-
-    return future;
   }
 
-  public <T> CompletableFuture<T> scheduleAtFixedRate(
-    Supplier<T> supplier,
+  public void scheduleAtFixedRate(
+    Runnable task,
     long initialDelay,
     long period,
     TimeUnit unit
   ) {
-    CompletableFuture<T> firstRunFuture = new CompletableFuture<>();
-
-    Runnable task = new Runnable() {
-      boolean first = true;
-
-      @Override
-      public void run() {
-        try {
-          T result = supplier.get();
-
-          if (first) {
-            firstRunFuture.complete(result);
-            first = false;
-          }
-
-        } catch (Throwable t) {
-          if (first) {
-            firstRunFuture.completeExceptionally(t);
-            first = false;
-          } else {
-            t.printStackTrace();
-          }
-        }
-      }
-    };
-
     if (isSchedulerAlive()) {
-      runFallback(task);
+      scheduler.scheduleAtFixedRate(
+        () -> safeRun(task),
+        initialDelay,
+        period,
+        unit
+      );
     } else {
-      try {
-        scheduler.scheduleAtFixedRate(task, initialDelay, period, unit);
-      } catch (RejectedExecutionException ex) {
-        runFallback(task);
-      }
+      fallbackExecutor.execute(task);
     }
-
-    return firstRunFuture;
   }
 
   /* ========================================= */
-  /* =============== EXECUTION =============== */
+  /* =============== INTERNAL ================= */
   /* ========================================= */
 
-  private void submitOrFallback(Runnable task) {
+  private void submit(Runnable task) {
     if (!isExecutorAlive()) {
-      runFallback(task);
+      fallbackExecutor.execute(task);
       return;
     }
 
     try {
       executor.submit(task);
     } catch (RejectedExecutionException ex) {
-      runFallback(task);
+      fallbackExecutor.execute(task);
+    }
+  }
+
+  private void safeRun(Runnable task) {
+    try {
+      task.run();
+    } catch (Throwable t) {
+      t.printStackTrace();
     }
   }
 
   private boolean isExecutorAlive() {
-    return running.get() && !executor.isShutdown() && !executor.isTerminated();
+    return running.get()
+      && !executor.isShutdown()
+      && !executor.isTerminated();
   }
 
   private boolean isSchedulerAlive() {
-    return !running.get() || scheduler.isShutdown() || scheduler.isTerminated();
-  }
-
-  /**
-   * Fallback seguro.
-   * Si quieres puedes redirigir a un executor global.
-   */
-  private void runFallback(Runnable task) {
-    task.run();
+    return running.get()
+      && !scheduler.isShutdown()
+      && !scheduler.isTerminated();
   }
 
   /* ========================================= */
-  /* =============== SHUTDOWN ================ */
+  /* =============== SHUTDOWN ================= */
   /* ========================================= */
 
   public void shutdown() {
@@ -213,7 +187,7 @@ public class AsyncContext {
     scheduler.shutdown();
 
     try {
-      if (!executor.awaitTermination(5, TimeUnit.SECONDS)) {
+      if (!executor.awaitTermination(defaultTimeout, defaultTimeoutUnit)) {
         executor.shutdownNow();
       }
 
@@ -235,7 +209,7 @@ public class AsyncContext {
   }
 
   /* ========================================= */
-  /* =============== METRICS ================= */
+  /* =============== METRICS ================== */
   /* ========================================= */
 
   public int getActiveThreads() {
@@ -248,5 +222,13 @@ public class AsyncContext {
 
   public int getQueueSize() {
     return executor.getQueue().size();
+  }
+
+  public double getLoadFactor() {
+    return (double) executor.getActiveCount() / executor.getMaximumPoolSize();
+  }
+
+  public boolean isHealthy() {
+    return isExecutorAlive() && isSchedulerAlive();
   }
 }

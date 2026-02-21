@@ -27,7 +27,6 @@ public class Config {
   private boolean useDefault;
   private String lang;
   private String prefix;
-  private String server;
   private List<String> commmandplugin;
   private List<String> storageCommand;
   private int decimals;
@@ -58,7 +57,6 @@ public class Config {
     timeSinceLastLoginToSuggest = DurationValue.parse("1y");
     decimals = 2;
     priceFormat = "#,##0.00";
-    server = "ExampleServer";
     GtsSupport = false;
     GtsEconomyToUse = new EconomyUse(ImpactorEconomy.IDENTIFY, "");
     priorityEconomy = new ArrayList<>();

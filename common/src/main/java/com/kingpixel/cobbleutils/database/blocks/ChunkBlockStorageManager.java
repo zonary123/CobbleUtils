@@ -35,7 +35,6 @@ public class ChunkBlockStorageManager {
     .build();
 
   private static final Cache<World, String> WORLD_NAME_CACHE = Caffeine.newBuilder()
-    .weakKeys()
     .build();
 
   public static void init(MinecraftServer server) {
@@ -76,10 +75,6 @@ public class ChunkBlockStorageManager {
     return getChunkData(world, chunk).contains(pos.asLong());
   }
 
-  /**
-   * Obtiene el ChunkBlockData de manera sincronizada.
-   * Si no existe, carga desde disco y lo cachea.
-   */
   private static ChunkBlockData getChunkData(World world, Chunk chunk) {
     String key = getKey(world, chunk);
 
@@ -106,26 +101,6 @@ public class ChunkBlockStorageManager {
     return WORLD_NAME_CACHE.get(world, w -> w.getRegistryKey().getValue().toString().replaceAll("[^a-zA-Z0-9-_]", "_"));
   }
 
-  // =========================================
-  // Async Load & Save con CompletableFuture
-  // =========================================
-
-  /**
-   * Precarga async sin bloquear. El merge puede perder un bloque temporalmente.
-   */
-  public static CompletableFuture<ChunkBlockData> loadChunkAsync(World world, Chunk chunk) {
-    String key = getKey(world, chunk);
-
-    // obtenemos o creamos chunk vacío en cache
-    ChunkBlockData cached = CHUNK_CACHE.get(key, k -> new ChunkBlockData());
-
-    // carga async y merge en la cache
-    return CompletableFuture.supplyAsync(() -> {
-      ChunkBlockData loaded = loadChunkSync(world, chunk);
-      cached.mergeFrom(loaded);
-      return cached; // devolvemos la instancia de la cache
-    }, UtilsFile.IO_CONTEXT.getExecutor());
-  }
 
   private static ChunkBlockData loadChunkSync(World world, Chunk chunk) {
     File worldDir = new File(storageDir, getSanitizedWorldName(world));
@@ -146,7 +121,7 @@ public class ChunkBlockStorageManager {
   }
 
   public static CompletableFuture<Void> saveChunkAsync(String key, ChunkBlockData data) {
-    return CompletableFuture.runAsync(() -> saveChunkSync(key, data), UtilsFile.IO_CONTEXT.getExecutor());
+    return UtilsFile.IO_CONTEXT.runAsync(() -> saveChunkSync(key, data));
   }
 
   private static void saveChunkSync(String key, ChunkBlockData data) {

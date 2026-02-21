@@ -39,9 +39,7 @@ public abstract class PlayTimeMixin {
     if (lastSentSecond == null || lastSentSecond != seconds) {
       PLAY_TIME_CACHE.put(uuid, seconds);
 
-      CobbleUtilsEvents.PLAY_TIME_EVENT.emit(
-        player
-      );
+      CobbleUtilsEvents.PLAY_TIME_EVENT.emit(player);
     }
   }
 }

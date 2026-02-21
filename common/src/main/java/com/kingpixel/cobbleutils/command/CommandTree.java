@@ -7,13 +7,11 @@ import com.kingpixel.cobbleutils.command.base.PokeShout;
 import com.kingpixel.cobbleutils.command.base.PokeShoutAll;
 import com.kingpixel.cobbleutils.command.base.PokeShoutAllMe;
 import com.kingpixel.cobbleutils.command.base.PokeShoutMe;
-import com.kingpixel.cobbleutils.network.ServerCache;
 import com.kingpixel.cobbleutils.util.LuckPermsUtil;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import net.minecraft.command.CommandRegistryAccess;
-import net.minecraft.command.CommandSource;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -50,7 +48,6 @@ public class CommandTree {
         CommandManager.literal("teleport")
           .then(
             CommandManager.argument("server", StringArgumentType.string())
-              .suggests((context, builder) -> CommandSource.suggestMatching(ServerCache.getServers(), builder))
               .executes(context -> {
                 String server = StringArgumentType.getString(context, "server");
                 ServerPlayerEntity player = context.getSource().getPlayer();
@@ -80,6 +77,7 @@ public class CommandTree {
       EconomyIdCommand.register(dispatcher, base);
       HipperMessageCommand.register(dispatcher, base);
 
+      TeleportCommand.register(dispatcher, base);
     }
     UserInfoCommand.register(dispatcher);
     ZonaryCommand.register(dispatcher);

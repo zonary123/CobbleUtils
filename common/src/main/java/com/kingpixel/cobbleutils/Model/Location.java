@@ -2,20 +2,25 @@ package com.kingpixel.cobbleutils.Model;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
+import com.google.gson.JsonObject;
 import com.kingpixel.cobbleutils.CobbleUtils;
-import com.kingpixel.cobbleutils.network.ProxyPacket;
+import com.kingpixel.cobbleutils.util.RedisManager;
+import lombok.AllArgsConstructor;
 import lombok.Data;
-import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
+import net.minecraft.network.packet.s2c.play.PositionFlag;
 import net.minecraft.registry.RegistryKey;
 import net.minecraft.registry.RegistryKeys;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.Identifier;
 
+import java.util.Objects;
+
 /**
  * @author Carlos Varas Alonso - 13/10/2025 22:03
  */
 @Data
+@AllArgsConstructor
 public class Location {
   private static final Cache<String, ServerWorld> WORLDS = Caffeine.newBuilder().build();
   private ItemModel displayItem;
@@ -40,7 +45,7 @@ public class Location {
 
   public Location(ServerPlayerEntity player) {
     this.displayItem = new ItemModel("minecraft:compass", "&eLocation");
-    this.server = CobbleUtils.config.getServer();
+    this.server = CobbleUtils.getServerName();
     this.world = player.getWorld().getRegistryKey().getValue().toString();
     this.x = player.getX();
     this.y = player.getY();
@@ -49,27 +54,46 @@ public class Location {
     this.pitch = player.getPitch();
   }
 
+
   public void teleportTo(ServerPlayerEntity player) {
-    CobbleUtils.server.execute(() -> {
-      if (CobbleUtils.config.isRedisMessaging()) {
-        teleportToCrossServer(player);
-      } else {
-        teleportToNoCrossServer(player);
-      }
-    });
+    if (CobbleUtils.config.isRedisMessaging()) {
+      teleportToCrossServer(player);
+    } else {
+      teleportToNoCrossServer(player);
+    }
   }
 
-  private void teleportToNoCrossServer(ServerPlayerEntity player) {
+  public boolean teleportToNoCrossServer(ServerPlayerEntity player) {
     ServerWorld targetWorld = WORLDS.get(world, k -> {
       var worldKey = RegistryKey.of(RegistryKeys.WORLD, Identifier.tryParse(world));
-      return CobbleUtils.server.getWorld(worldKey);
+      ServerWorld serverWorld = CobbleUtils.server.getWorld(worldKey);
+      return Objects.requireNonNullElse(serverWorld, CobbleUtils.server.getOverworld());
     });
-    if (targetWorld == null) return;
-    player.teleport(targetWorld, x, y, z, yaw, pitch);
+    if (targetWorld == null) return false;
+    return player.teleport(targetWorld, x, y, z, PositionFlag.ROT, yaw, pitch);
   }
 
-  private void teleportToCrossServer(ServerPlayerEntity player) {
-    ServerPlayNetworking.send(player, new ProxyPacket("Connect", server));
+  public void teleportToCrossServer(ServerPlayerEntity player) {
+
+    JsonObject json = new JsonObject();
+
+    json.addProperty("type", "teleport");
+    json.addProperty("uuid", player.getUuid().toString());
+
+    JsonObject loc = new JsonObject();
+    loc.addProperty("world", this.getWorld());
+    loc.addProperty("x", this.getX());
+    loc.addProperty("y", this.getY());
+    loc.addProperty("z", this.getZ());
+    loc.addProperty("yaw", this.getYaw());
+    loc.addProperty("pitch", this.getPitch());
+
+    json.add("location", loc);
+
+    json.addProperty("server", server);
+    json.addProperty("reason", "cross-server-teleport");
+
+    RedisManager.publish("cobbleutils:teleport", json.toString());
   }
 
 

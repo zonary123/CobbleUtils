@@ -52,6 +52,6 @@ public class UtilsAsync {
    * Should be called on server shutdown.
    */
   public static void shutdownAll() {
-    contexts.asMap().values().forEach(AsyncContext::shutdown);
+    contexts.asMap().values().forEach(AsyncContext::shutdownNow);
   }
 }

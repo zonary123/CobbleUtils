@@ -1,9 +1,12 @@
 package com.kingpixel.cobbleutils.util;
 
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.kingpixel.cobbleutils.CobbleUtils;
+import com.kingpixel.cobbleutils.Model.Location;
 import com.kingpixel.cobbleutils.Model.messages.HiperMessage;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
@@ -16,7 +19,10 @@ import redis.clients.jedis.exceptions.JedisException;
 
 import java.time.Duration;
 import java.util.UUID;
-import java.util.concurrent.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -32,11 +38,10 @@ public class RedisManager {
   private static final AtomicLong lastMessageReceived = new AtomicLong(System.currentTimeMillis());
   private static final AtomicLong messagesReceived = new AtomicLong(0);
   private static final AtomicLong messagesSent = new AtomicLong(0);
-  public static final ExecutorService EXECUTOR_REDIS = Executors.newFixedThreadPool(
-    4, new ThreadFactoryBuilder()
-      .setDaemon(true)
-      .setNameFormat("CobbleUtils Redis - %d")
-      .build());
+  public static final ExecutorService EXECUTOR_REDIS = Executors.newFixedThreadPool(1, new ThreadFactoryBuilder()
+    .setDaemon(true)
+    .setNameFormat("CobbleUtils Redis - %d")
+    .build());
 
   private static final int CONNECTION_TIMEOUT = 10000;
   private static final int SO_TIMEOUT = 10000;
@@ -255,30 +260,40 @@ public class RedisManager {
     jedisPubSub = new JedisPubSub() {
       @Override
       public void onMessage(String channel, String message) {
-        CompletableFuture.runAsync(() -> {
-            try {
-              lastMessageReceived.set(System.currentTimeMillis());
-              messagesReceived.incrementAndGet();
+        try {
+          lastMessageReceived.set(System.currentTimeMillis());
+          messagesReceived.incrementAndGet();
 
-              if (CobbleUtils.config.isDebug()) {
-                CobbleUtils.LOGGER.info("Received Redis message on channel " + channel + ": " + message);
-              }
+          if (CobbleUtils.config.isDebug()) {
+            CobbleUtils.LOGGER.info("Received Redis message on channel " + channel + ": " + message);
+          }
 
-              handleIncomingMessage(message);
+          switch (channel) {
+            case "cobbleutils:teleport" -> handleCobbleUtilsTeleport(message);
+            default -> handleIncomingMessage(message);
+          }
 
-              if (!isSubscriberHealthy.get()) {
-                isSubscriberHealthy.set(true);
-                CobbleUtils.LOGGER.info("Redis subscriber is receiving messages again.");
-              }
-            } catch (Exception e) {
-              CobbleUtils.LOGGER.error("Error handling Redis message: " + e.getMessage());
-              e.printStackTrace();
-            }
-          }, RedisManager.EXECUTOR_REDIS)
-          .exceptionally(e -> {
-            e.printStackTrace();
-            return null;
-          });
+          if (!isSubscriberHealthy.get()) {
+            isSubscriberHealthy.set(true);
+            CobbleUtils.LOGGER.info("Redis subscriber is receiving messages again.");
+          }
+        } catch (Exception e) {
+          CobbleUtils.LOGGER.error("Error handling Redis message: " + e.getMessage());
+          e.printStackTrace();
+        }
+      }
+
+      private void handleCobbleUtilsTeleport(String message) {
+        try {
+          JsonObject json = JsonParser.parseString(message).getAsJsonObject();
+          UUID playerUUID = UUID.fromString(json.get("uuid").getAsString());
+          JsonObject loc = json.get("location").getAsJsonObject();
+          Location location = UtilsFile.getGson().fromJson(loc, Location.class);
+          LOCATION_CACHE.put(playerUUID, location);
+        } catch (Exception e) {
+          CobbleUtils.LOGGER.error("Failed to handle teleport message: " + e.getMessage());
+          e.printStackTrace();
+        }
       }
 
       @Override
@@ -349,6 +364,11 @@ public class RedisManager {
     subscriptionThread.setDaemon(true);
     subscriptionThread.start();
   }
+
+  public static final Cache<UUID, Location> LOCATION_CACHE = Caffeine.newBuilder()
+    .expireAfterWrite(Duration.ofSeconds(10))
+    .maximumSize(1000)
+    .build();
 
   private static void handleIncomingMessage(String message) {
     try {
