@@ -27,12 +27,12 @@ import dev.architectury.event.events.common.PlayerEvent;
 import dev.architectury.injectables.targets.ArchitecturyTarget;
 import lombok.Getter;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
-import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.loader.api.ModContainer;
 import net.fabricmc.loader.api.metadata.Person;
 import net.minecraft.command.CommandRegistryAccess;
 import net.minecraft.server.MinecraftServer;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
 import java.nio.file.Path;
@@ -48,7 +48,7 @@ public class CobbleUtils {
   public static final UtilsLogger LOGGER = new UtilsLogger();
 
   @Getter
-  private static String serverName = "default";
+  private static @Nullable String serverName = null;
   public static CommandRegistryAccess commandRegistryAccess;
   public static MinecraftServer server;
   public static Config config = new Config();
@@ -87,7 +87,7 @@ public class CobbleUtils {
     events();
     if (config.isRedisMessaging()) {
       PayloadTypeRegistry.playS2C().register(ProxyPacket.PACKET_ID, ProxyPacket.CODEC);
-      PayloadTypeRegistry.playC2S().register(ProxyPacket.PACKET_ID, ProxyPacket.CODEC);
+      /*PayloadTypeRegistry.playC2S().register(ProxyPacket.PACKET_ID, ProxyPacket.CODEC);
 
       ServerPlayNetworking.registerGlobalReceiver(ProxyPacket.PACKET_ID, (payload, context) -> {
         LOGGER.info("[ProxyDebug] Paquete recibido: " + payload);
@@ -123,7 +123,7 @@ public class CobbleUtils {
           LOGGER.info("[ProxyDebug] Servidor actual recibido: " + serverName);
           LOGGER.info("[ProxyDebug] ===========================");
         }
-      });
+      });*/
     }
   }
 
@@ -227,9 +227,9 @@ public class CobbleUtils {
     });
 
     PlayerEvent.PLAYER_JOIN.register((player) -> {
-      if (serverName == null && config.isRedisMessaging()) {
+      /*if (serverName == null && config.isRedisMessaging()) {
         ServerPlayNetworking.send(player, new ProxyPacket("GetServer"));
-      }
+      }*/
       DataBaseFactory.dataBaseUsers.findUserModel(player.getUuid())
         .whenComplete((user, throwable) -> {
           if (user == null) user = new UserModel(player);

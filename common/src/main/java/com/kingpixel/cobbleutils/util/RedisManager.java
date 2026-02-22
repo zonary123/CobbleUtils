@@ -287,20 +287,33 @@ public class RedisManager {
         try {
           JsonObject json = JsonParser.parseString(message).getAsJsonObject();
 
-          if (!json.has("uuid") || !json.has("location") || !json.has("server")) return;
+          if (!json.has("uuid") || !json.has("location") || !json.has("server")) {
+            if (CobbleUtils.config.isDebug()) {
+              CobbleUtils.LOGGER.warn("Received malformed teleport message: " + message);
+            }
+            return;
+          }
 
           String targetServer = json.get("server").getAsString();
 
-          if (CobbleUtils.getServerName() != null && !CobbleUtils.getServerName().equals(targetServer))
+          if (CobbleUtils.getServerName() != null && !CobbleUtils.getServerName().equals(targetServer)) {
+            if (CobbleUtils.config.isDebug()) {
+              CobbleUtils.LOGGER.info("Received teleport message for server " + targetServer + ", but current server is " + CobbleUtils.getServerName() + ". Ignoring.");
+            }
             return;
+          }
 
           UUID playerUUID = UUID.fromString(json.get("uuid").getAsString());
           JsonObject loc = json.getAsJsonObject("location");
 
 
           if (!loc.has("world") || !loc.has("x") || !loc.has("y") ||
-            !loc.has("z") || !loc.has("yaw") || !loc.has("pitch"))
+            !loc.has("z") || !loc.has("yaw") || !loc.has("pitch")) {
+            if (CobbleUtils.config.isDebug()) {
+              CobbleUtils.LOGGER.warn("Received teleport message with incomplete location data: " + message);
+            }
             return;
+          }
 
           Location location = new Location();
           location.setWorld(loc.get("world").getAsString());
@@ -393,7 +406,7 @@ public class RedisManager {
   }
 
   public static final Cache<UUID, Location> LOCATION_CACHE = Caffeine.newBuilder()
-    .expireAfterWrite(Duration.ofSeconds(10))
+    .expireAfterWrite(Duration.ofSeconds(5))
     .maximumSize(1000)
     .build();
 

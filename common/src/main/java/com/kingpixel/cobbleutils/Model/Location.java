@@ -66,9 +66,14 @@ public class Location {
   }
 
   public boolean teleportToNoCrossServer(ServerPlayerEntity player) {
-    ServerWorld targetWorld = MinecraftUtils.getServerWorld(world);
-    if (targetWorld == null) return false;
-    return player.teleport(targetWorld, x, y, z, PositionFlag.ROT, yaw, pitch);
+    try {
+      ServerWorld targetWorld = MinecraftUtils.getServerWorld(world);
+      if (targetWorld == null) return false;
+      return player.teleport(targetWorld, x, y, z, PositionFlag.VALUES, yaw, pitch);
+    } catch (Exception e) {
+      e.printStackTrace();
+      return false;
+    }
   }
 
   public void teleportToCrossServer(ServerPlayerEntity player) {
@@ -79,6 +84,7 @@ public class Location {
     json.addProperty("uuid", player.getUuid().toString());
 
     JsonObject loc = new JsonObject();
+    loc.addProperty("server", server);
     loc.addProperty("world", world.toString());
     loc.addProperty("x", x);
     loc.addProperty("y", y);

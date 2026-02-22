@@ -22,27 +22,28 @@ public class TaskLocation {
 
         if (toProcess.isEmpty()) return;
 
-        CobbleUtils.server.execute(() -> {
-          try {
-            for (UUID playerUUID : toProcess) {
+        try {
+          for (UUID playerUUID : toProcess) {
 
-              Location location = RedisManager.LOCATION_CACHE.getIfPresent(playerUUID);
-              if (location == null) continue;
+            Location location = RedisManager.LOCATION_CACHE.getIfPresent(playerUUID);
+            if (location == null) continue;
 
+            CobbleUtils.server.execute(() -> {
               ServerPlayerEntity player =
                 CobbleUtils.server.getPlayerManager().getPlayer(playerUUID);
 
-              if (player == null) continue;
+              if (player == null) return;
 
               if (location.teleportToNoCrossServer(player)) {
                 RedisManager.LOCATION_CACHE.invalidate(playerUUID);
               }
-            }
-          } catch (Exception e) {
-            CobbleUtils.LOGGER.error("Error processing location task");
-            e.printStackTrace();
+            });
           }
-        });
+        } catch (Exception e) {
+          CobbleUtils.LOGGER.error("Error processing location task");
+          e.printStackTrace();
+        }
+
       } catch (Exception e) {
         CobbleUtils.LOGGER.error("Error processing location task");
         e.printStackTrace();
