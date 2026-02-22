@@ -18,11 +18,15 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
 import net.objecthunter.exp4j.Expression;
 import net.objecthunter.exp4j.ExpressionBuilder;
+import org.jetbrains.annotations.Nullable;
 
 import java.math.BigDecimal;
 import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.Future;
 import java.util.function.Function;
 
 /**
@@ -232,6 +236,27 @@ public class PokemonFormula {
     } catch (Exception e) {
       e.printStackTrace();
       return 0.0;
+    }
+  }
+
+
+  public Double getValue(Pokemon pokemon) {
+    try {
+      if (formula == null || formula.isEmpty()) return 0.0;
+      return getPokemonExpression(pokemon).evaluate();
+    } catch (Exception e) {
+      e.printStackTrace();
+      return 0.0;
+    }
+  }
+
+  public Future<@Nullable Double> getPokemonValueAsync(Pokemon pokemon) {
+    try {
+      if (formula == null || formula.isEmpty()) return CompletableFuture.completedFuture(null);
+      return getPokemonExpression(pokemon).evaluateAsync(ForkJoinPool.commonPool());
+    } catch (Exception e) {
+      e.printStackTrace();
+      return CompletableFuture.completedFuture(null);
     }
   }
 

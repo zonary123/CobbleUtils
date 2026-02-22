@@ -286,12 +286,40 @@ public class RedisManager {
       private void handleCobbleUtilsTeleport(String message) {
         try {
           JsonObject json = JsonParser.parseString(message).getAsJsonObject();
+
+          if (!json.has("uuid") || !json.has("location") || !json.has("server")) return;
+
+          String targetServer = json.get("server").getAsString();
+
+          if (CobbleUtils.getServerName() != null && !CobbleUtils.getServerName().equals(targetServer))
+            return;
+
           UUID playerUUID = UUID.fromString(json.get("uuid").getAsString());
-          JsonObject loc = json.get("location").getAsJsonObject();
-          Location location = UtilsFile.getGson().fromJson(loc, Location.class);
+          JsonObject loc = json.getAsJsonObject("location");
+
+
+          if (!loc.has("world") || !loc.has("x") || !loc.has("y") ||
+            !loc.has("z") || !loc.has("yaw") || !loc.has("pitch"))
+            return;
+
+          Location location = new Location();
+          location.setWorld(loc.get("world").getAsString());
+          location.setX(loc.get("x").getAsDouble());
+          location.setY(loc.get("y").getAsDouble());
+          location.setZ(loc.get("z").getAsDouble());
+          location.setYaw(loc.get("yaw").getAsFloat());
+          location.setPitch(loc.get("pitch").getAsFloat());
+          location.setServer(targetServer);
+
           LOCATION_CACHE.put(playerUUID, location);
+
+          if (CobbleUtils.config.isDebug()) {
+            CobbleUtils.LOGGER.info("Received teleport request for player " + playerUUID + " to location: " + location.getWorld() +
+              " (" + location.getX() + ", " + location.getY() + ", " + location.getZ() + ")");
+          }
+
         } catch (Exception e) {
-          CobbleUtils.LOGGER.error("Failed to handle teleport message: " + e.getMessage());
+          CobbleUtils.LOGGER.error("Failed to handle CobbleUtils teleport message");
           e.printStackTrace();
         }
       }
@@ -328,8 +356,7 @@ public class RedisManager {
           String channel = CobbleUtils.config.getRedis().getChannel();
           CobbleUtils.LOGGER.info("Subscribing to Redis channel: " + channel + " (attempt " + (attempts + 1) + ")");
 
-          subscriberJedis.subscribe(jedisPubSub, channel);
-
+          subscriberJedis.subscribe(jedisPubSub, channel, "cobbleutils:teleport");
           subscriberJedis.close();
           break;
 

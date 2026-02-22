@@ -73,6 +73,9 @@ public class TeleportCommand {
     if (hasRotation) {
       location.setYaw((float) DoubleArgumentType.getDouble(context, "yaw"));
       location.setPitch((float) DoubleArgumentType.getDouble(context, "pitch"));
+    } else {
+      location.setYaw(player.getYaw());
+      location.setPitch(player.getPitch());
     }
 
     location.teleportTo(player);

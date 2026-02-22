@@ -65,7 +65,6 @@ public class SpawnRates {
 
     // For each SpawnDetail
     for (SpawnDetail detail : spawnDetails) {
-
       // Finds the highest weight multiplier.
       float weightMultiplier = 0;
       for (WeightMultiplier multiplier : detail.getWeightMultipliers()) {

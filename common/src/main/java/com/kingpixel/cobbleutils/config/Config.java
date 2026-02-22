@@ -27,6 +27,8 @@ public class Config {
   private boolean useDefault;
   private String lang;
   private String prefix;
+  @Deprecated(forRemoval = true)
+  private String server = "default";
   private List<String> commmandplugin;
   private List<String> storageCommand;
   private int decimals;

@@ -5,18 +5,14 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.gson.JsonObject;
 import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.network.ProxyPacket;
+import com.kingpixel.cobbleutils.util.MinecraftUtils;
 import com.kingpixel.cobbleutils.util.RedisManager;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.network.packet.s2c.play.PositionFlag;
-import net.minecraft.registry.RegistryKey;
-import net.minecraft.registry.RegistryKeys;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.Identifier;
-
-import java.util.Objects;
 
 /**
  * @author Carlos Varas Alonso - 13/10/2025 22:03
@@ -25,7 +21,7 @@ import java.util.Objects;
 @AllArgsConstructor
 public class Location {
   private static final Cache<String, ServerWorld> WORLDS = Caffeine.newBuilder().build();
-  private ItemModel displayItem;
+  private ItemModel displayItem = new ItemModel("minecraft:compass", "&eLocation");
   private String server;
   private String world;
   private double x;
@@ -58,19 +54,19 @@ public class Location {
 
 
   public void teleportTo(ServerPlayerEntity player) {
-    if (CobbleUtils.config.isRedisMessaging()) {
-      teleportToCrossServer(player);
-    } else {
-      teleportToNoCrossServer(player);
+    try {
+      if (CobbleUtils.config.isRedisMessaging()) {
+        teleportToCrossServer(player);
+      } else {
+        teleportToNoCrossServer(player);
+      }
+    } catch (Exception e) {
+      e.printStackTrace();
     }
   }
 
   public boolean teleportToNoCrossServer(ServerPlayerEntity player) {
-    ServerWorld targetWorld = WORLDS.get(world, k -> {
-      var worldKey = RegistryKey.of(RegistryKeys.WORLD, Identifier.tryParse(world));
-      ServerWorld serverWorld = CobbleUtils.server.getWorld(worldKey);
-      return Objects.requireNonNullElse(serverWorld, CobbleUtils.server.getOverworld());
-    });
+    ServerWorld targetWorld = MinecraftUtils.getServerWorld(world);
     if (targetWorld == null) return false;
     return player.teleport(targetWorld, x, y, z, PositionFlag.ROT, yaw, pitch);
   }
@@ -83,15 +79,14 @@ public class Location {
     json.addProperty("uuid", player.getUuid().toString());
 
     JsonObject loc = new JsonObject();
-    loc.addProperty("world", this.getWorld());
-    loc.addProperty("x", this.getX());
-    loc.addProperty("y", this.getY());
-    loc.addProperty("z", this.getZ());
-    loc.addProperty("yaw", this.getYaw());
-    loc.addProperty("pitch", this.getPitch());
+    loc.addProperty("world", world.toString());
+    loc.addProperty("x", x);
+    loc.addProperty("y", y);
+    loc.addProperty("z", z);
+    loc.addProperty("yaw", yaw);
+    loc.addProperty("pitch", pitch);
 
     json.add("location", loc);
-
     json.addProperty("server", server);
     json.addProperty("reason", "cross-server-teleport");
 

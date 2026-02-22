@@ -86,44 +86,43 @@ public class CobbleUtils {
     tasks();
     events();
     if (config.isRedisMessaging()) {
-      PayloadTypeRegistry.playS2C().register(ProxyPacket.PACKET_ID, ProxyPacket.codec);
+      PayloadTypeRegistry.playS2C().register(ProxyPacket.PACKET_ID, ProxyPacket.CODEC);
+      PayloadTypeRegistry.playC2S().register(ProxyPacket.PACKET_ID, ProxyPacket.CODEC);
+
       ServerPlayNetworking.registerGlobalReceiver(ProxyPacket.PACKET_ID, (payload, context) -> {
-        context.server().execute(() -> {
+        LOGGER.info("[ProxyDebug] Paquete recibido: " + payload);
 
-          System.out.println("[ProxyDebug] Paquete recibido: " + payload);
+        String[] args = payload.args();
 
-          String[] args = payload.args();
+        if (args == null) {
+          LOGGER.info("[ProxyDebug] Args es NULL");
+          return;
+        }
 
-          if (args == null) {
-            System.out.println("[ProxyDebug] Args es NULL");
+        LOGGER.info("[ProxyDebug] Cantidad de argumentos: " + args.length);
+
+        if (args.length == 0) {
+          LOGGER.info("[ProxyDebug] No hay argumentos en el paquete.");
+          return;
+        }
+
+        String subChannel = args[0];
+
+        LOGGER.info("[ProxyDebug] SubChannel: " + subChannel);
+
+        if (subChannel.equalsIgnoreCase("Server")) {
+
+          if (args.length < 2) {
+            LOGGER.info("[ProxyDebug] ERROR: Falta el nombre del servidor.");
             return;
           }
 
-          System.out.println("[ProxyDebug] Cantidad de argumentos: " + args.length);
+          serverName = args[1];
 
-          if (args.length == 0) {
-            System.out.println("[ProxyDebug] No hay argumentos en el paquete.");
-            return;
-          }
-
-          String subChannel = args[0];
-
-          System.out.println("[ProxyDebug] SubChannel: " + subChannel);
-
-          if (subChannel.equalsIgnoreCase("Server")) {
-
-            if (args.length < 2) {
-              System.out.println("[ProxyDebug] ERROR: Falta el nombre del servidor.");
-              return;
-            }
-
-            serverName = args[1];
-
-            System.out.println("[ProxyDebug] ===========================");
-            System.out.println("[ProxyDebug] Servidor actual recibido: " + serverName);
-            System.out.println("[ProxyDebug] ===========================");
-          }
-        });
+          LOGGER.info("[ProxyDebug] ===========================");
+          LOGGER.info("[ProxyDebug] Servidor actual recibido: " + serverName);
+          LOGGER.info("[ProxyDebug] ===========================");
+        }
       });
     }
   }

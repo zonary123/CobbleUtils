@@ -78,6 +78,7 @@ public class CommandTree {
       HipperMessageCommand.register(dispatcher, base);
 
       TeleportCommand.register(dispatcher, base);
+      PokemonSpawnerCommand.register(dispatcher, base);
     }
     UserInfoCommand.register(dispatcher);
     ZonaryCommand.register(dispatcher);

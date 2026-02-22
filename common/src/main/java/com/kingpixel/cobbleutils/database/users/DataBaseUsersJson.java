@@ -11,13 +11,15 @@ import org.jetbrains.annotations.Nullable;
 
 import java.nio.file.Path;
 import java.time.Instant;
-import java.util.*;
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
 
-/**
- * @author Carlos Varas Alonso - 27/08/2025 15:11
- */
 public class DataBaseUsersJson extends DataBaseUsers {
+
   private static final Path PATH = CobbleUtils.getPathMod().resolve("users");
 
   @Override
@@ -31,59 +33,53 @@ public class DataBaseUsersJson extends DataBaseUsers {
     CobbleUtils.LOGGER.info("DataBaseUsersJson disconnected");
   }
 
+  private Path getUserPath(UUID uuid) {
+    return PATH.resolve(uuid + ".json");
+  }
+
+  private @Nullable UserModel loadFromFile(UUID uuid) {
+    try {
+      return UtilsFile.read(getUserPath(uuid), UserModel.class);
+    } catch (Exception e) {
+      return null;
+    }
+  }
+
+  private @Nullable UserModel getOrLoad(UUID uuid) {
+    UserModel cached = DataBaseUsers.USERS.getIfPresent(uuid);
+    if (cached != null) return cached;
+    return loadFromFile(uuid);
+  }
+
   @Override
   public CompletableFuture<@Nullable UserModel> findUserModel(UUID uuid) {
-    return CobbleUtils.ASYNC.supply(() -> {
-      UserModel userModel = DataBaseUsers.USERS.getIfPresent(uuid);
-      if (userModel != null) return userModel;
-      try {
-        userModel = UtilsFile.read(PATH, UserModel.class);
-      } catch (Exception e) {
-        return null;
-      }
-      return userModel;
-    });
+    return CobbleUtils.ASYNC.supply(() -> getOrLoad(uuid));
   }
 
   @Override
   public CompletableFuture<@Nullable UserModel> findUserModel(String username) {
     return CobbleUtils.ASYNC.supply(() -> {
-      var userCache = CobbleUtils.server.getUserCache();
-      if (userCache == null) return null;
-      var optional = userCache.findByName(username);
-      if (optional.isEmpty()) return null;
-      UUID uuid = optional.get().getId();
-      UserModel userModel = DataBaseUsers.USERS.getIfPresent(uuid);
-      if (userModel != null) return userModel;
-      try {
-        userModel = UtilsFile.read(PATH, UserModel.class);
-      } catch (Exception e) {
-        return null;
-      }
-      return userModel;
-    });
+        var cache = CobbleUtils.server.getUserCache();
+        if (cache == null) return null;
+        return cache.findByName(username)
+          .map(entry -> entry.getId())
+          .orElse(null);
+      })
+      .thenCompose(uuid -> uuid == null
+        ? CompletableFuture.completedFuture(null)
+        : findUserModel(uuid));
   }
 
   @Override
   public CompletableFuture<Set<Storage>> findUserStorage(UUID uuid) {
-    return CobbleUtils.ASYNC.supply(() -> {
-      UserModel userModel = DataBaseUsers.USERS.getIfPresent(uuid);
-      if (userModel != null) return userModel.getStorageList();
-      try {
-        userModel = UtilsFile.read(PATH, UserModel.class);
-      } catch (Exception e) {
-        return Collections.emptySet();
-      }
-      if (userModel == null) return Collections.emptySet();
-      return userModel.getStorageList();
-    });
+    return findUserModel(uuid)
+      .thenApply(model -> model != null ? model.getStorageList() : Collections.emptySet());
   }
 
   @Override
   public boolean isAvailableReward(ServerPlayerEntity player, ItemChance itemChance) {
-    var userModel = getUserModel(player);
-    if (userModel == null) return false;
-    return userModel.isAvailableReward(itemChance);
+    UserModel model = getUserModel(player);
+    return model != null && model.isAvailableReward(itemChance);
   }
 
   @Override
@@ -91,10 +87,9 @@ public class DataBaseUsersJson extends DataBaseUsers {
     if (!Boolean.TRUE.equals(reward.getUnique()) || reward.getIdentifier() == null)
       return CompletableFuture.completedFuture(true);
 
-    UserModel cached = getUserModel(playerUUID);
-    if (cached != null) {
+    UserModel cached = DataBaseUsers.USERS.getIfPresent(playerUUID);
+    if (cached != null)
       return CompletableFuture.completedFuture(cached.isAvailableReward(reward));
-    }
 
     return findUserModel(playerUUID).thenApply(model -> {
       if (model == null) return false;
@@ -108,114 +103,63 @@ public class DataBaseUsersJson extends DataBaseUsers {
   public CompletableFuture<Void> saveUserModel(UserModel userModel) {
     return CobbleUtils.ASYNC.runAsync(() -> {
       try {
-        UtilsFile.write(PATH, userModel);
+        UtilsFile.write(getUserPath(userModel.getPlayerUUID()), userModel);
       } catch (Exception e) {
         e.printStackTrace();
       }
     });
   }
 
+  private CompletableFuture<Boolean> modifyStorage(UUID uuid, Consumer<UserModel> action) {
+    return CobbleUtils.ASYNC.supply(() -> {
+      UserModel model = getOrLoad(uuid);
+      if (model == null) return false;
+      action.accept(model);
+      model.save();
+      return true;
+    });
+  }
 
   @Override
   public CompletableFuture<Boolean> addStorage(Storage storage, UUID targetUUID) {
-    return CobbleUtils.ASYNC.supply(() -> {
-      UserModel userModel = DataBaseUsers.USERS.getIfPresent(targetUUID);
-      if (userModel == null) {
-        try {
-          userModel = UtilsFile.read(PATH, UserModel.class);
-        } catch (Exception e) {
-          return false;
-        }
-        if (userModel == null) return false;
-      }
-      userModel.addStorage(storage);
-      userModel.save();
-      return true;
-    });
+    return modifyStorage(targetUUID, model -> model.addStorage(storage));
   }
 
   @Override
   public CompletableFuture<Boolean> addStorage(List<Storage> storage, UUID targetUUID) {
-    return CobbleUtils.ASYNC.supply(() -> {
-      UserModel userModel = DataBaseUsers.USERS.getIfPresent(targetUUID);
-      if (userModel == null) {
-        try {
-          userModel = UtilsFile.read(PATH, UserModel.class);
-        } catch (Exception e) {
-          return false;
-        }
-        if (userModel == null) return false;
-      }
-      userModel.addStorage(storage);
-      userModel.save();
-      return true;
-    });
+    return modifyStorage(targetUUID, model -> model.addStorage(storage));
   }
 
   @Override
   public CompletableFuture<Boolean> removeStorage(Storage storage, UUID targetUUID) {
-    return CobbleUtils.ASYNC.supply(() -> {
-      UserModel userModel = DataBaseUsers.USERS.getIfPresent(targetUUID);
-      if (userModel == null) {
-        try {
-          userModel = UtilsFile.read(PATH, UserModel.class);
-        } catch (Exception e) {
-          return false;
-        }
-        if (userModel == null) return false;
-      }
-      userModel.removeStorage(storage.getId());
-      userModel.save();
-      return true;
-    });
+    return modifyStorage(targetUUID, model -> model.removeStorage(storage.getId()));
   }
 
   @Override
   public CompletableFuture<Boolean> removeStorage(List<Storage> storage, UUID targetUUID) {
-    return CobbleUtils.ASYNC.supply(() -> {
-      UserModel userModel = DataBaseUsers.USERS.getIfPresent(targetUUID);
-      if (userModel == null) {
-        try {
-          userModel = UtilsFile.read(PATH, UserModel.class);
-        } catch (Exception e) {
-          return false;
-        }
-        if (userModel == null) return false;
-      }
+    return modifyStorage(targetUUID, model -> {
       for (Storage s : storage) {
-        userModel.removeStorage(s.getId());
+        model.removeStorage(s.getId());
       }
-      userModel.save();
-      return true;
     });
   }
 
   @Override
   public CompletableFuture<List<UserModel>> findUsersActiveBetween(Instant from, Instant to) {
-    return CobbleUtils.ASYNC.supply(() -> {
-      List<UserModel> activeUsers = new ArrayList<>();
-      var userList = USERS.asMap().values();
-      for (var userModel : userList) {
-        if (userModel.getLastLogin() != null && !userModel.getLastLogin().isBefore(from) && !userModel.getLastLogin().isAfter(to)) {
-          activeUsers.add(userModel);
-        }
-      }
-      return activeUsers;
-    });
+    return CobbleUtils.ASYNC.supply(() -> USERS.asMap().values().stream()
+      .filter(user ->
+        user.getLastLogin() != null &&
+          !user.getLastLogin().isBefore(from) &&
+          !user.getLastLogin().isAfter(to))
+      .toList());
   }
-
 
   @Override
   public CompletableFuture<List<UUID>> getOnlinePlayers() {
-    return CobbleUtils.ASYNC.supply(() -> {
-      List<UUID> onlinePlayers = new ArrayList<>();
-      var userList = USERS.asMap().values();
-      for (var userModel : userList) {
-        onlinePlayers.add(userModel.getPlayerUUID());
-      }
-      return onlinePlayers;
-    });
+    return CobbleUtils.ASYNC.supply(() ->
+      USERS.asMap().values().stream()
+        .map(UserModel::getPlayerUUID)
+        .toList()
+    );
   }
-
-
 }

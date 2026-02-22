@@ -26,6 +26,7 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import org.joml.Vector4f;
 
 import java.util.*;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Consumer;
 
 /**
@@ -38,6 +39,7 @@ import java.util.function.Consumer;
  * @author
  */
 @Data
+@Deprecated(forRemoval = true)
 public class FilterPokemons {
   // Cache <ModId, <Id, List<Pokemon>>>
   private static final Map<String, Map<String, List<Pokemon>>> CACHE = new HashMap<>();
@@ -70,6 +72,7 @@ public class FilterPokemons {
     useChances = false;
     pokemonsChances = AdvancedPokemonChance.defaultChances();
   }
+
 
   @Getter
   private static class AdvancedPokemonChance {
@@ -113,14 +116,14 @@ public class FilterPokemons {
         totalChance += pokemonChance.getChance();
       }
 
-      double randomValue = Utils.getRandom().nextDouble() * totalChance;
+      double randomValue = ThreadLocalRandom.current().nextDouble() * totalChance;
 
       for (AdvancedPokemonChance pokemonChance : pokemonChances) {
         randomValue -= pokemonChance.getChance();
         if (randomValue <= 0) {
           List<String> pokemons = pokemonChance.getPokemons();
           int size = pokemons.size();
-          int index = Utils.getRandom().nextInt(size);
+          int index = ThreadLocalRandom.current().nextInt(size);
           return PokemonProperties.Companion.parse(pokemons.get(index)).create();
         }
       }
@@ -206,7 +209,6 @@ public class FilterPokemons {
    *
    * @param modId the mod id
    * @param id    the id
-   *
    * @return the list of pokemons
    */
   public List<Pokemon> getCachePokemons(String modId, String id) {
@@ -234,7 +236,6 @@ public class FilterPokemons {
    * Gets a pokemon with properties
    *
    * @param pokemon the pokemon
-   *
    * @return the pokemon
    */
   private Pokemon clonePokemon(Pokemon pokemon) {
@@ -253,7 +254,6 @@ public class FilterPokemons {
    *
    * @param modId the mod id
    * @param id    the id
-   *
    * @return the pokemon
    */
   public Pokemon generateRandomPokemon(String modId, String id) {
@@ -261,7 +261,7 @@ public class FilterPokemons {
       return clonePokemon(AdvancedPokemonChance.getPokemon(getPokemonsChances()));
     } else {
       List<Pokemon> allowedPokemons = getCachePokemons(modId, id);
-      return clonePokemon(allowedPokemons.get(Utils.getRandom().nextInt(allowedPokemons.size())));
+      return clonePokemon(allowedPokemons.get(ThreadLocalRandom.current().nextInt(allowedPokemons.size())));
     }
   }
 
@@ -272,7 +272,6 @@ public class FilterPokemons {
    * @param modId the mod id
    * @param id    the id
    * @param size  the size of the list
-   *
    * @return the list of pokemons
    */
   public List<Pokemon> generateRandomPokemons(String modId, String id, int size) {
@@ -287,7 +286,7 @@ public class FilterPokemons {
 
       List<Pokemon> pokemons = new ArrayList<>();
       for (int i = 0; i < size; i++) {
-        pokemons.add(clonePokemon(allowedPokemons.get(Utils.getRandom().nextInt(allowedPokemons.size()))));
+        pokemons.add(clonePokemon(allowedPokemons.get(ThreadLocalRandom.current().nextInt(allowedPokemons.size()))));
       }
       return pokemons;
     }
@@ -366,7 +365,6 @@ public class FilterPokemons {
    * Checks if a pokemon is allowed
    *
    * @param pokemon the pokemon
-   *
    * @return true if the pokemon is allowed
    */
   private boolean isAllowed(Pokemon pokemon) {

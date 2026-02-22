@@ -14,11 +14,18 @@ import java.io.OutputStream;
 public record ProxyPacket(String... args) implements CustomPayload {
   public static final Identifier BUNGEECORD_ID = Identifier.of("bungeecord", "main");
   public static final CustomPayload.Id<ProxyPacket> PACKET_ID = new CustomPayload.Id<>(BUNGEECORD_ID);
-  public static final PacketCodec<RegistryByteBuf, ProxyPacket> codec = new PacketCodec<>() {
+  public static final PacketCodec<RegistryByteBuf, ProxyPacket> CODEC = new PacketCodec<>() {
 
     @Override
     public ProxyPacket decode(RegistryByteBuf buf) {
-      return null;
+      int size = buf.readVarInt();
+      String[] args = new String[size];
+
+      for (int i = 0; i < size; i++) {
+        args[i] = buf.readString();
+      }
+
+      return new ProxyPacket(args);
     }
 
     @Override
@@ -50,6 +57,7 @@ public record ProxyPacket(String... args) implements CustomPayload {
     public PacketByteBuf getBuf() {
       return packetByteBuf;
     }
+
 
     @Override
     public void write(int b) {
