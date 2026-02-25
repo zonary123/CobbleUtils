@@ -1,4 +1,4 @@
-package com.kingpixel.cobbleutils.Model.validators;
+package com.kingpixel.cobbleutils.Model;
 
 import com.cobblemon.mod.common.api.pokemon.PokemonProperties;
 import com.cobblemon.mod.common.pokemon.Pokemon;

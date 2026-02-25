@@ -22,13 +22,11 @@ import java.util.stream.Collectors;
 @NoArgsConstructor
 @AllArgsConstructor
 public class BlockValidator {
-  private Set<String> blockIds = new HashSet<>(
-    Set.of(
-      "*",
-      "regex:.*",
-      "minecraft:stone"
-    )
-  );
+  private Set<String> blockIds = new HashSet<>(Set.of(
+    "*",
+    "regex:.*",
+    "minecraft:stone"
+  ));
   private Set<String> tags = new HashSet<>();
 
   private transient Set<TagKey<Item>> tagKeys;

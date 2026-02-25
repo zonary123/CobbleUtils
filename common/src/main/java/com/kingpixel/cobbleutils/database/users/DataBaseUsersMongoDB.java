@@ -44,6 +44,7 @@ public class DataBaseUsersMongoDB extends DataBaseUsers {
     mongoClient = MongoClients.create(settings);
     database = mongoClient.getDatabase(config.getDatabase());
     collectionUser = database.getCollection("users");
+
   }
 
   @Override

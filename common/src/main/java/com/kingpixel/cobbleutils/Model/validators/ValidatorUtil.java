@@ -8,7 +8,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
 public class ValidatorUtil {
-
   private static final Cache<String, Pattern> regexCache = Caffeine.newBuilder()
     .expireAfterAccess(30, TimeUnit.MINUTES)
     .maximumSize(500)

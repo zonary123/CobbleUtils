@@ -23,6 +23,7 @@ import java.util.stream.Collectors;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ItemStackValidator {
+  private Set<String> blacklist = new HashSet<>();
   private Set<String> itemIds = new HashSet<>(
     Set.of(
       "*",
@@ -31,8 +32,6 @@ public class ItemStackValidator {
     )
   );
   private Set<String> tags = new HashSet<>();
-
-
   private transient Set<TagKey<Item>> tagKeys;
 
   private Set<TagKey<Item>> getTagKeysLazy() {
@@ -51,6 +50,7 @@ public class ItemStackValidator {
    * @return True if the item ID is valid, false otherwise.
    */
   public boolean isValid(@NonNull String itemId) {
+    if (ValidatorUtil.match(itemId, blacklist)) return false;
     return ValidatorUtil.match(itemId, itemIds);
   }
 

@@ -57,7 +57,7 @@ dependencies {
 
     // Database
     libby("org.mongodb:mongodb-driver-sync:${property("mongodb_version")}") { transitive = true }
-    libby("org.mongodb:bson:${property("mongodb_version")}")
+    //libby("org.mongodb:bson:${property("mongodb_version")}")
 
     libby("org.xerial:sqlite-jdbc:${property("sqlite_version")}")
     libby("com.zaxxer:HikariCP:${property("hikaricp_version")}")

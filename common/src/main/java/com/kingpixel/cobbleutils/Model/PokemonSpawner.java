@@ -9,7 +9,6 @@ import com.cobblemon.mod.common.pokemon.FormData;
 import com.cobblemon.mod.common.pokemon.Pokemon;
 import com.cobblemon.mod.common.pokemon.Species;
 import com.kingpixel.cobbleutils.CobbleUtils;
-import com.kingpixel.cobbleutils.Model.validators.AdvancedPokemonChance;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
