@@ -2,6 +2,7 @@ package com.kingpixel.cobbleutils.config;
 
 import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.Model.AdvancedItemChance;
+import com.kingpixel.cobbleutils.api.RewardsAPI;
 import com.kingpixel.cobbleutils.util.Utils;
 import lombok.Data;
 
@@ -28,6 +29,7 @@ public class AdvancedRewardsConfig {
         try {
           AdvancedItemChance advancedItemChance = Utils.newGson().fromJson(Utils.readFileSync(f), AdvancedItemChance.class);
           String id = f.getName().replace(".json", "");
+          RewardsAPI.registerAdvancedReward(id, advancedItemChance.toAdvancedReward(id));
           Utils.writeFileSync(f, Utils.newGson().toJson(advancedItemChance, AdvancedItemChance.class));
           if (TEMPLATE_REWARDS.containsKey(id)) {
             CobbleUtils.LOGGER.error("Duplicate reward id found: " + id + " in file: " + f.getPath());

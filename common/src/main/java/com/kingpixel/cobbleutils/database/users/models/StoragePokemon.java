@@ -21,7 +21,7 @@ import java.util.concurrent.CompletableFuture;
 @EqualsAndHashCode(callSuper = true)
 @Data
 public class StoragePokemon extends Storage {
-  private String type = "pokemon";
+  private final String type = "pokemon";
   private Pokemon pokemon;
 
   public StoragePokemon(Pokemon pokemon) {

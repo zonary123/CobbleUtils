@@ -22,7 +22,7 @@ public abstract class CampfirePotMixin {
     if (!(playerEntity instanceof ServerPlayerEntity player)) return;
 
     CobbleUtilsEvents.CAMPFIRE_POT_EVENT.emit(EventItemStack.builder()
-      .itemStack(itemStack)
+      .itemStack(itemStack.copy())
       .player(player)
       .build());
   }

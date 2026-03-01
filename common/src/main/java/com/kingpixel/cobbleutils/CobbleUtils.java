@@ -5,6 +5,7 @@ import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.kingpixel.cobbleutils.Model.properties.LegendaryPropertyType;
 import com.kingpixel.cobbleutils.Model.properties.MinIvsPropertyType;
 import com.kingpixel.cobbleutils.api.EconomyApi;
+import com.kingpixel.cobbleutils.api.RewardsAPI;
 import com.kingpixel.cobbleutils.command.CommandTree;
 import com.kingpixel.cobbleutils.command.suggests.CobbleUtilsSuggests;
 import com.kingpixel.cobbleutils.config.AdvancedRewardsConfig;
@@ -147,8 +148,10 @@ public class CobbleUtils {
   private static void files() {
     config.init();
     language.init();
+    RewardsAPI.clearRewards();
     rewardsConfig.init();
     advancedRewardsConfig.init();
+    RewardsAPI.show();
     DataBaseFactory.init(config.getDatabase());
   }
 

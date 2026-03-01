@@ -19,26 +19,30 @@ import java.util.concurrent.CompletableFuture;
 @Builder
 public class StorageRewards extends Storage {
   @Builder.Default
-  private String type = "reward";
+  private final String type = "reward";
   private Reward reward;
 
   public StorageRewards(ItemChance itemChance) {
     super();
+    this.type = "reward";
     this.reward = itemChance.toReward();
   }
 
   public StorageRewards(UUID id, ItemChance itemChance) {
     super(id);
+    this.type = "reward";
     this.reward = itemChance.toReward();
   }
 
   public StorageRewards(Reward reward) {
     super();
+    this.type = "reward";
     this.reward = reward;
   }
 
   public StorageRewards(UUID id, Reward reward) {
     super(id);
+    this.type = "reward";
     this.reward = reward;
   }
 

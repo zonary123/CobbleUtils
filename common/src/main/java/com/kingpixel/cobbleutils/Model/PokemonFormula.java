@@ -10,8 +10,8 @@ import com.cobblemon.mod.common.pokemon.Gender;
 import com.cobblemon.mod.common.pokemon.Nature;
 import com.cobblemon.mod.common.pokemon.Pokemon;
 import com.kingpixel.cobbleutils.CobbleUtils;
+import com.kingpixel.cobbleutils.util.NbtUtils;
 import com.kingpixel.cobbleutils.util.PokemonUtils;
-import com.kingpixel.cobbleutils.util.Utils;
 import lombok.Data;
 import net.minecraft.item.ItemStack;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -115,6 +115,7 @@ public class PokemonFormula {
    * To add a new variable, simply put it here.
    */
   private void registerVariables() {
+    if (!variableResolvers.isEmpty()) return;
     variableResolvers.clear();
     // Base stat value
     variableResolvers.put("base", this::getBase);
@@ -183,7 +184,7 @@ public class PokemonFormula {
           var persistentData = p.getPersistentData();
           var nbtElement = persistentData.get(key);
           if (nbtElement == null) return 0f;
-          var nbtValue = Utils.convertNbtValue(nbtElement);
+          var nbtValue = NbtUtils.convertNbtValue(nbtElement);
           if (nbtValue == null) return 0f;
           var value = map.getOrDefault(nbtValue, 0f);
           return value != null ? value : 0f;

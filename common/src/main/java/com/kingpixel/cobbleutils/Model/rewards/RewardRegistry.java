@@ -21,7 +21,6 @@ import net.minecraft.component.DataComponentTypes;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.text.Text;
-import org.jetbrains.annotations.Nullable;
 
 import java.math.BigDecimal;
 import java.util.Map;
@@ -54,13 +53,53 @@ public class RewardRegistry {
   }
 
   private static MoneyRewardData parseMoneyRewardData(String data) {
-    String[] parts = data.split(":", 4);
-    String amountPart = parts[0];
-    String economy = parts.length > 2 ? parts[1] : "";
-    String currency = parts.length > 3 ? parts[2] : "";
-    @Nullable String reason = parts.length == 4 ? parts[3] : null;
+    if (data.toLowerCase().startsWith("money:")) {
+      data = data.substring("money:".length());
+    }
 
-    double min, max;
+    String[] parts = data.split(":", 4);
+
+    String economy = "";
+    String currency = "";
+    String reason = null;
+    String amountPart;
+
+    if (parts.length == 1) {
+      // money:<amount>
+      amountPart = parts[0];
+
+    } else if (parts.length == 2) {
+      // Puede ser:
+      // money:<amount>
+      // money:<currency>:<amount>
+
+      if (isNumeric(parts[0])) {
+        amountPart = parts[0];
+      } else {
+        currency = parts[0];
+        amountPart = parts[1];
+      }
+
+    } else {
+      // money:<amount>:<economy>:<currency>:<reason>
+      // o money:<currency>:<amount>:<economy>:<reason> (si quisieras extender)
+
+      if (isNumeric(parts[0])) {
+        amountPart = parts[0];
+        economy = parts.length > 1 ? parts[1] : "";
+        currency = parts.length > 2 ? parts[2] : "";
+        reason = parts.length == 4 ? parts[3] : null;
+      } else {
+        currency = parts[0];
+        amountPart = parts[1];
+        economy = parts.length > 2 ? parts[2] : "";
+        reason = parts.length == 4 ? parts[3] : null;
+      }
+    }
+
+    double min;
+    double max;
+
     if (amountPart.contains("-")) {
       String[] range = amountPart.split("-");
       min = Double.parseDouble(range[0]);
@@ -69,9 +108,13 @@ public class RewardRegistry {
       min = max = Double.parseDouble(amountPart);
     }
 
-    double finalAmount = min == max ? min : ThreadLocalRandom.current().nextDouble(min, max);
+    double finalAmount = min == max
+      ? min
+      : ThreadLocalRandom.current().nextDouble(min, max);
 
-    if (reason == null) reason = "Money Reward: " + finalAmount;
+    if (reason == null || reason.isBlank()) {
+      reason = "Money Reward: " + finalAmount;
+    }
 
     return MoneyRewardData.builder()
       .minAmount(min)
@@ -82,6 +125,15 @@ public class RewardRegistry {
       .reason(reason)
       .economySelector(new EconomySelector(economy, currency))
       .build();
+  }
+
+  private static boolean isNumeric(String value) {
+    try {
+      Double.parseDouble(value);
+      return true;
+    } catch (NumberFormatException e) {
+      return false;
+    }
   }
 
   @Data
@@ -222,6 +274,7 @@ public class RewardRegistry {
       return CompletableFuture.completedFuture(true);
     });
     // ----------------- ICON_PROVIDERS -----------------
+    ICON_PROVIDERS.put("id", (data) -> Items.NETHER_STAR.getDefaultStack());
     ICON_PROVIDERS.put("mod", (data) -> Items.BARRIER.getDefaultStack());
     ICON_PROVIDERS.put("item", (data) -> {
       ItemStackRewardData itemStackRewardData = parseItemStackRewardData(data);

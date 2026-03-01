@@ -36,6 +36,9 @@ public class RewardAdapter implements JsonSerializer<Reward>, JsonDeserializer<R
       }
     }
     rewardValue = String.join("|", parts);
+    if (CobbleUtils.config != null && CobbleUtils.config.isDebug()) {
+      CobbleUtils.LOGGER.info("Deserialized reward value: '" + rewardValue);
+    }
     // -----------------------------------------------
 
     // -----------------------------------------------

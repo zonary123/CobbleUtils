@@ -64,6 +64,17 @@ public class StorageMenu {
   public CompletableFuture<Void> open(ServerPlayerEntity executor, UUID targetUUID) {
     CobbleUtils.server.execute(() -> UIManager.closeUI(executor));
     return DataBaseFactory.dataBaseUsers.findUserStorage(targetUUID)
+      .exceptionally(e -> {
+        e.printStackTrace();
+        CobbleUtils.server.execute(() -> {
+          executor.sendMessage(
+            AdventureTranslator.toNative("&cAn error occurred while fetching your storage. Please try again later."),
+            false
+          );
+          UIManager.closeUI(executor);
+        });
+        return null;
+      })
       .thenCompose(storageList -> {
         if (storageList == null) storageList = new HashSet<>();
         if (storageList.isEmpty()) {

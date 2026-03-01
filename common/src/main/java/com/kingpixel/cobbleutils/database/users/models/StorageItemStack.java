@@ -16,7 +16,7 @@ import java.util.concurrent.CompletableFuture;
 @Data
 
 public class StorageItemStack extends Storage {
-  private String type = "itemStack";
+  private final String type = "itemStack";
   private ItemStack itemStack;
 
   public StorageItemStack(ItemStack itemStack) {

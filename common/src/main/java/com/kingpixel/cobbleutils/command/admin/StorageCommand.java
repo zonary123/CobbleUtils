@@ -143,10 +143,10 @@ public class StorageCommand {
                           ServerCommandSource source = context.getSource();
                           UUID targetUUID = getPlayerUUID(context);
                           String targetName = getTargetName(context);
-                          String data = StringArgumentType.getString(context, "data");
+                          String data = StringArgumentType.getString(context, "data").trim();
                           Reward reward;
                           if (data.startsWith("id:")) {
-                            String id = data.substring(3);
+                            String id = data.replace("id:", "").trim();
                             reward = RewardsAPI.getRewardTemplate(id);
                           } else {
                             reward = Reward.builder().reward(data).build();
@@ -156,7 +156,7 @@ public class StorageCommand {
                             return 0;
                           }
                           if (reward.existType()) {
-                            sendFeedback(source, "⚠️ Reward '" + data + "' not found.");
+                            sendFeedback(source, "⚠️ Reward type '" + reward.getReward() + "' does not exist for reward: '" + data + "'.");
                             return 0;
                           }
 

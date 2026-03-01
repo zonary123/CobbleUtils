@@ -21,7 +21,10 @@ public class RewardsAPI {
   public static void registerAdvancedReward(String id, AdvancedReward advancedReward) {
     if (ADVANCED_REWARDS_TEMPLATE.containsKey(id)) {
       CobbleUtils.LOGGER.error("Advanced reward with id " + id + " already exists!");
-    } else ADVANCED_REWARDS_TEMPLATE.put(id, advancedReward);
+    } else {
+      ADVANCED_REWARDS_TEMPLATE.put(id, advancedReward);
+      CobbleUtils.LOGGER.info("Registered advanced reward with id: " + id);
+    }
   }
 
   public static void giveAdvancedReward(UUID playerUUID, AdvancedReward advancedReward) {
@@ -32,7 +35,21 @@ public class RewardsAPI {
     rewardToGive.giveRewards(playerUUID);
   }
 
+  public static AdvancedReward getAdvancedRewardTemplate(String advancedRewardId) {
+    AdvancedReward advancedReward = ADVANCED_REWARDS_TEMPLATE.getOrDefault(advancedRewardId, null);
+    if (advancedReward == null) CobbleUtils.LOGGER.error("Advanced reward with id " + advancedRewardId + " not found!");
+    return advancedReward;
+  }
+
   private static final Map<String, Reward> REWARDS_TEMPLATE = new ConcurrentHashMap<>();
+
+  public static @Nullable Reward getRewardTemplate(String id) {
+    if (CobbleUtils.config.isDebug()) CobbleUtils.LOGGER.info("Getting reward template with id: " + id);
+
+    Reward reward = REWARDS_TEMPLATE.getOrDefault(id, null);
+    if (reward == null) CobbleUtils.LOGGER.error("Reward with id " + id + " not found!");
+    return reward;
+  }
 
   public static void registerReward(Reward reward) {
     String id = reward.getId();
@@ -42,7 +59,10 @@ public class RewardsAPI {
     }
     if (REWARDS_TEMPLATE.containsKey(id)) {
       CobbleUtils.LOGGER.error("Reward with id " + id + " already exists!");
-    } else REWARDS_TEMPLATE.put(id, reward);
+    } else {
+      CobbleUtils.LOGGER.info("Registering reward with id: " + id);
+      REWARDS_TEMPLATE.put(id, reward);
+    }
   }
 
   public static CompletableFuture<Boolean> giveReward(UUID playerUUID, Reward reward) {
@@ -54,11 +74,6 @@ public class RewardsAPI {
     return player == null ? rewardToGive.giveToPlayerDisconnected(playerUUID) : rewardToGive.giveToPlayer(player);
   }
 
-  public static @Nullable Reward getRewardTemplate(String id) {
-    Reward reward = REWARDS_TEMPLATE.getOrDefault(id, null);
-    if (reward == null) CobbleUtils.LOGGER.error("Reward with id " + id + " not found!");
-    return reward;
-  }
 
   public static @Nullable ItemChance getReward(String id) {
     ItemChance itemChance = CobbleUtils.rewardsConfig.getRewards().getOrDefault(id, null);
@@ -66,9 +81,20 @@ public class RewardsAPI {
     return itemChance;
   }
 
-  public static AdvancedReward getAdvancedRewardTemplate(String advancedRewardId) {
-    AdvancedReward advancedReward = ADVANCED_REWARDS_TEMPLATE.getOrDefault(advancedRewardId, null);
-    if (advancedReward == null) CobbleUtils.LOGGER.error("Advanced reward with id " + advancedRewardId + " not found!");
-    return advancedReward;
+
+  public static void clearRewards() {
+    REWARDS_TEMPLATE.clear();
+    ADVANCED_REWARDS_TEMPLATE.clear();
+  }
+
+  public static void show() {
+    CobbleUtils.LOGGER.info("Registered rewards:");
+    for (Map.Entry<String, Reward> entry : REWARDS_TEMPLATE.entrySet()) {
+      CobbleUtils.LOGGER.info("- " + entry.getKey());
+    }
+    CobbleUtils.LOGGER.info("Registered advanced rewards:");
+    for (Map.Entry<String, AdvancedReward> entry : ADVANCED_REWARDS_TEMPLATE.entrySet()) {
+      CobbleUtils.LOGGER.info("- " + entry.getKey());
+    }
   }
 }

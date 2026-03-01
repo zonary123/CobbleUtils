@@ -15,6 +15,8 @@ import com.kingpixel.cobbleutils.Model.Animations.AllRewardsCircleAnimation;
 import com.kingpixel.cobbleutils.Model.Animations.AnimationUtils;
 import com.kingpixel.cobbleutils.Model.Animations.CSGOAnimation;
 import com.kingpixel.cobbleutils.Model.Animations.CircleAnimation;
+import com.kingpixel.cobbleutils.Model.rewards.AdvancedReward;
+import com.kingpixel.cobbleutils.Model.rewards.Reward;
 import com.kingpixel.cobbleutils.api.PermissionApi;
 import com.kingpixel.cobbleutils.command.suggests.CobbleUtilsSuggests;
 import com.kingpixel.cobbleutils.database.DataBaseFactory;
@@ -77,6 +79,26 @@ public class AdvancedItemChance {
     itemChances.add(new ItemChance());
     lootTable.put("group.vip", itemChances);
     lootTable.entrySet().removeIf(entry -> entry.getValue().isEmpty());
+  }
+
+  public AdvancedReward toAdvancedReward(String id) {
+    Map<String, List<Reward>> rewards = new LinkedHashMap<>();
+    lootTable.forEach((key, value) -> {
+      List<Reward> rewardList = new ArrayList<>();
+      for (ItemChance itemChance : value) {
+        rewardList.add(itemChance.toReward());
+      }
+      rewards.put(key, rewardList);
+    });
+
+    return AdvancedReward.builder()
+      .id(id)
+      .showMenu(showMenu)
+      .giveAll(giveAll)
+      .amountRewardsPermission(amountRewardsPermission)
+      .animation(animation.name())
+      .lootTable(rewards)
+      .build();
   }
 
   private enum TypeError {

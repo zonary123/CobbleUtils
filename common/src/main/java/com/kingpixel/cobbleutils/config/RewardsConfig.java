@@ -32,21 +32,23 @@ public class RewardsConfig {
               CobbleUtils.LOGGER.error("Reward file is empty or invalid: " + f);
               continue;
             }
-            reward.setId(f.getFileName().toString().replace(".json", ""));
+            reward.setId(f.toFile().getName().replace(".json", ""));
             RewardsAPI.registerReward(reward);
             rewards.put(reward.getId(), reward.toItemChance());
             UtilsFile.write(f, reward);
           } catch (Exception e) {
-            CobbleUtils.LOGGER.error("Error loading reward file: " + f.toAbsolutePath() + " - " + e.getMessage());
+            e.printStackTrace();
           }
         }
       } catch (Exception e) {
         CobbleUtils.LOGGER.error("Error accessing rewards folder: " + e.getMessage());
+        e.printStackTrace();
       }
     } else {
       folder.toFile().mkdirs();
       createDefaultFiles();
     }
+
   }
 
 
