@@ -23,7 +23,6 @@ public class RewardsAPI {
       CobbleUtils.LOGGER.error("Advanced reward with id " + id + " already exists!");
     } else {
       ADVANCED_REWARDS_TEMPLATE.put(id, advancedReward);
-      CobbleUtils.LOGGER.info("Registered advanced reward with id: " + id);
     }
   }
 
@@ -60,7 +59,6 @@ public class RewardsAPI {
     if (REWARDS_TEMPLATE.containsKey(id)) {
       CobbleUtils.LOGGER.error("Reward with id " + id + " already exists!");
     } else {
-      CobbleUtils.LOGGER.info("Registering reward with id: " + id);
       REWARDS_TEMPLATE.put(id, reward);
     }
   }
@@ -81,18 +79,10 @@ public class RewardsAPI {
     return itemChance;
   }
 
-
   public static void clearRewards() {
     REWARDS_TEMPLATE.clear();
     ADVANCED_REWARDS_TEMPLATE.clear();
   }
 
-  public static void show() {
-    String rewardIds = String.join(", ", REWARDS_TEMPLATE.keySet());
-    String advancedRewardIds = String.join(", ", ADVANCED_REWARDS_TEMPLATE.keySet());
-    CobbleUtils.LOGGER.info("Registered rewards:");
-    CobbleUtils.LOGGER.info("- " + rewardIds);
-    CobbleUtils.LOGGER.info("Registered advanced rewards:");
-    CobbleUtils.LOGGER.info("- " + advancedRewardIds);
-  }
+
 }

@@ -151,7 +151,6 @@ public class CobbleUtils {
     RewardsAPI.clearRewards();
     rewardsConfig.init();
     advancedRewardsConfig.init();
-    RewardsAPI.show();
     DataBaseFactory.init(config.getDatabase());
   }
 

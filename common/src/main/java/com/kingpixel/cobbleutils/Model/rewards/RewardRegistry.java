@@ -259,13 +259,14 @@ public class RewardRegistry {
       ItemStack itemStack = itemStackRewardData.getItemStack();
       int min = itemStackRewardData.getMinAmount();
       int max = itemStackRewardData.getMaxAmount();
+      String translatedItem = ItemUtils.getTranslatedName(itemStack);
       if (min != max) {
         itemStack.set(DataComponentTypes.CUSTOM_NAME, AdventureTranslator.toNative(
-          "Amount: " + min + " - " + max
+          translatedItem + " x" + min + " - x" + max
         ));
       } else {
         itemStack.set(DataComponentTypes.CUSTOM_NAME, AdventureTranslator.toNative(
-          "Amount: " + min
+          translatedItem + " x" + min
         ));
       }
       return itemStack;

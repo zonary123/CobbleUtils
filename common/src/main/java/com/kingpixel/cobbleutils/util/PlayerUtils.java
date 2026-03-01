@@ -379,7 +379,7 @@ public class PlayerUtils {
   }
 
   public static CompletableFuture<Boolean> executeCommandCompletable(String command, ServerPlayerEntity player) {
-    command = command.replace("%player%", player.getGameProfile().getName());
+    command = command.replace("%player%", player.getGameProfile().getName()).trim();
     CommandDispatcher<ServerCommandSource> disparador = CobbleUtils.server.getCommandManager().getDispatcher();
     if (silentCommandSource == null) silentCommandSource = CobbleUtils.server.getCommandSource().withSilent();
     ParseResults<ServerCommandSource> parse = disparador.parse(command, silentCommandSource);

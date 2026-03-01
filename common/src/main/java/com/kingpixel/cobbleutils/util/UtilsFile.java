@@ -15,12 +15,14 @@ import com.kingpixel.cobbleutils.Model.DurationValue;
 import com.kingpixel.cobbleutils.Model.ItemChance;
 import com.kingpixel.cobbleutils.Model.messages.HiperMessage;
 import com.kingpixel.cobbleutils.Model.rewards.Reward;
+import com.kingpixel.cobbleutils.Model.zones.zoneshapes.ZoneShape;
 import com.kingpixel.cobbleutils.adapter.*;
 import com.kingpixel.cobbleutils.database.users.models.Storage;
 import com.kingpixel.cobbleutils.util.async.AsyncContext;
 import kotlin.ranges.IntRange;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NbtCompound;
+import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Box;
 import net.minecraft.util.math.Vec3d;
 import org.jetbrains.annotations.Nullable;
@@ -97,6 +99,8 @@ public final class UtilsFile {
     registerAdapter(AtomicReference.class, AtomicReferenceAdapter.INSTANCE);
     registerAdapter(Box.class, BoxAdapter.INSTANCE);
     registerAdapter(Reward.class, RewardAdapter.INSTANCE);
+    registerAdapter(BlockPos.class, BlockPosAdapter.INSTANCE);
+    registerAdapter(ZoneShape.class, ZoneShapeAdapter.INSTANCE);
     // Cobblemon adapters
     registerAdapter(Pokemon.class, PokemonAdapter.INSTANCE);
     registerAdapter(Move.class, MoveTemplateAdapter.INSTANCE);
@@ -112,7 +116,7 @@ public final class UtilsFile {
   public UtilsFile() {
   }
 
-  public static void registerAdapter(
+  public synchronized static void registerAdapter(
     @Nonnull Type type,
     @Nonnull Object adapter
   ) {
@@ -120,13 +124,12 @@ public final class UtilsFile {
     rebuildGson();
   }
 
-  public static void configureGson(Consumer<GsonBuilder> config) {
-    synchronized (UtilsFile.class) {
-      GsonBuilder builder = new GsonBuilder();
-      config.accept(builder);
-      ADAPTERS.forEach(builder::registerTypeAdapter);
-      GSON = builder.create();
-    }
+  public synchronized static void configureGson(Consumer<GsonBuilder> config) {
+    GsonBuilder builder = new GsonBuilder();
+    config.accept(builder);
+    ADAPTERS.forEach(builder::registerTypeAdapter);
+    GSON = builder.create();
+
   }
 
   @Nonnull
@@ -143,15 +146,13 @@ public final class UtilsFile {
     return local;
   }
 
-  private static void rebuildGson() {
-    synchronized (UtilsFile.class) {
-      GsonBuilder builder = new GsonBuilder()
-        .setPrettyPrinting()
-        .disableHtmlEscaping();
+  private synchronized static void rebuildGson() {
+    GsonBuilder builder = new GsonBuilder()
+      .setPrettyPrinting()
+      .disableHtmlEscaping();
 
-      ADAPTERS.forEach(builder::registerTypeAdapter);
-      GSON = builder.create();
-    }
+    ADAPTERS.forEach(builder::registerTypeAdapter);
+    GSON = builder.create();
   }
 
   /* -------------------------------------------------------------------------- */
