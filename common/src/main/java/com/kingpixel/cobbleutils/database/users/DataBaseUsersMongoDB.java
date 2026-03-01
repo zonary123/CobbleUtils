@@ -115,12 +115,20 @@ public class DataBaseUsersMongoDB extends DataBaseUsers {
   }
 
   public CompletableFuture<Boolean> isAvailableReward(UUID playerUUID, Reward reward) {
-    if (!Boolean.TRUE.equals(reward.getUnique()) || reward.getIdentifier() == null)
+    if (reward == null) {
       return CompletableFuture.completedFuture(true);
+    }
+
+    if (!Boolean.TRUE.equals(reward.getUnique()) || reward.getIdentifier() == null) {
+      return CompletableFuture.completedFuture(true);
+    }
 
     return CobbleUtils.ASYNC.supply(() -> {
+
       String identifier = reward.getIdentifier();
-      Document userDoc = collectionUser.find(new Document("playerUUID", playerUUID.toString()))
+
+      Document userDoc = collectionUser.find(
+          new Document("playerUUID", playerUUID.toString()))
         .projection(new Document("rewardsClaimed." + identifier, 1))
         .first();
 
@@ -128,18 +136,35 @@ public class DataBaseUsersMongoDB extends DataBaseUsers {
       Instant finishCooldown = null;
 
       if (userDoc != null) {
-        Document rewardDoc = (Document) ((Document) userDoc.get("rewardsClaimed")).get(identifier);
-        if (rewardDoc != null) {
-          timesClaimed = rewardDoc.getInteger("timesClaimed", 0);
-          String finishStr = rewardDoc.getString("finishCooldown");
-          if (finishStr != null) finishCooldown = Instant.parse(finishStr);
+
+        Object rewardsObj = userDoc.get("rewardsClaimed");
+
+        if (rewardsObj instanceof Document rewardsDoc) {
+
+          Object specific = rewardsDoc.get(identifier);
+
+          if (specific instanceof Document rewardDoc) {
+
+            timesClaimed = rewardDoc.getInteger("timesClaimed", 0);
+
+            String finishStr = rewardDoc.getString("finishCooldown");
+            if (finishStr != null) {
+              finishCooldown = Instant.parse(finishStr);
+            }
+          }
         }
       }
 
+      int maxAmount = reward.getAmount() != null ? reward.getAmount() : 1;
+
       boolean onCooldown = false;
-      if (reward.getCooldown() != null && timesClaimed >= reward.getAmount()) {
+
+      if (reward.getCooldown() != null && timesClaimed >= maxAmount) {
+
         if (finishCooldown != null) {
-          Instant nextAvailable = finishCooldown.plusMillis(reward.getCooldown().toMillis());
+          Instant nextAvailable =
+            finishCooldown.plusMillis(reward.getCooldown().toMillis());
+
           onCooldown = Instant.now().isBefore(nextAvailable);
         }
       }
@@ -147,16 +172,17 @@ public class DataBaseUsersMongoDB extends DataBaseUsers {
       if (onCooldown) return false;
 
       timesClaimed++;
-      if (timesClaimed >= reward.getAmount() && reward.getCooldown() != null) {
-        finishCooldown = Instant.now();
-      }
 
       Document rewardUpdate = new Document("timesClaimed", timesClaimed);
-      if (finishCooldown != null) rewardUpdate.append("finishCooldown", finishCooldown.toString());
+
+      if (timesClaimed >= maxAmount && reward.getCooldown() != null) {
+        rewardUpdate.append("finishCooldown", Instant.now().toString());
+      }
 
       collectionUser.updateOne(
         new Document("playerUUID", playerUUID.toString()),
-        new Document("$set", new Document("rewardsClaimed." + identifier, rewardUpdate)),
+        new Document("$set",
+          new Document("rewardsClaimed." + identifier, rewardUpdate)),
         new UpdateOptions().upsert(true)
       );
 

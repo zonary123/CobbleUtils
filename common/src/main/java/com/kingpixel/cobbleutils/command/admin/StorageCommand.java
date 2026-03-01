@@ -155,13 +155,35 @@ public class StorageCommand {
                             sendFeedback(source, "⚠️ Invalid reward data: '" + data + "'.");
                             return 0;
                           }
-                          if (reward.existType()) {
+                          if (!reward.existType()) {
                             sendFeedback(source, "⚠️ Reward type '" + reward.getReward() + "' does not exist for reward: '" + data + "'.");
                             return 0;
                           }
 
-                          DataBaseFactory.dataBaseUsers.addStorage(new StorageRewards(reward), targetUUID);
-                          sendFeedback(source, "✅ Added reward '" + data + "' to " + targetName + "'s storage.");
+                          DataBaseFactory.dataBaseUsers.isAvailableReward(targetUUID, reward)
+                            .whenComplete((isAvailable, throwable) -> {
+                              if (throwable != null) {
+                                sendFeedback(source, "⚠️ An error occurred while checking reward availability: " + throwable.getMessage());
+                                return;
+                              }
+                              if (!isAvailable) {
+                                sendFeedback(source, "⚠️ The reward '" + data + "' is not available for " + targetName + ". It may be unique and already claimed, or the player may be on cooldown for this reward.");
+                                return;
+                              }
+                              DataBaseFactory.dataBaseUsers.addStorage(new StorageRewards(reward), targetUUID)
+                                .whenComplete((added, addThrowable) -> {
+                                  if (addThrowable != null) {
+                                    sendFeedback(source, "⚠️ An error occurred while adding the reward to storage: " + addThrowable.getMessage());
+                                    return;
+                                  }
+                                  if (added) {
+                                    sendFeedback(source, "✅ Added reward '" + data + "' to " + targetName + "'s storage.");
+                                    return;
+                                  }
+                                  sendFeedback(source, "⚠️ Failed to add reward '" + data + "' to " + targetName + "'s storage. Please try again.");
+                                });
+                            });
+
                           return 1;
                         })
                     )

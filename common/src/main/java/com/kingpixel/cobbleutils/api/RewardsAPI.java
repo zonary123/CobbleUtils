@@ -88,13 +88,11 @@ public class RewardsAPI {
   }
 
   public static void show() {
+    String rewardIds = String.join(", ", REWARDS_TEMPLATE.keySet());
+    String advancedRewardIds = String.join(", ", ADVANCED_REWARDS_TEMPLATE.keySet());
     CobbleUtils.LOGGER.info("Registered rewards:");
-    for (Map.Entry<String, Reward> entry : REWARDS_TEMPLATE.entrySet()) {
-      CobbleUtils.LOGGER.info("- " + entry.getKey());
-    }
+    CobbleUtils.LOGGER.info("- " + rewardIds);
     CobbleUtils.LOGGER.info("Registered advanced rewards:");
-    for (Map.Entry<String, AdvancedReward> entry : ADVANCED_REWARDS_TEMPLATE.entrySet()) {
-      CobbleUtils.LOGGER.info("- " + entry.getKey());
-    }
+    CobbleUtils.LOGGER.info("- " + advancedRewardIds);
   }
 }

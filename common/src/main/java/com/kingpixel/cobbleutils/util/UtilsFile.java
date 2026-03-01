@@ -32,6 +32,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.time.Instant;
 import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -354,11 +355,15 @@ public final class UtilsFile {
   }
 
   public static List<Path> getAllJsonFiles(Path folder) throws IOException {
+    if (folder == null || !Files.exists(folder)) return List.of();
     try (Stream<Path> walk = Files.walk(folder)) {
       return walk
         .filter(Files::isRegularFile)
-        .filter(p -> p.toString().endsWith(".json"))
-        .collect(Collectors.toList());
+        .filter(p -> p.getFileName()
+          .toString()
+          .toLowerCase(Locale.ROOT)
+          .endsWith(".json"))
+        .toList();
     }
   }
 }

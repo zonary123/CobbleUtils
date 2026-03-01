@@ -5,7 +5,9 @@ import com.kingpixel.cobbleutils.Model.DurationValue;
 import com.kingpixel.cobbleutils.Model.ItemChance;
 import com.kingpixel.cobbleutils.database.DataBaseFactory;
 import com.kingpixel.cobbleutils.database.users.models.StorageRewards;
+import com.kingpixel.cobbleutils.util.AdventureTranslator;
 import lombok.*;
+import net.minecraft.component.DataComponentTypes;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -66,32 +68,59 @@ public class Reward {
     }
   }
 
-  public boolean canGive(ServerPlayerEntity player) {
-    return true;
-  }
-
   /**
    * Obtiene el ícono para el GUI de manera segura
    */
   public ItemStack getIcon() {
-    String firstReward = reward.split("\\|")[0];
-    String[] parts = firstReward.split(":", 2);
+    ItemStack icon = null;
+    if (display != null && !display.isBlank()) icon = buildFromString(display);
 
-    String type = parts[0];
-    String data = parts[1];
+    if ((icon == null || icon.isEmpty()) && reward != null && !reward.isBlank()) {
+      String cleanedReward = clean(reward);
+      String[] rewardParts = cleanedReward.split("\\|");
+      if (rewardParts.length > 0) icon = buildFromString(rewardParts[0]);
+    }
 
-    IconProvider provider = RewardRegistry.getRewardIconProvider(type);
-    ItemStack icon = provider != null ? safeGetIcon(provider, data) : null;
+    if (icon == null || icon.isEmpty()) icon = Items.BARRIER.getDefaultStack();
 
-    return icon != null ? icon : Items.BARRIER.getDefaultStack();
+    if (displayname != null && !displayname.isBlank() && icon != null && !icon.isEmpty()) {
+      icon = icon.copy();
+      icon.set(DataComponentTypes.CUSTOM_NAME, AdventureTranslator.toNative(displayname));
+    }
+
+    return icon;
   }
 
+  private ItemStack buildFromString(String input) {
+    if (input == null || input.isBlank()) return null;
+
+    String cleaned = clean(input);
+    String[] parts = cleaned.split(":", 2);
+
+    if (parts.length < 2) return null;
+
+    String type = parts[0].trim();
+    String data = parts[1].trim();
+
+    IconProvider provider = RewardRegistry.getRewardIconProvider(type);
+    if (provider == null) return null;
+
+    return safeGetIcon(provider, data);
+  }
+
+  private String clean(String input) {
+    return input.replace("\"", "").trim();
+  }
 
   /**
    * Ejecuta el provider de manera segura
    */
   private static ItemStack safeGetIcon(IconProvider provider, String data) {
     try {
+      if (provider == null) {
+        CobbleUtils.LOGGER.warn("No icon provider found for reward type: " + data);
+        return Items.BARRIER.getDefaultStack();
+      }
       return provider.getIcon(data);
     } catch (Exception e) {
       e.printStackTrace();
@@ -168,6 +197,8 @@ public class Reward {
 
 
   public boolean existType() {
-    return RewardRegistry.getRewardExecutor(reward.split(":")[0]) != null;
+    String type = reward.split(":", 2)[0];
+    if (type == null || type.isEmpty()) return false;
+    return RewardRegistry.getRewardExecutor(type) != null;
   }
 }

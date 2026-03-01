@@ -7,6 +7,7 @@ import com.kingpixel.cobbleutils.api.RewardsAPI;
 import com.kingpixel.cobbleutils.util.UtilsFile;
 import lombok.Data;
 
+import java.io.IOException;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
@@ -23,27 +24,30 @@ public class RewardsConfig {
     rewards.clear();
     Path folder = CobbleUtils.getPathMod().resolve("rewards");
     if (folder.toFile().exists()) {
+
+      List<Path> files = null;
       try {
-        List<Path> files = UtilsFile.getAllJsonFiles(folder);
-        for (Path f : files) {
-          try {
-            Reward reward = UtilsFile.read(f, Reward.class);
-            if (reward == null) {
-              CobbleUtils.LOGGER.error("Reward file is empty or invalid: " + f);
-              continue;
-            }
-            reward.setId(f.toFile().getName().replace(".json", ""));
-            RewardsAPI.registerReward(reward);
-            rewards.put(reward.getId(), reward.toItemChance());
-            UtilsFile.write(f, reward);
-          } catch (Exception e) {
-            e.printStackTrace();
-          }
-        }
-      } catch (Exception e) {
-        CobbleUtils.LOGGER.error("Error accessing rewards folder: " + e.getMessage());
+        files = UtilsFile.getAllJsonFiles(folder);
+      } catch (IOException e) {
         e.printStackTrace();
+        files = List.of();
       }
+      for (Path f : files) {
+        try {
+          Reward reward = UtilsFile.read(f, Reward.class);
+          if (reward == null) {
+            CobbleUtils.LOGGER.error("Reward file is empty or invalid: " + f);
+            continue;
+          }
+          reward.setId(f.toFile().getName().replace(".json", ""));
+          RewardsAPI.registerReward(reward);
+          rewards.put(reward.getId(), reward.toItemChance());
+          UtilsFile.write(f, reward);
+        } catch (Exception e) {
+          e.printStackTrace();
+        }
+      }
+
     } else {
       folder.toFile().mkdirs();
       createDefaultFiles();
