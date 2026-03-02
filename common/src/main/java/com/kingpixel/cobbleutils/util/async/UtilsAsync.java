@@ -22,9 +22,7 @@ public class UtilsAsync {
     int minThreads,
     int maxThreads
   ) {
-    return contexts.get(modId, id ->
-      new AsyncContext(threadName, minThreads, maxThreads, 1000, 60, TimeUnit.SECONDS)
-    );
+    return contexts.get(modId, id -> new AsyncContext(threadName, minThreads, maxThreads, 2500, 60, TimeUnit.SECONDS));
   }
 
   // Overload simple (por compatibilidad)
