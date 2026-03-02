@@ -23,7 +23,7 @@ public class UtilsAsync {
     int maxThreads
   ) {
     return contexts.get(modId, id ->
-      new AsyncContext(threadName, minThreads, maxThreads, 1000, 30, TimeUnit.SECONDS)
+      new AsyncContext(threadName, minThreads, maxThreads, 1000, 60, TimeUnit.SECONDS)
     );
   }
 

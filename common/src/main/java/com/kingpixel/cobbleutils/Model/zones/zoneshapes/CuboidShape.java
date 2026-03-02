@@ -63,30 +63,50 @@ public class CuboidShape extends ZoneShape {
 
     if (world == null) return;
 
-    final double step = 1.0;
+    // Renderizar cada 4 ticks (opcional pero recomendado)
+    if (world.getTime() % 4 != 0) return;
 
-    for (double x = min.getX(); x <= max.getX(); x += step) {
-      for (double y = min.getY(); y <= max.getY(); y += step) {
+    final int spacing = 2; // Cada cuantos bloques se spawnea una partícula
 
-        spawn(world, player, x, y, min.getZ(), ParticleTypes.END_ROD);
-        spawn(world, player, x, y, max.getZ(), ParticleTypes.END_ROD);
-      }
+    int minX = min.getX();
+    int minY = min.getY();
+    int minZ = min.getZ();
+
+    int maxX = max.getX();
+    int maxY = max.getY();
+    int maxZ = max.getZ();
+
+    // =========================
+    // 1️⃣ Aristas paralelas al eje X
+    // =========================
+    for (int x = minX; x <= maxX; x += spacing) {
+
+      spawn(world, player, x, minY, minZ, ParticleTypes.END_ROD);
+      spawn(world, player, x, minY, maxZ, ParticleTypes.END_ROD);
+      spawn(world, player, x, maxY, minZ, ParticleTypes.END_ROD);
+      spawn(world, player, x, maxY, maxZ, ParticleTypes.END_ROD);
     }
 
-    for (double z = min.getZ(); z <= max.getZ(); z += step) {
-      for (double y = min.getY(); y <= max.getY(); y += step) {
+    // =========================
+    // 2️⃣ Aristas paralelas al eje Y
+    // =========================
+    for (int y = minY; y <= maxY; y += spacing) {
 
-        spawn(world, player, min.getX(), y, z, ParticleTypes.END_ROD);
-        spawn(world, player, max.getX(), y, z, ParticleTypes.END_ROD);
-      }
+      spawn(world, player, minX, y, minZ, ParticleTypes.END_ROD);
+      spawn(world, player, maxX, y, minZ, ParticleTypes.END_ROD);
+      spawn(world, player, minX, y, maxZ, ParticleTypes.END_ROD);
+      spawn(world, player, maxX, y, maxZ, ParticleTypes.END_ROD);
     }
 
-    for (double x = min.getX(); x <= max.getX(); x += step) {
-      for (double z = min.getZ(); z <= max.getZ(); z += step) {
+    // =========================
+    // 3️⃣ Aristas paralelas al eje Z
+    // =========================
+    for (int z = minZ; z <= maxZ; z += spacing) {
 
-        spawn(world, player, x, min.getY(), z, ParticleTypes.END_ROD);
-        spawn(world, player, x, max.getY(), z, ParticleTypes.END_ROD);
-      }
+      spawn(world, player, minX, minY, z, ParticleTypes.END_ROD);
+      spawn(world, player, maxX, minY, z, ParticleTypes.END_ROD);
+      spawn(world, player, minX, maxY, z, ParticleTypes.END_ROD);
+      spawn(world, player, maxX, maxY, z, ParticleTypes.END_ROD);
     }
   }
 

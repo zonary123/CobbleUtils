@@ -14,10 +14,12 @@ public class SphereShape extends ZoneShape {
 
   public static final String TYPE = "SPHERE";
 
+  private static final int PARTICLE_TICK_INTERVAL = 4;
+  private static final double MAX_RENDER_DISTANCE = 128.0;
+
   private final BlockPos center;
   private final double radius;
 
-  // No se guarda en JSON
   private transient Double radiusSquared;
 
   public SphereShape() {
@@ -39,7 +41,7 @@ public class SphereShape extends ZoneShape {
     this.radius = radius;
   }
 
-  public Double getRadiusSquared() {
+  public double getRadiusSquared() {
     if (radiusSquared == null) {
       radiusSquared = radius * radius;
     }
@@ -69,19 +71,29 @@ public class SphereShape extends ZoneShape {
   @Override
   public void spawnParticles(ServerWorld world,
                              @Nullable ServerPlayerEntity player) {
+
     if (world == null) return;
 
-    int steps = Math.max(8, (int) (radius * 2));
-
-
-    steps = Math.min(steps, 40);
-
-    double phiStep = Math.PI / steps;
-    double thetaStep = 2 * Math.PI / steps;
+    // Throttle por ticks
+    if (world.getTime() % PARTICLE_TICK_INTERVAL != 0) return;
 
     double cx = center.getX() + 0.5;
     double cy = center.getY() + 0.5;
     double cz = center.getZ() + 0.5;
+
+    // LOD por distancia si es por jugador
+    if (player != null) {
+      if (player.squaredDistanceTo(cx, cy, cz)
+        > MAX_RENDER_DISTANCE * MAX_RENDER_DISTANCE)
+        return;
+    }
+
+    // Densidad adaptativa
+    int steps = Math.max(8, (int) (radius * 1.5));
+    steps = Math.min(steps, 25); // límite de seguridad
+
+    double phiStep = Math.PI / steps;
+    double thetaStep = (2 * Math.PI) / steps;
 
     for (int i = 0; i <= steps; i++) {
 

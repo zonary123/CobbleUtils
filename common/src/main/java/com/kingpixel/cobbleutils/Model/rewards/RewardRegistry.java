@@ -52,11 +52,17 @@ public class RewardRegistry {
   }
 
   private static MoneyRewardData parseMoneyRewardData(String data) {
+
+    if (data == null || data.isBlank()) {
+      throw new IllegalArgumentException("Money reward data is null or empty");
+    }
+
+    // Remove prefix if exists
     if (data.toLowerCase().startsWith("money:")) {
       data = data.substring("money:".length());
     }
 
-    String[] parts = data.split(":", 4);
+    String[] parts = data.split(":");
 
     String economy = "";
     String currency = "";
@@ -64,47 +70,79 @@ public class RewardRegistry {
     String amountPart;
 
     if (parts.length == 1) {
-      // money:<amount>
+
       amountPart = parts[0];
 
     } else if (parts.length == 2) {
-      // Puede ser:
-      // money:<amount>
-      // money:<currency>:<amount>
 
-      if (isNumeric(parts[0])) {
+      if (isNumeric(parts[0]) || parts[0].contains("-")) {
+        // money:<amount>
         amountPart = parts[0];
       } else {
+        // money:<currency>:<amount>
         currency = parts[0];
         amountPart = parts[1];
       }
 
     } else {
-      // money:<amount>:<economy>:<currency>:<reason>
-      // o money:<currency>:<amount>:<economy>:<reason> (si quisieras extender)
 
-      if (isNumeric(parts[0])) {
+      // money:<amount>:<economy>:<currency>:<reason>
+      if (isNumeric(parts[0]) || parts[0].contains("-")) {
+
         amountPart = parts[0];
         economy = parts.length > 1 ? parts[1] : "";
         currency = parts.length > 2 ? parts[2] : "";
-        reason = parts.length == 4 ? parts[3] : null;
+
       } else {
+
+        // money:<currency>:<amount>:<economy>:<reason>
         currency = parts[0];
-        amountPart = parts[1];
-        economy = parts.length > 2 ? parts[2] : "";
-        reason = parts.length == 4 ? parts[3] : null;
+        amountPart = parts.length > 1 ? parts[1] : null;
+
+        if (amountPart == null) {
+          throw new IllegalArgumentException("Invalid money format: " + data);
+        }
+
+        economy = parts[2];
       }
+      reason = parts.length > 3 ? parts[3] : null;
+    }
+
+    if (amountPart == null || amountPart.isBlank()) {
+      throw new IllegalArgumentException("Money amount is missing in: " + data);
     }
 
     double min;
     double max;
 
-    if (amountPart.contains("-")) {
-      String[] range = amountPart.split("-");
-      min = Double.parseDouble(range[0]);
-      max = Double.parseDouble(range[1]);
-    } else {
-      min = max = Double.parseDouble(amountPart);
+    try {
+
+      if (amountPart.contains("-")) {
+
+        String[] range = amountPart.split("-", 2);
+
+        if (range.length != 2) {
+          throw new IllegalArgumentException("Invalid range format: " + amountPart);
+        }
+
+        min = Double.parseDouble(range[0]);
+        max = Double.parseDouble(range[1]);
+
+        if (min > max) {
+          throw new IllegalArgumentException("Min cannot be greater than max in range: " + amountPart);
+        }
+
+      } else {
+
+        if (!isNumeric(amountPart)) {
+          throw new IllegalArgumentException("Invalid numeric amount: " + amountPart);
+        }
+
+        min = max = Double.parseDouble(amountPart);
+      }
+
+    } catch (NumberFormatException ex) {
+      throw new IllegalArgumentException("Invalid money value: " + amountPart, ex);
     }
 
     double finalAmount = min == max
@@ -127,6 +165,7 @@ public class RewardRegistry {
   }
 
   private static boolean isNumeric(String value) {
+    if (value == null || value.isBlank()) return false;
     try {
       Double.parseDouble(value);
       return true;
@@ -273,7 +312,14 @@ public class RewardRegistry {
     });
 
 
-    ICON_PROVIDERS.put("command", (data) -> new ItemStack(Items.COMMAND_BLOCK));
+    ICON_PROVIDERS.put("command", (data) -> {
+      for (Map.Entry<String, ItemModel> entry : CobbleUtils.config.getItemsCommands().entrySet()) {
+        if (data.startsWith(entry.getKey())) {
+          return entry.getValue().getItemStack();
+        }
+      }
+      return new ItemStack(Items.COMMAND_BLOCK);
+    });
     ICON_PROVIDERS.put("money", (data) -> {
       MoneyRewardData moneyData = parseMoneyRewardData(data);
       if (moneyData == null) return new ItemStack(Items.GOLD_INGOT);

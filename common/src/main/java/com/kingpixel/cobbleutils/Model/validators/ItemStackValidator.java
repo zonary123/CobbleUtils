@@ -64,8 +64,9 @@ public class ItemStackValidator {
     try {
       Item item = itemStack.getItem();
       var keys = getTagKeysLazy();
+      var entry = Registries.ITEM.getEntry(item);
       for (TagKey<Item> key : keys) {
-        if (Registries.ITEM.getEntry(item).isIn(key)) return true;
+        if (entry.isIn(key)) return true;
       }
       return isValid(item.toString());
     } catch (Exception e) {

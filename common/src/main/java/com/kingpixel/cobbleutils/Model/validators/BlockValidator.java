@@ -64,8 +64,9 @@ public class BlockValidator {
     Set<TagKey<Item>> keys = getTagKeysLazy();
     if (keys.isEmpty()) return false;
 
+    var entry = Registries.ITEM.getEntry(item);
     for (TagKey<Item> tagKey : keys) {
-      if (Registries.ITEM.getEntry(item).isIn(tagKey)) return true;
+      if (entry.isIn(tagKey)) return true;
     }
     return false;
   }

@@ -17,7 +17,8 @@ public class RewardAdapter implements JsonSerializer<Reward>, JsonDeserializer<R
   private static final Set<String> COMMAND_PREFIX_FIX = Set.of(
     "lp ",
     "luckperms ",
-    "give "
+    "give ",
+    "cobbleutils "
   );
 
   // =====================================================
@@ -77,7 +78,7 @@ public class RewardAdapter implements JsonSerializer<Reward>, JsonDeserializer<R
           );
         } else {
           parts[i] = "item:1:" + part;
-          
+
           CobbleUtils.LOGGER.warn(
             "RewardAdapter",
             "Auto-fixed invalid reward → item:1:" + part

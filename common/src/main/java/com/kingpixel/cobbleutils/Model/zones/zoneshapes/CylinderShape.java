@@ -4,7 +4,6 @@ import com.kingpixel.cobbleutils.Model.zones.Point2D;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import net.minecraft.particle.ParticleTypes;
-import net.minecraft.particle.SimpleParticleType;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
@@ -15,6 +14,10 @@ import org.jetbrains.annotations.Nullable;
 public class CylinderShape extends ZoneShape {
 
   public static final String TYPE = "CYLINDER";
+
+  private static final int PARTICLE_TICK_INTERVAL = 4;   // Render cada X ticks
+  private static final int VERTICAL_SPACING = 3;         // Espaciado vertical
+  private static final int MIN_POINTS = 20;              // Mínimo puntos del círculo
 
   private final Point2D center;
   private final double radius;
@@ -79,33 +82,44 @@ public class CylinderShape extends ZoneShape {
 
     if (world == null) return;
 
-    drawCircle(world, player, minY, ParticleTypes.END_ROD);
+    // Throttle por ticks
+    if (world.getTime() % PARTICLE_TICK_INTERVAL != 0) return;
 
-    drawCircle(world, player, maxY, ParticleTypes.HAPPY_VILLAGER);
+    // Si es preview por jugador, no renderizar si está muy lejos
+    if (player != null) {
+      double midY = (minY + maxY) / 2.0;
+      double maxDistance = 128.0;
 
+      if (player.squaredDistanceTo(center.x(), midY, center.z()) > maxDistance * maxDistance)
+        return;
+    }
+
+    drawCircle(world, player, minY);
+    drawCircle(world, player, maxY);
     drawWalls(world, player);
   }
 
   // =========================
-  // Draw Circle
+  // Draw Top/Bottom Circle
   // =========================
   private void drawCircle(ServerWorld world,
                           @Nullable ServerPlayerEntity player,
-                          int y,
-                          SimpleParticleType particle) {
+                          int y) {
 
-    double angleStep = (2 * Math.PI) / 100;
     double centerX = center.x();
     double centerZ = center.z();
 
-    for (int i = 0; i < 100; i++) {
+    int points = Math.max(MIN_POINTS, (int) (radius * 6));
+    double angleStep = (2 * Math.PI) / points;
+
+    for (int i = 0; i < points; i++) {
 
       double angle = i * angleStep;
 
       double x = centerX + radius * Math.cos(angle);
       double z = centerZ + radius * Math.sin(angle);
 
-      spawn(world, player, x, y, z, particle);
+      spawn(world, player, x, y, z, ParticleTypes.END_ROD);
     }
   }
 
@@ -115,18 +129,20 @@ public class CylinderShape extends ZoneShape {
   private void drawWalls(ServerWorld world,
                          @Nullable ServerPlayerEntity player) {
 
-    double angleStep = (2 * Math.PI) / 100;
     double centerX = center.x();
     double centerZ = center.z();
 
-    for (int i = 0; i < 100; i++) {
+    int points = Math.max(MIN_POINTS, (int) (radius * 6));
+    double angleStep = (2 * Math.PI) / points;
+
+    for (int i = 0; i < points; i++) {
 
       double angle = i * angleStep;
 
       double x = centerX + radius * Math.cos(angle);
       double z = centerZ + radius * Math.sin(angle);
 
-      for (int y = minY; y <= maxY; y += 3) {
+      for (int y = minY; y <= maxY; y += VERTICAL_SPACING) {
         spawn(world, player, x, y, z, ParticleTypes.END_ROD);
       }
     }
