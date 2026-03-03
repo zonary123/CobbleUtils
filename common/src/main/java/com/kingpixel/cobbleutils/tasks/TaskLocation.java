@@ -35,6 +35,9 @@ public class TaskLocation {
               if (player == null) return;
 
               if (location.teleportToNoCrossServer(player)) {
+                if (CobbleUtils.getServerName() != null) {
+                  CobbleUtils.setServerName(location.getServer());
+                }
                 RedisManager.LOCATION_CACHE.invalidate(playerUUID);
               }
             });

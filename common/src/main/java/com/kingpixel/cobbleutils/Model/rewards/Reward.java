@@ -159,7 +159,7 @@ public class Reward {
 
           String finalSingleReward = singleReward;
           executor.execute(player, this, data)
-            .whenComplete((success, throwable) -> {
+            .whenCompleteAsync((success, throwable) -> {
               if (throwable != null) {
                 throwable.printStackTrace();
               }

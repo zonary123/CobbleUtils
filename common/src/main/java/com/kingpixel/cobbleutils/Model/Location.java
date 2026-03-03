@@ -85,7 +85,7 @@ public class Location {
 
     JsonObject loc = new JsonObject();
     loc.addProperty("server", server);
-    loc.addProperty("world", world.toString());
+    loc.addProperty("world", world);
     loc.addProperty("x", x);
     loc.addProperty("y", y);
     loc.addProperty("z", z);

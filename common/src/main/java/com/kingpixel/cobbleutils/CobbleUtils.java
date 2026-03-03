@@ -27,6 +27,7 @@ import dev.architectury.event.events.common.LifecycleEvent;
 import dev.architectury.event.events.common.PlayerEvent;
 import dev.architectury.injectables.targets.ArchitecturyTarget;
 import lombok.Getter;
+import lombok.Setter;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.loader.api.ModContainer;
@@ -48,6 +49,7 @@ public class CobbleUtils {
   public static final String PATH_BREED_DATA = PATH_BREED + "data/";
   public static final UtilsLogger LOGGER = new UtilsLogger();
 
+  @Setter
   @Getter
   private static @Nullable String serverName = null;
   public static CommandRegistryAccess commandRegistryAccess;
@@ -88,43 +90,6 @@ public class CobbleUtils {
     events();
     if (config.isRedisMessaging()) {
       PayloadTypeRegistry.playS2C().register(ProxyPacket.PACKET_ID, ProxyPacket.CODEC);
-      /*PayloadTypeRegistry.playC2S().register(ProxyPacket.PACKET_ID, ProxyPacket.CODEC);
-
-      ServerPlayNetworking.registerGlobalReceiver(ProxyPacket.PACKET_ID, (payload, context) -> {
-        LOGGER.info("[ProxyDebug] Paquete recibido: " + payload);
-
-        String[] args = payload.args();
-
-        if (args == null) {
-          LOGGER.info("[ProxyDebug] Args es NULL");
-          return;
-        }
-
-        LOGGER.info("[ProxyDebug] Cantidad de argumentos: " + args.length);
-
-        if (args.length == 0) {
-          LOGGER.info("[ProxyDebug] No hay argumentos en el paquete.");
-          return;
-        }
-
-        String subChannel = args[0];
-
-        LOGGER.info("[ProxyDebug] SubChannel: " + subChannel);
-
-        if (subChannel.equalsIgnoreCase("Server")) {
-
-          if (args.length < 2) {
-            LOGGER.info("[ProxyDebug] ERROR: Falta el nombre del servidor.");
-            return;
-          }
-
-          serverName = args[1];
-
-          LOGGER.info("[ProxyDebug] ===========================");
-          LOGGER.info("[ProxyDebug] Servidor actual recibido: " + serverName);
-          LOGGER.info("[ProxyDebug] ===========================");
-        }
-      });*/
     }
   }
 
@@ -196,11 +161,7 @@ public class CobbleUtils {
 
   private static void events() {
     files();
-    try {
-      RedisManager.init();
-    } catch (NoClassDefFoundError | NoSuchMethodError | Exception ignored) {
-      LOGGER.error("Error while trying to initialize RedisManager");
-    }
+
 
     LifecycleEvent.SERVER_LEVEL_LOAD.register(level -> {
       server = level.getServer();
@@ -212,6 +173,11 @@ public class CobbleUtils {
       load();
       CobbleUtilsSuggests.SUGGESTS_PLAYER_OFFLINE_AND_ONLINE.refreshIfNeeded();
       EconomyApi.loadEconomies();
+      try {
+        RedisManager.init();
+      } catch (NoClassDefFoundError | NoSuchMethodError | Exception ignored) {
+        LOGGER.error("Error while trying to initialize RedisManager");
+      }
     });
 
     LifecycleEvent.SERVER_STOPPING.register(server -> {
