@@ -8,6 +8,7 @@ import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.Model.DurationValue;
 import com.kingpixel.cobbleutils.mixins.UserCacheMixin;
 import com.kingpixel.cobbleutils.util.manager.CooldownManager;
+import com.kingpixel.cobbleutils.util.redis.handlers.RedisMessageHandler;
 import com.mojang.authlib.GameProfile;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.ParseResults;
@@ -99,19 +100,12 @@ public class PlayerUtils {
     String fullMessage = message.replace("%prefix%", prefix);
 
     if (CobbleUtils.config.isRedisMessaging()) {
-      CompletableFuture.runAsync(() -> {
-          switch (typeMessage) {
-            case CHAT -> RedisManager.sendMessage(playerUUID, fullMessage, prefix);
-            case ACTIONBAR -> RedisManager.sendActionBarMessage(playerUUID, fullMessage, prefix);
-            case ACTIONBAR_BROADCAST -> RedisManager.sendActionBarMessage(fullMessage, prefix);
-            case BROADCAST -> RedisManager.sendMessage(fullMessage, prefix);
-          }
-        }, RedisManager.EXECUTOR_REDIS)
-        .orTimeout(5, TimeUnit.SECONDS)
-        .exceptionally(e -> {
-          e.printStackTrace();
-          return null;
-        });
+      switch (typeMessage) {
+        case CHAT -> RedisMessageHandler.sendPlayer(playerUUID, fullMessage);
+        case ACTIONBAR -> RedisMessageHandler.sendActionBar(playerUUID, fullMessage);
+        case ACTIONBAR_BROADCAST -> RedisMessageHandler.sendActionBar(fullMessage);
+        case BROADCAST -> RedisMessageHandler.sendBroadcast(fullMessage);
+      }
     } else {
       if (CobbleUtils.server == null) return;
       ServerPlayerEntity player = CobbleUtils.server.getPlayerManager().getPlayer(playerUUID);
@@ -195,7 +189,7 @@ public class PlayerUtils {
   public static void broadcast(String message) {
     if (!message.isEmpty()) {
       if (CobbleUtils.config.isRedisMessaging()) {
-        RedisManager.sendMessage(message);
+        RedisMessageHandler.sendBroadcast(message);
       } else {
         if (CobbleUtils.server == null) return;
         var playerList = CobbleUtils.server.getPlayerManager().getPlayerList();
@@ -208,7 +202,7 @@ public class PlayerUtils {
   public static void broadcast(String message, String prefix) {
     if (!message.isEmpty()) {
       if (CobbleUtils.config.isRedisMessaging()) {
-        RedisManager.sendMessage(message, prefix);
+        RedisMessageHandler.sendBroadcast(message.replace("%prefix%", prefix));
       } else {
         var text = AdventureTranslator.toNative(message, prefix);
         if (CobbleUtils.server == null) return;
@@ -304,18 +298,18 @@ public class PlayerUtils {
    * @return The head item of the player.
    */
   public static ItemStack getHeadItem(UUID playerUUID) {
-    if (playerUUID == null) return Utils.parseItemId("minecraft:player_head");
+    if (playerUUID == null) return ItemUtils.parseItemId("minecraft:player_head");
     var userCache = CobbleUtils.server.getUserCache();
-    if (userCache == null) return Utils.parseItemId("minecraft:player_head");
+    if (userCache == null) return ItemUtils.parseItemId("minecraft:player_head");
     if (!((UserCacheMixin) userCache).byUuid().containsKey(playerUUID))
-      return Utils.parseItemId("minecraft:player_head");
+      return ItemUtils.parseItemId("minecraft:player_head");
     var gameProfile = userCache.getByUuid(playerUUID);
     if (gameProfile.isPresent()) {
       ItemStack itemStack = Items.PLAYER_HEAD.getDefaultStack();
       itemStack.set(DataComponentTypes.PROFILE, new ProfileComponent(gameProfile.get()));
       return itemStack;
     }
-    return Utils.parseItemId("minecraft:player_head");
+    return ItemUtils.parseItemId("minecraft:player_head");
   }
 
   /**
@@ -325,7 +319,7 @@ public class PlayerUtils {
    * @return The head item of the player.
    */
   public static ItemStack getHeadItem(ServerPlayerEntity player) {
-    if (player == null) return Utils.parseItemId("minecraft:player_head");
+    if (player == null) return ItemUtils.parseItemId("minecraft:player_head");
     return getHeadItem(player.getUuid());
   }
 

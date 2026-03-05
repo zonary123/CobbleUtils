@@ -6,7 +6,8 @@ import com.google.gson.JsonObject;
 import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.network.ProxyPacket;
 import com.kingpixel.cobbleutils.util.MinecraftUtils;
-import com.kingpixel.cobbleutils.util.RedisManager;
+import com.kingpixel.cobbleutils.util.redis.RedisManager;
+import com.kingpixel.cobbleutils.util.redis.handlers.RedisTeleportHandler;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
@@ -96,7 +97,7 @@ public class Location {
     json.addProperty("server", server);
     json.addProperty("reason", "cross-server-teleport");
 
-    RedisManager.publish("cobbleutils:teleport", json.toString());
+    RedisManager.publish(RedisTeleportHandler.CHANNEL, json);
   }
 
 

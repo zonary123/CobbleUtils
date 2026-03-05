@@ -2,7 +2,7 @@ package com.kingpixel.cobbleutils.tasks;
 
 import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.Model.Location;
-import com.kingpixel.cobbleutils.util.RedisManager;
+import com.kingpixel.cobbleutils.util.redis.handlers.RedisTeleportHandler;
 import net.minecraft.server.network.ServerPlayerEntity;
 
 import java.util.ArrayList;
@@ -18,14 +18,14 @@ public class TaskLocation {
       try {
         if (CobbleUtils.server == null) return;
 
-        List<UUID> toProcess = new ArrayList<>(RedisManager.LOCATION_CACHE.asMap().keySet());
+        List<UUID> toProcess = new ArrayList<>(RedisTeleportHandler.LOCATION_CACHE.asMap().keySet());
 
         if (toProcess.isEmpty()) return;
 
         try {
           for (UUID playerUUID : toProcess) {
 
-            Location location = RedisManager.LOCATION_CACHE.getIfPresent(playerUUID);
+            Location location = RedisTeleportHandler.LOCATION_CACHE.getIfPresent(playerUUID);
             if (location == null) continue;
 
             CobbleUtils.server.execute(() -> {
@@ -35,10 +35,8 @@ public class TaskLocation {
               if (player == null) return;
 
               if (location.teleportToNoCrossServer(player)) {
-                if (CobbleUtils.getServerName() != null) {
-                  CobbleUtils.setServerName(location.getServer());
-                }
-                RedisManager.LOCATION_CACHE.invalidate(playerUUID);
+                if (CobbleUtils.getServerName() != null) CobbleUtils.setServerName(location.getServer());
+                RedisTeleportHandler.LOCATION_CACHE.invalidate(playerUUID);
               }
             });
           }
