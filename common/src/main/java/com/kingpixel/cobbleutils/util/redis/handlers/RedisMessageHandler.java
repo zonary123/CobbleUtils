@@ -1,0 +1,123 @@
+package com.kingpixel.cobbleutils.util.redis.handlers;
+
+import com.google.gson.JsonObject;
+import com.kingpixel.cobbleutils.CobbleUtils;
+import com.kingpixel.cobbleutils.Model.messages.HiperMessage;
+import com.kingpixel.cobbleutils.util.AdventureTranslator;
+import com.kingpixel.cobbleutils.util.redis.RedisManager;
+import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.text.Text;
+
+import java.util.UUID;
+
+public class RedisMessageHandler implements RedisHandler {
+
+
+  public static final String CHANNEL = "cobbleutils:teleport";
+
+  @Override
+  public String getIdentifier() {
+    return CHANNEL;
+  }
+
+  @Override
+  public void handle(JsonObject json) {
+    handleIncomingMessage(json);
+  }
+
+  private static void handleIncomingMessage(JsonObject json) {
+    if (CobbleUtils.server == null) return;
+
+    try {
+      String type = json.get("type").getAsString();
+
+      if ("hipermessage".equals(type)) {
+        HiperMessage.handleRedisMessage(json);
+        return;
+      }
+
+      String content = json.get("content").getAsString();
+
+      if (json.has("prefix") && !json.get("prefix").getAsString().isEmpty()) {
+        content = content.replace("%prefix%", json.get("prefix").getAsString());
+      }
+
+      Text formatted = AdventureTranslator.toNative(content);
+
+      switch (type) {
+
+        case "broadcast" -> CobbleUtils.server.getPlayerManager().broadcast(formatted, false);
+
+        case "player" -> {
+          if (!json.has("uuid")) return;
+          UUID uuid = UUID.fromString(json.get("uuid").getAsString());
+          ServerPlayerEntity player =
+            CobbleUtils.server.getPlayerManager().getPlayer(uuid);
+          if (player != null) player.sendMessage(formatted);
+        }
+
+        case "actionbar" -> CobbleUtils.server.getPlayerManager().getPlayerList()
+          .forEach(p -> p.sendMessage(formatted, true));
+
+        case "actionbar_player" -> {
+          if (!json.has("uuid")) return;
+          UUID uuid = UUID.fromString(json.get("uuid").getAsString());
+          ServerPlayerEntity player =
+            CobbleUtils.server.getPlayerManager().getPlayer(uuid);
+          if (player != null) player.sendMessage(formatted, true);
+        }
+
+        default -> CobbleUtils.LOGGER.warn("Unknown Redis message type: " + type);
+      }
+
+    } catch (Exception e) {
+      CobbleUtils.LOGGER.error("Failed to handle Redis message: " + e.getMessage());
+    }
+  }
+
+  // ============================
+  // PUBLIC API
+  // ============================
+
+  public static void sendBroadcast(String message) {
+    publish("broadcast", message, null, null);
+  }
+
+  public static void sendPlayer(UUID uuid, String message) {
+    publish("player", message, uuid, null);
+  }
+
+  public static void sendActionBar(String message) {
+    publish("actionbar", message, null, null);
+  }
+
+  public static void sendActionBar(UUID uuid, String message) {
+    publish("actionbar_player", message, uuid, null);
+  }
+
+  private static void publish(String type, String content, UUID uuid, String prefix) {
+    if (!RedisManager.getConnected().get()) return;
+    if (RedisManager.getJedisPool() == null) return;
+
+    try (var jedis = RedisManager.getJedisPool().getResource()) {
+
+      JsonObject json = new JsonObject();
+      json.addProperty("type", type);
+      json.addProperty("content", content);
+
+      if (uuid != null) {
+        json.addProperty("uuid", uuid.toString());
+      }
+
+      if (prefix != null && !prefix.isEmpty()) {
+        json.addProperty("prefix", prefix);
+      }
+
+      String channel = CobbleUtils.config.getRedis().getChannel();
+      jedis.publish(channel, json.toString());
+
+    } catch (Exception ignored) {
+      RedisManager.getConnected().set(false);
+    }
+  }
+}

@@ -21,6 +21,7 @@ import com.kingpixel.cobbleutils.network.ProxyPacket;
 import com.kingpixel.cobbleutils.tasks.RegistryTasks;
 import com.kingpixel.cobbleutils.util.*;
 import com.kingpixel.cobbleutils.util.async.AsyncContext;
+import com.kingpixel.cobbleutils.util.redis.RedisManager;
 import dev.architectury.event.events.common.CommandRegistrationEvent;
 import dev.architectury.event.events.common.InteractionEvent;
 import dev.architectury.event.events.common.LifecycleEvent;
@@ -129,7 +130,7 @@ public class CobbleUtils {
     info(identifier, null, github);
   }
 
-  public static void info(String identifier, String version, String github) {
+  public static void info(String identifier, String version, String githubRepository) {
     String finalVersion = version;
     String finalName = identifier;
     String authors = "Zonary123";
@@ -151,9 +152,9 @@ public class CobbleUtils {
     LOGGER.info("§e+-------------------------------+");
     LOGGER.info("§e| §6Version: §e" + finalVersion);
     LOGGER.info("§e| §6Author: §e" + authors);
-    LOGGER.info("§e| §6Website: §9https://github.com/Zonary123/" + github);
+    LOGGER.info("§e| §6Website: §9https://github.com/Zonary123/" + githubRepository);
     LOGGER.info("§e| §6Discord: §9https://discord.com/invite/fKNc7FnXpa");
-    LOGGER.info("§e| §6Support: §9https://github.com/Zonary123/" + github + "/issues");
+    LOGGER.info("§e| §6Support: §9https://github.com/Zonary123/" + githubRepository + "/issues");
     LOGGER.info("§e| §dDonate: §9https://ko-fi.com/zonary123");
     LOGGER.info("§e+-------------------------------+");
   }
@@ -163,8 +164,8 @@ public class CobbleUtils {
     files();
 
 
-    LifecycleEvent.SERVER_LEVEL_LOAD.register(level -> {
-      server = level.getServer();
+    LifecycleEvent.SERVER_STARTING.register(server -> {
+      CobbleUtils.server = server;
       ChunkBlockStorageManager.init(server);
     });
 
@@ -173,11 +174,7 @@ public class CobbleUtils {
       load();
       CobbleUtilsSuggests.SUGGESTS_PLAYER_OFFLINE_AND_ONLINE.refreshIfNeeded();
       EconomyApi.loadEconomies();
-      try {
-        RedisManager.init();
-      } catch (NoClassDefFoundError | NoSuchMethodError | Exception ignored) {
-        LOGGER.error("Error while trying to initialize RedisManager");
-      }
+      RedisManager.init();
     });
 
     LifecycleEvent.SERVER_STOPPING.register(server -> {
@@ -189,7 +186,6 @@ public class CobbleUtils {
     LifecycleEvent.SERVER_STOPPED.register(server -> {
       shutdownAndAwait(EXECUTOR_COBBLEUTILS);
       shutdownAndAwait(Utils.IO_EXECUTOR);
-      shutdownAndAwait(RedisManager.EXECUTOR_REDIS);
       shutdownAndAwait(SCHEDULER_COBBLEUTILS);
       com.kingpixel.cobbleutils.util.async.UtilsAsync.shutdownAll();
     });

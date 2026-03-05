@@ -26,6 +26,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
+@Deprecated(forRemoval = true)
 public class RedisManager {
 
   private static JedisPool jedisPool;
@@ -368,7 +369,7 @@ public class RedisManager {
 
           String channel = CobbleUtils.config.getRedis().getChannel();
           CobbleUtils.LOGGER.info("Subscribing to Redis channel: " + channel + " (attempt " + (attempts + 1) + ")");
-
+          
           subscriberJedis.subscribe(jedisPubSub, channel, "cobbleutils:teleport");
           subscriberJedis.close();
           break;

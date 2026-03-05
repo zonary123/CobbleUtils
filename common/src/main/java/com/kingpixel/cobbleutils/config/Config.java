@@ -111,22 +111,6 @@ public class Config {
     }
   }
 
-  @Getter
-  @Data
-  @ToString
-  public static class RedisConfig {
-    private String host;
-    private int port;
-    private String password;
-    private String channel;
-
-    public RedisConfig() {
-      this.host = "localhost";
-      this.port = 6379;
-      this.password = "";
-      this.channel = "cobbleutils-messaging";
-    }
-  }
 
   // Transient para no serializarlo en el JSON
   private transient DecimalFormat lazyFormat;
