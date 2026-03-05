@@ -13,7 +13,7 @@ import java.util.UUID;
 public class RedisMessageHandler implements RedisHandler {
 
 
-  public static final String CHANNEL = "cobbleutils:teleport";
+  public static final String CHANNEL = "cobbleutils:messages";
 
   @Override
   public String getIdentifier() {
@@ -113,8 +113,7 @@ public class RedisMessageHandler implements RedisHandler {
         json.addProperty("prefix", prefix);
       }
 
-      String channel = CobbleUtils.config.getRedis().getChannel();
-      jedis.publish(channel, json.toString());
+      jedis.publish(CHANNEL, json.toString());
 
     } catch (Exception ignored) {
       RedisManager.getConnected().set(false);
