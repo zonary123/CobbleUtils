@@ -90,7 +90,11 @@ public class CobbleUtils {
     tasks();
     events();
     if (config.isRedisMessaging()) {
-      PayloadTypeRegistry.playS2C().register(ProxyPacket.PACKET_ID, ProxyPacket.CODEC);
+      try {
+        PayloadTypeRegistry.playS2C().register(ProxyPacket.PACKET_ID, ProxyPacket.CODEC);
+        PayloadTypeRegistry.playC2S().register(ProxyPacket.PACKET_ID, ProxyPacket.CODEC);
+      } catch (IllegalArgumentException ignored) {
+      }
     }
   }
 

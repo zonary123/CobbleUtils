@@ -3,6 +3,8 @@ package com.kingpixel.cobbleutils.Model.economy;
 import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.api.EconomyApi;
 import com.kingpixel.cobbleutils.util.economys.Economy;
+import com.kingpixel.cobbleutils.util.economys.providers.ImpactorEconomy;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NonNull;
 
@@ -14,9 +16,12 @@ import java.util.concurrent.CompletableFuture;
  * @author Carlos Varas Alonso - 16/03/2025 3:20
  */
 @Data
+@Builder
 public class EconomySelector {
-  private String economyId;
-  private String currency;
+  @Builder.Default
+  private String economyId = ImpactorEconomy.IDENTIFY;
+  @Builder.Default
+  private String currency = "impactor:dollars";
 
   public EconomySelector(String economy, String currency) {
     this.economyId = economy;

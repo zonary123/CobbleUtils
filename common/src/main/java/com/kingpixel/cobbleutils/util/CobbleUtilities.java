@@ -29,7 +29,6 @@ public class CobbleUtilities {
    * Convert seconds to time
    *
    * @param totalSeconds The total seconds
-   *
    * @return The time in a string
    */
   public static String convertSecondsToTime(int totalSeconds) {
@@ -87,9 +86,9 @@ public class CobbleUtilities {
    * Execute a command
    *
    * @param command The command to execute
-   *
    * @return If the command was executed successfully
    */
+  @Deprecated(forRemoval = true)
   public static boolean executeCommand(String command) {
     CommandDispatcher<ServerCommandSource> disparador = CobbleUtils.server.getCommandManager().getDispatcher();
     ServerCommandSource serverSource = CobbleUtils.server.getCommandSource();
@@ -112,7 +111,6 @@ public class CobbleUtilities {
    * Get an ItemStack from a string with NBT
    *
    * @param item The item with NBT
-   *
    * @return The ItemStack
    */
   public static ItemStack getItem(String item) {

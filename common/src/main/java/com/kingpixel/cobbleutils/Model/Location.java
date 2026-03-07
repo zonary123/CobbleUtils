@@ -15,6 +15,9 @@ import net.minecraft.network.packet.s2c.play.PositionFlag;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 
+import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
+
 /**
  * @author Carlos Varas Alonso - 13/10/2025 22:03
  */
@@ -53,10 +56,12 @@ public class Location {
     this.pitch = player.getPitch();
   }
 
-
   public void teleportTo(ServerPlayerEntity player) {
     try {
-      if (CobbleUtils.config.isRedisMessaging()) {
+      boolean crossServer = CobbleUtils.config.isRedisMessaging()
+        && !Objects.equals(CobbleUtils.getServerName(), server);
+
+      if (crossServer) {
         teleportToCrossServer(player);
       } else {
         teleportToNoCrossServer(player);
@@ -66,18 +71,15 @@ public class Location {
     }
   }
 
-  public boolean teleportToNoCrossServer(ServerPlayerEntity player) {
-    try {
+  public CompletableFuture<Boolean> teleportToNoCrossServer(ServerPlayerEntity player) {
+    return CobbleUtils.server.submit(() -> {
       ServerWorld targetWorld = MinecraftUtils.getServerWorld(world);
       if (targetWorld == null) return false;
       return player.teleport(targetWorld, x, y, z, PositionFlag.VALUES, yaw, pitch);
-    } catch (Exception e) {
-      e.printStackTrace();
-      return false;
-    }
+    });
   }
 
-  public void teleportToCrossServer(ServerPlayerEntity player) {
+  private void teleportToCrossServer(ServerPlayerEntity player) {
     ServerPlayNetworking.send(player, new ProxyPacket("Connect", server));
     JsonObject json = new JsonObject();
 

@@ -3,6 +3,7 @@ package com.kingpixel.cobbleutils.config;
 import com.google.gson.Gson;
 import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.Model.*;
+import com.kingpixel.cobbleutils.Model.economy.EconomySelector;
 import com.kingpixel.cobbleutils.util.Utils;
 import com.kingpixel.cobbleutils.util.economys.providers.*;
 import lombok.Data;
@@ -35,7 +36,7 @@ public class Config {
   private String priceFormat;
   private DurationValue timeSinceLastLoginToSuggest;
   private boolean GtsSupport;
-  private EconomyUse GtsEconomyToUse;
+  private EconomySelector GtsEconomyToUse;
   private boolean activeshinytoken;
   private String pokeshout;
   private String pokeshoutall;
@@ -60,7 +61,7 @@ public class Config {
     decimals = 2;
     priceFormat = "#,##0.00";
     GtsSupport = false;
-    GtsEconomyToUse = new EconomyUse(ImpactorEconomy.IDENTIFY, "");
+    GtsEconomyToUse = new EconomySelector(ImpactorEconomy.IDENTIFY, "");
     priorityEconomy = new ArrayList<>();
     priorityEconomy.add(new PriorityEconomy(UltraEEconomy.IDENTIFY, Priority.HIGHEST));
     priorityEconomy.add(new PriorityEconomy(ImpactorEconomy.IDENTIFY, Priority.HIGH));

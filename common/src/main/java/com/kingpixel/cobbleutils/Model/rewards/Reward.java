@@ -6,6 +6,7 @@ import com.kingpixel.cobbleutils.Model.ItemChance;
 import com.kingpixel.cobbleutils.database.DataBaseFactory;
 import com.kingpixel.cobbleutils.database.users.models.StorageRewards;
 import com.kingpixel.cobbleutils.util.AdventureTranslator;
+import com.kingpixel.cobbleutils.util.ItemUtils;
 import lombok.*;
 import net.minecraft.component.DataComponentTypes;
 import net.minecraft.item.ItemStack;
@@ -21,7 +22,7 @@ import java.util.concurrent.CompletableFuture;
 @AllArgsConstructor
 @Builder
 public class Reward {
-
+  private transient ItemStack cacheItemStack = null;
   @Builder.Default
   private String id = null;
   @Builder.Default
@@ -53,6 +54,24 @@ public class Reward {
       .display(display)
       .displayname(displayname)
       .build();
+  }
+
+  private String getType() {
+    if (reward == null || reward.isBlank()) return null;
+    String[] parts = reward.split(":", 2);
+    if (parts.length < 2) return null;
+    return parts[0].trim();
+  }
+
+  public boolean equalsItemStack(ItemStack stack) {
+    if (cacheItemStack != null) return ItemUtils.equals(cacheItemStack, stack);
+    String type = getType();
+    if (type == null) return false;
+    if (type.equals("item")) {
+      cacheItemStack = buildFromString(reward);
+      return ItemUtils.equals(cacheItemStack, stack);
+    }
+    return false;
   }
 
   public void fix() {

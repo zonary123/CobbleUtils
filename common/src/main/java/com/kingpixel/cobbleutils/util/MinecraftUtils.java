@@ -40,6 +40,7 @@ public class MinecraftUtils {
 
   public static String getBiomesTranslate(RegistryEntry<Biome> biome) {
     var biomeId = biome.getIdAsString();
+    
     if (CobbleUtils.config.isDebug()) {
       CobbleUtils.LOGGER.info("Biome ID: " + biomeId + " | Translation Key: " + biome.getKey().get().getValue().toTranslationKey());
     }

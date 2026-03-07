@@ -1,8 +1,7 @@
 package com.kingpixel.cobbleutils.util;
 
 import com.kingpixel.cobbleutils.CobbleUtils;
-import com.kingpixel.cobbleutils.Model.EconomyUse;
-import com.kingpixel.cobbleutils.api.EconomyApi;
+import com.kingpixel.cobbleutils.Model.economy.EconomySelector;
 import org.pokesplash.gts.api.economy.GtsEconomy;
 import org.pokesplash.gts.api.economy.GtsEconomyProvider;
 import org.pokesplash.gts.enumeration.Priority;
@@ -35,31 +34,34 @@ public class CobbleUtilsBridgeGTS implements GtsEconomy {
     }
   }
 
-  @Override public boolean add(UUID uuid, double v) {
+  @Override
+  public boolean add(UUID uuid, double v) {
     try {
-      return EconomyApi.addMoney(uuid, BigDecimal.valueOf(v), getConfig());
+      return getEconomy().deposit(uuid, BigDecimal.valueOf(v), "GTS").join().isSuccess();
     } catch (NoClassDefFoundError | NoSuchMethodError | Exception e) {
       e.printStackTrace();
       return false;
     }
   }
 
-  private EconomyUse getConfig() {
+  private EconomySelector getEconomy() {
     return CobbleUtils.config.getGtsEconomyToUse();
   }
 
-  @Override public boolean remove(UUID uuid, double v) {
+  @Override
+  public boolean remove(UUID uuid, double v) {
     try {
-      return EconomyApi.removeMoney(uuid, BigDecimal.valueOf(v), getConfig());
+      return getEconomy().withdraw(uuid, BigDecimal.valueOf(v), "GTS").join().isSuccess();
     } catch (NoClassDefFoundError | NoSuchMethodError | Exception e) {
       e.printStackTrace();
       return false;
     }
   }
 
-  @Override public double balance(UUID uuid) {
+  @Override
+  public double balance(UUID uuid) {
     try {
-      return EconomyApi.getBalance(uuid, getConfig()).doubleValue();
+      return getEconomy().getBalance(uuid).join().getAmount().doubleValue();
     } catch (NoClassDefFoundError | NoSuchMethodError | Exception e) {
       e.printStackTrace();
       return 0;

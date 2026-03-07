@@ -13,17 +13,13 @@ public class RewardAdapter implements JsonSerializer<Reward>, JsonDeserializer<R
 
   public static final RewardAdapter INSTANCE = new RewardAdapter();
 
-  // 🔥 Prefijos que se consideran comandos y se auto-fijan
   private static final Set<String> COMMAND_PREFIX_FIX = Set.of(
     "lp ",
     "luckperms ",
     "give ",
-    "cobbleutils "
+    "cobbleutils ",
+    "storage "
   );
-
-  // =====================================================
-  // =================== DESERIALIZE =====================
-  // =====================================================
 
   @Override
   public Reward deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context)
@@ -34,10 +30,6 @@ public class RewardAdapter implements JsonSerializer<Reward>, JsonDeserializer<R
     }
 
     JsonObject obj = json.getAsJsonObject();
-
-    // ===============================
-    // REWARD VALUE
-    // ===============================
 
     String rewardValue = null;
 
@@ -89,10 +81,6 @@ public class RewardAdapter implements JsonSerializer<Reward>, JsonDeserializer<R
 
     rewardValue = String.join("|", parts);
 
-    // ===============================
-    // WEIGHT / CHANCE
-    // ===============================
-
     double weight = 1.0;
 
     if (obj.has("weight") && !obj.get("weight").isJsonNull()) {
@@ -100,10 +88,6 @@ public class RewardAdapter implements JsonSerializer<Reward>, JsonDeserializer<R
     } else if (obj.has("chance") && !obj.get("chance").isJsonNull()) {
       weight = obj.get("chance").getAsDouble();
     }
-
-    // ===============================
-    // OTHER FIELDS
-    // ===============================
 
     Boolean unique = obj.has("unique") && !obj.get("unique").isJsonNull()
       && obj.get("unique").getAsBoolean();
@@ -128,10 +112,6 @@ public class RewardAdapter implements JsonSerializer<Reward>, JsonDeserializer<R
       ? obj.get("displayname").getAsString()
       : null;
 
-    // ===============================
-    // BUILD
-    // ===============================
-
     Reward reward = Reward.builder()
       .reward(rewardValue)
       .weight(weight)
@@ -147,10 +127,6 @@ public class RewardAdapter implements JsonSerializer<Reward>, JsonDeserializer<R
 
     return reward;
   }
-
-  // =====================================================
-  // =================== SERIALIZE =======================
-  // =====================================================
 
   @Override
   public JsonElement serialize(Reward src, Type typeOfSrc, JsonSerializationContext context) {

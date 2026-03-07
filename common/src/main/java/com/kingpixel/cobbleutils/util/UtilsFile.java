@@ -13,6 +13,7 @@ import com.google.gson.internal.bind.DateTypeAdapter;
 import com.kingpixel.cobbleutils.Model.DataBaseType;
 import com.kingpixel.cobbleutils.Model.DurationValue;
 import com.kingpixel.cobbleutils.Model.ItemChance;
+import com.kingpixel.cobbleutils.Model.conditions.Condition;
 import com.kingpixel.cobbleutils.Model.messages.HiperMessage;
 import com.kingpixel.cobbleutils.Model.rewards.Reward;
 import com.kingpixel.cobbleutils.Model.zones.zoneshapes.ZoneShape;
@@ -43,7 +44,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 /**
@@ -64,9 +65,9 @@ public final class UtilsFile {
 
   public static final AsyncContext IO_CONTEXT = new AsyncContext(
     "ZUtils-IO",
-    2,
+    1,
     8,
-    100,
+    1000,
     60L,
     TimeUnit.SECONDS
   );
@@ -101,6 +102,7 @@ public final class UtilsFile {
     registerAdapter(Reward.class, RewardAdapter.INSTANCE);
     registerAdapter(BlockPos.class, BlockPosAdapter.INSTANCE);
     registerAdapter(ZoneShape.class, ZoneShapeAdapter.INSTANCE);
+    registerAdapter(Condition.class, ConditionAdapter.INSTANCE);
     // Cobblemon adapters
     registerAdapter(Pokemon.class, PokemonAdapter.INSTANCE);
     registerAdapter(Move.class, MoveTemplateAdapter.INSTANCE);
@@ -347,24 +349,28 @@ public final class UtilsFile {
     return Files.list(directory);
   }
 
-  public static List<Path> getAllFiles(Path folder) throws IOException {
+  public static List<Path> getFiles(Path folder, Predicate<Path> filter) {
+    if (folder == null || !Files.exists(folder) || !Files.isDirectory(folder)) {
+      return List.of();
+    }
+
     try (Stream<Path> walk = Files.walk(folder)) {
       return walk
         .filter(Files::isRegularFile)
-        .collect(Collectors.toList());
+        .filter(filter)
+        .toList();
+    } catch (IOException e) {
+      e.printStackTrace();
+      return List.of();
     }
   }
 
-  public static List<Path> getAllJsonFiles(Path folder) throws IOException {
-    if (folder == null || !Files.exists(folder)) return List.of();
-    try (Stream<Path> walk = Files.walk(folder)) {
-      return walk
-        .filter(Files::isRegularFile)
-        .filter(p -> p.getFileName()
-          .toString()
-          .toLowerCase(Locale.ROOT)
-          .endsWith(".json"))
-        .toList();
-    }
+  public static List<Path> getAllFiles(Path folder) {
+    return getFiles(folder, p -> true);
+  }
+
+  public static List<Path> getAllJsonFiles(Path folder) {
+    return getFiles(folder, p ->
+      p.getFileName().toString().toLowerCase(Locale.ROOT).endsWith(".json"));
   }
 }

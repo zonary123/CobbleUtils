@@ -34,10 +34,13 @@ public class TaskLocation {
 
               if (player == null) return;
 
-              if (location.teleportToNoCrossServer(player)) {
-                if (CobbleUtils.getServerName() != null) CobbleUtils.setServerName(location.getServer());
-                RedisTeleportHandler.LOCATION_CACHE.invalidate(playerUUID);
-              }
+              location.teleportToNoCrossServer(player)
+                .whenComplete((success, throwable) -> {
+                  if (Boolean.TRUE.equals(success)) {
+                    if (CobbleUtils.getServerName() != null) CobbleUtils.setServerName(location.getServer());
+                    RedisTeleportHandler.LOCATION_CACHE.invalidate(playerUUID);
+                  }
+                });
             });
           }
         } catch (Exception e) {

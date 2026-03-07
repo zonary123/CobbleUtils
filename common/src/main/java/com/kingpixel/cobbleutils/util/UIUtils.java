@@ -41,7 +41,6 @@ public class UIUtils {
    *
    * @param pokemon       The pokemon to get the data
    * @param actionpokemon The action to do when the button is clicked
-   *
    * @return The button with the pokemon data
    */
   public static GooeyButton createButtonPokemon(Pokemon pokemon, Consumer<PokemonButtonAction> actionpokemon) {
@@ -68,7 +67,6 @@ public class UIUtils {
    *
    * @param itemModel The item model to check
    * @param rows      The rows of the inventory
-   *
    * @return If the slot is inside the inventory
    */
   public static boolean isInside(ItemModel itemModel, int rows) {
@@ -81,7 +79,6 @@ public class UIUtils {
    *
    * @param slot The slot to check
    * @param rows The rows of the inventory
-   *
    * @return If the slot is inside the inventory
    */
   public static boolean isInside(int slot, int rows) {
@@ -94,13 +91,12 @@ public class UIUtils {
    *
    * @param actionConfirm The action to do when the button is clicked
    * @param closeaction   The action to do when the button is clicked
-   *
    * @return The button with the pokemon data
    */
   public static GooeyPage confirmMenu(Consumer<ButtonAction> actionConfirm, Consumer<ButtonAction> closeaction) {
     ChestTemplate template = ChestTemplate.builder(3).build();
     GooeyButton fill = GooeyButton.builder()
-      .display(Utils.parseItemId(CobbleUtils.config.getFill())).build();
+      .display(ItemUtils.parseItemId(CobbleUtils.config.getFill())).build();
     template
       .fill(fill)
       .set(1, 2, getConfirmButton(actionConfirm))
@@ -120,9 +116,9 @@ public class UIUtils {
    * @param lore          The lore to replace
    * @param add           If add the default lore
    * @param actionpokemon The action to do when the button is clicked
-   *
    * @return The button with the pokemon data
    */
+  @Deprecated(forRemoval = true)
   public static GooeyButton createButtonPokemon(Pokemon pokemon, List<String> lore, boolean add,
                                                 Consumer<PokemonButtonAction> actionpokemon) {
     if (pokemon == null) {
@@ -150,9 +146,9 @@ public class UIUtils {
    * @param pokemon The pokemon to get the data
    * @param lore    The lore to replace
    * @param add     If add the default lore
-   *
    * @return The button with the pokemon data
    */
+  @Deprecated(forRemoval = true)
   public static List<String> lorepokemon(Pokemon pokemon, List<String> lore, boolean add) {
     List<String> finalLore = new ArrayList<>();
     if (add)
@@ -173,9 +169,9 @@ public class UIUtils {
    *
    * @param pokemon The pokemon to get the data
    * @param lore    The lore to replace
-   *
    * @return The button with the pokemon data
    */
+  @Deprecated(forRemoval = true)
   public static List<String> lorepokemon(Pokemon pokemon, List<String> lore) {
     List<String> finalLore = new ArrayList<>();
     lore.addAll(new ArrayList<>(CobbleUtils.language.getLorepokemon()));
@@ -194,9 +190,9 @@ public class UIUtils {
    * Create a button with the pokemon data
    *
    * @param pokemon The pokemon to get the data
-   *
    * @return The button with the pokemon data
    */
+  @Deprecated(forRemoval = true)
   public static List<String> lorepokemon(Pokemon pokemon) {
     List<String> lore = new ArrayList<>(CobbleUtils.language.getLorepokemon());
     List<String> finalLore = new ArrayList<>();
@@ -215,7 +211,6 @@ public class UIUtils {
    * Get the move name
    *
    * @param move The move to get the name
-   *
    * @return The move name
    */
   private static String move(Move move) {
@@ -230,7 +225,6 @@ public class UIUtils {
    *
    * @param command The command to execute
    * @param action  The action to do when the button is clicked
-   *
    * @return The button with the pokemon data
    */
   public static GooeyButton createButtonCommand(String command, Consumer<ButtonAction> action) {
@@ -257,7 +251,6 @@ public class UIUtils {
    *
    * @param itemStack The item to get the data
    * @param action    The action to do when the button is clicked
-   *
    * @return The button with the item data
    */
   public static GooeyButton createButtonItem(ItemStack itemStack, Consumer<ButtonAction> action) {
@@ -282,9 +275,7 @@ public class UIUtils {
    * @param actionpokemon The action to do when the button is clicked
    * @param closeaction   The action to do when the button is clicked
    * @param titlemenu     The title of the menu
-   *
    * @return The button with the item data
-   *
    * @throws ExecutionException   If the computation threw an exception
    * @throws InterruptedException If the current thread was interrupted
    */
@@ -326,9 +317,7 @@ public class UIUtils {
    * @param partyStore    The partyStore to get the data
    * @param actionpokemon The action to do when the button is clicked
    * @param titlemenu     The title of the menu
-   *
    * @return The button with the item data
-   *
    * @throws ExecutionException   If the computation threw an exception
    * @throws InterruptedException If the current thread was interrupted
    */
@@ -366,9 +355,7 @@ public class UIUtils {
    *
    * @param player        The player to get the data
    * @param actionpokemon The action to do when the button is clicked
-   *
    * @return The button with the item data
-   *
    * @throws ExecutionException   If the computation threw an exception
    * @throws InterruptedException If the current thread was interrupted
    */
@@ -402,7 +389,6 @@ public class UIUtils {
    *
    * @param itemModel The item model to get the button
    * @param linkType  The type of link
-   *
    * @return The linked page button
    */
   public static LinkedPageButton getLinkedPageButton(ItemModel itemModel, LinkType linkType) {
@@ -421,7 +407,6 @@ public class UIUtils {
    * @param itemModel The item model to get the button
    * @param linkType  The type of link
    * @param action    The action to do when the button is clicked
-   *
    * @return The linked page button
    */
   public static LinkedPageButton getLinkedPageButton(ItemModel itemModel, LinkType linkType,
@@ -437,7 +422,6 @@ public class UIUtils {
    * Get the close button
    *
    * @param action The action to do when the button is clicked
-   *
    * @return The close button
    */
   public static GooeyButton getCloseButton(Consumer<ButtonAction> action) {
@@ -455,7 +439,6 @@ public class UIUtils {
    * @param player        The player to get the data
    * @param actionpokemon The action to do when the button is clicked
    * @param closeaction   The action to do when the button is clicked
-   *
    * @return The pc button
    */
   public static GooeyButton getPcButton(ServerPlayerEntity player, Consumer<PokemonButtonAction> actionpokemon,
@@ -480,7 +463,6 @@ public class UIUtils {
    * Get the confirm button
    *
    * @param action The action to do when the button is clicked
-   *
    * @return The confirm button
    */
   public static GooeyButton getConfirmButton(Consumer<ButtonAction> action) {
@@ -498,7 +480,6 @@ public class UIUtils {
    *
    * @param pokemon       The pokemon to get the data
    * @param actionPokemon The action to do when the button is clicked
-   *
    * @return The confirm button
    */
   public static GooeyButton getConfirmButton(Pokemon pokemon, Consumer<PokemonButtonAction> actionPokemon) {
@@ -515,7 +496,6 @@ public class UIUtils {
    * Get the cancel button
    *
    * @param action The action to do when the button is clicked
-   *
    * @return The cancel button
    */
   public static GooeyButton getCancelButton(Consumer<ButtonAction> action) {
@@ -532,7 +512,6 @@ public class UIUtils {
    *
    * @param pokemon       The pokemon to get the data
    * @param actionPokemon The action to do when the button is clicked
-   *
    * @return The confirm button
    */
   public static GooeyButton getCancelButton(Pokemon pokemon, Consumer<PokemonButtonAction> actionPokemon) {
@@ -549,7 +528,6 @@ public class UIUtils {
    * Get the previous button
    *
    * @param action The action to do when the button is clicked
-   *
    * @return The previous button
    */
   public static LinkedPageButton getPreviousButton(Consumer<ButtonAction> action) {
@@ -564,7 +542,6 @@ public class UIUtils {
    * Get the next button
    *
    * @param action The action to do when the button is clicked
-   *
    * @return The next button
    */
   public static LinkedPageButton getNextButton(Consumer<ButtonAction> action) {
@@ -576,5 +553,9 @@ public class UIUtils {
       .onClick(action)
       .build();
   }
+
+  // =================================================================
+  //  NEW METHODS
+  // =================================================================
 
 }

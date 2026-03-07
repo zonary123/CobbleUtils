@@ -7,7 +7,6 @@ import com.kingpixel.cobbleutils.api.RewardsAPI;
 import com.kingpixel.cobbleutils.util.UtilsFile;
 import lombok.Data;
 
-import java.io.IOException;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
@@ -25,13 +24,8 @@ public class RewardsConfig {
     Path folder = CobbleUtils.getPathMod().resolve("rewards");
     if (folder.toFile().exists()) {
 
-      List<Path> files = null;
-      try {
-        files = UtilsFile.getAllJsonFiles(folder);
-      } catch (IOException e) {
-        e.printStackTrace();
-        files = List.of();
-      }
+      List<Path> files = UtilsFile.getAllJsonFiles(folder);
+
       for (Path f : files) {
         try {
           Reward reward = UtilsFile.read(f, Reward.class);
