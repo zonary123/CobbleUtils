@@ -3,6 +3,7 @@ package com.kingpixel.cobbleutils.database.users.models;
 import com.cobblemon.mod.common.Cobblemon;
 import com.cobblemon.mod.common.item.PokemonItem;
 import com.cobblemon.mod.common.pokemon.Pokemon;
+import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.util.AdventureTranslator;
 import com.kingpixel.cobbleutils.util.PokemonUtils;
 import lombok.Data;
@@ -48,7 +49,7 @@ public class StoragePokemon extends Storage {
 
   @Override
   public CompletableFuture<Boolean> giveToPlayer(ServerPlayerEntity player) {
-    return CompletableFuture.supplyAsync(() -> {
+    return CobbleUtils.server.submit(() -> {
       var party = Cobblemon.INSTANCE.getStorage().getParty(player);
       return party.add(pokemon);
     });

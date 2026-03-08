@@ -36,9 +36,9 @@ public class StorageItemStack extends Storage {
 
   @Override
   public CompletableFuture<Boolean> giveToPlayer(ServerPlayerEntity player) {
-    return CompletableFuture.supplyAsync(() -> {
+    return CobbleUtils.server.submit(() -> {
       if (player.getInventory().getEmptySlot() != -1) {
-        CobbleUtils.server.execute(() -> player.getInventory().offerOrDrop(itemStack.copy()));
+        player.getInventory().offerOrDrop(itemStack.copy());
         return true;
       }
       return false;

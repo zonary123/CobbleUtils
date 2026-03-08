@@ -103,8 +103,10 @@ public class StorageMenu {
           }
         }
 
-        invalidStorages.forEach(storageList::remove);
-        DataBaseFactory.dataBaseUsers.removeStorage(invalidStorages, targetUUID);
+        if (!invalidStorages.isEmpty()) {
+          invalidStorages.forEach(storageList::remove);
+          DataBaseFactory.dataBaseUsers.removeStorage(invalidStorages, targetUUID);
+        }
 
         claimAll.applyTemplate(template, claimAll.getButton(action -> {
           ServerPlayerEntity player = action.getPlayer();
@@ -150,11 +152,21 @@ public class StorageMenu {
   public static CompletableFuture<Boolean> removeStorage(ServerPlayerEntity player, Storage storage, UUID targetUUID) {
     return DataBaseFactory.dataBaseUsers.removeStorage(storage, targetUUID)
       .thenCompose(removed -> {
-        if (!removed) return CompletableFuture.completedFuture(false);
+        if (!removed) {
+          player.sendMessage(
+            AdventureTranslator.toNative("&cAn error occurred while claiming your reward. Please try again later."),
+            false
+          );
+          return CompletableFuture.completedFuture(false);
+        }
         return storage.giveToPlayer(player);
       })
       .exceptionally(throwable -> {
         throwable.printStackTrace();
+        player.sendMessage(
+          AdventureTranslator.toNative("&cAn error occurred while claiming your reward. Please try again later."),
+          false
+        );
         DataBaseFactory.dataBaseUsers.addStorage(storage, targetUUID);
         return false;
       });
