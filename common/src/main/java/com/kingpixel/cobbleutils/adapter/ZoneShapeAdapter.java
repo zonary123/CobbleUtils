@@ -25,11 +25,14 @@ public class ZoneShapeAdapter implements JsonDeserializer<ZoneShape>, JsonSerial
     if (clazz == null) {
       throw new JsonParseException("Unknown ZoneShape type: " + type);
     }
-    return context.deserialize(json, clazz);
+    ZoneShape shape = context.deserialize(json, clazz);
+    shape.fix();
+    return shape;
   }
 
   @Override
   public JsonElement serialize(ZoneShape src, Type typeOfSrc, JsonSerializationContext context) {
+    src.fix();
     return context.serialize(src, src.getClass());
   }
 }

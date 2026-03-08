@@ -17,6 +17,7 @@ import java.util.Set;
 @NoArgsConstructor
 @AllArgsConstructor
 public class EntityValidator {
+  private Set<String> blacklistEntityIds = new HashSet<>();
   private Set<String> entityIds = new HashSet<>(
     Set.of(
       "*",
@@ -26,6 +27,7 @@ public class EntityValidator {
   );
 
   public boolean isValid(@NonNull String entityId) {
+    if (ValidatorUtil.match(entityId, blacklistEntityIds)) return false;
     return ValidatorUtil.match(entityId, entityIds);
   }
 

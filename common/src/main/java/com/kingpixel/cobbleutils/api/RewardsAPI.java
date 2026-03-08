@@ -64,12 +64,17 @@ public class RewardsAPI {
   }
 
   public static CompletableFuture<Boolean> giveReward(UUID playerUUID, Reward reward) {
-    Reward rewardToGive = reward;
-    if (rewardToGive.getId() != null && !rewardToGive.getId().isEmpty()) {
-      rewardToGive = REWARDS_TEMPLATE.getOrDefault(reward.getId(), reward);
+    try {
+      Reward rewardToGive = reward;
+      if (rewardToGive.getId() != null && !rewardToGive.getId().isEmpty()) {
+        rewardToGive = REWARDS_TEMPLATE.getOrDefault(reward.getId(), reward);
+      }
+      ServerPlayerEntity player = CobbleUtils.server.getPlayerManager().getPlayer(playerUUID);
+      return player == null ? rewardToGive.giveToPlayerDisconnected(playerUUID) : rewardToGive.giveToPlayer(player);
+    } catch (Exception e) {
+      e.printStackTrace();
+      return CompletableFuture.completedFuture(false);
     }
-    ServerPlayerEntity player = CobbleUtils.server.getPlayerManager().getPlayer(playerUUID);
-    return player == null ? rewardToGive.giveToPlayerDisconnected(playerUUID) : rewardToGive.giveToPlayer(player);
   }
 
 

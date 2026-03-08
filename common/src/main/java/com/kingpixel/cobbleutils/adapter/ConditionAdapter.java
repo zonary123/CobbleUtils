@@ -56,6 +56,8 @@ public final class ConditionAdapter implements JsonDeserializer<Condition>, Json
 
   @Override
   public JsonElement serialize(Condition src, Type typeOfSrc, JsonSerializationContext context) {
-    return context.serialize(src, src.getClass());
+    JsonElement json = context.serialize(src, src.getClass());
+    json.getAsJsonObject().addProperty("type", src.getType());
+    return json;
   }
 }

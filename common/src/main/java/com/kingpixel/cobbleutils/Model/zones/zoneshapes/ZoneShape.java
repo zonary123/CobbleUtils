@@ -10,12 +10,13 @@ import org.jetbrains.annotations.Nullable;
 
 @Data
 public abstract class ZoneShape {
-
-  private final String type;
+  private String type;
 
   protected ZoneShape(String type) {
     this.type = type;
   }
+
+  public abstract void fix();
 
   /**
    * Checks if a position is inside the shape.

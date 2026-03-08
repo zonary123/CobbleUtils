@@ -149,64 +149,68 @@ public class Reward {
 
   public CompletableFuture<Boolean> giveToPlayer(@NonNull ServerPlayerEntity player) {
     return CobbleUtils.ASYNC.supply(() -> {
-      String[] allRewards = reward.split("\\|");
-      for (String singleReward : allRewards) {
-        try {
-          singleReward = singleReward.trim();
-          if (singleReward.isEmpty()) continue;
+        String[] allRewards = reward.split("\\|");
+        for (String singleReward : allRewards) {
+          try {
+            singleReward = singleReward.trim();
+            if (singleReward.isEmpty()) continue;
 
-          String[] rewardParts = singleReward.split(":", 2);
-          if (rewardParts.length < 2) {
+            String[] rewardParts = singleReward.split(":", 2);
+            if (rewardParts.length < 2) {
+              player.sendMessage(
+                Text.literal("Invalid reward format: " + singleReward)
+              );
+              continue;
+            }
+
+            String type = rewardParts[0];
+            String data = rewardParts[1];
+
+            RewardExecutor executor = RewardRegistry.getRewardExecutor(type);
+            if (executor == null) {
+              player.sendMessage(
+                Text.literal(
+                  "Unknown reward type: " + type + " for reward: " + singleReward
+                )
+              );
+              continue;
+            }
+
+            String finalSingleReward = singleReward;
+            executor.execute(player, this, data)
+              .whenCompleteAsync((success, throwable) -> {
+                if (throwable != null) {
+                  throwable.printStackTrace();
+                }
+
+                if (throwable != null || Boolean.FALSE.equals(success)) {
+                  final Reward finalReward = Reward.builder()
+                    .reward(finalSingleReward)
+                    .build();
+
+                  DataBaseFactory.dataBaseUsers.addStorage(
+                    StorageRewards.builder()
+                      .reward(finalReward)
+                      .build(),
+                    player.getUuid()
+                  );
+                }
+              });
+
+
+          } catch (Exception e) {
+            e.printStackTrace();
             player.sendMessage(
-              Text.literal("Invalid reward format: " + singleReward)
+              Text.literal("Error giving reward: " + singleReward)
             );
-            continue;
           }
-
-          String type = rewardParts[0];
-          String data = rewardParts[1];
-
-          RewardExecutor executor = RewardRegistry.getRewardExecutor(type);
-          if (executor == null) {
-            player.sendMessage(
-              Text.literal(
-                "Unknown reward type: " + type + " for reward: " + singleReward
-              )
-            );
-            continue;
-          }
-
-          String finalSingleReward = singleReward;
-          executor.execute(player, this, data)
-            .whenCompleteAsync((success, throwable) -> {
-              if (throwable != null) {
-                throwable.printStackTrace();
-              }
-
-              if (throwable != null || Boolean.FALSE.equals(success)) {
-                final Reward finalReward = Reward.builder()
-                  .reward(finalSingleReward)
-                  .build();
-
-                DataBaseFactory.dataBaseUsers.addStorage(
-                  StorageRewards.builder()
-                    .reward(finalReward)
-                    .build(),
-                  player.getUuid()
-                );
-              }
-            });
-
-
-        } catch (Exception e) {
-          e.printStackTrace();
-          player.sendMessage(
-            Text.literal("Error giving reward: " + singleReward)
-          );
         }
-      }
-      return true;
-    });
+        return true;
+      })
+      .exceptionally(throwable -> {
+        throwable.printStackTrace();
+        return false;
+      });
   }
 
 

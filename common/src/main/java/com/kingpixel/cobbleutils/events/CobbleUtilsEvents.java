@@ -56,7 +56,6 @@ public class CobbleUtilsEvents {
   public static void register() {
     PlayerEvent.CRAFT_ITEM.register((player, itemStack, inventory) -> {
       if (CRAFTING_EVENT.isEmpty()) return;
-      if (CRAFTING_BLACKLIST.contains(itemStack.getItem().toString())) return;
       CRAFTING_EVENT.emit(EventItemStack.builder()
         .itemStack(itemStack)
         .player((ServerPlayerEntity) player)

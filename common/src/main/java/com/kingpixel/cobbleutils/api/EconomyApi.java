@@ -18,6 +18,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * @author Carlos Varas Alonso - 05/11/2024 23:58
@@ -25,7 +26,6 @@ import java.util.concurrent.ConcurrentHashMap;
 @Data
 public class EconomyApi {
   private static final Map<String, Economy> ECONOMIES = new ConcurrentHashMap<>();
-  private static Economy DEFAULT_ECONOMY;
 
   public synchronized static void loadEconomies() {
     if (!ECONOMIES.isEmpty()) return;
@@ -221,6 +221,8 @@ public class EconomyApi {
   /* New Methods                                                                */
   /* -------------------------------------------------------------------------- */
 
+  private static final AtomicReference<Economy> DEFAULT_ECONOMY_REF = new AtomicReference<>();
+
   public static void registerEconomy(@Nonnull @UnknownNullability Economy economy) {
     String economyId = economy.getIdentify();
     try {
@@ -228,6 +230,7 @@ public class EconomyApi {
         CobbleUtils.LOGGER.warn("Economy with ID '%s' is already registered.".formatted(economyId));
         return;
       }
+
       UUID testPlayer = UUID.randomUUID();
       String currencyId = "";
 
@@ -235,8 +238,9 @@ public class EconomyApi {
         .whenComplete((result, ex) -> {
           if (ex == null) {
             CobbleUtils.LOGGER.warn("Economy '%s' registered successfully.".formatted(economyId));
-            if (DEFAULT_ECONOMY == null) {
-              DEFAULT_ECONOMY = economy;
+
+            // Solo asigna si DEFAULT_ECONOMY es null
+            if (DEFAULT_ECONOMY_REF.compareAndSet(null, economy)) {
               CobbleUtils.LOGGER.warn("Economy '%s' set as default economy.".formatted(economyId));
             }
           } else {
@@ -250,9 +254,9 @@ public class EconomyApi {
 
   @Nullable
   public static Economy getEconomy(@Nonnull String economyId) {
-    if (ECONOMIES.size() == 1) return DEFAULT_ECONOMY;
+    if (ECONOMIES.size() == 1) return DEFAULT_ECONOMY_REF.get();
     Economy economy = ECONOMIES.get(economyId);
-    if (economy == null) economy = DEFAULT_ECONOMY;
+    if (economy == null) economy = DEFAULT_ECONOMY_REF.get();
     return economy;
   }
 
@@ -292,5 +296,5 @@ public class EconomyApi {
   public static CompletableFuture<EconomyTransferResult> transfer(@Nonnull UUID fromPlayerId, @Nonnull UUID toPlayerId, @Nonnull BigDecimal amount, @Nonnull String reason, @Nonnull EconomySelector selector) {
     return selector.transfer(fromPlayerId, toPlayerId, amount, reason);
   }
-  
+
 }

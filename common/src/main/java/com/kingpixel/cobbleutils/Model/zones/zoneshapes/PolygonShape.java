@@ -13,35 +13,23 @@ public class PolygonShape extends ZoneShape {
 
   public static final String TYPE = "POLYGON";
 
-  private static final int PARTICLE_TICK_INTERVAL = 4;
-  private static final int VERTICAL_SPACING = 3;
   private static final double HORIZONTAL_SPACING = 1.5;
+  private static final int VERTICAL_SPACING = 3;
   private static final double MAX_RENDER_DISTANCE = 128.0;
 
-  private final List<Point2D> points;
-  private final int minY;
-  private final int maxY;
-
-  // 🔥 Centro cacheado
-  private final double centerX;
-  private final double centerZ;
+  private List<Point2D> points;
+  private int minY;
+  private int maxY;
 
   public PolygonShape() {
     super(TYPE);
-
     this.points = List.of(
       new Point2D(0, 0),
       new Point2D(5, 0),
       new Point2D(5, 5)
     );
-
     this.minY = 0;
     this.maxY = 255;
-
-    // Cache center
-    double[] center = computeCenter();
-    this.centerX = center[0];
-    this.centerZ = center[1];
   }
 
   public PolygonShape(List<Point2D> points, int minY, int maxY) {
@@ -54,41 +42,24 @@ public class PolygonShape extends ZoneShape {
     this.points = List.copyOf(points);
     this.minY = Math.min(minY, maxY);
     this.maxY = Math.max(minY, maxY);
-
-    // Cache center una sola vez
-    double[] center = computeCenter();
-    this.centerX = center[0];
-    this.centerZ = center[1];
   }
 
-  // =========================
-  // Centro calculado una vez
-  // =========================
-  private double[] computeCenter() {
-
-    double sumX = 0;
-    double sumZ = 0;
-
-    for (Point2D p : points) {
-      sumX += p.x();
-      sumZ += p.z();
+  @Override
+  public void fix() {
+    if (points == null || points.size() < 3) {
+      throw new IllegalStateException("PolygonShape must have at least 3 points.");
     }
 
-    double size = points.size();
-
-    return new double[]{
-      sumX / size,
-      sumZ / size
-    };
+    if (minY > maxY) {
+      int temp = minY;
+      minY = maxY;
+      maxY = temp;
+    }
   }
 
-  // =========================
-  // Containment (sin cambios)
-  // =========================
   @Override
   public boolean contains(BlockPos pos) {
-
-    if (pos == null) return false;
+    if (pos == null || points == null) return false;
 
     int x = pos.getX();
     int y = pos.getY();
@@ -104,15 +75,11 @@ public class PolygonShape extends ZoneShape {
       Point2D pi = points.get(i);
       Point2D pj = points.get(j);
 
-      int xi = pi.x();
-      int zi = pi.z();
-      int xj = pj.x();
-      int zj = pj.z();
-
-      if ((zi > z) != (zj > z)) {
+      if ((pi.z() > z) != (pj.z() > z)) {
 
         double intersectionX =
-          xi + (double) (xj - xi) * (z - zi) / (double) (zj - zi);
+          pi.x() + (double) (pj.x() - pi.x()) *
+            (z - pi.z()) / (double) (pj.z() - pi.z());
 
         if (x < intersectionX) {
           inside = !inside;
@@ -123,43 +90,37 @@ public class PolygonShape extends ZoneShape {
     return inside;
   }
 
-  // =========================
-  // Render optimizado
-  // =========================
   @Override
   public void spawnParticles(ServerWorld world,
                              @Nullable ServerPlayerEntity player) {
 
-    if (world == null || points.isEmpty()) return;
+    if (world == null || points == null) return;
 
-    // 🔥 Throttling
-    if (world.getTime() % PARTICLE_TICK_INTERVAL != 0) return;
-
-    // 🔥 LOD por distancia
     if (player != null) {
+      double centerX = points.stream().mapToDouble(Point2D::x).average().orElse(0);
+      double centerZ = points.stream().mapToDouble(Point2D::z).average().orElse(0);
       double midY = (minY + maxY) / 2.0;
 
       if (player.squaredDistanceTo(centerX, midY, centerZ)
-        > MAX_RENDER_DISTANCE * MAX_RENDER_DISTANCE)
+        > MAX_RENDER_DISTANCE * MAX_RENDER_DISTANCE) {
         return;
+      }
     }
 
-    drawTopOutline(world, player);
+    drawOutline(world, player, maxY);
     drawWalls(world, player);
   }
 
-  // =========================
-  // Contorno superior
-  // =========================
-  private void drawTopOutline(ServerWorld world,
-                              @Nullable ServerPlayerEntity player) {
+  private void drawOutline(ServerWorld world,
+                           @Nullable ServerPlayerEntity player,
+                           int y) {
 
     for (int i = 0; i < points.size(); i++) {
 
       Point2D p1 = points.get(i);
       Point2D p2 = points.get((i + 1) % points.size());
 
-      drawSegment(world, player, p1, p2, maxY);
+      drawSegment(world, player, p1, p2, y);
     }
   }
 
@@ -179,16 +140,14 @@ public class PolygonShape extends ZoneShape {
 
       double t = (double) s / steps;
 
-      double x = p1.x() + dx * t;
-      double z = p1.z() + dz * t;
-
-      spawn(world, player, x, y, z, ParticleTypes.HAPPY_VILLAGER);
+      spawn(world, player,
+        p1.x() + dx * t,
+        y,
+        p1.z() + dz * t,
+        ParticleTypes.HAPPY_VILLAGER);
     }
   }
 
-  // =========================
-  // Paredes verticales
-  // =========================
   private void drawWalls(ServerWorld world,
                          @Nullable ServerPlayerEntity player) {
 

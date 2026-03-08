@@ -22,6 +22,7 @@ import net.minecraft.item.Items;
 import net.minecraft.text.Text;
 
 import java.math.BigDecimal;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -57,7 +58,6 @@ public class RewardRegistry {
       throw new IllegalArgumentException("Money reward data is null or empty");
     }
 
-    // Remove prefix if exists
     if (data.toLowerCase().startsWith("money:")) {
       data = data.substring("money:".length());
     }
@@ -75,37 +75,42 @@ public class RewardRegistry {
 
     } else if (parts.length == 2) {
 
-      if (isNumeric(parts[0]) || parts[0].contains("-")) {
-        // money:<amount>
+      if (isAmount(parts[0])) {
         amountPart = parts[0];
       } else {
-        // money:<currency>:<amount>
         currency = parts[0];
         amountPart = parts[1];
       }
 
     } else {
 
-      // money:<amount>:<economy>:<currency>:<reason>
-      if (isNumeric(parts[0]) || parts[0].contains("-")) {
+      if (isAmount(parts[0])) {
 
+        // money:<amount>:<economy>:<currency>:<reason>
         amountPart = parts[0];
-        economy = parts.length > 1 ? parts[1] : "";
-        currency = parts.length > 2 ? parts[2] : "";
+        economy = parts[1];
+        currency = parts[2];
+
+        if (parts.length > 3) {
+          reason = String.join(":", Arrays.copyOfRange(parts, 3, parts.length));
+        }
 
       } else {
 
         // money:<currency>:<amount>:<economy>:<reason>
         currency = parts[0];
-        amountPart = parts.length > 1 ? parts[1] : null;
+        amountPart = parts[1];
 
         if (amountPart == null) {
           throw new IllegalArgumentException("Invalid money format: " + data);
         }
 
-        economy = parts[2];
+        economy = parts.length > 2 ? parts[2] : "";
+
+        if (parts.length > 3) {
+          reason = String.join(":", Arrays.copyOfRange(parts, 3, parts.length));
+        }
       }
-      reason = parts.length > 3 ? parts[3] : null;
     }
 
     if (amountPart == null || amountPart.isBlank()) {
@@ -117,13 +122,9 @@ public class RewardRegistry {
 
     try {
 
-      if (amountPart.contains("-")) {
+      if (isRange(amountPart)) {
 
         String[] range = amountPart.split("-", 2);
-
-        if (range.length != 2) {
-          throw new IllegalArgumentException("Invalid range format: " + amountPart);
-        }
 
         min = Double.parseDouble(range[0]);
         max = Double.parseDouble(range[1]);
@@ -150,7 +151,7 @@ public class RewardRegistry {
       : ThreadLocalRandom.current().nextDouble(min, max);
 
     if (reason == null || reason.isBlank()) {
-      reason = "Money Reward: " + finalAmount;
+      reason = "Money Reward: " + String.format("%.2f", finalAmount);
     }
 
     return MoneyRewardData.builder()
@@ -172,6 +173,14 @@ public class RewardRegistry {
     } catch (NumberFormatException e) {
       return false;
     }
+  }
+
+  private static boolean isRange(String value) {
+    return value.matches("-?\\d+(\\.\\d+)?-\\-?\\d+(\\.\\d+)?");
+  }
+
+  private static boolean isAmount(String value) {
+    return isNumeric(value) || isRange(value);
   }
 
   @Data
@@ -268,7 +277,10 @@ public class RewardRegistry {
     EXECUTORS.put("money", (player, reward, data) -> {
       try {
         MoneyRewardData moneyData = parseMoneyRewardData(data);
-        if (moneyData == null) return CompletableFuture.completedFuture(false);
+        if (moneyData == null) {
+          player.sendMessage(Text.literal("Invalid money reward data: " + data));
+          return CompletableFuture.completedFuture(false);
+        }
         double finalAmount = moneyData.getFinalAmount();
         return moneyData.getEconomySelector()
           .deposit(player.getUuid(), BigDecimal.valueOf(finalAmount), moneyData.getReason().replace("%money%", finalAmount + ""))

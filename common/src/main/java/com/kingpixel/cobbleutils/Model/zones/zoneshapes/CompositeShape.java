@@ -26,6 +26,13 @@ public class CompositeShape extends ZoneShape {
   }
 
   @Override
+  public void fix() {
+    for (ZoneShape shape : shapes) {
+      shape.fix();
+    }
+  }
+
+  @Override
   public boolean contains(BlockPos pos) {
 
     for (ZoneShape shape : shapes) {

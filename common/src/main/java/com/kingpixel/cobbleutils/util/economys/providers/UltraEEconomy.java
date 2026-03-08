@@ -115,7 +115,6 @@ public class UltraEEconomy extends Economy {
         BigDecimal after = UltraEconomyApi.getBalance(playerId, currencyId);
 
         return EconomyResult.success(before, after, amount, reason);
-
       } catch (Exception e) {
         return EconomyResult.failure(
           EconomyStatus.ERROR,

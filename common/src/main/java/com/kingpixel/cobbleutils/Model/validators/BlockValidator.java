@@ -22,6 +22,7 @@ import java.util.stream.Collectors;
 @NoArgsConstructor
 @AllArgsConstructor
 public class BlockValidator {
+  private Set<String> blacklistBlockIds = new HashSet<>();
   private Set<String> blockIds = new HashSet<>(Set.of(
     "*",
     "regex:.*",
@@ -47,6 +48,7 @@ public class BlockValidator {
    * @return True if the block ID is valid, false otherwise.
    */
   public boolean isValid(@NonNull String blockId) {
+    if (ValidatorUtil.match(blockId, blacklistBlockIds)) return false;
     return ValidatorUtil.match(blockId, blockIds);
   }
 
