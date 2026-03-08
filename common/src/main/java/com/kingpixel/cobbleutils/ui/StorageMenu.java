@@ -159,16 +159,31 @@ public class StorageMenu {
           );
           return CompletableFuture.completedFuture(false);
         }
-        return storage.giveToPlayer(player);
+        return storage.giveToPlayer(player)
+          .thenCompose(given -> {
+            if (given) return CompletableFuture.completedFuture(true);
+            return DataBaseFactory.dataBaseUsers.addStorage(storage, targetUUID)
+              .thenApply(restored -> {
+                player.sendMessage(
+                  AdventureTranslator.toNative("&cYour reward could not be delivered. Please try again."),
+                  false
+                );
+                return false;
+              });
+          });
       })
-      .exceptionally(throwable -> {
-        throwable.printStackTrace();
-        player.sendMessage(
-          AdventureTranslator.toNative("&cAn error occurred while claiming your reward. Please try again later."),
-          false
-        );
-        DataBaseFactory.dataBaseUsers.addStorage(storage, targetUUID);
-        return false;
+      .handle((result, throwable) -> {
+        if (throwable != null) {
+          throwable.printStackTrace();
+
+          DataBaseFactory.dataBaseUsers.addStorage(storage, targetUUID);
+          player.sendMessage(
+            AdventureTranslator.toNative("&cAn unexpected error occurred while claiming your reward."),
+            false
+          );
+          return false;
+        }
+        return result;
       });
   }
 }
