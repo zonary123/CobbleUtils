@@ -36,15 +36,10 @@ public class UserModel {
   private transient AtomicBoolean dirty = new AtomicBoolean(false);
 
   public UserModel(ServerPlayerEntity player) {
-    this.playerUUID = player.getUuid();
+    var gameProfile = player.getGameProfile();
+    this.playerName = gameProfile.getName();
+    this.playerUUID = gameProfile.getId();
     connect(player);
-  }
-
-  public UserModel(UUID uuid, String playerName) {
-    this.playerUUID = uuid;
-    this.playerName = playerName;
-    this.lastLogin = null;
-    this.ip = null;
   }
 
   public UserModel() {
@@ -55,7 +50,9 @@ public class UserModel {
   }
 
   public void connect(ServerPlayerEntity player) {
-    this.playerName = player.getGameProfile().getName();
+    var gameProfile = player.getGameProfile();
+    this.playerUUID = gameProfile.getId();
+    this.playerName = gameProfile.getName();
     this.lastLogin = Instant.now();
     this.ip = player.getIp();
     this.online = true;
@@ -119,12 +116,13 @@ public class UserModel {
   }
 
   public void fix(ServerPlayerEntity player) {
-    if (playerUUID == null) {
+    var gameProfile = player.getGameProfile();
+    if (playerUUID == null || !playerUUID.equals(gameProfile.getId())) {
       this.playerUUID = player.getUuid();
       markDirty();
     }
-    if (playerName == null || !playerName.equals(player.getGameProfile().getName())) {
-      this.playerName = player.getGameProfile().getName();
+    if (playerName == null || !playerName.equals(gameProfile.getName())) {
+      this.playerName = gameProfile.getName();
       markDirty();
     }
     if (rewardsClaimed == null) {

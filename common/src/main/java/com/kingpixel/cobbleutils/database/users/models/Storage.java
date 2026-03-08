@@ -21,10 +21,9 @@ import java.util.concurrent.TimeUnit;
  */
 @Data
 public abstract class Storage {
-  private UUID id;
+  protected UUID id = UUID.randomUUID();
 
   protected Storage() {
-    this.id = UUID.randomUUID();
   }
 
   protected Storage(UUID id) {

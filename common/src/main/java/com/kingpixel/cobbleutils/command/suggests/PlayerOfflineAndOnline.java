@@ -161,19 +161,11 @@ public class PlayerOfflineAndOnline {
    * Obtiene un jugador offline desde su nombre (de caché o DB).
    */
   public Optional<UserModel> getUserFromName(String playerName) {
-    // Primero buscamos en la caché
-    int index = playerNames.indexOf(playerName);
-    if (index >= 0 && index < playerUUIDs.size()) {
-      return Optional.of(new UserModel(playerUUIDs.get(index), playerName));
-    }
-
-    // Si no está en caché, lo pedimos directamente a la DB
     try {
       UserModel user = DataBaseFactory.dataBaseUsers.findUserModel(playerName).join();
       return Optional.ofNullable(user);
     } catch (Exception ex) {
       CobbleUtils.LOGGER.error("Error fetching user by name: " + playerName);
-
       return Optional.empty();
     }
   }
