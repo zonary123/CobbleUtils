@@ -5,6 +5,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import net.minecraft.item.ItemStack;
 import net.minecraft.server.network.ServerPlayerEntity;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -35,7 +36,7 @@ public class StorageItemStack extends Storage {
   }
 
   @Override
-  public CompletableFuture<Boolean> giveToPlayer(ServerPlayerEntity player) {
+  public CompletableFuture<Boolean> giveToPlayer(@NotNull ServerPlayerEntity player) {
     return CobbleUtils.server.submit(() -> {
       if (player.getInventory().getEmptySlot() != -1) {
         player.getInventory().offerOrDrop(itemStack.copy());

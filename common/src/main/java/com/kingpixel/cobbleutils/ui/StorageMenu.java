@@ -16,6 +16,7 @@ import com.kingpixel.cobbleutils.database.users.models.Storage;
 import com.kingpixel.cobbleutils.util.AdventureTranslator;
 import lombok.Data;
 import net.minecraft.server.network.ServerPlayerEntity;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -96,7 +97,7 @@ public class StorageMenu {
 
         for (Storage storage : storageList) {
           try {
-            buttons.add(storage.getButton(targetUUID));
+            buttons.add(storage.getButton(executor, targetUUID));
           } catch (Exception e) {
             e.printStackTrace();
             invalidStorages.add(storage);
@@ -108,31 +109,26 @@ public class StorageMenu {
           DataBaseFactory.dataBaseUsers.removeStorage(invalidStorages, targetUUID);
         }
 
-        claimAll.applyTemplate(template, claimAll.getButton(action -> {
-          ServerPlayerEntity player = action.getPlayer();
-          UIManager.closeUI(player);
+        claimAll.applyTemplate(template, claimAll.getButton(action -> DataBaseFactory.dataBaseUsers.findUserStorage(targetUUID)
+          .thenAccept(storages -> {
+            if (storages == null || storages.isEmpty()) {
+              CobbleUtils.server.execute(() ->
+                executor.sendMessage(
+                  AdventureTranslator.toNative("&cYou don't have any pending rewards to claim."),
+                  false
+                )
+              );
+              return;
+            }
 
-          DataBaseFactory.dataBaseUsers.findUserStorage(targetUUID)
-            .thenAccept(storages -> {
-              if (storages == null || storages.isEmpty()) {
-                CobbleUtils.server.execute(() ->
-                  player.sendMessage(
-                    AdventureTranslator.toNative("&cYou don't have any pending rewards to claim."),
-                    false
-                  )
-                );
-                return;
-              }
+            List<CompletableFuture<Boolean>> futures = new ArrayList<>();
+            for (Storage storage : storages) {
+              futures.add(removeStorage(executor, storage, targetUUID));
+            }
 
-              List<CompletableFuture<Boolean>> futures = new ArrayList<>();
-              for (Storage storage : storages) {
-                futures.add(removeStorage(player, storage, targetUUID));
-              }
-
-              CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
-                .thenRun(() -> CobbleUtils.language.getStorageMenu().open(player, targetUUID));
-            });
-        }, 1, TimeUnit.MINUTES, 1));
+            CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
+              .thenRun(() -> CobbleUtils.language.getStorageMenu().open(executor, targetUUID));
+          }), 1, TimeUnit.MINUTES, 1));
 
         previousPage.applyTemplate(template, previousPage.getLinkedPageButton(LinkType.Previous));
         nextPage.applyTemplate(template, nextPage.getLinkedPageButton(LinkType.Next));
@@ -149,7 +145,7 @@ public class StorageMenu {
       });
   }
 
-  public static CompletableFuture<Boolean> removeStorage(ServerPlayerEntity player, Storage storage, UUID targetUUID) {
+  public static CompletableFuture<Boolean> removeStorage(@NotNull ServerPlayerEntity player, Storage storage, UUID targetUUID) {
     return DataBaseFactory.dataBaseUsers.removeStorage(storage, targetUUID)
       .thenCompose(removed -> {
         if (!removed) {

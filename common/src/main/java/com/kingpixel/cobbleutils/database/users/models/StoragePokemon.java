@@ -12,6 +12,7 @@ import net.minecraft.component.DataComponentTypes;
 import net.minecraft.component.type.LoreComponent;
 import net.minecraft.item.ItemStack;
 import net.minecraft.server.network.ServerPlayerEntity;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -48,7 +49,7 @@ public class StoragePokemon extends Storage {
   }
 
   @Override
-  public CompletableFuture<Boolean> giveToPlayer(ServerPlayerEntity player) {
+  public CompletableFuture<Boolean> giveToPlayer(@NotNull ServerPlayerEntity player) {
     return CobbleUtils.server.submit(() -> {
       var party = Cobblemon.INSTANCE.getStorage().getParty(player);
       return party.add(pokemon);

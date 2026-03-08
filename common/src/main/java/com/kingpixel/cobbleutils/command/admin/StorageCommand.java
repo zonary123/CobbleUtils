@@ -228,7 +228,7 @@ public class StorageCommand {
               CommandManager.argument(ARG_PLAYER, EntityArgumentType.player())
                 .executes(context -> {
                   ServerPlayerEntity target = EntityArgumentType.getPlayer(context, ARG_PLAYER);
-                  CobbleUtils.language.getStorageMenu().open(target, target.getUuid());
+                  CobbleUtils.language.getStorageMenu().open(target, target.getGameProfile().getId());
                   sendFeedback(context.getSource(), "📦 Opened storage for " + target.getName().getString() + ".");
                   return 1;
                 })

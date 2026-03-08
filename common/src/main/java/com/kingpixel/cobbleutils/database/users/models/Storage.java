@@ -10,6 +10,7 @@ import lombok.Data;
 import net.minecraft.item.ItemStack;
 import net.minecraft.server.network.ServerPlayerEntity;
 import org.bson.Document;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -32,17 +33,14 @@ public abstract class Storage {
 
   public abstract ItemStack getDisplay();
 
-  public abstract CompletableFuture<Boolean> giveToPlayer(ServerPlayerEntity playerEntity);
+  public abstract CompletableFuture<Boolean> giveToPlayer(@NotNull ServerPlayerEntity playerEntity);
 
-  public RateLimitedButton getButton(UUID targetUUID) {
+  public RateLimitedButton getButton(ServerPlayerEntity player, UUID targetUUID) {
     return RateLimitedButton.builder()
       .button(GooeyButton.builder()
         .display(getDisplay())
-        .onClick(action -> {
-          ServerPlayerEntity player = action.getPlayer();
-          StorageMenu.removeStorage(player, this, targetUUID)
-            .whenComplete((success, throwable) -> CobbleUtils.language.getStorageMenu().open(player, targetUUID));
-        })
+        .onClick(action -> StorageMenu.removeStorage(player, this, targetUUID)
+          .whenComplete((success, throwable) -> CobbleUtils.language.getStorageMenu().open(player, targetUUID)))
         .build())
       .interval(1, TimeUnit.SECONDS)
       .limit(1)

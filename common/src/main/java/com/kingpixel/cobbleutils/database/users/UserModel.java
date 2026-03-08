@@ -119,6 +119,14 @@ public class UserModel {
   }
 
   public void fix(ServerPlayerEntity player) {
+    if (playerUUID == null) {
+      this.playerUUID = player.getUuid();
+      markDirty();
+    }
+    if (playerName == null || !playerName.equals(player.getGameProfile().getName())) {
+      this.playerName = player.getGameProfile().getName();
+      markDirty();
+    }
     if (rewardsClaimed == null) {
       rewardsClaimed = new HashMap<>();
       markDirty();

@@ -186,19 +186,30 @@ public class PlayerOfflineAndOnline {
   /**
    * Obtiene el UUID de un jugador (online u offline) a partir de su nombre.
    */
+  private static final UUID NIL_UUID = new UUID(0L, 0L);
+
   public @Nullable UUID getPlayerUUIDWithName(String playerName) {
     UserCache userCache = CobbleUtils.server.getUserCache();
-    UUID uuid;
+    UUID uuid = null;
+
     if (userCache != null) {
       var optional = userCache.findByName(playerName);
-      uuid = optional.map(GameProfile::getId).orElse(null);
-    } else {
+      if (optional.isPresent()) {
+        uuid = optional.get().getId();
+      }
+    }
+
+    if (uuid != null && uuid.equals(NIL_UUID)) {
       uuid = null;
     }
+
     if (uuid == null) {
       var userModel = DataBaseFactory.dataBaseUsers.findUserModel(playerName).join();
-      uuid = userModel != null ? userModel.getPlayerUUID() : null;
+      if (userModel != null) {
+        uuid = userModel.getPlayerUUID();
+      }
     }
+
     return uuid;
   }
 

@@ -5,6 +5,7 @@ import com.kingpixel.cobbleutils.Model.rewards.Reward;
 import lombok.*;
 import net.minecraft.item.ItemStack;
 import net.minecraft.server.network.ServerPlayerEntity;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -52,7 +53,7 @@ public class StorageRewards extends Storage {
   }
 
   @Override
-  public CompletableFuture<Boolean> giveToPlayer(ServerPlayerEntity player) {
+  public CompletableFuture<Boolean> giveToPlayer(@NotNull ServerPlayerEntity player) {
     return reward.giveToPlayer(player);
   }
 
