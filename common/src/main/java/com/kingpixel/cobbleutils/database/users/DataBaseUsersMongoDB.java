@@ -109,11 +109,10 @@ public class DataBaseUsersMongoDB extends DataBaseUsers {
 
   @Override
   public boolean isAvailableReward(ServerPlayerEntity player, ItemChance itemChance) {
-    UserModel userModel = getUserModel(player.getUuid());
-    if (userModel == null) return false;
-    return userModel.isAvailableReward(itemChance);
+    return isAvailableReward(player.getUuid(), itemChance.toReward()).join();
   }
 
+  @Override
   public CompletableFuture<Boolean> isAvailableReward(UUID playerUUID, Reward reward) {
     if (reward == null) {
       return CompletableFuture.completedFuture(true);
@@ -206,65 +205,109 @@ public class DataBaseUsersMongoDB extends DataBaseUsers {
     });
   }
 
-
   @Override
   public CompletableFuture<Boolean> addStorage(Storage storage, UUID targetUUID) {
     final String uuidStr = targetUUID.toString();
+
     return CobbleUtils.ASYNC.supply(() -> {
       Document filter = new Document(KEY_PLAYER_UUID, uuidStr);
-      Document update = new Document("$addToSet", new Document(KEY_STORAGE_LIST, storage.toDocument()));
-      var result = collectionUser.updateOne(filter, update);
-      return result.getModifiedCount() > 0;
+
+      Document update = new Document(
+        "$addToSet",
+        new Document(
+          KEY_STORAGE_LIST,
+          storage.toDocument()
+        )
+      );
+      collectionUser.updateOne(filter, update);
+      return true;
+    }).exceptionally(ex -> {
+      ex.printStackTrace();
+      return false;
     });
   }
 
   @Override
-  public CompletableFuture<Boolean> addStorage(List<Storage> storage, UUID targetUUID) {
+  public CompletableFuture<Boolean> addStorage(List<Storage> storageList, UUID targetUUID) {
     final String uuidStr = targetUUID.toString();
+
     return CobbleUtils.ASYNC.supply(() -> {
-        Document filter = new Document(KEY_PLAYER_UUID, uuidStr);
-        List<Document> storageDocs = storage.stream()
-          .map(Storage::toDocument)
-          .toList();
-        Document update = new Document("$addToSet", new Document(KEY_STORAGE_LIST, new Document("$each", storageDocs)));
-        var result = collectionUser.updateOne(filter, update);
-        return result.getModifiedCount() > 0;
-      })
-      .exceptionally(ex -> {
-        ex.printStackTrace();
-        return false;
-      });
+      Document filter = new Document(KEY_PLAYER_UUID, uuidStr);
+
+      List<Document> storageDocs = storageList.stream()
+        .map(Storage::toDocument)
+        .toList();
+
+      Document update = new Document(
+        "$addToSet",
+        new Document(
+          KEY_STORAGE_LIST,
+          new Document("$each", storageDocs)
+        )
+      );
+
+      collectionUser.updateOne(filter, update);
+      return true;
+
+    }).exceptionally(ex -> {
+      ex.printStackTrace();
+      return false;
+    });
   }
 
   @Override
   public CompletableFuture<Boolean> removeStorage(Storage storage, UUID targetUUID) {
     final String uuidStr = targetUUID.toString();
-    final String storageIdStr = storage.getId().toString();
+    final String storageId = storage.getId().toString();
 
     return CobbleUtils.ASYNC.supply(() -> {
-        Document filter = new Document(KEY_PLAYER_UUID, uuidStr);
-        Document update = new Document("$pull", new Document(KEY_STORAGE_LIST, new Document("id", storageIdStr)));
-        var result = collectionUser.updateOne(filter, update);
-        return result.getModifiedCount() > 0;
-      })
-      .exceptionally(ex -> {
-        ex.printStackTrace();
-        return false;
-      });
+      Document filter = new Document(KEY_PLAYER_UUID, uuidStr);
+
+      Document update = new Document(
+        "$pull",
+        new Document(
+          KEY_STORAGE_LIST,
+          new Document("id", storageId)
+        )
+      );
+
+      collectionUser.updateOne(filter, update);
+      return true;
+
+    }).exceptionally(ex -> {
+      ex.printStackTrace();
+      return false;
+    });
   }
 
   @Override
   public CompletableFuture<Boolean> removeStorage(List<Storage> storageList, UUID targetUUID) {
     final String uuidStr = targetUUID.toString();
+
     List<String> storageIds = storageList.stream()
       .map(s -> s.getId().toString())
       .toList();
 
     return CobbleUtils.ASYNC.supply(() -> {
       Document filter = new Document(KEY_PLAYER_UUID, uuidStr);
-      Document update = new Document("$pull", new Document(KEY_STORAGE_LIST, new Document("id", new Document("$in", storageIds))));
-      var result = collectionUser.updateOne(filter, update);
-      return result.getModifiedCount() > 0;
+
+      Document update = new Document(
+        "$pull",
+        new Document(
+          KEY_STORAGE_LIST,
+          new Document(
+            "id",
+            new Document("$in", storageIds)
+          )
+        )
+      );
+
+      collectionUser.updateOne(filter, update);
+      return true;
+
+    }).exceptionally(ex -> {
+      ex.printStackTrace();
+      return false;
     });
   }
 

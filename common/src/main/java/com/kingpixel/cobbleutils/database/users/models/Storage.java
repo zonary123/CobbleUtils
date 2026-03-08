@@ -2,7 +2,6 @@ package com.kingpixel.cobbleutils.database.users.models;
 
 import ca.landonjw.gooeylibs2.api.button.GooeyButton;
 import ca.landonjw.gooeylibs2.api.button.RateLimitedButton;
-import com.google.gson.JsonElement;
 import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.ui.StorageMenu;
 import com.kingpixel.cobbleutils.util.UtilsFile;
@@ -49,13 +48,12 @@ public abstract class Storage {
   }
 
   public Document toDocument() {
-    String data = UtilsFile.getGson().toJson(this);
+    String data = UtilsFile.getGson().toJson(this, Storage.class);
     return Document.parse(data);
   }
 
   public static Storage fromDocument(Document document) {
     String data = document.toJson();
-    JsonElement jsonElement = UtilsFile.getGson().fromJson(data, JsonElement.class);
-    return UtilsFile.getGson().fromJson(jsonElement, Storage.class);
+    return UtilsFile.getGson().fromJson(data, Storage.class);
   }
 }

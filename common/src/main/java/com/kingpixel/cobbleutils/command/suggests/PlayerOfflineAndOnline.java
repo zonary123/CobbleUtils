@@ -1,6 +1,7 @@
 package com.kingpixel.cobbleutils.command.suggests;
 
 import com.kingpixel.cobbleutils.CobbleUtils;
+import com.kingpixel.cobbleutils.Model.DurationValue;
 import com.kingpixel.cobbleutils.api.PermissionApi;
 import com.kingpixel.cobbleutils.database.DataBaseFactory;
 import com.kingpixel.cobbleutils.database.users.UserModel;
@@ -97,7 +98,7 @@ public class PlayerOfflineAndOnline {
    */
   private void loadAsync() {
     Instant now = Instant.now().plus(24, TimeUnit.DAYS.toChronoUnit());
-    Instant from = now.minusMillis(CobbleUtils.config.getTimeSinceLastLoginToSuggest().toMillis());
+    Instant from = now.minusMillis(DurationValue.parse("1y").toMillis());
     DataBaseFactory.dataBaseUsers.findUsersActiveBetween(from, now)
       .whenComplete((userModels, throwable) -> {
         if (userModels == null || userModels.isEmpty()) {

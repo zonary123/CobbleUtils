@@ -18,7 +18,6 @@ import com.kingpixel.cobbleutils.Model.Animations.CircleAnimation;
 import com.kingpixel.cobbleutils.Model.rewards.AdvancedReward;
 import com.kingpixel.cobbleutils.Model.rewards.Reward;
 import com.kingpixel.cobbleutils.api.PermissionApi;
-import com.kingpixel.cobbleutils.command.suggests.CobbleUtilsSuggests;
 import com.kingpixel.cobbleutils.database.DataBaseFactory;
 import com.kingpixel.cobbleutils.database.users.models.Storage;
 import com.kingpixel.cobbleutils.database.users.models.StorageRewards;
@@ -33,6 +32,7 @@ import net.minecraft.component.type.LoreComponent;
 import net.minecraft.item.ItemStack;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.util.math.Vec3d;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 import java.util.function.Consumer;
@@ -81,7 +81,7 @@ public class AdvancedItemChance {
     lootTable.entrySet().removeIf(entry -> entry.getValue().isEmpty());
   }
 
-  public AdvancedReward toAdvancedReward(String id) {
+  public AdvancedReward toAdvancedReward(@Nullable String id) {
     Map<String, List<Reward>> rewards = new LinkedHashMap<>();
     lootTable.forEach((key, value) -> {
       List<Reward> rewardList = new ArrayList<>();
@@ -147,8 +147,16 @@ public class AdvancedItemChance {
 
   public void giveRewards(UUID playerUUID) {
     var player = CobbleUtils.server.getPlayerManager().getPlayer(playerUUID);
-    CobbleUtilsSuggests.SUGGESTS_PLAYER_OFFLINE_AND_ONLINE.getPlayer(playerUUID)
-      .ifPresent(dataResultPlayer -> giveRewardsInternal(dataResultPlayer.player(), player != null, playerUUID));
+    if (player != null) {
+      giveRewards(player);
+      return;
+    } else {
+      this.toAdvancedReward(id)
+        .giveRewards(playerUUID);
+    }
+    //var player = CobbleUtils.server.getPlayerManager().getPlayer(playerUUID);
+    //CobbleUtilsSuggests.SUGGESTS_PLAYER_OFFLINE_AND_ONLINE.getPlayer(playerUUID)
+    //  .ifPresent(dataResultPlayer -> giveRewardsInternal(dataResultPlayer.player(), player != null, playerUUID));
   }
 
   public void giveRewards(ServerPlayerEntity player) {

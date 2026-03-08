@@ -175,7 +175,8 @@ public class ItemChance {
   }
 
   public Reward toReward() {
-    return Reward.builder()
+    return UtilsFile.getGson().fromJson(UtilsFile.getGson().toJson(this, ItemChance.class), Reward.class);
+    /*return Reward.builder()
       .reward(item)
       .weight(chance)
       .unique(unique != null ? unique : false)
@@ -183,7 +184,7 @@ public class ItemChance {
       .amount(amount)
       .cooldown(cooldown)
       .display(display)
-      .build();
+      .build();*/
   }
 
   /**

@@ -21,6 +21,8 @@ import net.minecraft.component.DataComponentTypes;
 import net.minecraft.component.type.LoreComponent;
 import net.minecraft.item.ItemStack;
 import net.minecraft.server.network.ServerPlayerEntity;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -34,6 +36,7 @@ import java.util.function.Consumer;
 @Builder
 public class AdvancedReward {
   @Builder.Default
+  @Nullable
   private String id = "";
   @Builder.Default
   private boolean showMenu = true;
@@ -152,22 +155,26 @@ public class AdvancedReward {
     return pool.getLast();
   }
 
-  public CompletableFuture<Void> giveRewards(UUID playerUUID) {
-    ServerPlayerEntity player = CobbleUtils.server.getPlayerManager().getPlayer(playerUUID);
-    return CobbleUtils.ASYNC.runAsync(() -> {
-      List<Reward> finalRewards = getFinalRewards(playerUUID);
-      if (finalRewards.isEmpty()) return;
+  public CompletableFuture<Void> giveRewards(@NotNull ServerPlayerEntity player) {
+    return giveRewards(player.getUuid());
+  }
 
-      if (player != null) {
-        for (Reward finalReward : finalRewards) {
-          giveRewardToPlayer(player, finalReward);
+  public CompletableFuture<Void> giveRewards(@NotNull UUID playerUUID) {
+    return CobbleUtils.server.submit(() -> CobbleUtils.server.getPlayerManager().getPlayer(playerUUID))
+      .thenAcceptAsync(player -> {
+        List<Reward> finalRewards = getFinalRewards(playerUUID);
+        if (finalRewards.isEmpty()) return;
+
+        if (player != null) {
+          for (Reward finalReward : finalRewards) {
+            giveRewardToPlayer(player, finalReward);
+          }
+        } else {
+          for (Reward finalReward : finalRewards) {
+            giveRewardToPlayerDisconnected(playerUUID, finalReward);
+          }
         }
-      } else {
-        for (Reward finalReward : finalRewards) {
-          giveRewardToPlayerDisconnected(playerUUID, finalReward);
-        }
-      }
-    });
+      });
   }
 
   private void giveRewardToPlayer(ServerPlayerEntity player, Reward reward) {
