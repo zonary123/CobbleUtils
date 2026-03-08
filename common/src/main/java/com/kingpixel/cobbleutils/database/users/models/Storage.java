@@ -7,6 +7,7 @@ import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.ui.StorageMenu;
 import com.kingpixel.cobbleutils.util.UtilsFile;
 import lombok.Data;
+import lombok.ToString;
 import net.minecraft.item.ItemStack;
 import net.minecraft.server.network.ServerPlayerEntity;
 import org.bson.Document;
@@ -20,6 +21,7 @@ import java.util.concurrent.TimeUnit;
  * @author Carlos Varas Alonso - 06/10/2025 5:11
  */
 @Data
+@ToString
 public abstract class Storage {
   protected UUID id = UUID.randomUUID();
 

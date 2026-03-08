@@ -145,41 +145,79 @@ public class StorageMenu {
       });
   }
 
-  public static CompletableFuture<Boolean> removeStorage(@NotNull ServerPlayerEntity player, Storage storage, UUID targetUUID) {
+  public static CompletableFuture<Boolean> removeStorage(
+    @NotNull ServerPlayerEntity player,
+    Storage storage,
+    UUID targetUUID
+  ) {
+
     return DataBaseFactory.dataBaseUsers.removeStorage(storage, targetUUID)
       .thenCompose(removed -> {
+
+        // Si no se pudo eliminar de la base de datos
         if (!removed) {
           player.sendMessage(
-            AdventureTranslator.toNative("&cAn error occurred while claiming your reward. Please try again later."),
+            AdventureTranslator.toNative(
+              "&cAn error occurred while claiming your reward. Please try again later."
+            ),
             false
           );
           return CompletableFuture.completedFuture(false);
         }
+
+        // Intentar entregar la recompensa
         return storage.giveToPlayer(player)
-          .thenCompose(given -> {
-            if (given) return CompletableFuture.completedFuture(true);
-            return DataBaseFactory.dataBaseUsers.addStorage(storage, targetUUID)
-              .thenApply(restored -> {
-                player.sendMessage(
-                  AdventureTranslator.toNative("&cYour reward could not be delivered. Please try again."),
-                  false
-                );
-                return false;
-              });
+          .handle((given, throwable) -> {
+
+            // Si hubo error al entregar
+            if (throwable != null) {
+              throwable.printStackTrace();
+
+              // Restaurar el storage en la base de datos
+              DataBaseFactory.dataBaseUsers.addStorage(storage, targetUUID);
+
+              player.sendMessage(
+                AdventureTranslator.toNative(
+                  "&cAn unexpected error occurred while giving your reward."
+                ),
+                false
+              );
+
+              return false;
+            }
+
+            // Si no se entregó correctamente
+            if (!given) {
+              DataBaseFactory.dataBaseUsers.addStorage(storage, targetUUID);
+
+              player.sendMessage(
+                AdventureTranslator.toNative(
+                  "&cYour reward could not be delivered. It has been restored."
+                ),
+                false
+              );
+
+              return false;
+            }
+
+            // Todo correcto
+            return true;
           });
       })
-      .handle((result, throwable) -> {
-        if (throwable != null) {
-          throwable.printStackTrace();
+      .exceptionally(ex -> {
+        // Captura cualquier error no manejado
+        ex.printStackTrace();
 
-          DataBaseFactory.dataBaseUsers.addStorage(storage, targetUUID);
-          player.sendMessage(
-            AdventureTranslator.toNative("&cAn unexpected error occurred while claiming your reward."),
-            false
-          );
-          return false;
-        }
-        return result;
+        DataBaseFactory.dataBaseUsers.addStorage(storage, targetUUID);
+
+        player.sendMessage(
+          AdventureTranslator.toNative(
+            "&cA critical error occurred while processing your reward."
+          ),
+          false
+        );
+
+        return false;
       });
   }
 }

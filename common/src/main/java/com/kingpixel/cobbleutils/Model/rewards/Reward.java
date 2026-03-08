@@ -13,6 +13,7 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -24,22 +25,29 @@ import java.util.concurrent.CompletableFuture;
 public class Reward {
   private transient ItemStack cacheItemStack = null;
   @Builder.Default
+  @Nullable
   private String id = null;
   @Builder.Default
   private String reward = "item:1:minecraft:stone";
   @Builder.Default
   private double weight = 1.0;
+  // Optional parameters for reward execution
   @Builder.Default
   private Boolean unique = false;
   @Builder.Default
+  @Nullable
   private String identifier = null;
   @Builder.Default
+  @Nullable
   private Integer amount = null;
   @Builder.Default
+  @Nullable
   private DurationValue cooldown = null;
   @Builder.Default
+  @Nullable
   private String display = null;
   @Builder.Default
+  @Nullable
   private String displayname = null;
 
   @SuppressWarnings(value = "ALL")

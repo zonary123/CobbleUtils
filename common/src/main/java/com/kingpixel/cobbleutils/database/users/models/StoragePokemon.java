@@ -8,6 +8,7 @@ import com.kingpixel.cobbleutils.util.AdventureTranslator;
 import com.kingpixel.cobbleutils.util.PokemonUtils;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.ToString;
 import net.minecraft.component.DataComponentTypes;
 import net.minecraft.component.type.LoreComponent;
 import net.minecraft.item.ItemStack;
@@ -21,6 +22,7 @@ import java.util.concurrent.CompletableFuture;
  * @author Carlos Varas Alonso - 06/10/2025 5:11
  */
 @EqualsAndHashCode(callSuper = true)
+@ToString(callSuper = true)
 @Data
 public class StoragePokemon extends Storage {
   private final String type = "pokemon";

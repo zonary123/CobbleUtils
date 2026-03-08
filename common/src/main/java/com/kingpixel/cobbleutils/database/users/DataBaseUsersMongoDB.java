@@ -222,36 +222,47 @@ public class DataBaseUsersMongoDB extends DataBaseUsers {
   public CompletableFuture<Boolean> addStorage(List<Storage> storage, UUID targetUUID) {
     final String uuidStr = targetUUID.toString();
     return CobbleUtils.ASYNC.supply(() -> {
-      Document filter = new Document(KEY_PLAYER_UUID, uuidStr);
-      List<Document> storageDocs = storage.stream()
-        .map(Storage::toDocument)
-        .toList();
-      Document update = new Document("$addToSet", new Document(KEY_STORAGE_LIST, new Document("$each", storageDocs)));
-      var result = collectionUser.updateOne(filter, update);
-      return result.getModifiedCount() > 0;
-    });
+        Document filter = new Document(KEY_PLAYER_UUID, uuidStr);
+        List<Document> storageDocs = storage.stream()
+          .map(Storage::toDocument)
+          .toList();
+        Document update = new Document("$addToSet", new Document(KEY_STORAGE_LIST, new Document("$each", storageDocs)));
+        var result = collectionUser.updateOne(filter, update);
+        return result.getModifiedCount() > 0;
+      })
+      .exceptionally(ex -> {
+        ex.printStackTrace();
+        return false;
+      });
   }
 
   @Override
   public CompletableFuture<Boolean> removeStorage(Storage storage, UUID targetUUID) {
     final String uuidStr = targetUUID.toString();
+    final String storageIdStr = storage.getId().toString();
+
     return CobbleUtils.ASYNC.supply(() -> {
-      Document filter = new Document(KEY_PLAYER_UUID, uuidStr);
-      Document update = new Document("$pull", new Document(KEY_STORAGE_LIST, storage.toDocument()));
-      var result = collectionUser.updateOne(filter, update);
-      return result.getModifiedCount() > 0;
-    });
+        Document filter = new Document(KEY_PLAYER_UUID, uuidStr);
+        Document update = new Document("$pull", new Document(KEY_STORAGE_LIST, new Document("id", storageIdStr)));
+        var result = collectionUser.updateOne(filter, update);
+        return result.getModifiedCount() > 0;
+      })
+      .exceptionally(ex -> {
+        ex.printStackTrace();
+        return false;
+      });
   }
 
   @Override
-  public CompletableFuture<Boolean> removeStorage(List<Storage> storage, UUID targetUUID) {
+  public CompletableFuture<Boolean> removeStorage(List<Storage> storageList, UUID targetUUID) {
     final String uuidStr = targetUUID.toString();
+    List<String> storageIds = storageList.stream()
+      .map(s -> s.getId().toString())
+      .toList();
+
     return CobbleUtils.ASYNC.supply(() -> {
       Document filter = new Document(KEY_PLAYER_UUID, uuidStr);
-      List<Document> storageDocs = storage.stream()
-        .map(Storage::toDocument)
-        .toList();
-      Document update = new Document("$pull", new Document(KEY_STORAGE_LIST, new Document("$in", storageDocs)));
+      Document update = new Document("$pull", new Document(KEY_STORAGE_LIST, new Document("id", new Document("$in", storageIds))));
       var result = collectionUser.updateOne(filter, update);
       return result.getModifiedCount() > 0;
     });

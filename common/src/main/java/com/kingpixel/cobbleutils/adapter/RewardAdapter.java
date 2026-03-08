@@ -130,12 +130,11 @@ public class RewardAdapter implements JsonSerializer<Reward>, JsonDeserializer<R
 
   @Override
   public JsonElement serialize(Reward src, Type typeOfSrc, JsonSerializationContext context) {
-
     JsonObject obj = new JsonObject();
-
     obj.addProperty("reward", src.getReward());
     obj.addProperty("weight", src.getWeight());
 
+    if (src.getId() != null) obj.addProperty("id", src.getId());
     if (src.getUnique() != null) obj.addProperty("unique", src.getUnique());
     if (src.getAmount() != null) obj.addProperty("amount", src.getAmount());
     if (src.getIdentifier() != null) obj.addProperty("identifier", src.getIdentifier());

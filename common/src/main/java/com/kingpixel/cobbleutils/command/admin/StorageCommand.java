@@ -21,7 +21,6 @@ import com.mojang.brigadier.context.CommandContext;
 import net.minecraft.command.CommandRegistryAccess;
 import net.minecraft.command.argument.EntityArgumentType;
 import net.minecraft.command.argument.ItemStackArgumentType;
-import net.minecraft.registry.DynamicRegistryManager;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -63,7 +62,7 @@ public class StorageCommand {
                               ServerCommandSource source = context.getSource();
                               UUID targetUUID = getPlayerUUID(context);
                               String targetName = getTargetName(context);
-                              Pokemon pokemon = PartySlotArgumentType.Companion.getPokemon(context, "slot").clone(true, DynamicRegistryManager.EMPTY);
+                              Pokemon pokemon = PartySlotArgumentType.Companion.getPokemon(context, "slot").clone(true, CobbleUtils.server.getRegistryManager());
 
                               DataBaseFactory.dataBaseUsers.addStorage(new StoragePokemon(pokemon), targetUUID);
                               sendFeedback(source,

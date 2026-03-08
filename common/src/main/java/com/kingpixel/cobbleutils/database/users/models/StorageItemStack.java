@@ -3,6 +3,7 @@ package com.kingpixel.cobbleutils.database.users.models;
 import com.kingpixel.cobbleutils.CobbleUtils;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.ToString;
 import net.minecraft.item.ItemStack;
 import net.minecraft.server.network.ServerPlayerEntity;
 import org.jetbrains.annotations.NotNull;
@@ -14,8 +15,8 @@ import java.util.concurrent.CompletableFuture;
  * @author Carlos Varas Alonso - 06/10/2025 5:11
  */
 @EqualsAndHashCode(callSuper = true)
+@ToString(callSuper = true)
 @Data
-
 public class StorageItemStack extends Storage {
   private final String type = "itemStack";
   private ItemStack itemStack;

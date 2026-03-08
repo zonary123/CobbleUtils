@@ -2,6 +2,7 @@ package com.kingpixel.cobbleutils.adapter;
 
 import com.cobblemon.mod.common.pokemon.Pokemon;
 import com.google.gson.*;
+import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.Model.rewards.Reward;
 import com.kingpixel.cobbleutils.database.users.models.Storage;
 import com.kingpixel.cobbleutils.database.users.models.StorageItemStack;
@@ -69,6 +70,7 @@ public class StorageAdapter implements JsonSerializer<Storage>, JsonDeserializer
     try {
       id = UUID.fromString(idRaw);
     } catch (Exception e) {
+      e.printStackTrace();
       throw new JsonParseException(
         "Invalid UUID format for field 'id': '" + idRaw + "' → " + obj,
         e
@@ -85,7 +87,7 @@ public class StorageAdapter implements JsonSerializer<Storage>, JsonDeserializer
     // LEVEL 3 VALIDATION (BY TYPE)
     // ===============================
 
-    return switch (type) {
+    Storage storage = switch (type) {
 
       case "pokemon" -> {
         assertFieldExists(obj, "pokemon");
@@ -99,6 +101,7 @@ public class StorageAdapter implements JsonSerializer<Storage>, JsonDeserializer
             context
           );
         } catch (Exception e) {
+          e.printStackTrace();
           throw new JsonParseException(
             "Failed to deserialize Pokemon object → " + pokemonObj,
             e
@@ -126,6 +129,7 @@ public class StorageAdapter implements JsonSerializer<Storage>, JsonDeserializer
             context
           );
         } catch (Exception e) {
+          e.printStackTrace();
           throw new JsonParseException(
             "Failed to deserialize ItemStack → " + itemStackObj,
             e
@@ -149,10 +153,11 @@ public class StorageAdapter implements JsonSerializer<Storage>, JsonDeserializer
         try {
           reward = RewardAdapter.INSTANCE.deserialize(
             rewardObj,
-            null,
+            Reward.class,
             context
           );
         } catch (Exception e) {
+          e.printStackTrace();
           throw new JsonParseException(
             "Failed to deserialize Reward object → " + rewardObj,
             e
@@ -172,6 +177,11 @@ public class StorageAdapter implements JsonSerializer<Storage>, JsonDeserializer
         "Unreachable code: unsupported Storage type"
       );
     };
+    if (CobbleUtils.config.isDebug()) {
+      CobbleUtils.LOGGER.info("Deserialized Storage: " + storage);
+    }
+
+    return storage;
   }
 
   // =====================================================
@@ -209,7 +219,7 @@ public class StorageAdapter implements JsonSerializer<Storage>, JsonDeserializer
           PokemonAdapter.INSTANCE.serialize(
             p.getPokemon(),
             Pokemon.class,
-            null
+            context
           )
         );
       }
@@ -225,7 +235,7 @@ public class StorageAdapter implements JsonSerializer<Storage>, JsonDeserializer
           ItemStackAdapter.INSTANCE.serialize(
             s.getItemStack(),
             ItemStack.class,
-            null
+            context
           )
         );
       }
@@ -237,13 +247,11 @@ public class StorageAdapter implements JsonSerializer<Storage>, JsonDeserializer
           );
         }
         obj.addProperty("type", "reward");
-        obj.add("reward",
-          RewardAdapter.INSTANCE.serialize(
-            r.getReward(),
-            null,
-            null
-          )
-        );
+        obj.add("reward", RewardAdapter.INSTANCE.serialize(
+          r.getReward(),
+          Reward.class,
+          context
+        ));
       }
 
       default -> throw new IllegalStateException(

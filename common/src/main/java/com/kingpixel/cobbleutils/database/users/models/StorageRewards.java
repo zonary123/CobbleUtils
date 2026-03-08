@@ -14,6 +14,7 @@ import java.util.concurrent.CompletableFuture;
  * @author Carlos Varas Alonso - 06/10/2025 5:11
  */
 @EqualsAndHashCode(callSuper = true)
+@ToString(callSuper = true)
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
