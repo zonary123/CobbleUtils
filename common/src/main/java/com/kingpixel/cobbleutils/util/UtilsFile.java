@@ -38,7 +38,7 @@ public final class UtilsFile {
 
   private static final AsyncContext IO_CONTEXT = new AsyncContext(
     "ZUtils-IO",
-    2,
+    1,
     8
   );
 
