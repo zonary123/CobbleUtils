@@ -37,7 +37,6 @@ public class TaskLocation {
               location.teleportToNoCrossServer(player)
                 .whenComplete((success, throwable) -> {
                   if (Boolean.TRUE.equals(success)) {
-                    if (CobbleUtils.getServerName() != null) CobbleUtils.setServerName(location.getServer());
                     RedisTeleportHandler.LOCATION_CACHE.invalidate(playerUUID);
                   }
                 });

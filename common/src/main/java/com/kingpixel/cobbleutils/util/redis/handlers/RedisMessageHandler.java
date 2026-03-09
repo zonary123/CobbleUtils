@@ -96,7 +96,6 @@ public class RedisMessageHandler implements RedisHandler {
   }
 
   private static void publish(String type, String content, UUID uuid, String prefix) {
-    if (!RedisManager.getConnected().get()) return;
     if (RedisManager.getJedisPool() == null) return;
 
     try (var jedis = RedisManager.getJedisPool().getResource()) {

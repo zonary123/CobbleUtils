@@ -96,7 +96,7 @@ public class AdvancedItemChance {
       .showMenu(showMenu)
       .giveAll(giveAll)
       .amountRewardsPermission(amountRewardsPermission)
-      .animation(animation.name())
+      .animation(animation != null ? animation.name() : "NONE")
       .lootTable(rewards)
       .build();
   }
@@ -149,7 +149,6 @@ public class AdvancedItemChance {
     var player = CobbleUtils.server.getPlayerManager().getPlayer(playerUUID);
     if (player != null) {
       giveRewards(player);
-      return;
     } else {
       this.toAdvancedReward(id)
         .giveRewards(playerUUID);

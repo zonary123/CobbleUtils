@@ -5,6 +5,7 @@ import ca.landonjw.gooeylibs2.api.button.RateLimitedButton;
 import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.ui.StorageMenu;
 import com.kingpixel.cobbleutils.util.UtilsFile;
+import lombok.Builder;
 import lombok.Data;
 import lombok.ToString;
 import net.minecraft.item.ItemStack;
@@ -19,9 +20,11 @@ import java.util.concurrent.TimeUnit;
 /**
  * @author Carlos Varas Alonso - 06/10/2025 5:11
  */
+@Builder
 @Data
 @ToString
 public abstract class Storage {
+  @Builder.Default
   protected UUID id = UUID.randomUUID();
 
   protected Storage() {

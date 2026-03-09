@@ -163,7 +163,12 @@ public class AdvancedReward {
     return CobbleUtils.server.submit(() -> CobbleUtils.server.getPlayerManager().getPlayer(playerUUID))
       .thenAcceptAsync(player -> {
         List<Reward> finalRewards = getFinalRewards(playerUUID);
-        if (finalRewards.isEmpty()) return;
+        if (finalRewards.isEmpty()) {
+          if (player != null) {
+            player.sendMessage(AdventureTranslator.toNative("You have no rewards to claim!"));
+          }
+          return;
+        }
 
         if (player != null) {
           for (Reward finalReward : finalRewards) {

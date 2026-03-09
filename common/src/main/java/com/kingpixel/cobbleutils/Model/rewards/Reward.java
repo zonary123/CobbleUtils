@@ -223,7 +223,9 @@ public class Reward {
 
 
   public CompletableFuture<Boolean> giveToPlayerDisconnected(UUID playerUUID) {
-    return DataBaseFactory.dataBaseUsers.addStorage(StorageRewards.builder().reward(this).build(), playerUUID);
+    return DataBaseFactory.dataBaseUsers.addStorage(StorageRewards.builder()
+      .reward(this)
+      .build(), playerUUID);
   }
 
 
