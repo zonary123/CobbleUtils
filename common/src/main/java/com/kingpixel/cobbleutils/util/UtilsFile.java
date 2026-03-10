@@ -1,8 +1,30 @@
 package com.kingpixel.cobbleutils.util;
 
+import com.cobblemon.mod.common.api.moves.Move;
+import com.cobblemon.mod.common.api.moves.adapters.MoveTemplateAdapter;
+import com.cobblemon.mod.common.api.types.ElementalType;
+import com.cobblemon.mod.common.api.types.adapters.ElementalTypeAdapter;
+import com.cobblemon.mod.common.pokemon.Pokemon;
+import com.cobblemon.mod.common.util.adapters.IntRangeAdapter;
+import com.cobblemon.mod.common.util.adapters.NbtCompoundAdapter;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.internal.bind.DateTypeAdapter;
+import com.kingpixel.cobbleutils.Model.DataBaseType;
+import com.kingpixel.cobbleutils.Model.DurationValue;
+import com.kingpixel.cobbleutils.Model.ItemChance;
+import com.kingpixel.cobbleutils.Model.conditions.Condition;
+import com.kingpixel.cobbleutils.Model.messages.HiperMessage;
+import com.kingpixel.cobbleutils.Model.zones.zoneshapes.ZoneShape;
+import com.kingpixel.cobbleutils.adapter.*;
+import com.kingpixel.cobbleutils.database.users.models.Storage;
 import com.kingpixel.cobbleutils.util.async.AsyncContext;
+import kotlin.ranges.IntRange;
+import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NbtCompound;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Box;
+import net.minecraft.util.math.Vec3d;
 import org.jetbrains.annotations.Nullable;
 
 import javax.annotation.Nonnull;
@@ -10,14 +32,18 @@ import java.io.IOException;
 import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
+import java.time.Instant;
 import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 /**
@@ -36,37 +62,61 @@ public final class UtilsFile {
   /* Async IO Context                                                            */
   /* -------------------------------------------------------------------------- */
 
-  private static final AsyncContext IO_CONTEXT = new AsyncContext(
+  public static final AsyncContext IO_CONTEXT = new AsyncContext(
     "ZUtils-IO",
     1,
-    8
+    8,
+    1000,
+    60L,
+    TimeUnit.SECONDS
   );
 
   /* -------------------------------------------------------------------------- */
   /* File Locks (per-path)                                                       */
   /* -------------------------------------------------------------------------- */
 
-  private static final ConcurrentMap<Path, ReadWriteLock> FILE_LOCKS =
-    new ConcurrentHashMap<>();
+  private static final ConcurrentMap<Path, ReadWriteLock> FILE_LOCKS = new ConcurrentHashMap<>();
 
   private static ReadWriteLock lock(Path path) {
-    return FILE_LOCKS.computeIfAbsent(
-      path.toAbsolutePath().normalize(),
-      p -> new ReentrantReadWriteLock()
-    );
+    return FILE_LOCKS.computeIfAbsent(path.toAbsolutePath().normalize(), p -> new ReentrantReadWriteLock());
   }
+
+  private static volatile Gson GSON;
+  private static final ConcurrentMap<Type, Object> ADAPTERS = new ConcurrentHashMap<>();
+
+  static {
+    registerAdapter(NbtCompound.class, NbtCompoundAdapter.INSTANCE);
+    registerAdapter(NbtCompoundAdapter.class, NbtCompoundAdapter.INSTANCE);
+    registerAdapter(DateTypeAdapter.class, new DateTypeAdapter());
+    registerAdapter(ItemStack.class, ItemStackAdapter.INSTANCE);
+    registerAdapter(Instant.class, InstantTypeAdapter.INSTANCE);
+    registerAdapter(ItemChance.class, ItemChanceAdapter.INSTANCE);
+    registerAdapter(DurationValue.class, DurationValue.INSTANCE);
+    registerAdapter(DataBaseType.class, DataBaseTypeAdapter.INSTANCE);
+    registerAdapter(Storage.class, StorageAdapter.INSTANCE);
+    registerAdapter(HiperMessage.class, HiperMessage.EMPTY);
+    registerAdapter(Vec3d.class, Vec3dAdapter.INSTANCE);
+    registerAdapter(AtomicReference.class, AtomicReferenceAdapter.INSTANCE);
+    registerAdapter(Box.class, BoxAdapter.INSTANCE);
+    registerAdapter(BlockPos.class, BlockPosAdapter.INSTANCE);
+    registerAdapter(ZoneShape.class, ZoneShapeAdapter.INSTANCE);
+    registerAdapter(Condition.class, ConditionAdapter.INSTANCE);
+    // Cobblemon adapters
+    registerAdapter(Pokemon.class, PokemonAdapter.INSTANCE);
+    registerAdapter(Move.class, MoveTemplateAdapter.INSTANCE);
+    registerAdapter(IntRange.class, IntRangeAdapter.INSTANCE);
+    registerAdapter(ElementalType.class, ElementalTypeAdapter.INSTANCE);
+  }
+
 
   /* -------------------------------------------------------------------------- */
   /* Gson                                                                        */
   /* -------------------------------------------------------------------------- */
 
-  private static volatile Gson GSON;
-  private static final ConcurrentMap<Type, Object> ADAPTERS = new ConcurrentHashMap<>();
-
-  private UtilsFile() {
+  public UtilsFile() {
   }
 
-  public static void registerAdapter(
+  public synchronized static void registerAdapter(
     @Nonnull Type type,
     @Nonnull Object adapter
   ) {
@@ -74,13 +124,12 @@ public final class UtilsFile {
     rebuildGson();
   }
 
-  public static void configureGson(Consumer<GsonBuilder> config) {
-    synchronized (UtilsFile.class) {
-      GsonBuilder builder = new GsonBuilder();
-      config.accept(builder);
-      ADAPTERS.forEach(builder::registerTypeAdapter);
-      GSON = builder.create();
-    }
+  public synchronized static void configureGson(Consumer<GsonBuilder> config) {
+    GsonBuilder builder = new GsonBuilder();
+    config.accept(builder);
+    ADAPTERS.forEach(builder::registerTypeAdapter);
+    GSON = builder.create();
+
   }
 
   @Nonnull
@@ -97,15 +146,13 @@ public final class UtilsFile {
     return local;
   }
 
-  private static void rebuildGson() {
-    synchronized (UtilsFile.class) {
-      GsonBuilder builder = new GsonBuilder()
-        .setPrettyPrinting()
-        .disableHtmlEscaping();
+  private synchronized static void rebuildGson() {
+    GsonBuilder builder = new GsonBuilder()
+      .setPrettyPrinting()
+      .disableHtmlEscaping();
 
-      ADAPTERS.forEach(builder::registerTypeAdapter);
-      GSON = builder.create();
-    }
+    ADAPTERS.forEach(builder::registerTypeAdapter);
+    GSON = builder.create();
   }
 
   /* -------------------------------------------------------------------------- */
@@ -183,7 +230,6 @@ public final class UtilsFile {
   /* -------------------------------------------------------------------------- */
 
   public static void write(@Nonnull Path path, @Nonnull Object object) throws IOException {
-
     ReadWriteLock lock = lock(path);
     lock.writeLock().lock();
     try {
@@ -222,13 +268,13 @@ public final class UtilsFile {
     @Nonnull Path path,
     @Nonnull Object object
   ) {
-    return CompletableFuture.runAsync(() -> {
+    return IO_CONTEXT.runAsync(() -> {
       try {
         write(path, object);
       } catch (IOException e) {
         throw new RuntimeException(e);
       }
-    }, IO_CONTEXT.getExecutor());
+    });
   }
 
   /* -------------------------------------------------------------------------- */
@@ -301,20 +347,28 @@ public final class UtilsFile {
     return Files.list(directory);
   }
 
-  public static List<Path> getAllFiles(Path folder) throws IOException {
+  public static List<Path> getFiles(Path folder, Predicate<Path> filter) {
+    if (folder == null || !Files.exists(folder) || !Files.isDirectory(folder)) {
+      return List.of();
+    }
+
     try (Stream<Path> walk = Files.walk(folder)) {
       return walk
         .filter(Files::isRegularFile)
-        .collect(Collectors.toList());
+        .filter(filter)
+        .toList();
+    } catch (IOException e) {
+      e.printStackTrace();
+      return List.of();
     }
   }
 
-  public static List<Path> getAllJsonFiles(Path folder) throws IOException {
-    try (Stream<Path> walk = Files.walk(folder)) {
-      return walk
-        .filter(Files::isRegularFile)
-        .filter(p -> p.toString().endsWith(".json"))
-        .collect(Collectors.toList());
-    }
+  public static List<Path> getAllFiles(Path folder) {
+    return getFiles(folder, p -> true);
+  }
+
+  public static List<Path> getAllJsonFiles(Path folder) {
+    return getFiles(folder, p ->
+      p.getFileName().toString().toLowerCase(Locale.ROOT).endsWith(".json"));
   }
 }

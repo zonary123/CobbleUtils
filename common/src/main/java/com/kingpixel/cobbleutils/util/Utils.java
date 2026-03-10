@@ -16,7 +16,9 @@ import com.kingpixel.cobbleutils.Model.DataBaseType;
 import com.kingpixel.cobbleutils.Model.DurationValue;
 import com.kingpixel.cobbleutils.Model.ItemChance;
 import com.kingpixel.cobbleutils.Model.ItemModel;
+import com.kingpixel.cobbleutils.Model.conditions.Condition;
 import com.kingpixel.cobbleutils.Model.messages.HiperMessage;
+import com.kingpixel.cobbleutils.Model.zones.zoneshapes.ZoneShape;
 import com.kingpixel.cobbleutils.adapter.*;
 import com.kingpixel.cobbleutils.database.users.models.Storage;
 import com.mojang.authlib.GameProfile;
@@ -33,6 +35,7 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
+import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Box;
 import net.minecraft.util.math.Vec3d;
 
@@ -114,6 +117,9 @@ public abstract class Utils {
       .registerTypeAdapter(DurationValue.class, DurationValue.INSTANCE)
       .registerTypeAdapter(DataBaseType.class, DataBaseTypeAdapter.INSTANCE)
       .registerTypeAdapter(Storage.class, StorageAdapter.INSTANCE)
+      .registerTypeAdapter(Condition.class, ConditionAdapter.INSTANCE)
+      .registerTypeAdapter(ZoneShape.class, ZoneShapeAdapter.INSTANCE)
+      .registerTypeAdapter(BlockPos.class, BlockPosAdapter.INSTANCE)
       .registerTypeAdapter(HiperMessage.class, HiperMessage.EMPTY)
       .registerTypeAdapter(Vec3d.class, Vec3dAdapter.INSTANCE)
       .registerTypeAdapter(AtomicReference.class, AtomicReferenceAdapter.INSTANCE)

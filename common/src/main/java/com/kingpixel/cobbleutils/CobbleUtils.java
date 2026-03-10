@@ -18,17 +18,23 @@ import com.kingpixel.cobbleutils.events.ItemRightClickEvents;
 import com.kingpixel.cobbleutils.network.CrossServerManager;
 import com.kingpixel.cobbleutils.tasks.RegistryTasks;
 import com.kingpixel.cobbleutils.util.*;
+import com.kingpixel.cobbleutils.util.async.AsyncContext;
 import dev.architectury.event.events.common.CommandRegistrationEvent;
 import dev.architectury.event.events.common.InteractionEvent;
 import dev.architectury.event.events.common.LifecycleEvent;
 import dev.architectury.event.events.common.PlayerEvent;
 import dev.architectury.injectables.targets.ArchitecturyTarget;
+import lombok.Getter;
+import lombok.Setter;
 import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.loader.api.ModContainer;
 import net.fabricmc.loader.api.metadata.Person;
 import net.minecraft.command.CommandRegistryAccess;
 import net.minecraft.server.MinecraftServer;
+import org.jetbrains.annotations.Nullable;
 
+import java.io.File;
+import java.nio.file.Path;
 import java.util.concurrent.*;
 
 public class CobbleUtils {
@@ -39,6 +45,10 @@ public class CobbleUtils {
   public static final String PATH_BREED = PATH + "/breed/";
   public static final String PATH_BREED_DATA = PATH_BREED + "data/";
   public static final UtilsLogger LOGGER = new UtilsLogger();
+
+  @Setter
+  @Getter
+  private static @Nullable String serverName = null;
   public static CommandRegistryAccess commandRegistryAccess;
   public static MinecraftServer server;
   public static Config config = new Config();
@@ -46,6 +56,7 @@ public class CobbleUtils {
   public static AdvancedRewardsConfig advancedRewardsConfig = new AdvancedRewardsConfig();
   public static SpawnRates spawnRates = new SpawnRates();
   // Lang
+  public static final AsyncContext ASYNC = com.kingpixel.cobbleutils.util.async.UtilsAsync.createContext(MOD_ID, MOD_NAME, 1, 8);
   public static Lang language = new Lang();
   private static final ExecutorService EXECUTOR_COBBLEUTILS = Executors.newFixedThreadPool(1, new ThreadFactoryBuilder()
     .setDaemon(true)
@@ -230,5 +241,15 @@ public class CobbleUtils {
     return UtilsAsync.runAsync(runnable, executor);
   }
 
+  private static Path path;
+
+  public static Path getPath() {
+    if (path == null) path = new File("").toPath().resolve("config");
+    return path;
+  }
+
+  public static Path getPathMod() {
+    return getPath().resolve(MOD_ID);
+  }
 
 }
