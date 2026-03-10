@@ -67,8 +67,8 @@ public final class UtilsFile {
     1,
     8,
     1000,
-    60L,
-    TimeUnit.SECONDS
+    5L,
+    TimeUnit.MINUTES
   );
 
   /* -------------------------------------------------------------------------- */

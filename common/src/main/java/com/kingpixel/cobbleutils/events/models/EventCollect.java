@@ -1,7 +1,7 @@
 package com.kingpixel.cobbleutils.events.models;
 
 import com.kingpixel.cobbleutils.CobbleUtils;
-import com.kingpixel.cobbleutils.api.BlocksApi;
+import com.kingpixel.cobbleutils.api.BlocksAPI;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -45,7 +45,7 @@ public class EventCollect {
     }
 
     if (state != null) {
-      amount = BlocksApi.getAmount(state.getBlock(), pos, state, world);
+      amount = BlocksAPI.getAmount(state.getBlock(), pos, state, world);
       if (CobbleUtils.config.isDebug()) {
         CobbleUtils.LOGGER.info("EventCollect: BlocksApi amount for "
           + state.getBlock().toString() + " at " + pos + ": " + amount);
@@ -72,6 +72,6 @@ public class EventCollect {
    */
   public ItemStack getItemStack() {
     if (itemStack != null) return itemStack;
-    return BlocksApi.getItemStack(state.getBlock());
+    return BlocksAPI.getItemStack(state.getBlock());
   }
 }

@@ -26,6 +26,7 @@ public abstract class CaveVinesMixin {
   )
   private static void cobbleUtils$onUse(BlockState state, World world, BlockPos pos, PlayerEntity playerEntity,
                                         BlockHitResult hit, CallbackInfoReturnable<ActionResult> cir) {
+    if (CobbleUtilsEvents.COLLECT_EVENT.isEmpty()) return;
     if (!(playerEntity instanceof ServerPlayerEntity player)) return;
 
     var result = cir.getReturnValue();

@@ -11,7 +11,7 @@ import com.kingpixel.cobbleutils.config.Config;
 import com.kingpixel.cobbleutils.config.Lang;
 import com.kingpixel.cobbleutils.config.RewardsConfig;
 import com.kingpixel.cobbleutils.database.DataBaseFactory;
-import com.kingpixel.cobbleutils.database.blocks.manager.ChunkBlockStorageManager;
+import com.kingpixel.cobbleutils.database.blocks.ChunkBlockStorageManager;
 import com.kingpixel.cobbleutils.database.users.DataBaseUsers;
 import com.kingpixel.cobbleutils.database.users.UserModel;
 import com.kingpixel.cobbleutils.events.ItemRightClickEvents;
@@ -173,6 +173,7 @@ public class CobbleUtils {
       DataBaseFactory.close();
       RedisManager.close();
       ChunkBlockStorageManager.shutdown();
+      com.kingpixel.cobbleutils.util.async.UtilsAsync.shutdownAll();
       shutdownAndAwait(EXECUTOR_COBBLEUTILS);
       shutdownAndAwait(Utils.IO_EXECUTOR);
       shutdownAndAwait(RedisManager.EXECUTOR_REDIS);

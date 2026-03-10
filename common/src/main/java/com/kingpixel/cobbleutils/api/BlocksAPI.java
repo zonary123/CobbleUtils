@@ -2,7 +2,7 @@ package com.kingpixel.cobbleutils.api;
 
 import com.cobblemon.mod.common.block.HeartyGrainsBlock;
 import com.kingpixel.cobbleutils.CobbleUtils;
-import com.kingpixel.cobbleutils.database.blocks.manager.ChunkBlockStorageManager;
+import com.kingpixel.cobbleutils.database.blocks.ChunkBlockStorageManager;
 import net.minecraft.block.*;
 import net.minecraft.item.ItemStack;
 import net.minecraft.registry.Registries;
@@ -13,14 +13,13 @@ import net.minecraft.world.World;
  * API para calcular la cantidad de bloques de cultivo o tipo columna
  * que deben recolectarse automáticamente.
  */
-public class BlocksApi {
+public class BlocksAPI {
 
   /**
    * Check if a block was placed by a player (not naturally generated).
    *
    * @param world the world
    * @param pos   the block position
-   *
    * @return true if the block was placed by a player
    */
   public static boolean isBlockPlaceByPlayer(World world, BlockPos pos) {
@@ -32,7 +31,6 @@ public class BlocksApi {
    *
    * @param block the block
    * @param state the block state
-   *
    * @return true if the crop is mature
    */
   public static boolean isMature(Block block, BlockState state) {

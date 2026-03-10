@@ -1,7 +1,7 @@
 package com.kingpixel.cobbleutils.mixins;
 
-import com.kingpixel.cobbleutils.api.BlocksApi;
-import com.kingpixel.cobbleutils.database.blocks.manager.ChunkBlockStorageManager;
+import com.kingpixel.cobbleutils.api.BlocksAPI;
+import com.kingpixel.cobbleutils.database.blocks.ChunkBlockStorageManager;
 import com.kingpixel.cobbleutils.events.CobbleUtilsEvents;
 import com.kingpixel.cobbleutils.events.models.EventBlockBreak;
 import com.kingpixel.cobbleutils.events.models.EventBlockPlaced;
@@ -14,21 +14,19 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
+import net.minecraft.world.chunk.WorldChunk;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-/**
- * @author Carlos Varas Alonso
- */
 @Mixin(Block.class)
 public abstract class BlockMixin {
 
   /* -------------------- PLACE -------------------- */
 
-  @Inject(method = "onPlaced", at = @At("HEAD"))
+  @Inject(method = "onPlaced", at = @At("RETURN"))
   private void cobbleutils$onPlaced(
     World world,
     BlockPos pos,
@@ -37,11 +35,16 @@ public abstract class BlockMixin {
     ItemStack stack,
     CallbackInfo ci
   ) {
+
+    if (world.isClient) return;
     if (!(placer instanceof ServerPlayerEntity player)) return;
-    if (CobbleUtilsEvents.BLOCK_PLACED_EVENT.isEmpty()) return;
+
+    if (CobbleUtilsEvents.BLOCK_PLACED_EVENT.isEmpty()
+      && CobbleUtilsEvents.BLOCK_BREAK_EVENT.isEmpty()) return;
 
     try {
-      var chunk = world.getChunk(pos);
+
+      WorldChunk chunk = world.getWorldChunk(pos);
 
       boolean alreadyPlaced = ChunkBlockStorageManager
         .isPlacedByPlayer(world, chunk, pos);
@@ -59,7 +62,7 @@ public abstract class BlockMixin {
 
   /* -------------------- BREAK -------------------- */
 
-  @Inject(method = "onBreak", at = @At("HEAD"))
+  @Inject(method = "onBreak", at = @At("RETURN"))
   private void cobbleutils$onBreak(
     World world,
     BlockPos pos,
@@ -67,6 +70,8 @@ public abstract class BlockMixin {
     PlayerEntity entity,
     CallbackInfoReturnable<BlockState> cir
   ) {
+
+    if (world.isClient) return;
     if (!(entity instanceof ServerPlayerEntity player)) return;
 
     boolean hasBreak = !CobbleUtilsEvents.BLOCK_BREAK_EVENT.isEmpty();
@@ -74,8 +79,11 @@ public abstract class BlockMixin {
 
     if (!hasBreak && !hasCollect) return;
 
+    WorldChunk chunk = world.getWorldChunk(pos);
+
     try {
-      boolean isPlaced = BlocksApi.isBlockPlaceByPlayer(world, pos);
+
+      boolean isPlaced = BlocksAPI.isBlockPlaceByPlayer(world, pos);
 
       if (hasBreak) {
         CobbleUtilsEvents.BLOCK_BREAK_EVENT.emit(
@@ -84,7 +92,8 @@ public abstract class BlockMixin {
       }
 
       if (hasCollect) {
-        var collectEvent = EventCollect.builder()
+
+        EventCollect collectEvent = EventCollect.builder()
           .player(player)
           .playerPlaced(isPlaced)
           .world(world)
@@ -92,20 +101,23 @@ public abstract class BlockMixin {
           .pos(pos)
           .build();
 
-        if (collectEvent.getAmount() > 0) {
+        int amount = collectEvent.getAmount();
+
+        if (amount > 0) {
           CobbleUtilsEvents.COLLECT_EVENT.emit(collectEvent);
         }
       }
 
+    } catch (Exception e) {
+      e.printStackTrace();
+    } finally {
+
       ChunkBlockStorageManager.removePlaced(
         world,
-        world.getChunk(pos),
+        chunk,
         pos,
         state
       );
-
-    } catch (Exception e) {
-      e.printStackTrace();
     }
   }
 }

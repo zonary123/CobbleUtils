@@ -12,6 +12,7 @@ import java.util.function.Supplier;
  * - Usa el executor si está activo
  * - Si el executor está muerto o shutdown → ejecuta en el hilo principal
  */
+@Deprecated(forRemoval = true)
 public final class UtilsAsync {
 
   private static final long DEFAULT_TIMEOUT = 30;

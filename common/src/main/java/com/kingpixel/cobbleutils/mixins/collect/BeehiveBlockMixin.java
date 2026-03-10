@@ -43,6 +43,7 @@ public abstract class BeehiveBlockMixin {
     BlockHitResult hit,
     CallbackInfoReturnable<ItemActionResult> cir
   ) {
+    if (CobbleUtilsEvents.COLLECT_EVENT.isEmpty()) return;
     try {
       if (world.isClient()) return;
       if (!(player instanceof ServerPlayerEntity serverPlayer)) return;

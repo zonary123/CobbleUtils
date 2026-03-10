@@ -47,8 +47,21 @@ public class ItemChanceAdapter implements JsonSerializer<ItemChance>, JsonDeseri
     throws JsonParseException {
 
     JsonObject obj = json.getAsJsonObject();
-    String item = obj.has("item") ? obj.get("item").getAsString() : "";
-    double chance = obj.has("chance") ? obj.get("chance").getAsDouble() : 0.0;
+    // Item
+    String item = null;
+    if (obj.has("reward")) {
+      item = obj.get("reward").getAsString();
+    } else if (obj.has("item")) {
+      item = obj.get("item").getAsString();
+    }
+
+    // Chance
+    double chance = 0.0;
+    if (obj.has("weight")) {
+      chance = obj.get("weight").getAsDouble();
+    } else if (obj.has("chance")) {
+      chance = obj.get("chance").getAsDouble();
+    }
 
     ItemChance itemChance = new ItemChance(item, chance);
 
@@ -71,13 +84,13 @@ public class ItemChanceAdapter implements JsonSerializer<ItemChance>, JsonDeseri
           } else if (primitive.isString()) {
             itemChance.setCooldown(DurationValue.parse(primitive.getAsString()));
           } else {
-            throw new JsonParseException("Cooldown inválido: " + cd);
+            throw new JsonParseException("Invalid cooldown format: " + cd);
           }
         } else {
-          throw new JsonParseException("Cooldown inválido (se esperaba número o string): " + cd);
+          throw new JsonParseException("Invalid cooldown format: " + cd);
         }
       } else {
-        itemChance.setCooldown(DurationValue.parse("60m")); // default
+        itemChance.setCooldown(DurationValue.parse("60m"));
       }
 
     }
