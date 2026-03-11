@@ -10,7 +10,7 @@ import java.util.UUID;
 /**
  * @author Carlos Varas Alonso - 06/11/2024 23:06
  */
-public class PermissionApi {
+public class PermissionAPI {
 
   /**
    * Check if the player has the permission
@@ -18,7 +18,6 @@ public class PermissionApi {
    * @param player     The player to check
    * @param permission The permission to check
    * @param level      The level of the permission
-   *
    * @return True if the player has the permission
    */
   public static boolean hasPermission(ServerPlayerEntity player, String permission, int level) {
@@ -32,7 +31,6 @@ public class PermissionApi {
    * @param player      The player to check
    * @param permissions The permissions to check
    * @param level       The level of the permission
-   *
    * @return True if the player has the permission
    */
   public static boolean hasPermission(ServerPlayerEntity player, List<String> permissions, int level) {
@@ -50,7 +48,6 @@ public class PermissionApi {
    * @param source     The source to check
    * @param permission The permission to check
    * @param level      The level of the permission
-   *
    * @return True if the source has the permission
    */
   public static boolean hasPermission(ServerCommandSource source, String permission, int level) {
@@ -64,7 +61,6 @@ public class PermissionApi {
    * @param source      The source to check
    * @param permissions The permissions to check
    * @param level       The level of the permission
-   *
    * @return True if the source has the permission
    */
   public static boolean hasPermission(ServerCommandSource source, List<String> permissions, int level) {
@@ -77,7 +73,6 @@ public class PermissionApi {
    *
    * @param player     The player to get the data
    * @param permission The permission to get the data
-   *
    * @return The data of the player
    */
   public static Object getMetaData(ServerPlayerEntity player, String permission) {

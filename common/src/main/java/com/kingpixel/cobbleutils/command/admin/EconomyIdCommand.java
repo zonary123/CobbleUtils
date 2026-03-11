@@ -1,7 +1,7 @@
 package com.kingpixel.cobbleutils.command.admin;
 
 import com.kingpixel.cobbleutils.api.EconomyApi;
-import com.kingpixel.cobbleutils.api.PermissionApi;
+import com.kingpixel.cobbleutils.api.PermissionAPI;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import net.minecraft.server.command.CommandManager;
@@ -21,7 +21,7 @@ public class EconomyIdCommand {
       base
         .then(
           CommandManager.literal("economys")
-            .requires(source -> PermissionApi.hasPermission(
+            .requires(source -> PermissionAPI.hasPermission(
               source,
               "cobbleutils.command.economys",
               2

@@ -10,8 +10,8 @@ import ca.landonjw.gooeylibs2.api.page.GooeyPage;
 import ca.landonjw.gooeylibs2.api.page.LinkedPage;
 import ca.landonjw.gooeylibs2.api.template.types.ChestTemplate;
 import com.kingpixel.cobbleutils.CobbleUtils;
+import com.kingpixel.cobbleutils.api.PermissionAPI;
 import com.kingpixel.cobbleutils.model.Rectangle;
-import com.kingpixel.cobbleutils.api.PermissionApi;
 import com.kingpixel.cobbleutils.util.AdventureTranslator;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -79,7 +79,7 @@ public class AdvancedReward {
     for (Map.Entry<String, Integer> entry : amountRewardsPermission.entrySet()) {
       String perm = entry.getKey();
       int amt = entry.getValue();
-      if (amt > total && (perm.isEmpty() || PermissionApi.hasPermission(playerUUID, perm, 2))) {
+      if (amt > total && (perm.isEmpty() || PermissionAPI.hasPermission(playerUUID, perm, 2))) {
         total = amt;
       }
     }
@@ -94,7 +94,7 @@ public class AdvancedReward {
       result = lootTable.getOrDefault("", Collections.emptyList());
       for (Map.Entry<String, List<Reward>> entry : lootTable.entrySet()) {
         String perm = entry.getKey();
-        if (!perm.isEmpty() && PermissionApi.hasPermission(playerUUID, perm, 2)) {
+        if (!perm.isEmpty() && PermissionAPI.hasPermission(playerUUID, perm, 2)) {
           result = entry.getValue();
         }
       }
@@ -102,7 +102,7 @@ public class AdvancedReward {
       result = new ArrayList<>(lootTable.getOrDefault("", Collections.emptyList()));
       for (Map.Entry<String, List<Reward>> entry : lootTable.entrySet()) {
         String perm = entry.getKey();
-        if (!perm.isEmpty() && PermissionApi.hasPermission(playerUUID, perm, 2)) {
+        if (!perm.isEmpty() && PermissionAPI.hasPermission(playerUUID, perm, 2)) {
           result.addAll(entry.getValue());
         }
       }

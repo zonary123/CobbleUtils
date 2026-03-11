@@ -4,14 +4,14 @@ import com.cobblemon.mod.common.command.argument.PartySlotArgumentType;
 import com.cobblemon.mod.common.command.argument.PokemonPropertiesArgumentType;
 import com.cobblemon.mod.common.pokemon.Pokemon;
 import com.kingpixel.cobbleutils.CobbleUtils;
-import com.kingpixel.cobbleutils.model.rewards.Reward;
-import com.kingpixel.cobbleutils.api.PermissionApi;
+import com.kingpixel.cobbleutils.api.PermissionAPI;
 import com.kingpixel.cobbleutils.api.RewardsAPI;
 import com.kingpixel.cobbleutils.command.suggests.CobbleUtilsSuggests;
 import com.kingpixel.cobbleutils.database.DataBaseFactory;
 import com.kingpixel.cobbleutils.database.users.models.StorageItemStack;
 import com.kingpixel.cobbleutils.database.users.models.StoragePokemon;
 import com.kingpixel.cobbleutils.database.users.models.StorageRewards;
+import com.kingpixel.cobbleutils.model.rewards.Reward;
 import com.mojang.authlib.GameProfile;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
@@ -40,7 +40,7 @@ public class StorageCommand {
   public static void register(CommandDispatcher<ServerCommandSource> dispatcher, CommandRegistryAccess registry, LiteralArgumentBuilder<ServerCommandSource> base) {
     dispatcher.register(
       base
-        .requires(source -> PermissionApi.hasPermission(source, List.of("cobbleutils.storage.base"), 1))
+        .requires(source -> PermissionAPI.hasPermission(source, List.of("cobbleutils.storage.base"), 1))
         .executes(context -> {
           ServerPlayerEntity player = context.getSource().getPlayerOrThrow();
           CobbleUtils.language.getStorageMenu().open(player, player.getUuid());
@@ -48,7 +48,7 @@ public class StorageCommand {
         })
         .then(
           CommandManager.literal("add")
-            .requires(source -> PermissionApi.hasPermission(source, PERMISSIONS, 2))
+            .requires(source -> PermissionAPI.hasPermission(source, PERMISSIONS, 2))
             .then(
               CobbleUtilsSuggests.SUGGESTS_PLAYER_OFFLINE_AND_ONLINE.suggestPlayerName(ARG_PLAYER, PERMISSIONS, 2)
                 // --- Add Pokémon ---
@@ -192,7 +192,7 @@ public class StorageCommand {
         // --- View Storage ---
         .then(
           CommandManager.literal("view")
-            .requires(source -> PermissionApi.hasPermission(source, PERMISSIONS, 2))
+            .requires(source -> PermissionAPI.hasPermission(source, PERMISSIONS, 2))
             .then(
               CobbleUtilsSuggests.SUGGESTS_PLAYER_OFFLINE_AND_ONLINE.suggestPlayerName(ARG_PLAYER, PERMISSIONS, 2)
                 .executes(context -> {
@@ -222,7 +222,7 @@ public class StorageCommand {
         // --- Open another player's storage ---
         .then(
           CommandManager.literal("other")
-            .requires(source -> PermissionApi.hasPermission(source, PERMISSIONS, 2))
+            .requires(source -> PermissionAPI.hasPermission(source, PERMISSIONS, 2))
             .then(
               CommandManager.argument(ARG_PLAYER, EntityArgumentType.player())
                 .executes(context -> {

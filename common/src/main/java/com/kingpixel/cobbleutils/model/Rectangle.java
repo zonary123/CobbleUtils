@@ -14,6 +14,7 @@ import java.util.List;
 @Setter
 @EqualsAndHashCode
 @Data
+@Builder
 @ToString
 public class Rectangle {
   private int startRow;

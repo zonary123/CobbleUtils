@@ -1,11 +1,11 @@
 package com.kingpixel.cobbleutils.command.suggests;
 
 import com.kingpixel.cobbleutils.CobbleUtils;
-import com.kingpixel.cobbleutils.model.DurationValue;
-import com.kingpixel.cobbleutils.api.PermissionApi;
+import com.kingpixel.cobbleutils.api.PermissionAPI;
 import com.kingpixel.cobbleutils.database.DataBaseFactory;
 import com.kingpixel.cobbleutils.database.users.UserModel;
 import com.kingpixel.cobbleutils.mixins.UserCacheMixin;
+import com.kingpixel.cobbleutils.model.DurationValue;
 import com.mojang.authlib.GameProfile;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.RequiredArgumentBuilder;
@@ -127,7 +127,7 @@ public class PlayerOfflineAndOnline {
   public RequiredArgumentBuilder<ServerCommandSource, String> suggestPlayerName(
     String literal, List<String> permissions, int level) {
     return CommandManager.argument(literal, StringArgumentType.string())
-      .requires(source -> PermissionApi.hasPermission(source, permissions, level))
+      .requires(source -> PermissionAPI.hasPermission(source, permissions, level))
       .suggests((context, builder) -> CommandSource.suggestMatching(getPlayerNames(), builder));
   }
 
@@ -137,7 +137,7 @@ public class PlayerOfflineAndOnline {
   public RequiredArgumentBuilder<ServerCommandSource, UUID> suggestPlayerUUID(
     String literal, List<String> permissions, int level) {
     return CommandManager.argument(literal, UuidArgumentType.uuid())
-      .requires(source -> PermissionApi.hasPermission(source, permissions, level))
+      .requires(source -> PermissionAPI.hasPermission(source, permissions, level))
       .suggests((context, builder) -> CommandSource.suggestMatching(getPlayerUUIDsAsString(), builder));
   }
 

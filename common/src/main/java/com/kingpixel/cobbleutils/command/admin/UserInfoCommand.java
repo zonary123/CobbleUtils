@@ -1,6 +1,6 @@
 package com.kingpixel.cobbleutils.command.admin;
 
-import com.kingpixel.cobbleutils.api.PermissionApi;
+import com.kingpixel.cobbleutils.api.PermissionAPI;
 import com.kingpixel.cobbleutils.command.suggests.CobbleUtilsSuggests;
 import com.kingpixel.cobbleutils.database.DataBaseFactory;
 import com.kingpixel.cobbleutils.database.users.UserModel;
@@ -23,10 +23,10 @@ public class UserInfoCommand {
   public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
     dispatcher.register(
       CommandManager.literal("cobbleutils")
-        .requires(source -> PermissionApi.hasPermission(source, "cobbleutils.admin", 4))
+        .requires(source -> PermissionAPI.hasPermission(source, "cobbleutils.admin", 4))
         .then(
           CommandManager.literal("UserInfo")
-            .requires(source -> PermissionApi.hasPermission(source, "cobbleutils.admin", 4))
+            .requires(source -> PermissionAPI.hasPermission(source, "cobbleutils.admin", 4))
             .then(
               CommandManager.literal("name")
                 .then(
@@ -72,7 +72,7 @@ public class UserInfoCommand {
             )
         ).then(
           CommandManager.literal("fakeUser")
-            .requires(source -> PermissionApi.hasPermission(source, "cobbleutils.admin", 4))
+            .requires(source -> PermissionAPI.hasPermission(source, "cobbleutils.admin", 4))
             .then(
               CobbleUtilsSuggests.SUGGESTS_PLAYER_OFFLINE_AND_ONLINE
                 .suggestPlayerName("target", List.of("cobbleutils.admin", "cobbleutils.command.userinfo"), 2)

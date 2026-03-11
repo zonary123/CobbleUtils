@@ -3,7 +3,7 @@ package com.kingpixel.cobbleutils.command.base;
 import com.cobblemon.mod.common.command.argument.PartySlotArgumentType;
 import com.cobblemon.mod.common.pokemon.Pokemon;
 import com.kingpixel.cobbleutils.CobbleUtils;
-import com.kingpixel.cobbleutils.api.PermissionApi;
+import com.kingpixel.cobbleutils.api.PermissionAPI;
 import com.kingpixel.cobbleutils.util.*;
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.CommandDispatcher;
@@ -33,7 +33,7 @@ public class PokeShout implements Command<CommandSource> {
                               LiteralArgumentBuilder<ServerCommandSource> base) {
     dispatcher.register(
       base
-        .requires(source -> PermissionApi.hasPermission(source, List.of("cobbleutils.pokeshoutplus",
+        .requires(source -> PermissionAPI.hasPermission(source, List.of("cobbleutils.pokeshoutplus",
           "cobbleutils" +
             ".user"), 2))
         .then(

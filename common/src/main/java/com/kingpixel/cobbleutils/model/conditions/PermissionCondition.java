@@ -1,6 +1,6 @@
 package com.kingpixel.cobbleutils.model.conditions;
 
-import com.kingpixel.cobbleutils.api.PermissionApi;
+import com.kingpixel.cobbleutils.api.PermissionAPI;
 import net.minecraft.server.network.ServerPlayerEntity;
 
 public class PermissionCondition extends Condition {
@@ -15,7 +15,7 @@ public class PermissionCondition extends Condition {
 
   @Override
   public boolean check(ServerPlayerEntity player) {
-    return PermissionApi.hasPermission(player, permission, 2);
+    return PermissionAPI.hasPermission(player, permission, 2);
   }
 
   @Override

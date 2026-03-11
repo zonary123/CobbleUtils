@@ -3,7 +3,7 @@ package com.kingpixel.cobbleutils.command.base;
 import com.cobblemon.mod.common.Cobblemon;
 import com.cobblemon.mod.common.api.storage.party.PlayerPartyStore;
 import com.kingpixel.cobbleutils.CobbleUtils;
-import com.kingpixel.cobbleutils.api.PermissionApi;
+import com.kingpixel.cobbleutils.api.PermissionAPI;
 import com.kingpixel.cobbleutils.util.AdventureTranslator;
 import com.kingpixel.cobbleutils.util.PlayerUtils;
 import com.kingpixel.cobbleutils.util.TypeMessage;
@@ -27,7 +27,7 @@ public class PokeShoutAll implements Command<ServerCommandSource> {
                               LiteralArgumentBuilder<ServerCommandSource> base) {
     dispatcher.register(
       base
-        .requires(source -> PermissionApi.hasPermission(source, List.of("cobbleutils.pokeshoutplusall",
+        .requires(source -> PermissionAPI.hasPermission(source, List.of("cobbleutils.pokeshoutplusall",
           "cobbleutils" +
             ".user"), 2))
         .executes(context -> {

@@ -1,7 +1,7 @@
 package com.kingpixel.cobbleutils.command.admin;
 
 import com.kingpixel.cobbleutils.CobbleUtils;
-import com.kingpixel.cobbleutils.api.PermissionApi;
+import com.kingpixel.cobbleutils.api.PermissionAPI;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
@@ -29,7 +29,7 @@ public class ShinyToken {
       base
         .then(
           CommandManager.literal("shinytoken")
-            .requires(source -> PermissionApi.hasPermission(source, List.of("cobbleutils.shinytoken", "cobbleutils.admin"), 2))
+            .requires(source -> PermissionAPI.hasPermission(source, List.of("cobbleutils.shinytoken", "cobbleutils.admin"), 2))
             .then(
               CommandManager.argument("player", EntityArgumentType.player())
                 .then(
