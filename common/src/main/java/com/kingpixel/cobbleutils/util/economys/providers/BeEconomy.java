@@ -1,17 +1,18 @@
 package com.kingpixel.cobbleutils.util.economys.providers;
 
 import com.kingpixel.cobbleutils.CobbleUtils;
-import com.kingpixel.cobbleutils.Model.economy.EconomyResult;
-import com.kingpixel.cobbleutils.Model.economy.EconomyStatus;
 import com.kingpixel.cobbleutils.util.economys.Economy;
+import com.kingpixel.cobbleutils.util.economys.EconomyResponse;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
+import lombok.NonNull;
 import org.krripe.beconomy.api.BEconomy;
 import org.krripe.beconomy.api.EconomyAPI;
 
 import java.math.BigDecimal;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Supplier;
 
 @EqualsAndHashCode(callSuper = true)
 @Getter
@@ -37,177 +38,102 @@ public class BeEconomy extends Economy {
     }
   }
 
-  // =======================
-  // Deprecated API
-  // =======================
-
-  @Override
-  @Deprecated(forRemoval = true)
-  public boolean deposit(UUID playerUuid, BigDecimal money, String currency) {
-    service.addBalance(playerUuid, money, currency);
-    return true;
-  }
-
-  @Override
-  @Deprecated(forRemoval = true)
-  public boolean withdraw(UUID playerUuid, BigDecimal money, String currency) {
-    BigDecimal balance = getBalance(playerUuid, currency);
-    if (balance.compareTo(money) < 0) return false;
-
-    service.setBalance(playerUuid, balance.subtract(money), currency);
-    return true;
-  }
-
-  @Override
-  @Deprecated(forRemoval = true)
-  public BigDecimal getBalance(UUID playerUuid, String currency) {
-    return service.getBalance(playerUuid, currency);
-  }
-
-  @Override
-  @Deprecated(forRemoval = true)
-  public boolean setBalance(UUID playerUuid, BigDecimal money, String currency) {
-    service.setBalance(playerUuid, money, currency);
-    return true;
-  }
-
-  // =======================
-  // Modern API
-  // =======================
-
-  @Override
-  public CompletableFuture<EconomyResult> getBalanceAsync(UUID playerId, String currencyId) {
-    return CompletableFuture.supplyAsync(() -> {
+  // Wrapper async seguro
+  private CompletableFuture<EconomyResponse> runAsync(Supplier<EconomyResponse> supplier) {
+    return CobbleUtils.ASYNC.supply(() -> {
       try {
-        BigDecimal balance = getBalance(playerId, currencyId);
-
-        return EconomyResult.success(
-          balance,
-          balance,
-          BigDecimal.ZERO,
-          "Balance fetched"
-        );
-
+        return supplier.get();
       } catch (Exception e) {
-        return EconomyResult.failure(
-          EconomyStatus.ERROR,
-          "Error getting balance: " + e.getMessage(),
-          null
-        );
+        CobbleUtils.LOGGER.error("Economy operation failed");
+        return EconomyResponse.failure("Error: " + e.getMessage());
       }
     });
   }
 
   @Override
-  public CompletableFuture<EconomyResult> setBalance(UUID playerId, String currencyId, BigDecimal amount, String reason) {
-    return CompletableFuture.supplyAsync(() -> {
-      try {
-        BigDecimal before = getBalance(playerId, currencyId);
+  public CompletableFuture<EconomyResponse> getBalance(UUID playerId, String currencyId) {
+    return runAsync(() -> {
+      BigDecimal balance = service.getBalance(playerId, currencyId);
+      return EconomyResponse.success(balance, balance);
+    });
+  }
 
+  @Override
+  public CompletableFuture<EconomyResponse> setBalance(UUID playerId, String currencyId, BigDecimal amount, String reason) {
+    return runAsync(() -> {
+      BigDecimal before = service.getBalance(playerId, currencyId);
+      BigDecimal diff = amount.subtract(before);
+
+      if (diff.compareTo(BigDecimal.ZERO) > 0) {
+        service.addBalance(playerId, diff, currencyId);
+      } else if (diff.compareTo(BigDecimal.ZERO) < 0) {
         service.setBalance(playerId, amount, currencyId);
-
-        BigDecimal after = getBalance(playerId, currencyId);
-
-        return EconomyResult.success(
-          before,
-          after,
-          amount,
-          reason
-        );
-
-      } catch (Exception e) {
-        return EconomyResult.failure(
-          EconomyStatus.ERROR,
-          "Error setting balance: " + e.getMessage(),
-          null
-        );
       }
+
+      BigDecimal after = service.getBalance(playerId, currencyId);
+      return EconomyResponse.success(diff, after);
     });
   }
 
   @Override
-  public CompletableFuture<EconomyResult> deposit(UUID playerId, String currencyId, BigDecimal amount, String reason) {
-    return CompletableFuture.supplyAsync(() -> {
-      try {
-        BigDecimal before = getBalance(playerId, currencyId);
-
-        service.addBalance(playerId, amount, currencyId);
-
-        BigDecimal after = getBalance(playerId, currencyId);
-
-        return EconomyResult.success(
-          before,
-          after,
-          amount,
-          reason
-        );
-
-      } catch (Exception e) {
-        return EconomyResult.failure(
-          EconomyStatus.ERROR,
-          "Error depositing: " + e.getMessage(),
-          null
-        );
-      }
+  public CompletableFuture<EconomyResponse> deposit(UUID playerId, String currencyId, BigDecimal amount, String reason) {
+    return runAsync(() -> {
+      service.addBalance(playerId, amount, currencyId);
+      BigDecimal after = service.getBalance(playerId, currencyId);
+      return EconomyResponse.success(amount, after);
     });
   }
 
   @Override
-  public CompletableFuture<EconomyResult> withdraw(UUID playerId, String currencyId, BigDecimal amount, String reason) {
-    return CompletableFuture.supplyAsync(() -> {
-      try {
-        BigDecimal before = getBalance(playerId, currencyId);
-
-        if (before.compareTo(amount) < 0) {
-          return EconomyResult.failure(
-            EconomyStatus.INSUFFICIENT_FUNDS,
-            "Insufficient funds",
-            before
-          );
-        }
-
-        service.setBalance(playerId, before.subtract(amount), currencyId);
-
-        BigDecimal after = getBalance(playerId, currencyId);
-
-        return EconomyResult.success(
-          before,
-          after,
-          amount,
-          reason
-        );
-
-      } catch (Exception e) {
-        return EconomyResult.failure(
-          EconomyStatus.ERROR,
-          "Error withdrawing: " + e.getMessage(),
-          null
-        );
-      }
+  public CompletableFuture<EconomyResponse> withdraw(UUID playerId, String currencyId, BigDecimal amount, String reason) {
+    return runAsync(() -> {
+      BigDecimal before = service.getBalance(playerId, currencyId);
+      if (before.compareTo(amount) < 0) return EconomyResponse.failure("Insufficient funds");
+      service.setBalance(playerId, before.subtract(amount), currencyId);
+      BigDecimal after = service.getBalance(playerId, currencyId);
+      return EconomyResponse.success(amount, after);
     });
   }
 
   @Override
-  public CompletableFuture<Boolean> hasEnoughMoney(UUID playerId, String currencyId, BigDecimal amount) {
-    return CompletableFuture.supplyAsync(() -> {
-      try {
-        return service.hasEnoughFunds(playerId, amount, currencyId);
-      } catch (Exception e) {
-        CobbleUtils.LOGGER.error("Error checking balance: " + e.getMessage());
-        e.printStackTrace();
-        return false;
-      }
+  public CompletableFuture<EconomyResponse> hasEnoughMoney(UUID playerId, String currencyId, BigDecimal amount) {
+    return getBalance(playerId, currencyId).thenApply(resp ->
+      resp.balance().compareTo(amount) >= 0
+        ? EconomyResponse.success(BigDecimal.ZERO, resp.balance())
+        : EconomyResponse.failure("Not enough money")
+    );
+  }
+
+  @Override
+  public CompletableFuture<EconomyResponse> transfer(@NonNull UUID fromPlayerId, @NonNull UUID toPlayerId,
+                                                     @NonNull String currencyId, @NonNull BigDecimal amount,
+                                                     @NonNull String reason) {
+    if (fromPlayerId.equals(toPlayerId))
+      return CompletableFuture.completedFuture(EconomyResponse.failure("Cannot transfer to the same player"));
+
+    // Check funds y luego ejecutar todo de manera segura
+    return hasEnoughMoney(fromPlayerId, currencyId, amount).thenCompose(hasMoneyResp -> {
+      if (!hasMoneyResp.success())
+        return CompletableFuture.completedFuture(EconomyResponse.failure("Source player lacks funds"));
+
+      return withdraw(fromPlayerId, currencyId, amount, reason).thenCompose(withdrawResp -> {
+        if (!withdrawResp.success())
+          return CompletableFuture.completedFuture(EconomyResponse.failure("Failed to withdraw from source"));
+
+        return deposit(toPlayerId, currencyId, amount, reason).thenCompose(depositResp -> {
+          if (!depositResp.success()) {
+            // rollback asincrónico
+            return deposit(fromPlayerId, currencyId, amount, "rollback")
+              .thenApply(rollbackResp -> EconomyResponse.failure("Failed to deposit to target, rollback applied"));
+          }
+          return CompletableFuture.completedFuture(EconomyResponse.success(amount, depositResp.balance()));
+        });
+      });
     });
   }
 
-
   @Override
-  public int getDecimals(String currency) {
-    return CobbleUtils.config.getDecimals();
-  }
-
-  @Override
-  public String format(BigDecimal money, String currency) {
-    return CobbleUtils.config.getFormat(money) + " " + service.getCurrencySymbol(currency);
+  public String getSymbol(String currency) {
+    return service.getCurrencySymbol(currency);
   }
 }

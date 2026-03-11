@@ -1,7 +1,7 @@
 package com.kingpixel.cobbleutils.tasks;
 
 import com.kingpixel.cobbleutils.CobbleUtils;
-import com.kingpixel.cobbleutils.Model.Location;
+import com.kingpixel.cobbleutils.model.Location;
 import com.kingpixel.cobbleutils.util.redis.handlers.RedisTeleportHandler;
 import net.minecraft.server.network.ServerPlayerEntity;
 

@@ -1,20 +1,20 @@
 package com.kingpixel.cobbleutils.config;
 
-import com.google.gson.Gson;
 import com.kingpixel.cobbleutils.CobbleUtils;
-import com.kingpixel.cobbleutils.Model.ItemModel;
+import com.kingpixel.cobbleutils.model.ItemModel;
 import com.kingpixel.cobbleutils.ui.AdvancedRewardsGUI;
 import com.kingpixel.cobbleutils.ui.ConfirmMenu;
 import com.kingpixel.cobbleutils.ui.PartyPcMenu;
 import com.kingpixel.cobbleutils.ui.StorageMenu;
-import com.kingpixel.cobbleutils.util.Utils;
+import com.kingpixel.cobbleutils.util.UtilsFile;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.io.IOException;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 
 @Getter
 @Setter
@@ -292,24 +292,20 @@ public class Lang {
    * Method to initialize the config.
    */
   public void init() {
-    CompletableFuture<Boolean> futureRead = Utils.readFileAsync(CobbleUtils.PATH_LANG, CobbleUtils.config.getLang() + ".json",
-      el -> {
-        Gson gson = Utils.newGson();
-        CobbleUtils.language = gson.fromJson(el, Lang.class);
-        if (CobbleUtils.language.getTitlemenurewards() == null)
-          CobbleUtils.language.setTitlemenurewards("&eRewards Menu");
-        String data = gson.toJson(CobbleUtils.language);
-        Utils.writeFileAsync(CobbleUtils.PATH_LANG, CobbleUtils.config.getLang() + ".json", data);
-      });
-
-    if (!futureRead.join()) {
-      CobbleUtils.LOGGER.info("No lang.json file found for" + CobbleUtils.MOD_NAME + ". Attempting to generate one.");
-      Gson gson = Utils.newGson();
-      String data = gson.toJson(this);
-      Utils.writeFileAsync(CobbleUtils.PATH_LANG, CobbleUtils.config.getLang() +
-          ".json",
-        data);
+    Path file = CobbleUtils.getPathMod().resolve("lang").resolve(CobbleUtils.config.getLang() + ".json");
+    Lang lang = null;
+    if (file.toFile().exists()) {
+      try {
+        lang = UtilsFile.read(file, Lang.class);
+      } catch (IOException e) {
+        e.printStackTrace();
+      }
+    } else {
+      lang = this;
     }
+    if (lang == null) lang = this;
+    CobbleUtils.language = lang;
+    UtilsFile.writeAsync(file, lang);
   }
 
 }

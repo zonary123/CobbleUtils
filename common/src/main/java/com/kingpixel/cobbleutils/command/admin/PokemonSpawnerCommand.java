@@ -1,7 +1,7 @@
 package com.kingpixel.cobbleutils.command.admin;
 
 import com.cobblemon.mod.common.pokemon.Pokemon;
-import com.kingpixel.cobbleutils.Model.PokemonSpawner;
+import com.kingpixel.cobbleutils.model.PokemonSpawner;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;

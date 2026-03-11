@@ -1,12 +1,10 @@
 package com.kingpixel.cobbleutils.database.users;
 
 import com.kingpixel.cobbleutils.CobbleUtils;
-import com.kingpixel.cobbleutils.Model.DataBaseConfig;
-import com.kingpixel.cobbleutils.Model.ItemChance;
-import com.kingpixel.cobbleutils.Model.rewards.Reward;
+import com.kingpixel.cobbleutils.model.DataBaseConfig;
+import com.kingpixel.cobbleutils.model.rewards.Reward;
 import com.kingpixel.cobbleutils.database.users.models.Storage;
 import com.kingpixel.cobbleutils.util.UtilsFile;
-import net.minecraft.server.network.ServerPlayerEntity;
 import org.jetbrains.annotations.Nullable;
 
 import java.nio.file.Path;
@@ -74,12 +72,6 @@ public class DataBaseUsersJson extends DataBaseUsers {
   public CompletableFuture<Set<Storage>> findUserStorage(UUID uuid) {
     return findUserModel(uuid)
       .thenApply(model -> model != null ? model.getStorageList() : Collections.emptySet());
-  }
-
-  @Override
-  public boolean isAvailableReward(ServerPlayerEntity player, ItemChance itemChance) {
-    UserModel model = getUserModel(player);
-    return model != null && model.isAvailableReward(itemChance);
   }
 
   @Override

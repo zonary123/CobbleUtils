@@ -2,7 +2,7 @@ package com.kingpixel.cobbleutils.util.redis.handlers;
 
 import com.google.gson.JsonObject;
 import com.kingpixel.cobbleutils.CobbleUtils;
-import com.kingpixel.cobbleutils.Model.messages.HiperMessage;
+import com.kingpixel.cobbleutils.model.messages.HiperMessage;
 import com.kingpixel.cobbleutils.util.AdventureTranslator;
 import com.kingpixel.cobbleutils.util.redis.RedisManager;
 import net.minecraft.server.network.ServerPlayerEntity;

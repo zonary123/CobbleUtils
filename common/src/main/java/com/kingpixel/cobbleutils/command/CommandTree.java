@@ -1,12 +1,12 @@
 package com.kingpixel.cobbleutils.command;
 
 import com.kingpixel.cobbleutils.CobbleUtils;
-import com.kingpixel.cobbleutils.Model.Location;
 import com.kingpixel.cobbleutils.command.admin.*;
 import com.kingpixel.cobbleutils.command.base.PokeShout;
 import com.kingpixel.cobbleutils.command.base.PokeShoutAll;
 import com.kingpixel.cobbleutils.command.base.PokeShoutAllMe;
 import com.kingpixel.cobbleutils.command.base.PokeShoutMe;
+import com.kingpixel.cobbleutils.model.Location;
 import com.kingpixel.cobbleutils.util.LuckPermsUtil;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
@@ -58,8 +58,6 @@ public class CommandTree {
               })
           )
       );
-
-      ModRewardsCommand.register(dispatcher, base);
 
       WikiCommand.register(dispatcher, base, "https://zonary123-dev.gitbook.io/zonary123-dev-docs/mods/cobbleutils");
 

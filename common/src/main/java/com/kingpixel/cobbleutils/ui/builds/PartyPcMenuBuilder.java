@@ -3,7 +3,7 @@ package com.kingpixel.cobbleutils.ui.builds;
 import ca.landonjw.gooeylibs2.api.button.ButtonAction;
 import ca.landonjw.gooeylibs2.api.template.Template;
 import com.cobblemon.mod.common.pokemon.Pokemon;
-import com.kingpixel.cobbleutils.Model.PokemonBlackList;
+import com.kingpixel.cobbleutils.model.PokemonBlackList;
 import com.kingpixel.cobbleutils.action.PokemonButtonAction;
 import com.kingpixel.cobbleutils.ui.ConfirmMenu;
 import com.kingpixel.cobbleutils.ui.PartyPcMenu;

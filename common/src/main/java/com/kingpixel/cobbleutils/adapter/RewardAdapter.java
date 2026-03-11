@@ -2,9 +2,9 @@ package com.kingpixel.cobbleutils.adapter;
 
 import com.google.gson.*;
 import com.kingpixel.cobbleutils.CobbleUtils;
-import com.kingpixel.cobbleutils.Model.DurationValue;
-import com.kingpixel.cobbleutils.Model.rewards.Reward;
-import com.kingpixel.cobbleutils.Model.rewards.RewardRegistry;
+import com.kingpixel.cobbleutils.model.DurationValue;
+import com.kingpixel.cobbleutils.model.rewards.Reward;
+import com.kingpixel.cobbleutils.model.rewards.RewardRegistry;
 
 import java.lang.reflect.Type;
 import java.util.Set;

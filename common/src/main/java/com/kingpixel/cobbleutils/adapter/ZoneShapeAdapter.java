@@ -1,7 +1,7 @@
 package com.kingpixel.cobbleutils.adapter;
 
 import com.google.gson.*;
-import com.kingpixel.cobbleutils.Model.zones.zoneshapes.*;
+import com.kingpixel.cobbleutils.model.zones.zoneshapes.*;
 
 import java.lang.reflect.Type;
 import java.util.Map;

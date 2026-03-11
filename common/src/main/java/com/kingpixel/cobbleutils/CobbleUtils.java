@@ -1,9 +1,8 @@
 package com.kingpixel.cobbleutils;
 
 import com.cobblemon.mod.common.api.properties.CustomPokemonProperty;
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import com.kingpixel.cobbleutils.Model.properties.LegendaryPropertyType;
-import com.kingpixel.cobbleutils.Model.properties.MinIvsPropertyType;
+import com.kingpixel.cobbleutils.model.properties.LegendaryPropertyType;
+import com.kingpixel.cobbleutils.model.properties.MinIvsPropertyType;
 import com.kingpixel.cobbleutils.api.EconomyApi;
 import com.kingpixel.cobbleutils.api.RewardsAPI;
 import com.kingpixel.cobbleutils.command.CommandTree;
@@ -19,8 +18,11 @@ import com.kingpixel.cobbleutils.database.users.UserModel;
 import com.kingpixel.cobbleutils.events.ItemRightClickEvents;
 import com.kingpixel.cobbleutils.network.ProxyPacket;
 import com.kingpixel.cobbleutils.tasks.RegistryTasks;
-import com.kingpixel.cobbleutils.util.*;
+import com.kingpixel.cobbleutils.util.CobbleUtilsBridgeGTS;
+import com.kingpixel.cobbleutils.util.SpawnRates;
+import com.kingpixel.cobbleutils.util.UtilsLogger;
 import com.kingpixel.cobbleutils.util.async.AsyncContext;
+import com.kingpixel.cobbleutils.util.async.UtilsAsync;
 import com.kingpixel.cobbleutils.util.redis.RedisManager;
 import dev.architectury.event.events.common.CommandRegistrationEvent;
 import dev.architectury.event.events.common.InteractionEvent;
@@ -39,7 +41,6 @@ import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
 import java.nio.file.Path;
-import java.util.concurrent.*;
 
 public class CobbleUtils {
   public static final String MOD_ID = "cobbleutils";
@@ -61,32 +62,9 @@ public class CobbleUtils {
   public static SpawnRates spawnRates = new SpawnRates();
   // Lang
   public static Lang language = new Lang();
-  public static final AsyncContext ASYNC = com.kingpixel.cobbleutils.util.async.UtilsAsync.createContext(MOD_ID, MOD_NAME, 1, 8);
-
-  @Deprecated(forRemoval = true)
-  private static final ExecutorService EXECUTOR_COBBLEUTILS = Executors.newFixedThreadPool(1, new ThreadFactoryBuilder()
-    .setDaemon(true)
-    .setNameFormat("CobbleUtils Executor-%d")
-    .build());
-  @Deprecated(forRemoval = true)
-  public static final ScheduledExecutorService SCHEDULER_COBBLEUTILS = Executors.newScheduledThreadPool(1, new ThreadFactoryBuilder()
-    .setDaemon(true)
-    .setNameFormat("CobbleUtils Scheduled Executor-%d")
-    .build());
-
+  public static final AsyncContext ASYNC = UtilsAsync.createContext(MOD_ID, MOD_NAME, 1, 4);
 
   public static void init() {
-    new UtilsFile();
-    try {
-      Class.forName("org.bson.conversions.Bson");
-    } catch (ClassNotFoundException e) {
-      e.printStackTrace();
-    }
-    try {
-      server = (MinecraftServer) FabricLoader.getInstance().getGameInstance();
-    } catch (Exception e) {
-      e.printStackTrace();
-    }
     tasks();
     events();
     if (config.isRedisMessaging()) {
@@ -187,12 +165,7 @@ public class CobbleUtils {
       ChunkBlockStorageManager.shutdownAsync().join();
     });
 
-    LifecycleEvent.SERVER_STOPPED.register(server -> {
-      shutdownAndAwait(EXECUTOR_COBBLEUTILS);
-      shutdownAndAwait(Utils.IO_EXECUTOR);
-      shutdownAndAwait(SCHEDULER_COBBLEUTILS);
-      com.kingpixel.cobbleutils.util.async.UtilsAsync.shutdownAll();
-    });
+    LifecycleEvent.SERVER_STOPPED.register(server -> UtilsAsync.shutdownAll());
 
     PlayerEvent.PLAYER_JOIN.register((player) -> {
       /*if (serverName == null && config.isRedisMessaging()) {
@@ -237,47 +210,6 @@ public class CobbleUtils {
 
   public static Path getPathMod() {
     return getPath().resolve(MOD_ID);
-  }
-
-  @Deprecated(forRemoval = true)
-  public static void shutdownAndAwait(ExecutorService executor) {
-    if (executor == null || executor.isShutdown()) {
-      return;
-    }
-    executor.shutdown();
-    try {
-      if (!executor.awaitTermination(5, TimeUnit.SECONDS)) {
-        LOGGER.warn("Executor did not terminate in time, forcing shutdown...");
-        executor.shutdownNow();
-      }
-    } catch (InterruptedException e) {
-      LOGGER.error("Executor shutdown was interrupted");
-      e.printStackTrace();
-      executor.shutdownNow();
-    }
-  }
-
-  /**
-   * Run async with CobbleUtils executor
-   *
-   * @param runnable
-   * @return CompletableFuture<Void>
-   */
-  @Deprecated(forRemoval = true)
-  public static CompletableFuture<Void> runAsync(Runnable runnable) {
-    return runAsync(runnable, EXECUTOR_COBBLEUTILS);
-  }
-
-  /**
-   * Run async with custom executor
-   *
-   * @param runnable
-   * @param executor
-   * @return CompletableFuture<Void>
-   */
-  @Deprecated(forRemoval = true)
-  public static CompletableFuture<Void> runAsync(Runnable runnable, ExecutorService executor) {
-    return UtilsAsync.runAsync(runnable, executor);
   }
 
 

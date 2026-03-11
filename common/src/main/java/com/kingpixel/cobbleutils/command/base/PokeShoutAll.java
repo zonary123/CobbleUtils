@@ -48,7 +48,7 @@ public class PokeShoutAll implements Command<ServerCommandSource> {
           PokeShout.cooldowns.put(player.getUuid(),
             System.currentTimeMillis() + CobbleUtils.config.getCooldownpokeshout().toMillis());
           PlayerPartyStore playerPartyStore = Cobblemon.INSTANCE.getStorage().getParty(player);
-          if (playerPartyStore.size() == 0) {
+          if (playerPartyStore.isEmpty()) {
             player.sendMessage(
               AdventureTranslator.toNative(
                 CobbleUtils.language.getMessageNoPokemon()

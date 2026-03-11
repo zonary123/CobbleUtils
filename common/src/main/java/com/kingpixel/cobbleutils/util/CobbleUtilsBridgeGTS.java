@@ -1,7 +1,7 @@
 package com.kingpixel.cobbleutils.util;
 
 import com.kingpixel.cobbleutils.CobbleUtils;
-import com.kingpixel.cobbleutils.Model.economy.EconomySelector;
+import com.kingpixel.cobbleutils.util.economys.EconomySelector;
 import org.pokesplash.gts.api.economy.GtsEconomy;
 import org.pokesplash.gts.api.economy.GtsEconomyProvider;
 import org.pokesplash.gts.enumeration.Priority;

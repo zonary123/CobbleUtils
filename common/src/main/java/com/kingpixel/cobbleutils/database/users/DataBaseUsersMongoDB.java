@@ -1,9 +1,8 @@
 package com.kingpixel.cobbleutils.database.users;
 
 import com.kingpixel.cobbleutils.CobbleUtils;
-import com.kingpixel.cobbleutils.Model.DataBaseConfig;
-import com.kingpixel.cobbleutils.Model.ItemChance;
-import com.kingpixel.cobbleutils.Model.rewards.Reward;
+import com.kingpixel.cobbleutils.model.DataBaseConfig;
+import com.kingpixel.cobbleutils.model.rewards.Reward;
 import com.kingpixel.cobbleutils.database.users.models.Storage;
 import com.mongodb.ConnectionString;
 import com.mongodb.MongoClientSettings;
@@ -13,7 +12,6 @@ import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.UpdateOptions;
-import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.util.UserCache;
 import org.bson.Document;
 import org.jetbrains.annotations.Nullable;
@@ -105,11 +103,6 @@ public class DataBaseUsersMongoDB extends DataBaseUsers {
         .map(Storage::fromDocument)
         .collect(Collectors.toSet());
     });
-  }
-
-  @Override
-  public boolean isAvailableReward(ServerPlayerEntity player, ItemChance itemChance) {
-    return isAvailableReward(player.getUuid(), itemChance.toReward()).join();
   }
 
   @Override

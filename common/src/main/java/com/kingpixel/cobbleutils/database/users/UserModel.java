@@ -1,9 +1,8 @@
 package com.kingpixel.cobbleutils.database.users;
 
 import com.kingpixel.cobbleutils.CobbleUtils;
-import com.kingpixel.cobbleutils.Model.DurationValue;
-import com.kingpixel.cobbleutils.Model.ItemChance;
-import com.kingpixel.cobbleutils.Model.rewards.Reward;
+import com.kingpixel.cobbleutils.model.DurationValue;
+import com.kingpixel.cobbleutils.model.rewards.Reward;
 import com.kingpixel.cobbleutils.database.DataBaseFactory;
 import com.kingpixel.cobbleutils.database.users.models.Storage;
 import com.kingpixel.cobbleutils.util.PlayerUtils;
@@ -108,11 +107,6 @@ public class UserModel {
 
     markDirty();
     return true;
-  }
-
-  public boolean isAvailableReward(ItemChance itemChance) {
-    if (itemChance == null) return false;
-    return isAvailableReward(itemChance.toReward());
   }
 
   public void fix(ServerPlayerEntity player) {

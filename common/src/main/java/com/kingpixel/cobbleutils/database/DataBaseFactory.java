@@ -1,6 +1,6 @@
 package com.kingpixel.cobbleutils.database;
 
-import com.kingpixel.cobbleutils.Model.DataBaseConfig;
+import com.kingpixel.cobbleutils.model.DataBaseConfig;
 import com.kingpixel.cobbleutils.database.users.DataBaseUsers;
 import com.kingpixel.cobbleutils.database.users.DataBaseUsersJson;
 import com.kingpixel.cobbleutils.database.users.DataBaseUsersMongoDB;

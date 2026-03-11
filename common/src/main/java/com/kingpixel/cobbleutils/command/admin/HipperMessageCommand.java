@@ -1,7 +1,7 @@
 package com.kingpixel.cobbleutils.command.admin;
 
 import com.kingpixel.cobbleutils.CobbleUtils;
-import com.kingpixel.cobbleutils.Model.messages.HiperMessage;
+import com.kingpixel.cobbleutils.model.messages.HiperMessage;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;

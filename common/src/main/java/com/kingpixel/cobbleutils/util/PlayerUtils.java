@@ -5,8 +5,8 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.kingpixel.cobbleutils.CobbleUtils;
-import com.kingpixel.cobbleutils.Model.DurationValue;
 import com.kingpixel.cobbleutils.mixins.UserCacheMixin;
+import com.kingpixel.cobbleutils.model.DurationValue;
 import com.kingpixel.cobbleutils.util.manager.CooldownManager;
 import com.kingpixel.cobbleutils.util.redis.handlers.RedisMessageHandler;
 import com.mojang.authlib.GameProfile;
@@ -438,5 +438,13 @@ public class PlayerUtils {
       e.printStackTrace();
     }
     return null;
+  }
+
+  public static ItemStack getHead(String replace, int amount) {
+    ItemStack itemStack = Items.PLAYER_HEAD.getDefaultStack();
+    var profile = new GameProfile(UUID.randomUUID(), replace);
+    itemStack.set(DataComponentTypes.PROFILE, new ProfileComponent(profile));
+    itemStack.setCount(amount);
+    return itemStack;
   }
 }

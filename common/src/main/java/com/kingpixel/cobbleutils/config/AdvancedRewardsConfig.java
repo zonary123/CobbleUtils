@@ -1,16 +1,14 @@
 package com.kingpixel.cobbleutils.config;
 
 import com.kingpixel.cobbleutils.CobbleUtils;
-import com.kingpixel.cobbleutils.Model.AdvancedItemChance;
+import com.kingpixel.cobbleutils.model.rewards.AdvancedReward;
 import com.kingpixel.cobbleutils.api.RewardsAPI;
-import com.kingpixel.cobbleutils.util.Utils;
+import com.kingpixel.cobbleutils.util.UtilsFile;
 import lombok.Data;
 
-import java.io.File;
-import java.util.ArrayList;
-import java.util.HashMap;
+import java.io.IOException;
+import java.nio.file.Path;
 import java.util.List;
-import java.util.Map;
 
 /**
  * @author Carlos Varas Alonso - 02/09/2025 12:16
@@ -18,60 +16,42 @@ import java.util.Map;
 @Data
 public class AdvancedRewardsConfig {
   private static final String PATH = CobbleUtils.PATH + "/advancedRewards/";
-  private final Map<String, AdvancedItemChance> TEMPLATE_REWARDS = new HashMap<>();
 
   public void init() {
-    TEMPLATE_REWARDS.clear();
-    File folder = Utils.getAbsolutePath(PATH);
-    if (folder.exists()) {
-      List<File> files = getAllJsonFilesRecursive(folder);
-      for (File f : files) {
+    Path folder = CobbleUtils.getPathMod().resolve("advancedRewards");
+    if (folder.toFile().exists()) {
+      List<Path> files = UtilsFile.getAllJsonFiles(folder);
+      for (Path f : files) {
         try {
-          AdvancedItemChance advancedItemChance = Utils.newGson().fromJson(Utils.readFileSync(f), AdvancedItemChance.class);
-          String id = f.getName().replace(".json", "");
-          RewardsAPI.registerAdvancedReward(id, advancedItemChance.toAdvancedReward(id));
-          Utils.writeFileSync(f, Utils.newGson().toJson(advancedItemChance, AdvancedItemChance.class));
-          if (TEMPLATE_REWARDS.containsKey(id)) {
-            CobbleUtils.LOGGER.error("Duplicate reward id found: " + id + " in file: " + f.getPath());
-          } else {
-            TEMPLATE_REWARDS.put(id, advancedItemChance);
+          AdvancedReward advancedReward = UtilsFile.read(f, AdvancedReward.class);
+          if (advancedReward != null) {
+            String id = f.toFile().getName().replace(".json", "");
+            RewardsAPI.registerAdvancedReward(id, advancedReward);
+            UtilsFile.write(f, advancedReward);
           }
         } catch (Exception e) {
-          CobbleUtils.LOGGER.error("Error loading reward file: " + f.getPath() + " - " + e.getMessage());
+          CobbleUtils.LOGGER.error("Error loading reward file: " + f + " - " + e.getMessage());
         }
       }
     } else {
-      folder.mkdirs();
-      createDefaultFiles();
-    }
-    CobbleUtils.LOGGER.info("Loaded " + TEMPLATE_REWARDS.size() + " reward files.");
-  }
-
-  private List<File> getAllJsonFilesRecursive(File folder) {
-    List<File> files = new ArrayList<>();
-    File[] list = folder.listFiles();
-    if (list != null) {
-      for (File f : list) {
-        if (f.isDirectory()) {
-          files.addAll(getAllJsonFilesRecursive(f));
-        } else if (f.isFile() && f.getName().endsWith(".json")) {
-          files.add(f);
-        }
+      folder.toFile().mkdirs();
+      try {
+        createDefaultFiles();
+      } catch (IOException e) {
+        e.printStackTrace();
       }
     }
-    return files;
   }
 
-  private void createDefaultFiles() {
-    createFile("easy_reward", new AdvancedItemChance());
+  private void createDefaultFiles() throws IOException {
+    createFile("easy_reward", new AdvancedReward());
   }
 
-  private void createFile(String fileName, AdvancedItemChance advancedItemChance) {
+  private void createFile(String fileName, AdvancedReward advancedReward) throws IOException {
     String id = fileName.replace(".json", "");
-    TEMPLATE_REWARDS.put(id, advancedItemChance);
-    File file = Utils.getAbsolutePath(PATH + fileName + ".json");
-    Utils.writeFileSync(file, Utils.newGson().toJson(advancedItemChance,
-      AdvancedItemChance.class));
+    RewardsAPI.registerAdvancedReward(id, advancedReward);
+    Path filePath = CobbleUtils.getPathMod().resolve("advancedRewards/" + fileName + ".json");
+    UtilsFile.write(filePath, advancedReward);
   }
 
 }

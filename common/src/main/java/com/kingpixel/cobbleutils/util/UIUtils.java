@@ -18,8 +18,8 @@ import com.cobblemon.mod.common.api.storage.pc.PCStore;
 import com.cobblemon.mod.common.item.PokemonItem;
 import com.cobblemon.mod.common.pokemon.Pokemon;
 import com.kingpixel.cobbleutils.CobbleUtils;
-import com.kingpixel.cobbleutils.Model.ItemModel;
 import com.kingpixel.cobbleutils.action.PokemonButtonAction;
+import com.kingpixel.cobbleutils.model.ItemModel;
 import net.minecraft.component.DataComponentTypes;
 import net.minecraft.component.type.LoreComponent;
 import net.minecraft.item.ItemStack;
@@ -298,7 +298,7 @@ public class UIUtils {
     }
 
 
-    template.fill(GooeyButton.of(Utils.parseItemId(CobbleUtils.config.getFill())))
+    template.fill(GooeyButton.of(ItemUtils.parseItemId(CobbleUtils.config.getFill())))
       .rectangle(0, 0, 5, 9, new PlaceholderButton())
       .set(5, 4, getCloseButton(closeaction))
       .set(5, 0, getLinkedPageButton(CobbleUtils.language.getItemPrevious(), LinkType.Previous))
@@ -340,7 +340,7 @@ public class UIUtils {
       slotFutures.add(slot);
     }
 
-    template.fill(GooeyButton.of(Utils.parseItemId(CobbleUtils.config.getFill())));
+    template.fill(GooeyButton.of(ItemUtils.parseItemId(CobbleUtils.config.getFill())));
 
     return GooeyPage.builder()
       .template(template)
@@ -373,7 +373,7 @@ public class UIUtils {
       template.set(row, col, slot);
     }
 
-    template.fill(GooeyButton.of(Utils.parseItemId(CobbleUtils.config.getFill())));
+    template.fill(GooeyButton.of(ItemUtils.parseItemId(CobbleUtils.config.getFill())));
     template.set(0, 4, getPcButton(player, actionpokemon, actionclose));
 
     return GooeyPage.builder()

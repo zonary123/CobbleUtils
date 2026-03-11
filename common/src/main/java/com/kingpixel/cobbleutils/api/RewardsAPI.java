@@ -1,9 +1,8 @@
 package com.kingpixel.cobbleutils.api;
 
 import com.kingpixel.cobbleutils.CobbleUtils;
-import com.kingpixel.cobbleutils.Model.ItemChance;
-import com.kingpixel.cobbleutils.Model.rewards.AdvancedReward;
-import com.kingpixel.cobbleutils.Model.rewards.Reward;
+import com.kingpixel.cobbleutils.model.rewards.AdvancedReward;
+import com.kingpixel.cobbleutils.model.rewards.Reward;
 import net.minecraft.server.network.ServerPlayerEntity;
 import org.jetbrains.annotations.Nullable;
 
@@ -17,6 +16,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class RewardsAPI {
   private static final Map<String, AdvancedReward> ADVANCED_REWARDS_TEMPLATE = new ConcurrentHashMap<>();
+  private static final Map<String, Reward> REWARDS_TEMPLATE = new ConcurrentHashMap<>();
 
   public static void registerAdvancedReward(String id, AdvancedReward advancedReward) {
     if (ADVANCED_REWARDS_TEMPLATE.containsKey(id)) {
@@ -24,30 +24,6 @@ public class RewardsAPI {
     } else {
       ADVANCED_REWARDS_TEMPLATE.put(id, advancedReward);
     }
-  }
-
-  public static void giveAdvancedReward(UUID playerUUID, AdvancedReward advancedReward) {
-    AdvancedReward rewardToGive = advancedReward;
-    if (rewardToGive.getId() != null && !rewardToGive.getId().isEmpty()) {
-      rewardToGive = ADVANCED_REWARDS_TEMPLATE.getOrDefault(advancedReward.getId(), advancedReward);
-    }
-    rewardToGive.giveRewards(playerUUID);
-  }
-
-  public static AdvancedReward getAdvancedRewardTemplate(String advancedRewardId) {
-    AdvancedReward advancedReward = ADVANCED_REWARDS_TEMPLATE.getOrDefault(advancedRewardId, null);
-    if (advancedReward == null) CobbleUtils.LOGGER.error("Advanced reward with id " + advancedRewardId + " not found!");
-    return advancedReward;
-  }
-
-  private static final Map<String, Reward> REWARDS_TEMPLATE = new ConcurrentHashMap<>();
-
-  public static @Nullable Reward getRewardTemplate(String id) {
-    if (CobbleUtils.config.isDebug()) CobbleUtils.LOGGER.info("Getting reward template with id: " + id);
-
-    Reward reward = REWARDS_TEMPLATE.getOrDefault(id, null);
-    if (reward == null) CobbleUtils.LOGGER.error("Reward with id " + id + " not found!");
-    return reward;
   }
 
   public static void registerReward(Reward reward) {
@@ -61,6 +37,27 @@ public class RewardsAPI {
     } else {
       REWARDS_TEMPLATE.put(id, reward);
     }
+  }
+
+  public static AdvancedReward getAdvancedRewardTemplate(String advancedRewardId) {
+    AdvancedReward advancedReward = ADVANCED_REWARDS_TEMPLATE.getOrDefault(advancedRewardId, null);
+    if (advancedReward == null) CobbleUtils.LOGGER.error("Advanced reward with id " + advancedRewardId + " not found!");
+    return advancedReward;
+  }
+
+  public static @Nullable Reward getRewardTemplate(String id) {
+    if (CobbleUtils.config.isDebug()) CobbleUtils.LOGGER.info("Getting reward template with id: " + id);
+    Reward reward = REWARDS_TEMPLATE.getOrDefault(id, null);
+    if (reward == null) CobbleUtils.LOGGER.error("Reward with id " + id + " not found!");
+    return reward;
+  }
+
+  public static void giveAdvancedReward(UUID playerUUID, AdvancedReward advancedReward) {
+    AdvancedReward rewardToGive = advancedReward;
+    if (rewardToGive.getId() != null && !rewardToGive.getId().isEmpty()) {
+      rewardToGive = ADVANCED_REWARDS_TEMPLATE.getOrDefault(advancedReward.getId(), advancedReward);
+    }
+    rewardToGive.giveRewards(playerUUID);
   }
 
   public static CompletableFuture<Boolean> giveReward(UUID playerUUID, Reward reward) {
@@ -77,17 +74,17 @@ public class RewardsAPI {
     }
   }
 
-
-  public static @Nullable ItemChance getReward(String id) {
-    ItemChance itemChance = CobbleUtils.rewardsConfig.getRewards().getOrDefault(id, null);
-    if (itemChance == null) CobbleUtils.LOGGER.error("Reward with id " + id + " not found!");
-    return itemChance;
-  }
-
   public static void clearRewards() {
     REWARDS_TEMPLATE.clear();
     ADVANCED_REWARDS_TEMPLATE.clear();
   }
 
 
+  public static Map<String, Reward> getRewards() {
+    return REWARDS_TEMPLATE;
+  }
+
+  public static Map<String, AdvancedReward> getAdvancedRewards() {
+    return ADVANCED_REWARDS_TEMPLATE;
+  }
 }

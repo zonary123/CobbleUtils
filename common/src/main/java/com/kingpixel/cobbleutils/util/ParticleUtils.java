@@ -1,6 +1,6 @@
 package com.kingpixel.cobbleutils.util;
 
-import com.kingpixel.cobbleutils.Model.Particle;
+import com.kingpixel.cobbleutils.model.Particle;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.ai.TargetPredicate;
 import net.minecraft.network.packet.s2c.play.ParticleS2CPacket;

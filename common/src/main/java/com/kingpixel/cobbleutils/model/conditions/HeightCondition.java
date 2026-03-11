@@ -1,0 +1,31 @@
+package com.kingpixel.cobbleutils.model.conditions;
+
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import net.minecraft.server.network.ServerPlayerEntity;
+
+@EqualsAndHashCode(callSuper = true)
+@Data
+public class HeightCondition extends Condition {
+  public static final String TYPE = "HEIGHT";
+  private final int minHeight = 0;
+  private final int maxHeight = 256;
+
+  @Override
+  public String getType() {
+    return TYPE;
+  }
+
+  @Override
+  public boolean check(ServerPlayerEntity player) {
+    int y = player.getBlockPos().getY();
+    return y >= minHeight && y <= maxHeight;
+  }
+
+  @Override
+  public String getReason(ServerPlayerEntity player) {
+    return "You need to be between Y levels " + minHeight + " and " + maxHeight;
+  }
+
+
+}

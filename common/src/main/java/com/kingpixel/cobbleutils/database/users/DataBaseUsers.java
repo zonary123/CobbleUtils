@@ -2,9 +2,8 @@ package com.kingpixel.cobbleutils.database.users;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
-import com.kingpixel.cobbleutils.Model.DataBaseConfig;
-import com.kingpixel.cobbleutils.Model.ItemChance;
-import com.kingpixel.cobbleutils.Model.rewards.Reward;
+import com.kingpixel.cobbleutils.model.DataBaseConfig;
+import com.kingpixel.cobbleutils.model.rewards.Reward;
 import com.kingpixel.cobbleutils.database.users.models.Storage;
 import net.minecraft.server.network.ServerPlayerEntity;
 import org.jetbrains.annotations.Nullable;
@@ -52,10 +51,7 @@ public abstract class DataBaseUsers {
     return CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
   }
 
-  public abstract boolean isAvailableReward(ServerPlayerEntity player, ItemChance itemChance);
-
   public abstract CompletableFuture<Boolean> isAvailableReward(UUID playerUUID, Reward reward);
-
 
   public abstract CompletableFuture<Boolean> addStorage(Storage storage, UUID targetUUID);
 

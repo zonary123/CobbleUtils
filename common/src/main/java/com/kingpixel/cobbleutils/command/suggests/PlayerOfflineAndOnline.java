@@ -1,7 +1,7 @@
 package com.kingpixel.cobbleutils.command.suggests;
 
 import com.kingpixel.cobbleutils.CobbleUtils;
-import com.kingpixel.cobbleutils.Model.DurationValue;
+import com.kingpixel.cobbleutils.model.DurationValue;
 import com.kingpixel.cobbleutils.api.PermissionApi;
 import com.kingpixel.cobbleutils.database.DataBaseFactory;
 import com.kingpixel.cobbleutils.database.users.UserModel;

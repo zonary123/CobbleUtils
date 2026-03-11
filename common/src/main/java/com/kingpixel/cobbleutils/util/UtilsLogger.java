@@ -7,7 +7,6 @@ import org.apache.logging.log4j.Logger;
 import java.time.DayOfWeek;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 
 /**
  * Class for logging with emojis 😎
@@ -82,21 +81,4 @@ public class UtilsLogger {
     FATAL
   }
 
-  // Write method to save logs to file (async)
-  private void write(Level level, String message) {
-    String emoji = switch (level) {
-      case INFO -> "ℹ️";
-      case WARN -> "⚠️";
-      case ERROR -> "❌";
-      case FATAL -> "💀";
-    };
-
-    String output = emoji + " [" + level + "]: " + message;
-
-    CompletableFuture<Boolean> future = Utils.writeFileAsync(
-      CobbleUtils.PATH, "logs.txt", output
-    );
-
-    System.out.println(": " + future.join());
-  }
 }

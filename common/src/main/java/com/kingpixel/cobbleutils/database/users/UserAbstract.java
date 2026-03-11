@@ -1,12 +1,14 @@
 package com.kingpixel.cobbleutils.database.users;
 
 import lombok.Data;
+import lombok.ToString;
 import net.minecraft.server.network.ServerPlayerEntity;
 
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 @Data
+@ToString(callSuper = true)
 public abstract class UserAbstract {
 
   public static final String KEY_PLAYER_UUID = "playerUUID";

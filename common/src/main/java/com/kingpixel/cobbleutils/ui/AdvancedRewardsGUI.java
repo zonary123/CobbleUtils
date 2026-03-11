@@ -1,14 +1,15 @@
 package com.kingpixel.cobbleutils.ui;
 
 import com.kingpixel.cobbleutils.CobbleUtils;
-import com.kingpixel.cobbleutils.Model.ItemModel;
-import com.kingpixel.cobbleutils.Model.PanelsConfig;
+import com.kingpixel.cobbleutils.model.ItemModel;
+import com.kingpixel.cobbleutils.model.PanelsConfig;
 import lombok.Data;
 
 import java.util.List;
 
 /**
  * Configuration for Advanced Rewards GUI (pool display)
+ *
  * @author Carlos Varas Alonso
  */
 @Data

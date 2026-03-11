@@ -3,7 +3,7 @@ package com.kingpixel.cobbleutils.adapter;
 import com.cobblemon.mod.common.pokemon.Pokemon;
 import com.google.gson.*;
 import com.kingpixel.cobbleutils.CobbleUtils;
-import com.kingpixel.cobbleutils.Model.rewards.Reward;
+import com.kingpixel.cobbleutils.model.rewards.Reward;
 import com.kingpixel.cobbleutils.database.users.models.Storage;
 import com.kingpixel.cobbleutils.database.users.models.StorageItemStack;
 import com.kingpixel.cobbleutils.database.users.models.StoragePokemon;

@@ -8,7 +8,7 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.Expiry;
 import com.kingpixel.cobbleutils.CobbleUtils;
-import com.kingpixel.cobbleutils.Model.DurationValue;
+import com.kingpixel.cobbleutils.model.DurationValue;
 import com.kingpixel.cobbleutils.util.PlayerUtils;
 import com.kingpixel.cobbleutils.util.TypeMessage;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -57,7 +57,6 @@ public class CooldownManager {
    * @param player        Jugador
    * @param menu          Identificador del menú
    * @param durationValue Duración del cooldown
-   *
    * @return true si sigue en cooldown, false si puede usarlo
    */
   public static boolean hasCooldownMenu(ServerPlayerEntity player, String menu, DurationValue durationValue) {

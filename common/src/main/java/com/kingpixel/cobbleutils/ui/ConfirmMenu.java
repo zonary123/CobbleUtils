@@ -6,9 +6,9 @@ import ca.landonjw.gooeylibs2.api.button.GooeyButton;
 import ca.landonjw.gooeylibs2.api.page.GooeyPage;
 import ca.landonjw.gooeylibs2.api.template.types.ChestTemplate;
 import com.kingpixel.cobbleutils.CobbleUtils;
-import com.kingpixel.cobbleutils.Model.ItemModel;
-import com.kingpixel.cobbleutils.Model.PanelsConfig;
 import com.kingpixel.cobbleutils.config.Lang;
+import com.kingpixel.cobbleutils.model.ItemModel;
+import com.kingpixel.cobbleutils.model.PanelsConfig;
 import com.kingpixel.cobbleutils.util.AdventureTranslator;
 import lombok.Data;
 import net.minecraft.item.ItemStack;
@@ -16,6 +16,7 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
@@ -84,7 +85,6 @@ public class ConfirmMenu {
    * @param itemStack The item to display
    * @param onConfirm Action to execute on confirm
    * @param onCancel  Action to execute on cancel
-   *
    * @return true if the default menu was used, false if custom implementation should be used
    */
   public static boolean openDefault(ServerPlayerEntity player, ItemStack itemStack,
@@ -97,9 +97,9 @@ public class ConfirmMenu {
     return true;
   }
 
-  public void open(ServerPlayerEntity player, ItemStack itemStack, Consumer<ButtonAction> onConfirm,
-                   Consumer<ButtonAction> onCancel) {
-    CobbleUtils.runAsync(() -> {
+  public CompletableFuture<Void> open(ServerPlayerEntity player, ItemStack itemStack, Consumer<ButtonAction> onConfirm,
+                                      Consumer<ButtonAction> onCancel) {
+    return CobbleUtils.ASYNC.runAsync(() -> {
       ChestTemplate template = createTemplate();
 
       // Copiar el ItemStack para no modificar el original

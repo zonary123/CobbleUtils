@@ -1,9 +1,8 @@
 package com.kingpixel.cobbleutils.command.admin;
 
-import com.kingpixel.cobbleutils.CobbleUtils;
-import com.kingpixel.cobbleutils.Model.rewards.AdvancedReward;
 import com.kingpixel.cobbleutils.api.RewardsAPI;
 import com.kingpixel.cobbleutils.command.suggests.CobbleUtilsSuggests;
+import com.kingpixel.cobbleutils.model.rewards.AdvancedReward;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
@@ -28,7 +27,7 @@ public class AdvancedRewardsCommand {
                 2
               ).then(
                 CommandManager.argument("reward", StringArgumentType.string())
-                  .suggests((context, builder) -> CommandSource.suggestMatching(CobbleUtils.advancedRewardsConfig.getTEMPLATE_REWARDS().keySet(), builder))
+                  .suggests((context, builder) -> CommandSource.suggestMatching(RewardsAPI.getRewards().keySet(), builder))
                   .executes(context -> {
                     String playerName = StringArgumentType.getString(context, "player");
                     if (playerName == null) {

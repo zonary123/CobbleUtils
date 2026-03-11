@@ -19,7 +19,7 @@ import net.minecraft.server.network.ServerPlayerEntity;
 public class CobbleUtilities {
 
   public static String getNameItem(String id) {
-    ItemStack itemStack = Utils.parseItemId(id);
+    ItemStack itemStack = ItemUtils.parseItemId(id);
     Item item = itemStack.getItem();
     return item.getName(itemStack).getString();
   }
@@ -75,7 +75,7 @@ public class CobbleUtilities {
   }
 
   public static GooeyButton fillItem() {
-    return GooeyButton.builder().display(Utils.parseItemId(CobbleUtils.config.getFill())).build();
+    return GooeyButton.builder().display(ItemUtils.parseItemId(CobbleUtils.config.getFill())).build();
   }
 
   public static boolean executeCommand(ServerPlayerEntity player, String command) {

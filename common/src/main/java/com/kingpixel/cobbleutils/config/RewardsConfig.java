@@ -1,26 +1,21 @@
 package com.kingpixel.cobbleutils.config;
 
 import com.kingpixel.cobbleutils.CobbleUtils;
-import com.kingpixel.cobbleutils.Model.ItemChance;
-import com.kingpixel.cobbleutils.Model.rewards.Reward;
+import com.kingpixel.cobbleutils.model.rewards.Reward;
 import com.kingpixel.cobbleutils.api.RewardsAPI;
 import com.kingpixel.cobbleutils.util.UtilsFile;
 import lombok.Data;
 
 import java.nio.file.Path;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * @author Carlos Varas Alonso - 02/09/2025 12:16
  */
 @Data
 public class RewardsConfig {
-  private final Map<String, ItemChance> rewards = new HashMap<>();
 
   public void init() {
-    rewards.clear();
     Path folder = CobbleUtils.getPathMod().resolve("rewards");
     if (folder.toFile().exists()) {
 
@@ -35,7 +30,6 @@ public class RewardsConfig {
           }
           reward.setId(f.toFile().getName().replace(".json", ""));
           RewardsAPI.registerReward(reward);
-          rewards.put(reward.getId(), reward.toItemChance());
           UtilsFile.write(f, reward);
         } catch (Exception e) {
           e.printStackTrace();

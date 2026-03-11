@@ -10,15 +10,14 @@ import com.cobblemon.mod.common.util.adapters.NbtCompoundAdapter;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.internal.bind.DateTypeAdapter;
-import com.kingpixel.cobbleutils.Model.DataBaseType;
-import com.kingpixel.cobbleutils.Model.DurationValue;
-import com.kingpixel.cobbleutils.Model.ItemChance;
-import com.kingpixel.cobbleutils.Model.conditions.Condition;
-import com.kingpixel.cobbleutils.Model.messages.HiperMessage;
-import com.kingpixel.cobbleutils.Model.rewards.Reward;
-import com.kingpixel.cobbleutils.Model.zones.zoneshapes.ZoneShape;
 import com.kingpixel.cobbleutils.adapter.*;
 import com.kingpixel.cobbleutils.database.users.models.Storage;
+import com.kingpixel.cobbleutils.model.DataBaseType;
+import com.kingpixel.cobbleutils.model.DurationValue;
+import com.kingpixel.cobbleutils.model.conditions.Condition;
+import com.kingpixel.cobbleutils.model.messages.HiperMessage;
+import com.kingpixel.cobbleutils.model.rewards.Reward;
+import com.kingpixel.cobbleutils.model.zones.zoneshapes.ZoneShape;
 import com.kingpixel.cobbleutils.util.async.AsyncContext;
 import kotlin.ranges.IntRange;
 import net.minecraft.item.ItemStack;
@@ -58,6 +57,7 @@ import java.util.stream.Stream;
  * @since 18/01/2026
  */
 public final class UtilsFile {
+  public static final UtilsFile INSTANCE = new UtilsFile();
 
   /* -------------------------------------------------------------------------- */
   /* Async IO Context                                                            */
@@ -91,7 +91,6 @@ public final class UtilsFile {
     registerAdapter(DateTypeAdapter.class, new DateTypeAdapter());
     registerAdapter(ItemStack.class, ItemStackAdapter.INSTANCE);
     registerAdapter(Instant.class, InstantTypeAdapter.INSTANCE);
-    registerAdapter(ItemChance.class, ItemChanceAdapter.INSTANCE);
     registerAdapter(DurationValue.class, DurationValue.INSTANCE);
     registerAdapter(DataBaseType.class, DataBaseTypeAdapter.INSTANCE);
     registerAdapter(Storage.class, StorageAdapter.INSTANCE);

@@ -2,11 +2,14 @@ package com.kingpixel.cobbleutils.util;
 
 import com.google.gson.JsonObject;
 import com.kingpixel.cobbleutils.CobbleUtils;
+import com.kingpixel.cobbleutils.model.ItemModel;
 import com.mojang.brigadier.StringReader;
 import com.mojang.serialization.Dynamic;
 import net.minecraft.SharedConstants;
 import net.minecraft.command.argument.ItemStackArgumentType;
 import net.minecraft.component.DataComponentTypes;
+import net.minecraft.component.type.CustomModelDataComponent;
+import net.minecraft.component.type.LoreComponent;
 import net.minecraft.datafixer.TypeReferences;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NbtCompound;
@@ -35,6 +38,13 @@ public class ItemUtils {
 
   public static ItemStack parseItemId(String id, int amount) {
     return new ItemStack(Registries.ITEM.get(Identifier.of(id)), amount);
+  }
+
+  public static ItemStack parseItemId(String item, int amount, long customModelData) {
+    ItemStack itemStack = parseItemId(item, amount);
+    if (customModelData != 0)
+      itemStack.set(DataComponentTypes.CUSTOM_MODEL_DATA, new CustomModelDataComponent((int) customModelData));
+    return itemStack;
   }
 
   public static boolean equals(ItemStack itemStack, ItemStack otherStack) {
@@ -99,7 +109,7 @@ public class ItemUtils {
   }
 
   public static String getNameItem(String item) {
-    ItemStack itemStack = Utils.parseItemId(item);
+    ItemStack itemStack = ItemUtils.parseItemId(item);
     return getTranslatedName(itemStack);
   }
 
@@ -111,5 +121,69 @@ public class ItemUtils {
     if (itemStack.isEmpty()) return CobbleUtils.language.getUnknown();
     if (itemStack.get(DataComponentTypes.CUSTOM_NAME) != null) return itemStack.getName().getString();
     return "<lang:" + itemStack.getItem().getTranslationKey() + ">";
+  }
+
+
+  public static ItemStack parseItemModel(ItemModel itemModel, int amount) {
+    String item = itemModel.getItem();
+    String nbt = itemModel.getNbt();
+
+    // Split item string to handle NBT if present
+    String[] nbtSplit = item.split("#");
+    if (nbtSplit.length > 1) {
+      item = nbtSplit[0];
+      nbt = nbtSplit[1];
+    }
+
+    // Handle custom item format
+    if (item.startsWith("item:")) {
+      item = item.replace("item:", "");
+      String[] split = item.split(":");
+      item = split[1] + ":" + split[2];
+      amount = Integer.parseInt(split[0]);
+    }
+
+    // Parse the item ID and create the ItemStack
+    ItemStack itemStack = parseItemId(item, amount);
+
+    // Apply additional NBT and properties to the ItemStack
+    itemStack = addThingsItemStack(itemStack, itemModel, nbt);
+
+    return itemStack;
+  }
+
+
+  public static ItemStack addThingsItemStack(ItemStack itemStack, ItemModel itemModel, String nbt) {
+    if (nbt != null && !nbt.isEmpty()) {
+      String item = itemModel.getItem();
+      String supportNbt = "";
+      String[] split = item.split("#");
+      if (split.length > 1) {
+        item = split[0];
+        supportNbt = split[1];
+      }
+      String[] splitItem = item.split(":");
+      if (splitItem.length > 2) {
+        item = splitItem[2] + ":" + splitItem[3];
+      } else {
+        item = splitItem[0] + ":" + splitItem[1];
+      }
+      itemStack = ItemUtils.applyNbt(item, itemStack, itemModel.getNbt() == null || itemModel.getNbt().isEmpty() ?
+          supportNbt
+          : nbt,
+        itemStack.getCount());
+    }
+
+    itemStack.set(DataComponentTypes.CUSTOM_NAME, AdventureTranslator.toNativeWithOutPrefix(
+      itemModel.getDisplayname() != null ? itemModel.getDisplayname() : "Please set a displayname for this item"));
+
+    if (itemModel.getCustomModelData() != 0)
+      itemStack.set(DataComponentTypes.CUSTOM_MODEL_DATA, new CustomModelDataComponent((int) itemModel.getCustomModelData()));
+
+    if (itemModel.getLore() != null && !itemModel.getLore().isEmpty()) {
+      itemStack.set(DataComponentTypes.LORE,
+        new LoreComponent(AdventureTranslator.toNativeL(itemModel.getLore())));
+    }
+    return itemStack;
   }
 }

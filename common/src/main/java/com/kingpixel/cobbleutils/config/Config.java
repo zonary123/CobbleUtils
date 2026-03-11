@@ -1,22 +1,22 @@
 package com.kingpixel.cobbleutils.config;
 
-import com.google.gson.Gson;
 import com.kingpixel.cobbleutils.CobbleUtils;
-import com.kingpixel.cobbleutils.Model.*;
-import com.kingpixel.cobbleutils.Model.economy.EconomySelector;
-import com.kingpixel.cobbleutils.util.Utils;
+import com.kingpixel.cobbleutils.model.*;
+import com.kingpixel.cobbleutils.util.UtilsFile;
+import com.kingpixel.cobbleutils.util.economys.EconomySelector;
 import com.kingpixel.cobbleutils.util.economys.providers.*;
 import lombok.Data;
 import lombok.Getter;
 import lombok.ToString;
 
+import java.io.IOException;
 import java.math.BigDecimal;
+import java.nio.file.Path;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 
 @Getter
 @Data
@@ -94,22 +94,20 @@ public class Config {
   }
 
   public void init() {
-    CompletableFuture<Boolean> futureRead = Utils.readFileAsync(CobbleUtils.PATH, "config.json",
-      el -> {
-        Gson gson = Utils.newGson();
-        CobbleUtils.config = gson.fromJson(el, Config.class);
-        String data = gson.toJson(CobbleUtils.config);
-        Utils.writeFileAsync(CobbleUtils.PATH, "config.json", data);
-      });
-
-    if (!futureRead.join()) {
-      CobbleUtils.LOGGER.info("No config.json file found for" + CobbleUtils.MOD_NAME + ". Attempting to generate one.");
-      Gson gson = Utils.newGson();
-      CobbleUtils.config = this;
-      String data = gson.toJson(CobbleUtils.config);
-      Utils.writeFileAsync(CobbleUtils.PATH, "config.json",
-        data);
+    Path file = CobbleUtils.getPathMod().resolve("config.json");
+    Config config = null;
+    if (file.toFile().exists()) {
+      try {
+        config = UtilsFile.read(file, Config.class);
+      } catch (IOException e) {
+        e.printStackTrace();
+      }
+    } else {
+      config = this;
     }
+    if (config == null) config = this;
+    CobbleUtils.config = config;
+    UtilsFile.writeAsync(file, config);
   }
 
 

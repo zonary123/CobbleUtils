@@ -10,11 +10,11 @@ import com.cobblemon.mod.common.Cobblemon;
 import com.cobblemon.mod.common.item.PokemonItem;
 import com.cobblemon.mod.common.pokemon.Pokemon;
 import com.kingpixel.cobbleutils.CobbleUtils;
-import com.kingpixel.cobbleutils.Model.ItemModel;
-import com.kingpixel.cobbleutils.Model.PanelsConfig;
-import com.kingpixel.cobbleutils.Model.PokemonBlackList;
-import com.kingpixel.cobbleutils.Model.Rectangle;
 import com.kingpixel.cobbleutils.action.PokemonButtonAction;
+import com.kingpixel.cobbleutils.model.ItemModel;
+import com.kingpixel.cobbleutils.model.PanelsConfig;
+import com.kingpixel.cobbleutils.model.PokemonBlackList;
+import com.kingpixel.cobbleutils.model.Rectangle;
 import com.kingpixel.cobbleutils.ui.builds.PartyPcMenuBuilder;
 import com.kingpixel.cobbleutils.util.AdventureTranslator;
 import com.kingpixel.cobbleutils.util.PokemonUtils;
@@ -156,7 +156,7 @@ public class PartyPcMenu {
     int maxSize = pokemons.size();
     if (maxSize == 0) return;
     List<Pokemon> finalPokemons = pokemons;
-    CobbleUtils.runAsync(() -> {
+    CobbleUtils.ASYNC.runAsync(() -> {
       long startTime = System.currentTimeMillis();
       ChestTemplate template = ChestTemplate.builder(rowsPc).build();
       PanelsConfig.applyConfig(template, panelsPc);
@@ -195,7 +195,7 @@ public class PartyPcMenu {
 
   public void openParty(PartyPcMenuBuilder builder) {
     if (isOnCooldown(builder.getPlayer())) return;
-    CobbleUtils.runAsync(() -> {
+    CobbleUtils.ASYNC.runAsync(() -> {
       long startTime = System.currentTimeMillis();
       ChestTemplate template = ChestTemplate
         .builder(rowsParty)
