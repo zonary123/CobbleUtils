@@ -13,7 +13,9 @@ import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.NbtElement;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.nbt.StringNbtReader;
+import net.minecraft.registry.Registries;
 import net.minecraft.registry.RegistryOps;
+import net.minecraft.util.Identifier;
 
 /**
  * @author Carlos Varas Alonso - 04/07/2024 4:05
@@ -25,6 +27,18 @@ public class ItemUtils {
     if (nbtOps == null)
       if (CobbleUtils.server != null) nbtOps = CobbleUtils.server.getRegistryManager().getOps(NbtOps.INSTANCE);
     return nbtOps;
+  }
+
+  public static ItemStack parseItemId(String id) {
+    return parseItemId(id, 1);
+  }
+
+  public static ItemStack parseItemId(String id, int amount) {
+    return new ItemStack(Registries.ITEM.get(Identifier.of(id)), amount);
+  }
+
+  public static boolean equals(ItemStack itemStack, ItemStack otherStack) {
+    return ItemStack.areItemsAndComponentsEqual(itemStack, otherStack);
   }
 
   public static String itemstackToString(ItemStack itemStack) {

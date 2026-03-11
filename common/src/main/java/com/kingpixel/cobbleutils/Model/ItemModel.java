@@ -14,9 +14,9 @@ import com.kingpixel.cobbleutils.util.AdventureTranslator;
 import com.kingpixel.cobbleutils.util.UIUtils;
 import com.kingpixel.cobbleutils.util.Utils;
 import com.mongodb.lang.Nullable;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
-import lombok.Getter;
-import lombok.Setter;
 import lombok.ToString;
 import net.minecraft.component.DataComponentTypes;
 import net.minecraft.component.type.LoreComponent;
@@ -33,16 +33,22 @@ import java.util.function.Consumer;
 /**
  * @author Carlos Varas Alonso - 28/06/2024 20:02
  */
-@Getter
-@Setter
 @ToString
 @Data
+@Builder
+@AllArgsConstructor
 public class ItemModel {
-  private Integer slot;
-  private Integer[] slots;
-  private String item;
-  private String displayname;
+  @Builder.Default
+  private Integer slot = -1;
+  @Builder.Default
+  private Integer[] slots = new Integer[]{};
+  @Builder.Default
+  private String item = "minecraft:emerald";
+  @Builder.Default
+  private String displayname = "";
+  @Builder.Default
   private List<String> lore = new ArrayList<>();
+  @Builder.Default
   private long CustomModelData = 0;
   private String nbt;
   private Object tooltip;
@@ -160,7 +166,6 @@ public class ItemModel {
    * Get the itemstack of the item
    *
    * @param amount The amount of the item
-   *
    * @return The itemstack of the item
    */
   public ItemStack getItemStack(int amount) {
@@ -171,7 +176,6 @@ public class ItemModel {
    * Get the itemstack of the item
    *
    * @param itemModel The item model to get the itemstack
-   *
    * @return The itemstack of the item
    */
   public static ItemStack getItemStack(ItemModel itemModel) {
@@ -185,7 +189,6 @@ public class ItemModel {
    *
    * @param itemModel The item model to get the itemstack
    * @param amount    The amount of the item
-   *
    * @return The itemstack of the item
    */
   public static ItemStack getItemStack(ItemModel itemModel, int amount) {
@@ -218,10 +221,9 @@ public class ItemModel {
    * Get the button of the item
    *
    * @param action The action of the button
-   *
    * @return The button of the item
    */
-  @Deprecated
+  @Deprecated(forRemoval = true)
   public GooeyButton getButton(Consumer<ButtonAction> action) {
     return getButton(1, null, null, action);
   }
@@ -230,10 +232,9 @@ public class ItemModel {
    * Get the button of the item
    *
    * @param action The action of the button
-   *
    * @return The button of the item
    */
-  @Deprecated
+  @Deprecated(forRemoval = true)
   public GooeyButton getButton(int amount, Consumer<ButtonAction> action) {
     return getButton(amount, null, null, action);
   }
@@ -243,10 +244,9 @@ public class ItemModel {
    *
    * @param action The action of the button
    * @param amount The amount of the item
-   *
    * @return The button of the item
    */
-  @Deprecated
+  @Deprecated(forRemoval = true)
   public GooeyButton getButton(int amount, String name, Consumer<ButtonAction> action) {
     return getButton(amount, name, null, action);
   }
@@ -256,10 +256,9 @@ public class ItemModel {
    *
    * @param action The action of the button
    * @param amount The amount of the item
-   *
    * @return The button of the item
    */
-  @Deprecated
+  @Deprecated(forRemoval = true)
   public GooeyButton getButton(int amount, String name,
                                List<String> lore, Consumer<ButtonAction> action) {
     ItemStack itemStack = this.getItemStack(amount);
@@ -292,7 +291,6 @@ public class ItemModel {
     return builder
       .build();
   }
-
 
   public RateLimitedButton getButton(Consumer<ButtonAction> action,
                                      long delay, TimeUnit timeUnit, @Nullable Integer limit) {

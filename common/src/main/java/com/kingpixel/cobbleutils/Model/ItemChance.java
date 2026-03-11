@@ -19,9 +19,7 @@ import com.kingpixel.cobbleutils.api.EconomyApi;
 import com.kingpixel.cobbleutils.api.RewardsApi;
 import com.kingpixel.cobbleutils.database.DataBaseFactory;
 import com.kingpixel.cobbleutils.util.*;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.*;
 import net.minecraft.component.DataComponentTypes;
 import net.minecraft.component.type.LoreComponent;
 import net.minecraft.item.ItemStack;
@@ -36,9 +34,11 @@ import java.util.regex.Pattern;
 /**
  * Represents an item chance model with methods to handle rewards.
  */
-@Getter
-@Setter
+@Data
+@EqualsAndHashCode
 @ToString
+@Builder
+@AllArgsConstructor
 public class ItemChance {
   public static final Map<String, List<ItemMod>> modItems = new HashMap<>();
   // Required properties
