@@ -28,13 +28,13 @@ public abstract class TravelMixin {
   @Unique
   private static final Cache<UUID, Vec3d> cobbleutils$lastPos = Caffeine.newBuilder()
     .expireAfterAccess(10, TimeUnit.SECONDS)
-    .maximumSize(10_000)
+    .maximumSize(1000)
     .build();
 
   @Unique
   private static final Cache<UUID, Integer> cobbleutils$tickCounters = Caffeine.newBuilder()
     .expireAfterAccess(10, TimeUnit.SECONDS)
-    .maximumSize(10_000)
+    .maximumSize(1000)
     .build();
 
   @Unique
@@ -42,8 +42,6 @@ public abstract class TravelMixin {
 
   @Unique
   private short cobbleutils$teleportTicks = 0;
-
-  /* -------------------- TELEPORT DETECTION -------------------- */
 
   @Inject(method = "requestTeleport", at = @At("HEAD"))
   private void cobbleutils$requestTeleport(double destX, double destY, double destZ, CallbackInfo ci) {
@@ -73,15 +71,12 @@ public abstract class TravelMixin {
     cobbleutils$teleportTicks = 3;
   }
 
-  /* -------------------- MOVEMENT CHECK -------------------- */
-
   @Inject(method = "tick", at = @At("HEAD"))
   private void cobbleutils$onTick(CallbackInfo ci) {
     if (CobbleUtilsEvents.TRAVEL_EVENT.isEmpty()) return;
     try {
       ServerPlayerEntity player = (ServerPlayerEntity) (Object) this;
       UUID uuid = player.getUuid();
-
 
       if (cobbleutils$teleportTicks > 0) {
         cobbleutils$teleportTicks--;
@@ -100,17 +95,28 @@ public abstract class TravelMixin {
 
       Vec3d currentPos = player.getPos();
       Vec3d lastPos = cobbleutils$lastPos.get(uuid, key -> currentPos);
+
       if (currentPos.squaredDistanceTo(lastPos) <= MOVEMENT_THRESHOLD * MOVEMENT_THRESHOLD) {
         cobbleutils$lastPos.put(uuid, currentPos);
         return;
       }
 
+      boolean movingByInput =
+        player.forwardSpeed != 0 ||
+          player.sidewaysSpeed != 0;
+
+      if (!movingByInput) {
+        cobbleutils$lastPos.put(uuid, currentPos);
+        return;
+      }
 
       cobbleutils$lastPos.put(uuid, currentPos);
+
       CobbleUtilsEvents.TRAVEL_EVENT.emit(EventTravel.builder()
         .distance(lastPos.distanceTo(currentPos))
         .player(player)
         .build());
+
     } catch (Exception e) {
       CobbleUtils.LOGGER.error("Error in TravelMixin tick");
       e.printStackTrace();
