@@ -10,16 +10,11 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.UUID;
 
-/**
- * @author Carlos Varas Alonso - 16/03/2025 3:41
- */
 @EqualsAndHashCode(callSuper = true)
 @Data
 public class CobbleDollarsEconomy extends EconomyAbstract {
-  public static final String IDENTIFY = "COBBLE_DOLLARS";
 
-  public CobbleDollarsEconomy() {
-  }
+  public static final String IDENTIFY = "COBBLE_DOLLARS";
 
   @Override
   public String getIdentify() {
@@ -28,52 +23,86 @@ public class CobbleDollarsEconomy extends EconomyAbstract {
 
   @Override
   public boolean isPresent() {
-    CobbleDollars.INSTANCE.getImplementation();
-    return true;
+    try {
+      CobbleDollars.INSTANCE.getImplementation();
+      return true;
+    } catch (Throwable ignored) {
+      return false;
+    }
+  }
+
+  private CobbleDollarsPlayer getCobblePlayer(UUID uuid) {
+    Object player = getPlayer(uuid);
+    if (player instanceof CobbleDollarsPlayer cdPlayer) {
+      return cdPlayer;
+    }
+    return null;
+  }
+
+  private BigInteger toBigInteger(BigDecimal money) {
+    if (money == null) return BigInteger.ZERO;
+    if (money.compareTo(BigDecimal.ZERO) <= 0) return BigInteger.ZERO;
+    return money.toBigInteger();
   }
 
   @Override
   public boolean deposit(UUID playerUuid, BigDecimal money, String currency) {
-    CobbleDollarsPlayer player = (CobbleDollarsPlayer) getPlayer(playerUuid);
+
+    CobbleDollarsPlayer player = getCobblePlayer(playerUuid);
     if (player == null) return false;
-    BigInteger depositAmount = BigInteger.valueOf(money.longValue());
-    if (depositAmount.compareTo(BigInteger.ZERO) < 0) return false;
+
+    BigInteger amount = toBigInteger(money);
+    if (amount.equals(BigInteger.ZERO)) return false;
+
     BigInteger balance = player.cobbleDollars$getCobbleDollars();
-    player.cobbleDollars$setCobbleDollars(balance.add(depositAmount));
+    player.cobbleDollars$setCobbleDollars(balance.add(amount));
+
     return true;
   }
 
   @Override
   public boolean withdraw(UUID playerUuid, BigDecimal money, String currency) {
-    CobbleDollarsPlayer player = (CobbleDollarsPlayer) getPlayer(playerUuid);
+
+    CobbleDollarsPlayer player = getCobblePlayer(playerUuid);
     if (player == null) return false;
+
+    BigInteger amount = toBigInteger(money);
+    if (amount.equals(BigInteger.ZERO)) return false;
+
     BigInteger balance = player.cobbleDollars$getCobbleDollars();
-    BigInteger integerMoney = BigInteger.valueOf(money.longValue());
-    if (balance.compareTo(integerMoney) >= 0) {
-      player.cobbleDollars$setCobbleDollars(balance.subtract(integerMoney));
-      return true;
+
+    if (balance.compareTo(amount) < 0) {
+      return false;
     }
-    return false;
+
+    player.cobbleDollars$setCobbleDollars(balance.subtract(amount));
+    return true;
   }
 
   @Override
   public BigDecimal getBalance(UUID playerUuid, String currency) {
-    CobbleDollarsPlayer player = (CobbleDollarsPlayer) getPlayer(playerUuid);
+
+    CobbleDollarsPlayer player = getCobblePlayer(playerUuid);
     if (player == null) return BigDecimal.ZERO;
-    return BigDecimal.valueOf(player.cobbleDollars$getCobbleDollars().doubleValue());
+
+    return new BigDecimal(player.cobbleDollars$getCobbleDollars());
+  }
+
+  @Override
+  public boolean setBalance(UUID playerUuid, BigDecimal money, String currency) {
+
+    CobbleDollarsPlayer player = getCobblePlayer(playerUuid);
+    if (player == null) return false;
+
+    BigInteger amount = toBigInteger(money);
+
+    player.cobbleDollars$setCobbleDollars(amount);
+    return true;
   }
 
   @Override
   public String format(BigDecimal money, String currency) {
     return CobbleUtils.config.getFormat(money);
-  }
-
-  @Override
-  public boolean setBalance(UUID playerUuid, BigDecimal money, String currency) {
-    CobbleDollarsPlayer player = (CobbleDollarsPlayer) getPlayer(playerUuid);
-    if (player == null) return false;
-    player.cobbleDollars$setCobbleDollars(BigInteger.valueOf(money.longValue()));
-    return true;
   }
 
   @Override
