@@ -9,11 +9,14 @@ import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.config.Lang;
 import com.kingpixel.cobbleutils.model.ItemModel;
 import com.kingpixel.cobbleutils.model.PanelsConfig;
-import com.kingpixel.cobbleutils.util.AdventureTranslator;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
+import net.minecraft.component.DataComponentTypes;
+import net.minecraft.component.type.CustomModelDataComponent;
 import net.minecraft.item.ItemStack;
 import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.text.Text;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -22,6 +25,7 @@ import java.util.function.Consumer;
 
 @Data
 public class ConfirmMenu {
+  private boolean useDefault = false;
   private int rows;
   private String title;
   private int slotDisplay;
@@ -30,10 +34,6 @@ public class ConfirmMenu {
   private ItemModel cancel;
   private ItemModel close;
   private List<PanelsConfig> panels;
-  transient
-  private ChestTemplate template;
-  transient
-  private Text titleText;
 
   public ConfirmMenu() {
     this.rows = 3;
@@ -65,68 +65,71 @@ public class ConfirmMenu {
     }
   }
 
-  private ChestTemplate createTemplate() {
-    ChestTemplate template = ChestTemplate.builder(rows).build();
-    PanelsConfig.applyConfig(template, panels);
 
-    titleText = AdventureTranslator.toNative(title);
-    int totalSlots = rows * 9;
-    for (PanelsConfig panel : panels) {
-      panel.getSlots().removeIf(slot -> slot < 0 || slot >= totalSlots);
-    }
-    return template;
-  }
-
-  /**
-   * Opens the default confirm menu if useDefault is enabled.
-   * This is the recommended way to open confirm menus when using CobbleUtils as an API.
-   *
-   * @param player    The player to show the menu to
-   * @param itemStack The item to display
-   * @param onConfirm Action to execute on confirm
-   * @param onCancel  Action to execute on cancel
-   * @return true if the default menu was used, false if custom implementation should be used
-   */
-  public static boolean openDefault(ServerPlayerEntity player, ItemStack itemStack,
-                                    Consumer<ButtonAction> onConfirm, Consumer<ButtonAction> onCancel) {
-    if (!CobbleUtils.config.isUseDefault()) {
-      return false;
-    }
-    // Force the use of default confirm menu
-    CobbleUtils.language.getConfirmMenu().open(player, itemStack, onConfirm, onCancel);
-    return true;
-  }
-
-  public CompletableFuture<Void> open(ServerPlayerEntity player, ItemStack itemStack, Consumer<ButtonAction> onConfirm,
-                                      Consumer<ButtonAction> onCancel) {
+  public CompletableFuture<Void> open(ConfirmMenuData data) {
     return CobbleUtils.ASYNC.runAsync(() -> {
-      ChestTemplate template = createTemplate();
-
-      // Copiar el ItemStack para no modificar el original
-      ItemStack displayStack = itemStack.copy();
-
-      // Aplicar customModelData si está configurado (>= 0 es válido, -1 significa no aplicar)
-      if (customModelDataConfirm >= 0) {
-        displayStack.set(net.minecraft.component.DataComponentTypes.CUSTOM_MODEL_DATA,
-          new net.minecraft.component.type.CustomModelDataComponent((int) customModelDataConfirm));
-      }
-
-      // Mostrar el ítem principal en el slot correspondiente
-      template.set(slotDisplay, GooeyButton.builder()
-        .display(displayStack)
-        .build()
-      );
-
-      // Botón de confirmación
-      if (confirm != null) confirm.applyTemplate(template, confirm.getButton(onConfirm, 1, TimeUnit.SECONDS, 1));
-      if (cancel != null) cancel.applyTemplate(template, cancel.getButton(onCancel, 1, TimeUnit.SECONDS, 1));
-      if (close != null) close.applyTemplate(template, close.getButton(onCancel, 1, TimeUnit.SECONDS, 1));
-      // Crear y abrir la página del menú
-      GooeyPage page = GooeyPage.builder()
-        .title(titleText)
-        .template(template)
-        .build();
-      CobbleUtils.server.execute(() -> UIManager.openUIForcefully(player, page));
+      ConfirmMenu confirmMenu = this;
+      if (useDefault) confirmMenu = CobbleUtils.language.getConfirmMenu();
+      confirmMenu.openFinal(data);
     });
   }
+
+  private void openFinal(ConfirmMenuData data) {
+    ServerPlayerEntity player = data.getPlayer();
+    ChestTemplate template = ChestTemplate
+      .builder(data.getRows(rows))
+      .build();
+    PanelsConfig.applyConfig(template, panels);
+
+    ItemStack display = data.getDisplay();
+    if (customModelDataConfirm >= 0) {
+      display.set(DataComponentTypes.CUSTOM_MODEL_DATA, new CustomModelDataComponent((int) customModelDataConfirm));
+    }
+    template.set(slotDisplay, GooeyButton.builder()
+      .display(display)
+      .build()
+    );
+
+    Consumer<ChestTemplate> templateConsumer = data.getTemplate();
+    if (templateConsumer != null) templateConsumer.accept(template);
+
+
+    Consumer<ButtonAction> onConfirm = data.getOnConfirm();
+    if (confirm != null) confirm.applyTemplate(template, confirm.getButton(onConfirm, 1, TimeUnit.SECONDS, 1));
+
+    Consumer<ButtonAction> onCancel = data.getOnCancel();
+    if (cancel != null) cancel.applyTemplate(template, cancel.getButton(onCancel, 1, TimeUnit.SECONDS, 1));
+    if (close != null) close.applyTemplate(template, close.getButton(onCancel, 1, TimeUnit.SECONDS, 1));
+
+    GooeyPage page = GooeyPage.builder()
+      .template(template)
+      .title(data.getTitle(title))
+      .build();
+
+    CobbleUtils.server.execute(() -> UIManager.openUIForcefully(player, page));
+  }
+
+
+  @Data
+  @AllArgsConstructor
+  @NoArgsConstructor
+  @Builder
+  public static class ConfirmMenuData {
+    private ServerPlayerEntity player;
+    private String title;
+    private Integer rows;
+    private ItemStack display;
+    private Consumer<ChestTemplate> template;
+    private Consumer<ButtonAction> onConfirm;
+    private Consumer<ButtonAction> onCancel;
+
+    public String getTitle(String title) {
+      return this.title != null ? this.title : title;
+    }
+
+    public Integer getRows(int rows) {
+      return this.rows != null ? this.rows : rows;
+    }
+  }
+
 }

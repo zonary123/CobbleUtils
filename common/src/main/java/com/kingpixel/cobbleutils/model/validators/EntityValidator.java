@@ -1,40 +1,50 @@
 package com.kingpixel.cobbleutils.model.validators;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.NonNull;
+import lombok.*;
 import net.minecraft.entity.Entity;
 
 import java.util.HashSet;
 import java.util.Set;
 
 /**
- *
- * @author Carlos Varas Alonso - 20/01/2026 11:01
+ * Validator for Minecraft entities.
+ * <p>
+ * Checks whether an entity is valid based on a list of entity IDs and a blacklist.
  */
+@EqualsAndHashCode(callSuper = true)
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class EntityValidator {
-  private Set<String> blacklistEntityIds = new HashSet<>();
-  private Set<String> entityIds = new HashSet<>(
-    Set.of(
-      "*",
-      "regex:.*",
-      "minecraft:pig"
-    )
-  );
+@Builder
+@ToString(callSuper = true)
+public class EntityValidator extends AbstractRegistryValidator<Entity> {
 
-  public boolean isValid(@NonNull String entityId) {
-    if (ValidatorUtil.match(entityId, blacklistEntityIds)) return false;
-    return ValidatorUtil.match(entityId, entityIds);
+  /**
+   * List of allowed entity IDs. Supports wildcards and regex.
+   */
+  private Set<String> entityIds = new HashSet<>(Set.of(
+    "*",
+    "regex:.*",
+    "minecraft:pig"
+  ));
+
+  @Override
+  protected Set<String> getIdSet() {
+    return entityIds;
   }
 
-  public boolean isValid(@NonNull Entity entity) {
-    String id = entity.getSavedEntityId();
-    return id != null && isValid(id);
+  @Override
+  protected Set<String> getTagSet() {
+    return Set.of();
   }
 
+  @Override
+  protected String getId(@NonNull Entity entity) {
+    return entity.getSavedEntityId();
+  }
 
+  @Override
+  protected boolean isInTag(@NonNull Entity entity) {
+    return false;
+  }
 }

@@ -88,7 +88,7 @@ public class ChunkBlockStorageManager {
     CompletableFuture.runAsync(() -> {
       ChunkBlockData loaded = loadChunkSync(world, chunk);
       finalCached.mergeFrom(loaded);
-    }, UtilsFile.IO_CONTEXT.getExecutor());
+    }, UtilsFile.IO_EXECUTOR);
 
     return cached;
   }
@@ -121,7 +121,7 @@ public class ChunkBlockStorageManager {
   }
 
   public static CompletableFuture<Void> saveChunkAsync(String key, ChunkBlockData data) {
-    return UtilsFile.IO_CONTEXT.runAsync(() -> saveChunkSync(key, data));
+    return CompletableFuture.runAsync(() -> saveChunkSync(key, data), UtilsFile.IO_EXECUTOR);
   }
 
   private static void saveChunkSync(String key, ChunkBlockData data) {

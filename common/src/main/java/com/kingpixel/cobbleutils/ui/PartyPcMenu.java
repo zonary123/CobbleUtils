@@ -291,15 +291,19 @@ public class PartyPcMenu {
       .display(itemStack)
       .onClick(action -> {
         if (confirmMenu != null) {
-          confirmMenu.open(action.getPlayer(), itemStack, confirmAction -> {
-            pokemonAction.accept(new PokemonButtonAction(action, pokemon));
-          }, close -> {
-            if (closeAction == null) {
-              UIManager.closeUI(close.getPlayer());
-            } else {
-              closeAction.accept(close);
-            }
-          });
+          ConfirmMenu.ConfirmMenuData data = ConfirmMenu.ConfirmMenuData.builder()
+            .display(itemStack)
+            .player(action.getPlayer())
+            .onConfirm(onConfirm -> pokemonAction.accept(new PokemonButtonAction(action, pokemon)))
+            .onCancel(onCancel -> {
+              if (closeAction == null) {
+                UIManager.closeUI(onCancel.getPlayer());
+              } else {
+                closeAction.accept(onCancel);
+              }
+            })
+            .build();
+          confirmMenu.open(data);
         } else {
           pokemonAction.accept(new PokemonButtonAction(action, pokemon));
         }
