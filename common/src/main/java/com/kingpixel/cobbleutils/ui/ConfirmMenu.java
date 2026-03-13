@@ -11,6 +11,8 @@ import com.kingpixel.cobbleutils.Model.PanelsConfig;
 import com.kingpixel.cobbleutils.config.Lang;
 import com.kingpixel.cobbleutils.util.AdventureTranslator;
 import lombok.Data;
+import net.minecraft.component.DataComponentTypes;
+import net.minecraft.component.type.CustomModelDataComponent;
 import net.minecraft.item.ItemStack;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
@@ -84,7 +86,6 @@ public class ConfirmMenu {
    * @param itemStack The item to display
    * @param onConfirm Action to execute on confirm
    * @param onCancel  Action to execute on cancel
-   *
    * @return true if the default menu was used, false if custom implementation should be used
    */
   public static boolean openDefault(ServerPlayerEntity player, ItemStack itemStack,
@@ -107,8 +108,8 @@ public class ConfirmMenu {
 
       // Aplicar customModelData si está configurado (>= 0 es válido, -1 significa no aplicar)
       if (customModelDataConfirm >= 0) {
-        displayStack.set(net.minecraft.component.DataComponentTypes.CUSTOM_MODEL_DATA,
-          new net.minecraft.component.type.CustomModelDataComponent((int) customModelDataConfirm));
+        displayStack.set(DataComponentTypes.CUSTOM_MODEL_DATA,
+          new CustomModelDataComponent((int) customModelDataConfirm));
       }
 
       // Mostrar el ítem principal en el slot correspondiente

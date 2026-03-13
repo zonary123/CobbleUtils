@@ -46,7 +46,7 @@ public final class UtilsFile {
   private UtilsFile() {
   }
 
-  private static final ExecutorService IO_EXECUTOR =
+  public static final ExecutorService IO_EXECUTOR =
     new ThreadPoolExecutor(
       1,
       8,

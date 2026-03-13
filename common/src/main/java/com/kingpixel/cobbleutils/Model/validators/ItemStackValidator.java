@@ -1,6 +1,5 @@
 package com.kingpixel.cobbleutils.Model.validators;
 
-
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -16,63 +15,68 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- *
- * @author Carlos Varas Alonso - 20/01/2026 11:01
+ * Validator for Minecraft items.
+ * <p>
+ * Checks whether an ItemStack is valid based on a list of item IDs, blacklist, and optional tags.
  */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class ItemStackValidator {
-  private Set<String> blacklist = new HashSet<>();
-  private Set<String> itemIds = new HashSet<>(
-    Set.of(
-      "*",
-      "regex:.*",
-      "minecraft:stone"
-    )
-  );
-  private Set<String> tags = new HashSet<>();
+public class ItemStackValidator extends AbstractRegistryValidator<ItemStack> {
+  /**
+   * List of allowed item IDs. Supports wildcards and regex.
+   */
+  private Set<String> itemIds = new HashSet<>(Set.of(
+    "*",
+    "regex:.*",
+    "minecraft:stone"
+  ));
+
+  /**
+   * Optional tags for validation.
+   */
+  private Set<String> itemTags = new HashSet<>();
+
   private transient Set<TagKey<Item>> tagKeys;
 
+  /**
+   * Lazy initialization of TagKey<Item> set from itemTags.
+   */
   private Set<TagKey<Item>> getTagKeysLazy() {
     if (tagKeys == null) {
-      tagKeys = tags.stream()
+      tagKeys = itemTags.stream()
         .map(t -> TagKey.of(Registries.ITEM.getKey(), Identifier.tryParse(t)))
         .collect(Collectors.toSet());
     }
     return tagKeys;
   }
 
-  /**
-   * Check if the given item ID is valid according to the validator's criteria.
-   *
-   * @param itemId The item ID to validate.
-   * @return True if the item ID is valid, false otherwise.
-   */
-  public boolean isValid(@NonNull String itemId) {
-    if (ValidatorUtil.match(itemId, blacklist)) return false;
-    return ValidatorUtil.match(itemId, itemIds);
+  @Override
+  protected Set<String> getIdSet() {
+    return itemIds;
   }
 
-  /**
-   * Check if the given ItemStack is valid according to the validator's criteria.
-   *
-   * @param itemStack The ItemStack to validate.
-   * @return True if the ItemStack is valid, false otherwise.
-   */
-  public boolean isValid(@NonNull ItemStack itemStack) {
-    try {
-      Item item = itemStack.getItem();
-      var keys = getTagKeysLazy();
-      var entry = Registries.ITEM.getEntry(item);
-      for (TagKey<Item> key : keys) {
-        if (entry.isIn(key)) return true;
-      }
-      return isValid(item.toString());
-    } catch (Exception e) {
-      e.printStackTrace();
-      return false;
+  @Override
+  protected Set<String> getTagSet() {
+    return itemTags;
+  }
+
+  @Override
+  protected String getId(@NonNull ItemStack itemStack) {
+    Item item = itemStack.getItem();
+    return Registries.ITEM.getId(item).toString();
+  }
+
+  @Override
+  protected boolean isInTag(@NonNull ItemStack itemStack) {
+    Item item = itemStack.getItem();
+    var keys = getTagKeysLazy();
+    if (keys.isEmpty()) return false;
+
+    var entry = Registries.ITEM.getEntry(item);
+    for (TagKey<Item> key : keys) {
+      if (entry.isIn(key)) return true;
     }
+    return false;
   }
-
 }

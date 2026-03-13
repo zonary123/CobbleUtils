@@ -172,7 +172,7 @@ public class CobbleUtils {
     LifecycleEvent.SERVER_STOPPING.register(server1 -> {
       DataBaseFactory.close();
       RedisManager.close();
-      ChunkBlockStorageManager.shutdown();
+      ChunkBlockStorageManager.shutdownAsync().join();
       com.kingpixel.cobbleutils.util.async.UtilsAsync.shutdownAll();
       shutdownAndAwait(EXECUTOR_COBBLEUTILS);
       shutdownAndAwait(Utils.IO_EXECUTOR);

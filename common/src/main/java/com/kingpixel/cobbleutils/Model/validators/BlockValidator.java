@@ -1,9 +1,6 @@
 package com.kingpixel.cobbleutils.Model.validators;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.NonNull;
+import lombok.*;
 import net.minecraft.block.Block;
 import net.minecraft.item.Item;
 import net.minecraft.registry.Registries;
@@ -15,55 +12,64 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- *
- * @author Carlos Varas Alonso - 20/01/2026 11:01
+ * Validator for Minecraft blocks.
+ * <p>
+ * Checks whether a block is valid based on a list of block IDs, blacklist, and optional tags.
  */
+@EqualsAndHashCode(callSuper = true)
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class BlockValidator {
-  private Set<String> blacklistBlockIds = new HashSet<>();
+@Builder
+@ToString
+public class BlockValidator extends AbstractRegistryValidator<Block> {
+  /**
+   * List of allowed block IDs. Supports wildcards and regex.
+   */
   private Set<String> blockIds = new HashSet<>(Set.of(
     "*",
     "regex:.*",
     "minecraft:stone"
   ));
-  private Set<String> tags = new HashSet<>();
+
+  /**
+   * Optional block tags for validation.
+   */
+  private Set<String> blockTags = new HashSet<>();
 
   private transient Set<TagKey<Item>> tagKeys;
 
+  /**
+   * Lazy initialization of TagKey<Item> set from blockTags.
+   */
   private Set<TagKey<Item>> getTagKeysLazy() {
     if (tagKeys == null) {
-      tagKeys = tags.stream()
+      tagKeys = blockTags.stream()
         .map(t -> TagKey.of(Registries.ITEM.getKey(), Identifier.tryParse(t)))
         .collect(Collectors.toSet());
     }
     return tagKeys;
   }
 
-  /**
-   * Check if the given block ID is valid according to the validator's criteria.
-   *
-   * @param blockId The block ID to validate.
-   * @return True if the block ID is valid, false otherwise.
-   */
-  public boolean isValid(@NonNull String blockId) {
-    if (ValidatorUtil.match(blockId, blacklistBlockIds)) return false;
-    return ValidatorUtil.match(blockId, blockIds);
+  @Override
+  protected Set<String> getIdSet() {
+    return blockIds;
   }
 
+  @Override
+  protected Set<String> getTagSet() {
+    return blockTags;
+  }
 
-  /**
-   * Check if the given BlockType is valid according to the validator's criteria.
-   *
-   * @param block The BlockType to validate.
-   * @return True if the BlockType is valid, false otherwise.
-   */
-  public boolean isValid(Block block) {
+  @Override
+  protected String getId(@NonNull Block block) {
+    return Registries.BLOCK.getId(block).toString();
+  }
+
+  @Override
+  protected boolean isInTag(@NonNull Block block) {
     Item item = block.asItem();
-    if (blockIds.contains("*") || blockIds.contains(item.toString())) return true;
-
-    Set<TagKey<Item>> keys = getTagKeysLazy();
+    var keys = getTagKeysLazy();
     if (keys.isEmpty()) return false;
 
     var entry = Registries.ITEM.getEntry(item);
