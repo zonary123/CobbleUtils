@@ -78,4 +78,10 @@ public class BlockValidator extends AbstractRegistryValidator<Block> {
     }
     return false;
   }
+
+  @Override
+  protected String getReason(Block value) {
+    String id = getId(value);
+    return "Block " + id + " does not match any of the allowed IDs or tags";
+  }
 }

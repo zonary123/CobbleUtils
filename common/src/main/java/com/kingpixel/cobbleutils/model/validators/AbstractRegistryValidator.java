@@ -3,6 +3,8 @@ package com.kingpixel.cobbleutils.model.validators;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import lombok.*;
+import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.text.Text;
 
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -85,6 +87,19 @@ public abstract class AbstractRegistryValidator<T> {
    * @return true if the object is in any tag, false otherwise
    */
   protected abstract boolean isInTag(@NonNull T object);
+
+  /**
+   * Provides a reason why the given value is not valid according to the validator's criteria.
+   *
+   * @param value The value that failed validation.
+   * @return A string message explaining why the value is not valid.
+   */
+  protected abstract String getReason(T value);
+
+  public void sendReason(T Value, ServerPlayerEntity player) {
+    String reason = getReason(Value);
+    if (reason != null && !reason.isEmpty()) player.sendMessage(Text.literal(reason), false);
+  }
 
   /**
    * Checks if the object is valid according to the validator's criteria.

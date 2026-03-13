@@ -46,4 +46,9 @@ public class StringValidator extends AbstractRegistryValidator<String> {
   protected boolean isInTag(@NonNull String string) {
     return false; // No tags for strings
   }
+
+  @Override
+  protected String getReason(String value) {
+    return "String '" + value + "' is not allowed.";
+  }
 }

@@ -47,4 +47,9 @@ public class EntityValidator extends AbstractRegistryValidator<Entity> {
   protected boolean isInTag(@NonNull Entity entity) {
     return false;
   }
+
+  @Override
+  protected String getReason(Entity value) {
+    return "Entity " + value.getSavedEntityId() + " does not match any allowed entity IDs or tags.";
+  }
 }

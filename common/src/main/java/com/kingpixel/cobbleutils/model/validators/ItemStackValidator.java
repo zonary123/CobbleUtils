@@ -62,6 +62,12 @@ public class ItemStackValidator extends AbstractRegistryValidator<ItemStack> {
   }
 
   @Override
+  protected String getReason(ItemStack value) {
+    String itemId = getId(value);
+    return "ItemStack with item ID '" + itemId + "' does not match any allowed item IDs or tags.";
+  }
+
+  @Override
   protected String getId(@NonNull ItemStack itemStack) {
     Item item = itemStack.getItem();
     return Registries.ITEM.getId(item).toString();
