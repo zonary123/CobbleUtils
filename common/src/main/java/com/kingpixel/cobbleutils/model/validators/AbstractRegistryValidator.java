@@ -27,7 +27,6 @@ import java.util.concurrent.TimeUnit;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
 @ToString(callSuper = true)
 public abstract class AbstractRegistryValidator<T> {
 
