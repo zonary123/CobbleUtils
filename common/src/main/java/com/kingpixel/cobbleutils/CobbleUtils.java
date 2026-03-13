@@ -56,7 +56,7 @@ public class CobbleUtils {
   public static AdvancedRewardsConfig advancedRewardsConfig = new AdvancedRewardsConfig();
   public static SpawnRates spawnRates = new SpawnRates();
   // Lang
-  public static final AsyncContext ASYNC = com.kingpixel.cobbleutils.util.async.UtilsAsync.createContext(MOD_ID, MOD_NAME, 1, 8);
+  public static final AsyncContext ASYNC = com.kingpixel.cobbleutils.util.async.UtilsAsync.createContext(MOD_ID, MOD_NAME, 1, 2);
   public static Lang language = new Lang();
   private static final ExecutorService EXECUTOR_COBBLEUTILS = Executors.newFixedThreadPool(1, new ThreadFactoryBuilder()
     .setDaemon(true)
@@ -158,8 +158,8 @@ public class CobbleUtils {
       LOGGER.error("Error while trying to initialize RedisManager");
     }
 
-    LifecycleEvent.SERVER_LEVEL_LOAD.register(level -> {
-      server = level.getServer();
+    LifecycleEvent.SERVER_STARTING.register(server -> {
+      CobbleUtils.server = server;
       ChunkBlockStorageManager.init(server);
     });
 
