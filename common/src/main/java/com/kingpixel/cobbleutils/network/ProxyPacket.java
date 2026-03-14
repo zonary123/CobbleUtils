@@ -1,10 +1,10 @@
 package com.kingpixel.cobbleutils.network;
 
+import io.netty.buffer.Unpooled;
 import net.minecraft.network.PacketByteBuf;
 import net.minecraft.network.RegistryByteBuf;
 import net.minecraft.network.codec.PacketCodec;
 import net.minecraft.network.packet.CustomPayload;
-import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.util.Identifier;
 
 import java.io.DataOutputStream;
@@ -12,32 +12,30 @@ import java.io.IOException;
 import java.io.OutputStream;
 
 public record ProxyPacket(String... args) implements CustomPayload {
-
   public static final Identifier BUNGEECORD_ID = Identifier.of("bungeecord", "main");
   public static final CustomPayload.Id<ProxyPacket> PACKET_ID = new CustomPayload.Id<>(BUNGEECORD_ID);
+  public static final PacketCodec<RegistryByteBuf, ProxyPacket> CODEC = new PacketCodec<>() {
 
-  public static final PacketCodec<RegistryByteBuf, ProxyPacket> codec = new PacketCodec<>() {
     @Override
     public ProxyPacket decode(RegistryByteBuf buf) {
-      return null; // Solo envío, no recibo
+      int size = buf.readVarInt();
+      String[] args = new String[size];
+
+      for (int i = 0; i < size; i++) {
+        args[i] = buf.readString();
+      }
+
+      return new ProxyPacket(args);
     }
 
     @Override
     public void encode(RegistryByteBuf buf, ProxyPacket value) {
-      try {
-        DataOutputStream out = new DataOutputStream(new OutputStream() {
-          @Override
-          public void write(int b) {
-            buf.writeByte(b);
-          }
-        });
+      try (ByteBufDataOutput output = new ByteBufDataOutput(new PacketByteBuf(Unpooled.buffer()))) {
+        for (String arg : value.args())
+          output.writeUTF(arg);
+        buf.writeBytes(output.getBuf());
 
-        for (String arg : value.args()) {
-          out.writeUTF(arg);
-        }
-
-      } catch (IOException e) {
-        throw new IllegalStateException(e);
+      } catch (Exception ignored) {
       }
     }
   };
@@ -47,11 +45,31 @@ public record ProxyPacket(String... args) implements CustomPayload {
     return PACKET_ID;
   }
 
-  // Método de ayuda para enviar a un jugador
-  public static void send(ServerPlayerEntity player, String... args) {
-    PacketByteBuf buf = new PacketByteBuf(net.fabricmc.fabric.api.networking.v1.PacketByteBufs.create());
-    for (String arg : args) {
-      buf.writeString(arg);
+  private static class ByteBufDataOutput extends OutputStream {
+    private final PacketByteBuf packetByteBuf;
+    private final DataOutputStream dataOutputStream;
+
+    public ByteBufDataOutput(PacketByteBuf buf) {
+      this.packetByteBuf = buf;
+      this.dataOutputStream = new DataOutputStream(this);
+    }
+
+    public PacketByteBuf getBuf() {
+      return packetByteBuf;
+    }
+
+
+    @Override
+    public void write(int b) {
+      packetByteBuf.writeByte(b);
+    }
+
+    public void writeUTF(String s) {
+      try {
+        this.dataOutputStream.writeUTF(s);
+      } catch (IOException e) {
+        throw new IllegalStateException(e);
+      }
     }
   }
 }

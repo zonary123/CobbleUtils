@@ -1,9 +1,6 @@
 package com.kingpixel.cobbleutils.Model.validators;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.NonNull;
+import lombok.*;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.registry.Registries;
@@ -19,6 +16,7 @@ import java.util.stream.Collectors;
  * <p>
  * Checks whether an ItemStack is valid based on a list of item IDs, blacklist, and optional tags.
  */
+@EqualsAndHashCode(callSuper = true)
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

@@ -1,22 +1,17 @@
 package com.kingpixel.cobbleutils.command;
 
 import com.kingpixel.cobbleutils.CobbleUtils;
-import com.kingpixel.cobbleutils.Model.Location;
 import com.kingpixel.cobbleutils.command.admin.*;
 import com.kingpixel.cobbleutils.command.base.PokeShout;
 import com.kingpixel.cobbleutils.command.base.PokeShoutAll;
 import com.kingpixel.cobbleutils.command.base.PokeShoutAllMe;
 import com.kingpixel.cobbleutils.command.base.PokeShoutMe;
-import com.kingpixel.cobbleutils.network.ServerCache;
 import com.kingpixel.cobbleutils.util.LuckPermsUtil;
 import com.mojang.brigadier.CommandDispatcher;
-import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import net.minecraft.command.CommandRegistryAccess;
-import net.minecraft.command.CommandSource;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
-import net.minecraft.server.network.ServerPlayerEntity;
 
 import java.util.List;
 
@@ -44,21 +39,7 @@ public class CommandTree {
       LiteralArgumentBuilder<ServerCommandSource> base = CommandManager.literal(literal).requires(source ->
         LuckPermsUtil.checkPermission(source, 2, List.of("cobbleutils.admin")));
 
-      base.then(
-        CommandManager.literal("teleport")
-          .then(
-            CommandManager.argument("server", StringArgumentType.string())
-              .suggests((context, builder) -> CommandSource.suggestMatching(ServerCache.getServers(), builder))
-              .executes(context -> {
-                String server = StringArgumentType.getString(context, "server");
-                ServerPlayerEntity player = context.getSource().getPlayer();
-                Location location = new Location();
-                location.setServer(server);
-                location.teleportTo(player);
-                return 1;
-              })
-          )
-      );
+      TeleportCommand.register(dispatcher, base);
 
       ModRewardsCommand.register(dispatcher, base);
 

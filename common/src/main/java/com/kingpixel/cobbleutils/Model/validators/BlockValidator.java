@@ -26,6 +26,7 @@ public class BlockValidator extends AbstractRegistryValidator<Block> {
   /**
    * List of allowed block IDs. Supports wildcards and regex.
    */
+  @Builder.Default
   private Set<String> blockIds = new HashSet<>(Set.of(
     "*",
     "regex:.*",
@@ -35,6 +36,7 @@ public class BlockValidator extends AbstractRegistryValidator<Block> {
   /**
    * Optional block tags for validation.
    */
+  @Builder.Default
   private Set<String> blockTags = new HashSet<>();
 
   private transient Set<TagKey<Item>> tagKeys;

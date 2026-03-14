@@ -5,7 +5,8 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.gson.*;
 import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.util.AdventureTranslator;
-import com.kingpixel.cobbleutils.util.RedisManager;
+import com.kingpixel.cobbleutils.util.redis.RedisManager;
+import com.kingpixel.cobbleutils.util.redis.handlers.RedisMessageHandler;
 import lombok.Data;
 import net.minecraft.entity.effect.StatusEffect;
 import net.minecraft.entity.effect.StatusEffectInstance;
@@ -146,7 +147,6 @@ public class HiperMessage implements JsonSerializer<HiperMessage>, JsonDeseriali
    *
    * @param content      the original content string containing placeholders
    * @param placeholders a map of placeholders and their corresponding replacement values
-   *
    * @return the content string with all placeholders replaced by their values
    */
   private String replacePlaceholders(String content, Map<String, String> placeholders) {
@@ -229,7 +229,6 @@ public class HiperMessage implements JsonSerializer<HiperMessage>, JsonDeseriali
    * Gets the player entity from the server using the player's UUID.
    *
    * @param playerUUID the UUID of the player
-   *
    * @return the player entity, or null if the player is not online
    */
   private ServerPlayerEntity getPlayer(UUID playerUUID) {
@@ -432,7 +431,6 @@ public class HiperMessage implements JsonSerializer<HiperMessage>, JsonDeseriali
    * Parses the content string to extract title and subtitle using regex.
    *
    * @param content the content string containing title and subtitle
-   *
    * @return a TitleSubtitle object containing the parsed title and subtitle
    */
   private TitleSubtitle parseTitleSubtitle(String content) {
@@ -684,11 +682,11 @@ public class HiperMessage implements JsonSerializer<HiperMessage>, JsonDeseriali
             redisMessage.add("placeholders", placeholdersJson);
           }
           try {
-            RedisManager.publish(CobbleUtils.config.getRedis().getChannel(), redisMessage.toString());
+            RedisManager.publish(RedisMessageHandler.CHANNEL, redisMessage);
           } catch (Exception e) {
             CobbleUtils.LOGGER.error("Failed to send HiperMessage through Redis: " + e.getMessage());
           }
-        }, RedisManager.EXECUTOR_REDIS)
+        }, CobbleUtils.ASYNC.getExecutor())
         .exceptionally(e -> {
           e.printStackTrace();
           return null;
@@ -762,9 +760,7 @@ public class HiperMessage implements JsonSerializer<HiperMessage>, JsonDeseriali
    * @param json    the JSON element to deserialize
    * @param typeOfT the type of the object to deserialize to
    * @param context the context for deserialization
-   *
    * @return a HiperMessage object created from the JSON string
-   *
    * @throws JsonParseException if the JSON element is not a string
    */
   @Override
@@ -781,7 +777,6 @@ public class HiperMessage implements JsonSerializer<HiperMessage>, JsonDeseriali
    * @param src       the HiperMessage object to serialize
    * @param typeOfSrc the type of the source object
    * @param context   the context for serialization
-   *
    * @return a JsonElement representing the HiperMessage as a JSON string
    */
   @Override

@@ -21,6 +21,7 @@ import com.kingpixel.cobbleutils.Model.messages.HiperMessage;
 import com.kingpixel.cobbleutils.Model.zones.zoneshapes.ZoneShape;
 import com.kingpixel.cobbleutils.adapter.*;
 import com.kingpixel.cobbleutils.database.users.models.Storage;
+import com.kingpixel.cobbleutils.util.redis.handlers.RedisMessageHandler;
 import com.mojang.authlib.GameProfile;
 import kotlin.ranges.IntRange;
 import net.minecraft.component.DataComponentTypes;
@@ -279,7 +280,7 @@ public abstract class Utils {
   @Deprecated
   public static void broadcastMessage(String message) {
     if (CobbleUtils.config.isRedisMessaging()) {
-      RedisManager.sendMessage(message);
+      RedisMessageHandler.sendBroadcast(message, "");
     } else {
       MinecraftServer server = CobbleUtils.server;
       ArrayList<ServerPlayerEntity> players = new ArrayList<>(server.getPlayerManager().getPlayerList());
@@ -293,7 +294,7 @@ public abstract class Utils {
     if (CobbleUtils.config.isRedisMessaging()) {
       // Convert Text to String and send via Redis
       String textAsString = message.getString();
-      RedisManager.sendMessage(textAsString);
+      RedisMessageHandler.sendBroadcast(textAsString, "");
     } else {
       MinecraftServer server = CobbleUtils.server;
       ArrayList<ServerPlayerEntity> players = new ArrayList<>(server.getPlayerManager().getPlayerList());
@@ -305,7 +306,7 @@ public abstract class Utils {
 
   public static void broadcastMessage(String message, String prefix) {
     if (CobbleUtils.config.isRedisMessaging()) {
-      RedisManager.sendMessage(message, prefix);
+      RedisMessageHandler.sendBroadcast(message, prefix);
     } else {
       var text = AdventureTranslator.toNative(message, prefix);
       MinecraftServer server = CobbleUtils.server;

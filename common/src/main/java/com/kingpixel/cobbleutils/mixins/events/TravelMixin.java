@@ -74,6 +74,7 @@ public abstract class TravelMixin {
   @Inject(method = "tick", at = @At("HEAD"))
   private void cobbleutils$onTick(CallbackInfo ci) {
     if (CobbleUtilsEvents.TRAVEL_EVENT.isEmpty()) return;
+
     try {
       ServerPlayerEntity player = (ServerPlayerEntity) (Object) this;
       UUID uuid = player.getUuid();
@@ -85,12 +86,10 @@ public abstract class TravelMixin {
       }
 
       int tickCount = cobbleutils$tickCounters.get(uuid, key -> 0) + 1;
-
       if (tickCount < 20) {
         cobbleutils$tickCounters.put(uuid, tickCount);
         return;
       }
-
       cobbleutils$tickCounters.put(uuid, 0);
 
       Vec3d currentPos = player.getPos();
@@ -101,22 +100,12 @@ public abstract class TravelMixin {
         return;
       }
 
-      boolean movingByInput =
-        player.forwardSpeed != 0 ||
-          player.sidewaysSpeed != 0;
-
-      if (!movingByInput) {
-        cobbleutils$lastPos.put(uuid, currentPos);
-        return;
-      }
-
       cobbleutils$lastPos.put(uuid, currentPos);
 
       CobbleUtilsEvents.TRAVEL_EVENT.emit(EventTravel.builder()
         .distance(lastPos.distanceTo(currentPos))
         .player(player)
         .build());
-
     } catch (Exception e) {
       CobbleUtils.LOGGER.error("Error in TravelMixin tick");
       e.printStackTrace();

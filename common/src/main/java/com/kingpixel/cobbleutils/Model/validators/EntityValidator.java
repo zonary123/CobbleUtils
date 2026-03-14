@@ -22,6 +22,7 @@ public class EntityValidator extends AbstractRegistryValidator<Entity> {
   /**
    * List of allowed entity IDs. Supports wildcards and regex.
    */
+  @Builder.Default
   private Set<String> entityIds = new HashSet<>(Set.of(
     "*",
     "regex:.*",

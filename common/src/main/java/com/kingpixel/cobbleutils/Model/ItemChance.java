@@ -45,9 +45,13 @@ public class ItemChance {
   private String item;
   private double chance;
   // Optional Unique reward ID
+  @Builder.Default
   private Boolean unique = null;
+  @Builder.Default
   private String identifier = null;
+  @Builder.Default
   private Integer amount = null; // fixed amount, if null, amount is parsed from item string
+  @Builder.Default
   private DurationValue cooldown = null;
   // Optional display properties
   private String display;

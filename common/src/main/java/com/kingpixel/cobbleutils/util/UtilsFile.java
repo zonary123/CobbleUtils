@@ -1,8 +1,30 @@
 package com.kingpixel.cobbleutils.util;
 
+import com.cobblemon.mod.common.api.moves.Move;
+import com.cobblemon.mod.common.api.moves.adapters.MoveTemplateAdapter;
+import com.cobblemon.mod.common.api.types.ElementalType;
+import com.cobblemon.mod.common.api.types.adapters.ElementalTypeAdapter;
+import com.cobblemon.mod.common.pokemon.Pokemon;
+import com.cobblemon.mod.common.util.adapters.IntRangeAdapter;
+import com.cobblemon.mod.common.util.adapters.NbtCompoundAdapter;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.internal.bind.DateTypeAdapter;
 import com.google.gson.reflect.TypeToken;
+import com.kingpixel.cobbleutils.Model.DataBaseType;
+import com.kingpixel.cobbleutils.Model.DurationValue;
+import com.kingpixel.cobbleutils.Model.ItemChance;
+import com.kingpixel.cobbleutils.Model.conditions.Condition;
+import com.kingpixel.cobbleutils.Model.messages.HiperMessage;
+import com.kingpixel.cobbleutils.Model.zones.zoneshapes.ZoneShape;
+import com.kingpixel.cobbleutils.adapter.*;
+import com.kingpixel.cobbleutils.database.users.models.Storage;
+import kotlin.ranges.IntRange;
+import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NbtCompound;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Box;
+import net.minecraft.util.math.Vec3d;
 import org.jetbrains.annotations.Nullable;
 
 import javax.annotation.Nonnull;
@@ -12,9 +34,11 @@ import java.io.IOException;
 import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
+import java.time.Instant;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Consumer;
@@ -46,6 +70,7 @@ public final class UtilsFile {
   private UtilsFile() {
   }
 
+
   public static final ExecutorService IO_EXECUTOR =
     new ThreadPoolExecutor(
       1,
@@ -61,6 +86,30 @@ public final class UtilsFile {
   private static volatile Gson GSON;
 
   private static final ConcurrentMap<Type, Object> ADAPTERS = new ConcurrentHashMap<>();
+
+  static {
+    registerAdapter(NbtCompound.class, NbtCompoundAdapter.INSTANCE);
+    registerAdapter(NbtCompoundAdapter.class, NbtCompoundAdapter.INSTANCE);
+    registerAdapter(DateTypeAdapter.class, new DateTypeAdapter());
+    registerAdapter(ItemStack.class, ItemStackAdapter.INSTANCE);
+    registerAdapter(Instant.class, InstantTypeAdapter.INSTANCE);
+    registerAdapter(ItemChance.class, ItemChanceAdapter.INSTANCE);
+    registerAdapter(DurationValue.class, DurationValue.INSTANCE);
+    registerAdapter(DataBaseType.class, DataBaseTypeAdapter.INSTANCE);
+    registerAdapter(Storage.class, StorageAdapter.INSTANCE);
+    registerAdapter(HiperMessage.class, HiperMessage.EMPTY);
+    registerAdapter(Vec3d.class, Vec3dAdapter.INSTANCE);
+    registerAdapter(AtomicReference.class, AtomicReferenceAdapter.INSTANCE);
+    registerAdapter(Box.class, BoxAdapter.INSTANCE);
+    registerAdapter(BlockPos.class, BlockPosAdapter.INSTANCE);
+    registerAdapter(ZoneShape.class, ZoneShapeAdapter.INSTANCE);
+    registerAdapter(Condition.class, ConditionAdapter.INSTANCE);
+    // Cobblemon adapters
+    registerAdapter(Pokemon.class, PokemonAdapter.INSTANCE);
+    registerAdapter(Move.class, MoveTemplateAdapter.INSTANCE);
+    registerAdapter(IntRange.class, IntRangeAdapter.INSTANCE);
+    registerAdapter(ElementalType.class, ElementalTypeAdapter.INSTANCE);
+  }
 
   /**
    * Retrieves the lock associated with a file path.

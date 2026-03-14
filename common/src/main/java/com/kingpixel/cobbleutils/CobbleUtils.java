@@ -15,10 +15,11 @@ import com.kingpixel.cobbleutils.database.blocks.ChunkBlockStorageManager;
 import com.kingpixel.cobbleutils.database.users.DataBaseUsers;
 import com.kingpixel.cobbleutils.database.users.UserModel;
 import com.kingpixel.cobbleutils.events.ItemRightClickEvents;
-import com.kingpixel.cobbleutils.network.CrossServerManager;
+import com.kingpixel.cobbleutils.network.ProxyPacket;
 import com.kingpixel.cobbleutils.tasks.RegistryTasks;
 import com.kingpixel.cobbleutils.util.*;
 import com.kingpixel.cobbleutils.util.async.AsyncContext;
+import com.kingpixel.cobbleutils.util.redis.RedisManager;
 import dev.architectury.event.events.common.CommandRegistrationEvent;
 import dev.architectury.event.events.common.InteractionEvent;
 import dev.architectury.event.events.common.LifecycleEvent;
@@ -26,6 +27,7 @@ import dev.architectury.event.events.common.PlayerEvent;
 import dev.architectury.injectables.targets.ArchitecturyTarget;
 import lombok.Getter;
 import lombok.Setter;
+import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.loader.api.ModContainer;
 import net.fabricmc.loader.api.metadata.Person;
@@ -81,8 +83,13 @@ public class CobbleUtils {
     }
     tasks();
     events();
-    CrossServerManager.register();
-
+    if (config.isRedisMessaging()) {
+      try {
+        PayloadTypeRegistry.playS2C().register(ProxyPacket.PACKET_ID, ProxyPacket.CODEC);
+        PayloadTypeRegistry.playC2S().register(ProxyPacket.PACKET_ID, ProxyPacket.CODEC);
+      } catch (IllegalArgumentException ignored) {
+      }
+    }
   }
 
   public static void load() {
@@ -176,7 +183,6 @@ public class CobbleUtils {
       com.kingpixel.cobbleutils.util.async.UtilsAsync.shutdownAll();
       shutdownAndAwait(EXECUTOR_COBBLEUTILS);
       shutdownAndAwait(Utils.IO_EXECUTOR);
-      shutdownAndAwait(RedisManager.EXECUTOR_REDIS);
       shutdownAndAwait(SCHEDULER_COBBLEUTILS);
     });
 

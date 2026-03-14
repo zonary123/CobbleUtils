@@ -1,9 +1,6 @@
 package com.kingpixel.cobbleutils.Model.validators;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.NonNull;
+import lombok.*;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -13,6 +10,7 @@ import java.util.Set;
  * <p>
  * Checks whether a string is valid based on a list of allowed IDs and optional blacklist.
  */
+@EqualsAndHashCode(callSuper = true)
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
