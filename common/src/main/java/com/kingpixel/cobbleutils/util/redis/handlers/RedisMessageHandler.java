@@ -96,26 +96,19 @@ public class RedisMessageHandler implements RedisHandler {
   }
 
   private static void publish(String type, String content, UUID uuid, String prefix) {
-    if (RedisManager.getJedisPool() == null) return;
+    JsonObject json = new JsonObject();
+    json.addProperty("type", type);
+    json.addProperty("content", content);
 
-    try (var jedis = RedisManager.getJedisPool().getResource()) {
-
-      JsonObject json = new JsonObject();
-      json.addProperty("type", type);
-      json.addProperty("content", content);
-
-      if (uuid != null) {
-        json.addProperty("uuid", uuid.toString());
-      }
-
-      if (prefix != null && !prefix.isEmpty()) {
-        json.addProperty("prefix", prefix);
-      }
-
-      jedis.publish(CHANNEL, json.toString());
-
-    } catch (Exception ignored) {
-      RedisManager.getConnected().set(false);
+    if (uuid != null) {
+      json.addProperty("uuid", uuid.toString());
     }
+
+    if (prefix != null && !prefix.isEmpty()) {
+      json.addProperty("prefix", prefix);
+    }
+
+    RedisManager.publish(CHANNEL, json);
+
   }
 }
