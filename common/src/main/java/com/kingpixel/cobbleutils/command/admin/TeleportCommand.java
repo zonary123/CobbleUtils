@@ -1,7 +1,6 @@
 package com.kingpixel.cobbleutils.command.admin;
 
 import com.kingpixel.cobbleutils.Model.Location;
-import com.kingpixel.cobbleutils.network.ProxyPacket;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.DoubleArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;

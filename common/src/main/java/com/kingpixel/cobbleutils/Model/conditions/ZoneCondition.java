@@ -2,11 +2,14 @@ package com.kingpixel.cobbleutils.Model.conditions;
 
 import com.kingpixel.cobbleutils.Model.zones.zoneshapes.CuboidShape;
 import com.kingpixel.cobbleutils.Model.zones.zoneshapes.ZoneShape;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
+import lombok.*;
 import net.minecraft.server.network.ServerPlayerEntity;
 
 @EqualsAndHashCode(callSuper = true)
+@AllArgsConstructor
+@NoArgsConstructor
+@ToString(callSuper = true)
+@Builder
 @Data
 public class ZoneCondition extends Condition implements VisualizableCondition {
   public static final String TYPE = "ZONE";

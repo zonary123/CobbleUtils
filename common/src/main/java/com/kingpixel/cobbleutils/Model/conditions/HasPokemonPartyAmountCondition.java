@@ -3,11 +3,14 @@ package com.kingpixel.cobbleutils.Model.conditions;
 import com.cobblemon.mod.common.Cobblemon;
 import com.cobblemon.mod.common.pokemon.Pokemon;
 import com.kingpixel.cobbleutils.Model.PokemonBlackList;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
+import lombok.*;
 import net.minecraft.server.network.ServerPlayerEntity;
 
 @EqualsAndHashCode(callSuper = true)
+@AllArgsConstructor
+@NoArgsConstructor
+@ToString(callSuper = true)
+@Builder
 @Data
 public class HasPokemonPartyAmountCondition extends Condition {
   public static final String TYPE = "HAS_POKEMON_PARTY_AMOUNT";

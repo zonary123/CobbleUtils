@@ -15,7 +15,7 @@ import com.kingpixel.cobbleutils.database.blocks.ChunkBlockStorageManager;
 import com.kingpixel.cobbleutils.database.users.DataBaseUsers;
 import com.kingpixel.cobbleutils.database.users.UserModel;
 import com.kingpixel.cobbleutils.events.ItemRightClickEvents;
-import com.kingpixel.cobbleutils.network.ProxyPacket;
+import com.kingpixel.cobbleutils.network.NetworkInitializer;
 import com.kingpixel.cobbleutils.tasks.RegistryTasks;
 import com.kingpixel.cobbleutils.util.*;
 import com.kingpixel.cobbleutils.util.async.AsyncContext;
@@ -27,7 +27,6 @@ import dev.architectury.event.events.common.PlayerEvent;
 import dev.architectury.injectables.targets.ArchitecturyTarget;
 import lombok.Getter;
 import lombok.Setter;
-import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.loader.api.ModContainer;
 import net.fabricmc.loader.api.metadata.Person;
@@ -83,13 +82,7 @@ public class CobbleUtils {
     }
     tasks();
     events();
-    if (config.isRedisMessaging()) {
-      try {
-        PayloadTypeRegistry.playS2C().register(ProxyPacket.PACKET_ID, ProxyPacket.CODEC);
-        PayloadTypeRegistry.playC2S().register(ProxyPacket.PACKET_ID, ProxyPacket.CODEC);
-      } catch (IllegalArgumentException ignored) {
-      }
-    }
+    NetworkInitializer.register();
   }
 
   public static void load() {
@@ -186,14 +179,16 @@ public class CobbleUtils {
       shutdownAndAwait(SCHEDULER_COBBLEUTILS);
     });
 
-    PlayerEvent.PLAYER_JOIN.register((player) -> runAsync(() -> {
-      UserModel user = DataBaseFactory.dataBaseUsers.findUserByUUID(player.getUuid());
-      if (user == null) user = new UserModel(player);
-      user.connect(player);
-      user.fix();
-      DataBaseFactory.dataBaseUsers.saveOrUpdateUser(user);
-      DataBaseUsers.USERS.put(player.getUuid(), user);
-    }));
+    PlayerEvent.PLAYER_JOIN.register((player) -> {
+      runAsync(() -> {
+        UserModel user = DataBaseFactory.dataBaseUsers.findUserByUUID(player.getUuid());
+        if (user == null) user = new UserModel(player);
+        user.connect(player);
+        user.fix();
+        DataBaseFactory.dataBaseUsers.saveOrUpdateUser(user);
+        DataBaseUsers.USERS.put(player.getUuid(), user);
+      });
+    });
 
     PlayerEvent.PLAYER_QUIT.register((player) -> runAsync(() -> {
       DataBaseFactory.dataBaseUsers.disconnected(player);

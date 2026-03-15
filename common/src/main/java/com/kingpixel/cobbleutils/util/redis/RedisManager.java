@@ -203,4 +203,32 @@ public class RedisManager {
     connected.set(false);
     subscriberHealthy.set(false);
   }
+
+  public static void publishAndSave(String key, JsonObject json) {
+    saveState(key, json);
+    publish(key, json);
+  }
+
+  public static void saveState(String key, JsonObject json) {
+    if (!connected.get() || jedisPool == null || jedisPool.isClosed()) return;
+
+    try (Jedis jedis = jedisPool.getResource()) {
+      jedis.set("state:" + key, json.toString());
+    } catch (Exception e) {
+      connected.set(false);
+    }
+  }
+
+  public static JsonObject getState(String key) {
+    if (!connected.get() || jedisPool == null || jedisPool.isClosed()) return null;
+
+    try (Jedis jedis = jedisPool.getResource()) {
+      String data = jedis.get("state:" + key);
+      if (data != null) return JsonParser.parseString(data).getAsJsonObject();
+    } catch (Exception e) {
+      connected.set(false);
+    }
+
+    return null;
+  }
 }

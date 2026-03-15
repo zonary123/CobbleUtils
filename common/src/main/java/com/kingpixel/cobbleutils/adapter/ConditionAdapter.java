@@ -25,6 +25,7 @@ public final class ConditionAdapter implements JsonDeserializer<Condition>, Json
     register(TimeOfDayMinecraftCondition.TYPE, TimeOfDayMinecraftCondition.class);
     register(WeatherCondition.TYPE, WeatherCondition.class);
     register(NearBlockCondition.TYPE, NearBlockCondition.class);
+    register(StructureCondition.TYPE, StructureCondition.class);
     // Cobblemon conditions
     register(MolangCondition.TYPE, MolangCondition.class);
     register(HasPokemonPartyCondition.TYPE, HasPokemonPartyCondition.class);
@@ -35,6 +36,7 @@ public final class ConditionAdapter implements JsonDeserializer<Condition>, Json
   }
 
   public static void register(String id, Class<? extends Condition> clazz) {
+    if (TYPES.containsKey(id)) throw new IllegalArgumentException("Condition type already registered: " + id);
     TYPES.put(id, clazz);
   }
 

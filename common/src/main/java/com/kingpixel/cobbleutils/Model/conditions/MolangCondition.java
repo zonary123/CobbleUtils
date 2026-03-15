@@ -1,13 +1,16 @@
 package com.kingpixel.cobbleutils.Model.conditions;
 
 import com.kingpixel.cobbleutils.CobbleUtils;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
+import lombok.*;
 import net.minecraft.server.network.ServerPlayerEntity;
 
 import java.util.List;
 
 @EqualsAndHashCode(callSuper = true)
+@AllArgsConstructor
+@NoArgsConstructor
+@ToString(callSuper = true)
+@Builder
 @Data
 public class MolangCondition extends Condition {
   public static final String TYPE = "MOLANG";

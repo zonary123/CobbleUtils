@@ -1,7 +1,6 @@
 package com.kingpixel.cobbleutils.Model.conditions;
 
-import lombok.Data;
-import lombok.EqualsAndHashCode;
+import lombok.*;
 import net.minecraft.registry.Registries;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.util.math.BlockPos;
@@ -10,6 +9,10 @@ import java.util.HashSet;
 import java.util.Set;
 
 @EqualsAndHashCode(callSuper = true)
+@AllArgsConstructor
+@NoArgsConstructor
+@ToString(callSuper = true)
+@Builder
 @Data
 public class NearBlockCondition extends Condition {
 

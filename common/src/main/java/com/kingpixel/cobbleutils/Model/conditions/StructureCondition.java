@@ -1,14 +1,17 @@
 package com.kingpixel.cobbleutils.Model.conditions;
 
 import com.kingpixel.cobbleutils.CobbleUtils;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
+import lombok.*;
 import net.minecraft.server.network.ServerPlayerEntity;
 
 import java.util.HashSet;
 import java.util.Set;
 
 @EqualsAndHashCode(callSuper = true)
+@AllArgsConstructor
+@NoArgsConstructor
+@ToString(callSuper = true)
+@Builder
 @Data
 public class StructureCondition extends Condition {
 

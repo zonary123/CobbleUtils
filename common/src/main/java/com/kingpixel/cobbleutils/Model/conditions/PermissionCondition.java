@@ -1,11 +1,18 @@
 package com.kingpixel.cobbleutils.Model.conditions;
 
 import com.kingpixel.cobbleutils.api.PermissionApi;
+import lombok.*;
 import net.minecraft.server.network.ServerPlayerEntity;
 
+@EqualsAndHashCode(callSuper = true)
+@AllArgsConstructor
+@NoArgsConstructor
+@ToString(callSuper = true)
+@Builder
+@Data
 public class PermissionCondition extends Condition {
   public static final String TYPE = "PERMISSION";
-  private final String permission = "";
+  private String permission = "";
 
   @Override
   public String getType() {

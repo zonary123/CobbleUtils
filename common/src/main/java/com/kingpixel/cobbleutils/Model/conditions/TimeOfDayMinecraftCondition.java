@@ -1,15 +1,18 @@
 package com.kingpixel.cobbleutils.Model.conditions;
 
 
-import lombok.Data;
-import lombok.EqualsAndHashCode;
+import lombok.*;
 import net.minecraft.server.network.ServerPlayerEntity;
 
 @EqualsAndHashCode(callSuper = true)
+@AllArgsConstructor
+@NoArgsConstructor
+@ToString(callSuper = true)
+@Builder
 @Data
 public class TimeOfDayMinecraftCondition extends Condition {
 
-  public static final String TYPE = "time";
+  public static final String TYPE = "TIME_OF_DAY_MINECRAFT";
 
   private long minTime = 0;
   private long maxTime = 24000;
