@@ -7,7 +7,6 @@ import java.util.Set;
 
 @EqualsAndHashCode(callSuper = true)
 @AllArgsConstructor
-@NoArgsConstructor
 @ToString(callSuper = true)
 @Builder
 @Data

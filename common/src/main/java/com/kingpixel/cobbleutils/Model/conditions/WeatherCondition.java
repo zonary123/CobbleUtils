@@ -6,7 +6,6 @@ import net.minecraft.server.network.ServerPlayerEntity;
 
 @EqualsAndHashCode(callSuper = true)
 @AllArgsConstructor
-@NoArgsConstructor
 @ToString(callSuper = true)
 @Builder
 @Data

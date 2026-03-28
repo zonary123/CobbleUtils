@@ -55,7 +55,7 @@ public class ItemModel {
 
 
   public ItemModel() {
-    this.slot = null;
+    this.slot = -1;
     this.slots = new Integer[]{};
     this.item = "minecraft:emerald";
     this.displayname = "";
