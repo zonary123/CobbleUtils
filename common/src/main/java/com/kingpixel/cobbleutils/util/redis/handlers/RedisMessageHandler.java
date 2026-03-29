@@ -88,30 +88,28 @@ public class RedisMessageHandler implements RedisHandler {
     publish("player", fullMessage, playerUUID, prefix);
   }
 
-  public static void sendActionBar(UUID playerUUID, String message, String prefix) {
-    publish("actionbar", message, playerUUID, prefix);
+  public static void sendActionBarPlayer(UUID playerUUID, String message, String prefix) {
+    publish("actionbar_player", message, playerUUID, prefix);
   }
 
+  public static void sendActionBarBroadcast(String message, String prefix) {
+    publish("actionbar", message, null, prefix);
+  }
+
+
   private static void publish(String type, String content, UUID uuid, String prefix) {
-    if (RedisManager.getJedisPool() == null) return;
+    JsonObject json = new JsonObject();
+    json.addProperty("type", type);
+    json.addProperty("content", content);
 
-    try (var jedis = RedisManager.getJedisPool().getResource()) {
-
-      JsonObject json = new JsonObject();
-      json.addProperty("type", type);
-      json.addProperty("content", content);
-
-      if (uuid != null) {
-        json.addProperty("uuid", uuid.toString());
-      }
-
-      if (prefix != null && !prefix.isEmpty()) {
-        json.addProperty("prefix", prefix);
-      }
-
-      RedisManager.publish(CHANNEL, json);
-    } catch (Exception ignored) {
-      RedisManager.getConnected().set(false);
+    if (uuid != null) {
+      json.addProperty("uuid", uuid.toString());
     }
+
+    if (prefix != null && !prefix.isEmpty()) {
+      json.addProperty("prefix", prefix);
+    }
+
+    RedisManager.publish(CHANNEL, json);
   }
 }

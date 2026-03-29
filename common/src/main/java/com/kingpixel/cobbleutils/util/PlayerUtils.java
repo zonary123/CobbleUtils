@@ -94,8 +94,8 @@ public class PlayerUtils {
     if (CobbleUtils.config.isRedisMessaging()) {
       switch (typeMessage) {
         case CHAT -> RedisMessageHandler.sendPlayer(playerUUID, fullMessage, prefix);
-        case ACTIONBAR -> RedisMessageHandler.sendActionBar(playerUUID, fullMessage, prefix);
-        case ACTIONBAR_BROADCAST -> RedisMessageHandler.sendActionBar(null, fullMessage, prefix);
+        case ACTIONBAR -> RedisMessageHandler.sendActionBarPlayer(playerUUID, fullMessage, prefix);
+        case ACTIONBAR_BROADCAST -> RedisMessageHandler.sendActionBarBroadcast(fullMessage, prefix);
         case BROADCAST -> RedisMessageHandler.sendBroadcast(fullMessage, prefix);
       }
     } else {
