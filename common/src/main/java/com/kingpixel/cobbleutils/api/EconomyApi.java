@@ -4,7 +4,7 @@ import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.Model.EconomyUse;
 import com.kingpixel.cobbleutils.Model.Priority;
 import com.kingpixel.cobbleutils.Model.PriorityEconomy;
-import com.kingpixel.cobbleutils.util.economys.*;
+import com.kingpixel.cobbleutils.util.economys.v1.*;
 import lombok.Data;
 import lombok.Getter;
 
@@ -16,7 +16,8 @@ import java.util.*;
  */
 @Data
 public class EconomyApi {
-  @Getter private static Set<EconomyAbstract> economys = new HashSet<>();
+  @Getter
+  private static Set<EconomyAbstract> economys = new HashSet<>();
 
   public static void setEconomyType() {
     economys.clear();
@@ -102,7 +103,6 @@ public class EconomyApi {
    * @param playerUuid The player to add the money
    * @param money      The amount of money
    * @param currency   The currency to add
-   *
    * @return If the money was added
    */
   @Deprecated
@@ -121,7 +121,6 @@ public class EconomyApi {
    * @param playerUuid The player to remove the money
    * @param money      The amount of money
    * @param currency   The currency to remove
-   *
    * @return If the money was removed
    */
   @Deprecated(forRemoval = true)
@@ -139,7 +138,6 @@ public class EconomyApi {
    *
    * @param playerUuid The player to get the money
    * @param currency   The currency to get
-   *
    * @return The amount of money
    */
   @Deprecated(forRemoval = true)
@@ -203,7 +201,6 @@ public class EconomyApi {
    *
    * @param money    The amount of money
    * @param currency The currency to format
-   *
    * @return The formatted money
    */
   @Deprecated(forRemoval = false)
@@ -222,7 +219,6 @@ public class EconomyApi {
    * @param money      The amount of money
    * @param currency   The currency to check
    * @param economyId  The economys to check
-   *
    * @return If the player has enough money
    */
   @Deprecated(forRemoval = true)
@@ -239,7 +235,6 @@ public class EconomyApi {
    * Get the symbol of the currency
    *
    * @param currency The currency to get the symbol
-   *
    * @return The symbol of the currency
    */
   @Deprecated(forRemoval = true)

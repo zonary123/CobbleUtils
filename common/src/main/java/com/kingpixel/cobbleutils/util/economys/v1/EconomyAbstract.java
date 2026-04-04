@@ -1,4 +1,4 @@
-package com.kingpixel.cobbleutils.util.economys;
+package com.kingpixel.cobbleutils.util.economys.v1;
 
 import com.kingpixel.cobbleutils.CobbleUtils;
 import lombok.Data;
@@ -33,7 +33,6 @@ public abstract class EconomyAbstract {
    * @param playerUuid The player to withdraw money from
    * @param money      The amount of money to withdraw
    * @param currency   The currency to withdraw
-   *
    * @return true if the player has enough money
    */
   public abstract boolean withdraw(UUID playerUuid, BigDecimal money, String currency);
@@ -43,7 +42,6 @@ public abstract class EconomyAbstract {
    *
    * @param playerUuid The player to deposit money to
    * @param currency   The currency to deposit
-   *
    * @return The balance of the player
    */
   public abstract BigDecimal getBalance(UUID playerUuid, String currency);
@@ -56,7 +54,6 @@ public abstract class EconomyAbstract {
    * @param money       The amount of money to withdraw
    * @param currency    The currency to withdraw
    * @param removeMoney Remove the money if the player has enough
-   *
    * @return true if the player has enough money
    */
   public boolean hasEnough(UUID playerUuid, BigDecimal money, String currency, boolean removeMoney) {
@@ -71,7 +68,6 @@ public abstract class EconomyAbstract {
    * get the symbol of the currency
    *
    * @param currency The currency to withdraw
-   *
    * @return The symbol of the currency
    */
   public String getSymbol(String currency) {
@@ -83,7 +79,6 @@ public abstract class EconomyAbstract {
    *
    * @param money    The amount of money to format
    * @param currency The currency to format
-   *
    * @return The formatted money
    */
   public abstract String format(BigDecimal money, String currency);
@@ -94,7 +89,6 @@ public abstract class EconomyAbstract {
    * @param playerUuid The player to set the balance
    * @param money      The amount of money to set
    * @param currency   The currency to set
-   *
    * @return true if the balance was set
    */
   public abstract boolean setBalance(UUID playerUuid, BigDecimal money, String currency);
@@ -103,7 +97,6 @@ public abstract class EconomyAbstract {
    * get the decimals of the currency
    *
    * @param currency The currency to get the decimals
-   *
    * @return The decimals of the currency
    */
   public abstract int getDecimals(String currency);

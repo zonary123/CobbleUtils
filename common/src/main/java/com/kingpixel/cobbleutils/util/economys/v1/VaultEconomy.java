@@ -1,4 +1,4 @@
-package com.kingpixel.cobbleutils.util.economys;
+package com.kingpixel.cobbleutils.util.economys.v1;
 
 import com.kingpixel.cobbleutils.CobbleUtils;
 import lombok.Data;
@@ -16,7 +16,8 @@ import java.util.UUID;
 /**
  * @author Carlos Varas Alonso - 16/03/2025 3:30
  */
-@EqualsAndHashCode(callSuper = true) @Data
+@EqualsAndHashCode(callSuper = true)
+@Data
 public class VaultEconomy extends EconomyAbstract {
   public static final String IDENTIFY = "VAULT";
   private Economy service;
@@ -25,7 +26,8 @@ public class VaultEconomy extends EconomyAbstract {
 
   }
 
-  @Override public String getIdentify() {
+  @Override
+  public String getIdentify() {
     return IDENTIFY;
   }
 
@@ -52,23 +54,28 @@ public class VaultEconomy extends EconomyAbstract {
     return false;
   }
 
-  @Override public boolean deposit(UUID playerUuid, BigDecimal money, String currency) {
+  @Override
+  public boolean deposit(UUID playerUuid, BigDecimal money, String currency) {
     return service.depositPlayer(Bukkit.getOfflinePlayer(playerUuid), money.doubleValue()).transactionSuccess();
   }
 
-  @Override public boolean withdraw(UUID playerUuid, BigDecimal money, String currency) {
+  @Override
+  public boolean withdraw(UUID playerUuid, BigDecimal money, String currency) {
     return service.withdrawPlayer(Bukkit.getOfflinePlayer(playerUuid), money.doubleValue()).transactionSuccess();
   }
 
-  @Override public BigDecimal getBalance(UUID playerUuid, String currency) {
+  @Override
+  public BigDecimal getBalance(UUID playerUuid, String currency) {
     return BigDecimal.valueOf(service.getBalance(Bukkit.getOfflinePlayer(playerUuid)));
   }
 
-  @Override public String format(BigDecimal money, String currency) {
+  @Override
+  public String format(BigDecimal money, String currency) {
     return service.format(money.doubleValue());
   }
 
-  @Override public boolean setBalance(UUID playerUuid, BigDecimal money, String currency) {
+  @Override
+  public boolean setBalance(UUID playerUuid, BigDecimal money, String currency) {
     var offlinePlayer = Bukkit.getOfflinePlayer(playerUuid);
     if (service.hasAccount(offlinePlayer)) {
       service.withdrawPlayer(offlinePlayer, getBalance(playerUuid, currency).doubleValue());
@@ -77,7 +84,8 @@ public class VaultEconomy extends EconomyAbstract {
     return false;
   }
 
-  @Override public int getDecimals(String currency) {
+  @Override
+  public int getDecimals(String currency) {
     return CobbleUtils.config.getDecimals();
   }
 }

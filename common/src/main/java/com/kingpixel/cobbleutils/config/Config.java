@@ -4,7 +4,7 @@ import com.google.gson.Gson;
 import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.Model.*;
 import com.kingpixel.cobbleutils.util.Utils;
-import com.kingpixel.cobbleutils.util.economys.*;
+import com.kingpixel.cobbleutils.util.economys.v1.*;
 import lombok.Data;
 import lombok.Getter;
 import lombok.ToString;

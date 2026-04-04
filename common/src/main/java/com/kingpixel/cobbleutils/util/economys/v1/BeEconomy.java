@@ -1,23 +1,24 @@
-package com.kingpixel.cobbleutils.util.economys;
+package com.kingpixel.cobbleutils.util.economys.v1;
 
 import com.kingpixel.cobbleutils.CobbleUtils;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import tech.sethi.pebbleseconomy.PebblesEconomyInitializer;
+import org.krripe.beconomy.api.BEconomy;
+import org.krripe.beconomy.api.EconomyAPI;
 
 import java.math.BigDecimal;
 import java.util.UUID;
 
 /**
- * @author Carlos Varas Alonso - 16/03/2025 3:51
+ * @author Carlos Varas Alonso - 16/03/2025 3:35
  */
 @EqualsAndHashCode(callSuper = true)
 @Data
-public class PebbleEconomy extends EconomyAbstract {
-  public static final String IDENTIFY = "PEBBLE_ECONOMY";
-  private PebblesEconomyInitializer service;
+public class BeEconomy extends EconomyAbstract {
+  public static final String IDENTIFY = "BECONOMY";
+  private static EconomyAPI service;
 
-  public PebbleEconomy() {
+  public BeEconomy() {
   }
 
   @Override
@@ -27,34 +28,36 @@ public class PebbleEconomy extends EconomyAbstract {
 
   @Override
   public boolean isPresent() {
-    service = PebblesEconomyInitializer.INSTANCE;
+    BEconomy.INSTANCE.initialize(CobbleUtils.server);
+    service = BEconomy.INSTANCE.getAPI();
     return true;
   }
 
   @Override
   public boolean deposit(UUID playerUuid, BigDecimal money, String currency) {
-    service.getEconomy().deposit(playerUuid, money.doubleValue());
+    service.addBalance(playerUuid, money, currency);
     return true;
   }
 
   @Override
   public boolean withdraw(UUID playerUuid, BigDecimal money, String currency) {
-    return service.getEconomy().withdraw(playerUuid, money.doubleValue());
+    BigDecimal balance = getBalance(playerUuid, currency);
+    return setBalance(playerUuid, balance.subtract(money), currency);
   }
 
   @Override
   public BigDecimal getBalance(UUID playerUuid, String currency) {
-    return BigDecimal.valueOf(service.getEconomy().getBalance(playerUuid));
+    return service.getBalance(playerUuid, currency);
   }
 
   @Override
   public String format(BigDecimal money, String currency) {
-    return CobbleUtils.language.getDefaultSymbol() + " " + CobbleUtils.config.getFormat(money);
+    return CobbleUtils.config.getFormat(money) + " " + service.getCurrencySymbol(currency);
   }
 
   @Override
   public boolean setBalance(UUID playerUuid, BigDecimal money, String currency) {
-    service.getEconomy().setBalance(playerUuid, money.doubleValue());
+    service.setBalance(playerUuid, money, currency);
     return true;
   }
 

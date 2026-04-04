@@ -1,4 +1,4 @@
-package com.kingpixel.cobbleutils.util.economys;
+package com.kingpixel.cobbleutils.util.economys.v1;
 
 import com.kingpixel.cobbleutils.CobbleUtils;
 import fr.harmex.cobbledollars.common.CobbleDollars;
