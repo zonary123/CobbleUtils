@@ -32,6 +32,8 @@ import net.fabricmc.loader.api.ModContainer;
 import net.fabricmc.loader.api.metadata.Person;
 import net.minecraft.command.CommandRegistryAccess;
 import net.minecraft.server.MinecraftServer;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
@@ -46,6 +48,7 @@ public class CobbleUtils {
   public static final String PATH_BREED = PATH + "/breed/";
   public static final String PATH_BREED_DATA = PATH_BREED + "data/";
   public static final UtilsLogger LOGGER = new UtilsLogger();
+  public static final Logger LOGGER_RAW = LogManager.getLogger(MOD_NAME);
 
   @Setter
   @Getter

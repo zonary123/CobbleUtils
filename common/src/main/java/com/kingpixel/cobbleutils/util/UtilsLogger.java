@@ -16,13 +16,8 @@ public class UtilsLogger {
   private static final Map<String, Logger> loggers = new HashMap<>();
   private Logger logger; // Log for the console.
 
-  private Logger getLogger(String modId) {
-    Logger logger = loggers.get(modId);
-    if (logger == null) {
-      logger = LogManager.getLogger(modId);
-      loggers.put(modId, logger);
-    }
-    return logger;
+  public Logger getLogger(String modId) {
+    return loggers.computeIfAbsent(modId, LogManager::getLogger);
   }
 
   // Constructor

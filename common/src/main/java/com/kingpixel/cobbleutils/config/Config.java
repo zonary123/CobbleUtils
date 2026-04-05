@@ -100,13 +100,13 @@ public class Config {
         Utils.writeFileAsync(CobbleUtils.PATH, "config.json", data);
       });
 
-    if (!futureRead.join()) {
-      CobbleUtils.LOGGER.info("No config.json file found for" + CobbleUtils.MOD_NAME + ". Attempting to generate one.");
+    Boolean readResult = futureRead.join();
+    if (readResult == null || !readResult) {
+      CobbleUtils.LOGGER.info("No config.json file found for " + CobbleUtils.MOD_NAME + ". Attempting to generate one.");
       Gson gson = Utils.newGson();
       CobbleUtils.config = this;
       String data = gson.toJson(CobbleUtils.config);
-      Utils.writeFileAsync(CobbleUtils.PATH, "config.json",
-        data);
+      Utils.writeFileAsync(CobbleUtils.PATH, "config.json", data);
     }
   }
 

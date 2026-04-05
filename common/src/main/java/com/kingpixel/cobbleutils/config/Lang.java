@@ -303,13 +303,12 @@ public class Lang {
         Utils.writeFileAsync(CobbleUtils.PATH_LANG, CobbleUtils.config.getLang() + ".json", data);
       });
 
-    if (!futureRead.join()) {
-      CobbleUtils.LOGGER.info("No lang.json file found for" + CobbleUtils.MOD_NAME + ". Attempting to generate one.");
+    Boolean readResult = futureRead.join();
+    if (readResult == null || !readResult) {
+      CobbleUtils.LOGGER.info("No lang.json file found for " + CobbleUtils.MOD_NAME + ". Attempting to generate one.");
       Gson gson = Utils.newGson();
       String data = gson.toJson(this);
-      Utils.writeFileAsync(CobbleUtils.PATH_LANG, CobbleUtils.config.getLang() +
-          ".json",
-        data);
+      Utils.writeFileAsync(CobbleUtils.PATH_LANG, CobbleUtils.config.getLang() + ".json", data);
     }
   }
 
