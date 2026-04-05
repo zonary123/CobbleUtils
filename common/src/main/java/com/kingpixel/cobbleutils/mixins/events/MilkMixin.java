@@ -18,16 +18,42 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 /**
+ * Mixin that intercepts cow milking interactions and emits a {@code MILKING_EVENT}.
+ * <p>
+ * A per-cow cooldown of 30 seconds is enforced using a Caffeine cache.
+ * Entries expire automatically after 30 seconds, so dead or unloaded cows
+ * do not remain in memory indefinitely.
  *
  * @author Carlos Varas Alonso - 27/12/2025 1:33
  */
 @Mixin(CowEntity.class)
 public abstract class MilkMixin {
+
+  /**
+   * Per-cow cooldown cache. Entries expire 30 seconds after write,
+   * meaning each cow can only trigger the event once every 30 seconds.
+   * Caffeine automatically evicts expired entries, keeping memory usage low
+   * even when cows are unloaded or removed from the world.
+   */
   @Unique
   private static final Cache<UUID, Boolean> cobbleUtils$COOLDOWN = Caffeine.newBuilder()
     .expireAfterWrite(30, TimeUnit.SECONDS)
+    .maximumSize(500)
     .build();
 
+  /**
+   * Injected into {@link CowEntity#interactMob(PlayerEntity, Hand)} right before the milk bucket
+   * is exchanged. Emits a {@code MILKING_EVENT} if:
+   * <ul>
+   *   <li>There are registered listeners for the event</li>
+   *   <li>The interacting entity is a {@link ServerPlayerEntity}</li>
+   *   <li>The cow is not on cooldown (30-second window)</li>
+   * </ul>
+   *
+   * @param playerEntity the player interacting with the cow
+   * @param hand         the hand used for the interaction
+   * @param cir          mixin callback info
+   */
   @Inject(
     method = "interactMob",
     at = @At(

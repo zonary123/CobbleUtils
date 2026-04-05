@@ -20,6 +20,9 @@ import com.kingpixel.cobbleutils.tasks.RegistryTasks;
 import com.kingpixel.cobbleutils.util.*;
 import com.kingpixel.cobbleutils.util.async.AsyncContext;
 import com.kingpixel.cobbleutils.util.redis.RedisManager;
+import com.kingpixel.cobbleutils.util.redis.RedisService;
+import com.kingpixel.cobbleutils.util.redis.handlers.RedisMessageHandler;
+import com.kingpixel.cobbleutils.util.redis.handlers.RedisTeleportHandler;
 import dev.architectury.event.events.common.CommandRegistrationEvent;
 import dev.architectury.event.events.common.InteractionEvent;
 import dev.architectury.event.events.common.LifecycleEvent;
@@ -62,6 +65,7 @@ public class CobbleUtils {
   // Lang
   public static final AsyncContext ASYNC = com.kingpixel.cobbleutils.util.async.UtilsAsync.createContext(MOD_ID, MOD_NAME, 1, 2);
   public static Lang language = new Lang();
+  public static RedisManager redisManager;
   private static final ExecutorService EXECUTOR_COBBLEUTILS = Executors.newFixedThreadPool(1, new ThreadFactoryBuilder()
     .setDaemon(true)
     .setNameFormat("CobbleUtils Executor-%d")
@@ -156,7 +160,11 @@ public class CobbleUtils {
   private static void events() {
     files();
     try {
-      RedisManager.init();
+      if (config.isRedisMessaging()) {
+        redisManager = config.getRedis().getManager();
+        redisManager.registerHandler(new RedisMessageHandler());
+        redisManager.registerHandler(new RedisTeleportHandler());
+      }
     } catch (NoClassDefFoundError | NoSuchMethodError | Exception ignored) {
       LOGGER.error("Error while trying to initialize RedisManager");
     }
@@ -174,13 +182,15 @@ public class CobbleUtils {
 
     LifecycleEvent.SERVER_STOPPING.register(server1 -> {
       DataBaseFactory.close();
-      RedisManager.close();
+      if (redisManager != null) redisManager.close();
       ChunkBlockStorageManager.shutdownAsync().join();
       com.kingpixel.cobbleutils.util.async.UtilsAsync.shutdownAll();
       shutdownAndAwait(EXECUTOR_COBBLEUTILS);
       shutdownAndAwait(Utils.IO_EXECUTOR);
       shutdownAndAwait(SCHEDULER_COBBLEUTILS);
     });
+
+    LifecycleEvent.SERVER_STOPPED.register(server -> RedisService.shutdown());
 
     PlayerEvent.PLAYER_JOIN.register((player) -> {
       runAsync(() -> {

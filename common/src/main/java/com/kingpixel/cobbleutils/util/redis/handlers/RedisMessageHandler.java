@@ -4,7 +4,6 @@ import com.google.gson.JsonObject;
 import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.Model.messages.HiperMessage;
 import com.kingpixel.cobbleutils.util.AdventureTranslator;
-import com.kingpixel.cobbleutils.util.redis.RedisManager;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
 
@@ -110,6 +109,6 @@ public class RedisMessageHandler implements RedisHandler {
       json.addProperty("prefix", prefix);
     }
 
-    RedisManager.publish(CHANNEL, json);
+    CobbleUtils.redisManager.publish(CHANNEL, json);
   }
 }

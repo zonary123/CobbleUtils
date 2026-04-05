@@ -5,7 +5,6 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.gson.*;
 import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.util.AdventureTranslator;
-import com.kingpixel.cobbleutils.util.redis.RedisManager;
 import com.kingpixel.cobbleutils.util.redis.handlers.RedisMessageHandler;
 import lombok.Data;
 import net.minecraft.entity.effect.StatusEffect;
@@ -682,7 +681,7 @@ public class HiperMessage implements JsonSerializer<HiperMessage>, JsonDeseriali
             redisMessage.add("placeholders", placeholdersJson);
           }
           try {
-            RedisManager.publish(RedisMessageHandler.CHANNEL, redisMessage);
+            CobbleUtils.redisManager.publish(RedisMessageHandler.CHANNEL, redisMessage);
           } catch (Exception e) {
             CobbleUtils.LOGGER.error("Failed to send HiperMessage through Redis: " + e.getMessage());
           }
