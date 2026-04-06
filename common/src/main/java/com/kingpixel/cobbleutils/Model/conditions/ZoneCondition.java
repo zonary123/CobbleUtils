@@ -13,6 +13,7 @@ import net.minecraft.server.network.ServerPlayerEntity;
 @Data
 public class ZoneCondition extends Condition implements VisualizableCondition {
   public static final String TYPE = "ZONE";
+  @Builder.Default
   private ZoneShape zone = new CuboidShape();
 
   @Override
@@ -27,7 +28,12 @@ public class ZoneCondition extends Condition implements VisualizableCondition {
 
   @Override
   public String getReason(ServerPlayerEntity player) {
-    return "";
+    boolean insideZone = zone.contains(player.getBlockPos());
+    if (insideZone) {
+      return "Player is within the required zone";
+    }
+
+    return "Player position [" + player.getBlockPos().getX() + ", " + player.getBlockPos().getY() + ", " + player.getBlockPos().getZ() + "] is outside the required zone: " + zone;
   }
 
 

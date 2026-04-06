@@ -1,20 +1,19 @@
 package com.kingpixel.cobbleutils.config;
 
-import com.google.gson.Gson;
 import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.Model.ItemModel;
 import com.kingpixel.cobbleutils.ui.AdvancedRewardsGUI;
 import com.kingpixel.cobbleutils.ui.ConfirmMenu;
 import com.kingpixel.cobbleutils.ui.PartyPcMenu;
 import com.kingpixel.cobbleutils.ui.StorageMenu;
-import com.kingpixel.cobbleutils.util.Utils;
+import com.kingpixel.cobbleutils.util.UtilsFile;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.io.File;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 
 @Getter
 @Setter
@@ -293,23 +292,25 @@ public class Lang {
    * Method to initialize the config.
    */
   public void init() {
-    CompletableFuture<Boolean> futureRead = Utils.readFileAsync(CobbleUtils.PATH_LANG, CobbleUtils.config.getLang() + ".json",
-      el -> {
-        Gson gson = Utils.newGson();
-        CobbleUtils.language = gson.fromJson(el, Lang.class);
+    File file = new File(CobbleUtils.PATH_LANG, CobbleUtils.config.getLang() + ".json");
+    try {
+      Lang langFromFile = UtilsFile.read(file.toPath(), Lang.class);
+      if (langFromFile != null) {
+        CobbleUtils.language = langFromFile;
         if (CobbleUtils.language.getTitlemenurewards() == null)
           CobbleUtils.language.setTitlemenurewards("&eRewards Menu");
-        String data = gson.toJson(CobbleUtils.language);
-        Utils.writeFileAsync(CobbleUtils.PATH_LANG, CobbleUtils.config.getLang() + ".json", data);
-      });
-
-    Boolean readResult = futureRead.join();
-    if (readResult == null || !readResult) {
-      CobbleUtils.LOGGER.info("No lang.json file found for " + CobbleUtils.MOD_NAME + ". Attempting to generate one.");
-      Gson gson = Utils.newGson();
-      String data = gson.toJson(this);
-      Utils.writeFileAsync(CobbleUtils.PATH_LANG, CobbleUtils.config.getLang() + ".json", data);
+        UtilsFile.write(file.toPath(), CobbleUtils.language);
+      } else {
+        CobbleUtils.LOGGER_RAW.info("No lang.json file found for " + CobbleUtils.MOD_NAME + ". Attempting to generate one.");
+        UtilsFile.write(file.toPath(), this);
+      }
+    } catch (Exception e) {
+      CobbleUtils.LOGGER_RAW.error("Error loading lang file: " + file.getPath() + " - " + e.getMessage());
+      try {
+        UtilsFile.write(file.toPath(), this);
+      } catch (Exception ex) {
+        ex.printStackTrace();
+      }
     }
   }
-
 }

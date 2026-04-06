@@ -32,7 +32,7 @@ public class PokeShoutAll implements Command<ServerCommandSource> {
             ".user"), 2))
         .executes(context -> {
           if (!context.getSource().isExecutedByPlayer()) {
-            CobbleUtils.LOGGER.error("This command can only be executed by a player");
+            CobbleUtils.LOGGER_RAW.error("This command can only be executed by a player");
             return 0;
           }
           ServerPlayerEntity player = context.getSource().getPlayerOrThrow();

@@ -413,7 +413,7 @@ public class FilterPokemons {
       int startIndex = Math.min(pos, totalPokemons);
       int endIndex = Math.min(pos + RECTANGLE_SIZE, totalPokemons);
       if (startIndex > endIndex) {
-        CobbleUtils.LOGGER.error("Invalid indices for pagination: startIndex > endIndex");
+        CobbleUtils.LOGGER_RAW.error("Invalid indices for pagination: startIndex > endIndex");
         return;
       }
       pokemons = pokemons.subList(startIndex, endIndex);

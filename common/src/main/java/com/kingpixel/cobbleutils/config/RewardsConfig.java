@@ -2,10 +2,11 @@ package com.kingpixel.cobbleutils.config;
 
 import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.Model.ItemChance;
-import com.kingpixel.cobbleutils.util.Utils;
+import com.kingpixel.cobbleutils.util.UtilsFile;
 import lombok.Data;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -21,28 +22,28 @@ public class RewardsConfig {
 
   public void init() {
     rewards.clear();
-    File folder = Utils.getAbsolutePath(PATH);
+    File folder = new File(PATH);
     if (folder.exists()) {
       List<File> files = getAllJsonFilesRecursive(folder);
       for (File f : files) {
         try {
-          ItemChance itemChance = Utils.newGson().fromJson(Utils.readFileSync(f), ItemChance.class);
+          ItemChance itemChance = UtilsFile.read(f.toPath(), ItemChance.class);
           String id = f.getName().replace(".json", "");
-          Utils.writeFileSync(f, Utils.newGson().toJson(itemChance, ItemChance.class));
+          UtilsFile.write(f.toPath(), itemChance);
           if (rewards.containsKey(id)) {
-            CobbleUtils.LOGGER.error("Duplicate reward id found: " + id + " in file: " + f.getPath());
+            CobbleUtils.LOGGER_RAW.error("Duplicate reward id found: " + id + " in file: " + f.getPath());
           } else {
             rewards.put(id, itemChance);
           }
         } catch (Exception e) {
-          CobbleUtils.LOGGER.error("Error loading reward file: " + f.getPath() + " - " + e.getMessage());
+          CobbleUtils.LOGGER_RAW.error("Error loading reward file: " + f.getPath() + " - " + e.getMessage());
         }
       }
     } else {
       folder.mkdirs();
       createDefaultFiles();
     }
-    CobbleUtils.LOGGER.info("Loaded " + rewards.size() + " reward files.");
+    CobbleUtils.LOGGER_RAW.info("Loaded " + rewards.size() + " reward files.");
   }
 
   private List<File> getAllJsonFilesRecursive(File folder) {
@@ -71,8 +72,11 @@ public class RewardsConfig {
   private void createFile(String fileName, ItemChance itemChance) {
     String id = fileName.replace(".json", "");
     rewards.put(id, itemChance);
-    File file = Utils.getAbsolutePath(PATH + fileName + ".json");
-    Utils.writeFileSync(file, Utils.newGson().toJson(itemChance,
-      ItemChance.class));
+    File file = new File(PATH + fileName + ".json");
+    try {
+      UtilsFile.write(file.toPath(), itemChance);
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
   }
 }

@@ -11,8 +11,9 @@ import com.cobblemon.mod.common.item.PokemonItem;
 import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.mixins.gooeylibs.GooeyButtonMixin;
 import com.kingpixel.cobbleutils.util.AdventureTranslator;
+import com.kingpixel.cobbleutils.util.ItemUtils;
+import com.kingpixel.cobbleutils.util.PlayerUtils;
 import com.kingpixel.cobbleutils.util.UIUtils;
-import com.kingpixel.cobbleutils.util.Utils;
 import com.mongodb.lang.Nullable;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -201,17 +202,17 @@ public class ItemModel {
       String command = itemModel.getItem().replace("command:", "");
       for (Map.Entry<String, ItemModel> entry : CobbleUtils.config.getItemsCommands().entrySet()) {
         if (command.startsWith(entry.getKey())) {
-          itemStack = Utils.parseItemId(entry.getValue().getItem(), amount, entry.getValue().getCustomModelData());
+          itemStack = ItemUtils.parseItemId(entry.getValue().getItem(), amount, entry.getValue().getCustomModelData());
           break;
         }
       }
-      if (itemStack == null) return Utils.parseItemId("minecraft:command_block", amount);
+      if (itemStack == null) return ItemUtils.parseItemId("minecraft:command_block", amount);
     } else if (itemModel.getItem().startsWith("head:")) {
-      itemStack = Utils.getHead(itemModel.getItem().replace("head:", ""), amount);
+      itemStack = PlayerUtils.getHeadItem(itemModel.getItem().replace("head:", ""), amount);
     } else if (itemModel.getItem().startsWith("money:")) {
       itemStack = new ItemChance(itemModel.getItem(), 0).getIcon();
     } else {
-      itemStack = Utils.parseItemModel(itemModel, amount);
+      itemStack = ItemUtils.parseItemModel(itemModel, amount);
     }
     itemCache.put(itemModel, itemStack);
     return itemStack.copyWithCount(amount == 0 ? 1 : amount);

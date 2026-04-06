@@ -42,7 +42,7 @@ public class MinecraftUtils {
     var biomeId = biome.getIdAsString();
 
     if (CobbleUtils.config.isDebug()) {
-      CobbleUtils.LOGGER.info("Biome ID: " + biomeId + " | Translation Key: " + biome.getKey().get().getValue().toTranslationKey());
+      CobbleUtils.LOGGER_RAW.info("Biome ID: " + biomeId + " | Translation Key: " + biome.getKey().get().getValue().toTranslationKey());
     }
     return CobbleUtils.language.getBiomes().getOrDefault(biomeId, "<lang:biome." + biome.getKey().get().getValue().toTranslationKey() + ">");
   }

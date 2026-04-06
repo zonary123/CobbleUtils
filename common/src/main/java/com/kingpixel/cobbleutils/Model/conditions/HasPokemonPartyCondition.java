@@ -14,6 +14,7 @@ import net.minecraft.server.network.ServerPlayerEntity;
 @Data
 public class HasPokemonPartyCondition extends Condition {
   public static final String TYPE = "HAS_POKEMON_PARTY";
+  @Builder.Default
   private PokemonBlackList filter = new PokemonBlackList();
 
   @Override

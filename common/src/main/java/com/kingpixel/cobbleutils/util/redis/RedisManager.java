@@ -112,7 +112,8 @@ public class RedisManager {
       connected.set(true);
     } catch (Exception e) {
       connected.set(false);
-      CobbleUtils.LOGGER.error("Could not connect to Redis at {}:{}", redisConfig.getHost(), redisConfig.getPort());
+      CobbleUtils.LOGGER_RAW.error("Could not connect to Redis at {}:{}", redisConfig.getHost(), redisConfig.getPort());
+      throw new RuntimeException(e);
     }
   }
 
@@ -173,19 +174,22 @@ public class RedisManager {
           }
         } catch (Exception e) {
           if (Thread.currentThread().isInterrupted()) break;
-          CobbleUtils.LOGGER.warn("Redis subscriber connection lost. Retrying in 5s...");
-          try {
-            Thread.sleep(RECONNECT_DELAY);
-          } catch (InterruptedException ie) {
-            Thread.currentThread().interrupt();
-            break;
-          }
+          CobbleUtils.LOGGER_RAW.warn("Redis subscriber connection lost. Retrying in 5s...");
+          reconnectSubscriberWithBackoff();
         }
       }
     }, "Redis-Subscriber-" + redisConfig.getHost());
 
     subscriberThread.setDaemon(true);
     subscriberThread.start();
+  }
+
+  private void reconnectSubscriberWithBackoff() {
+    try {
+      Thread.sleep(RECONNECT_DELAY);
+    } catch (InterruptedException interruptedException) {
+      Thread.currentThread().interrupt();
+    }
   }
 
   /**
@@ -248,7 +252,7 @@ public class RedisManager {
     try {
       return JsonParser.parseString(data).getAsJsonObject();
     } catch (Exception e) {
-      CobbleUtils.LOGGER.error("Failed to parse Redis state for key: {}", key, e);
+      CobbleUtils.LOGGER_RAW.error("Failed to parse Redis state for key: {}", key, e);
       return null;
     }
   }
@@ -269,7 +273,7 @@ public class RedisManager {
       return task.run(jedis);
     } catch (Exception e) {
       connected.set(false);
-      CobbleUtils.LOGGER.error("Redis execute error", e);
+      CobbleUtils.LOGGER_RAW.error("Redis execute error", e);
       return null;
     }
   }
@@ -329,4 +333,3 @@ public class RedisManager {
     }
   }
 }
-

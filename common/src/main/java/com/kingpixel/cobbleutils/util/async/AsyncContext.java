@@ -1,5 +1,6 @@
 package com.kingpixel.cobbleutils.util.async;
 
+import com.kingpixel.cobbleutils.CobbleUtils;
 import lombok.Getter;
 
 import java.util.concurrent.*;
@@ -16,9 +17,10 @@ public class AsyncContext {
 
   private final ThreadPoolExecutor executor;
   private final ScheduledExecutorService scheduler;
-  private final Executor fallbackExecutor;
+  private final ExecutorService fallbackExecutor;
 
   private final AtomicBoolean running = new AtomicBoolean(true);
+  private final AtomicInteger fallbackExecutions = new AtomicInteger();
 
   private final long defaultTimeout;
   private final TimeUnit defaultTimeoutUnit;
@@ -55,10 +57,8 @@ public class AsyncContext {
       Thread t = new Thread(r);
       t.setName(threadName + "-" + counter.incrementAndGet());
       t.setDaemon(true);
-      t.setUncaughtExceptionHandler((thread, ex) -> {
-        System.err.println("[AsyncContext] Error en " + thread.getName());
-        ex.printStackTrace();
-      });
+      t.setUncaughtExceptionHandler((thread, ex) ->
+        CobbleUtils.LOGGER_RAW.error("[AsyncContext] Uncaught error in {}", thread.getName(), ex));
       return t;
     };
 
@@ -80,7 +80,17 @@ public class AsyncContext {
       return t;
     });
 
-    this.fallbackExecutor = Executors.newCachedThreadPool(factory);
+    int fallbackMaxThreads = Math.max(2, maxThreads);
+    int fallbackQueueSize = Math.max(128, queueSize / 2);
+    this.fallbackExecutor = new ThreadPoolExecutor(
+      1,
+      fallbackMaxThreads,
+      60L,
+      TimeUnit.SECONDS,
+      new LinkedBlockingQueue<>(fallbackQueueSize),
+      factory,
+      new ThreadPoolExecutor.AbortPolicy()
+    );
   }
 
   /* ========================================= */
@@ -102,12 +112,12 @@ public class AsyncContext {
     Runnable task = () -> {
       try {
         future.complete(supplier.get());
-      } catch (Throwable t) {
-        future.completeExceptionally(t);
+      } catch (Exception exception) {
+        future.completeExceptionally(exception);
       }
     };
 
-    submit(task);
+    submit(task, future);
 
     return future.orTimeout(timeout, unit);
   }
@@ -127,7 +137,7 @@ public class AsyncContext {
     if (isSchedulerAlive()) {
       scheduler.schedule(() -> safeRun(task), delay, unit);
     } else {
-      fallbackExecutor.execute(task);
+      executeOnFallback(task, null);
     }
   }
 
@@ -145,7 +155,7 @@ public class AsyncContext {
         unit
       );
     } else {
-      fallbackExecutor.execute(task);
+      executeOnFallback(task, null);
     }
   }
 
@@ -154,23 +164,44 @@ public class AsyncContext {
   /* ========================================= */
 
   private void submit(Runnable task) {
+    submit(task, null);
+  }
+
+  private void submit(Runnable task, CompletableFuture<?> future) {
     if (!isExecutorAlive()) {
-      fallbackExecutor.execute(task);
+      executeOnFallback(task, future);
       return;
     }
 
     try {
       executor.submit(task);
     } catch (RejectedExecutionException ex) {
-      fallbackExecutor.execute(task);
+      executeOnFallback(task, future);
     }
+  }
+
+  private void executeOnFallback(Runnable task, CompletableFuture<?> future) {
+    fallbackExecutions.incrementAndGet();
+    try {
+      fallbackExecutor.execute(task);
+    } catch (RejectedExecutionException rejectedExecutionException) {
+      handleRejectedSubmission(future, rejectedExecutionException);
+    }
+  }
+
+  private void handleRejectedSubmission(CompletableFuture<?> future, RejectedExecutionException exception) {
+    if (future != null) {
+      future.completeExceptionally(exception);
+      return;
+    }
+    CobbleUtils.LOGGER_RAW.warn("[AsyncContext] Async task rejected", exception);
   }
 
   private void safeRun(Runnable task) {
     try {
       task.run();
-    } catch (Throwable t) {
-      t.printStackTrace();
+    } catch (Exception exception) {
+      CobbleUtils.LOGGER_RAW.error("[AsyncContext] Async task failed", exception);
     }
   }
 
@@ -195,6 +226,7 @@ public class AsyncContext {
 
     executor.shutdown();
     scheduler.shutdown();
+    fallbackExecutor.shutdown();
 
     try {
       if (!executor.awaitTermination(defaultTimeout, defaultTimeoutUnit)) {
@@ -205,9 +237,14 @@ public class AsyncContext {
         scheduler.shutdownNow();
       }
 
+      if (!fallbackExecutor.awaitTermination(5, TimeUnit.SECONDS)) {
+        fallbackExecutor.shutdownNow();
+      }
+
     } catch (InterruptedException e) {
       executor.shutdownNow();
       scheduler.shutdownNow();
+      fallbackExecutor.shutdownNow();
       Thread.currentThread().interrupt();
     }
   }
@@ -216,6 +253,7 @@ public class AsyncContext {
     running.set(false);
     executor.shutdownNow();
     scheduler.shutdownNow();
+    fallbackExecutor.shutdownNow();
   }
 
   /* ========================================= */

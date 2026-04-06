@@ -60,7 +60,7 @@ public abstract class Utils {
   /**
    * @deprecated Use {@link Utils#getRandom()} instead.
    */
-  @Deprecated
+  @Deprecated(forRemoval = true)
   public static final Random RANDOM = new Random();
 
   private static final Charset charset = StandardCharsets.UTF_8;
@@ -69,26 +69,30 @@ public abstract class Utils {
     return ThreadLocalRandom.current();
   }
 
+  @Deprecated(forRemoval = true)
   private static final class GsonPrettyHolder {
     private static final Gson gsonPretty = adapters()
       .setPrettyPrinting()
       .create();
   }
 
+  @Deprecated(forRemoval = true)
   public static Gson newGson() {
     return GsonPrettyHolder.gsonPretty;
   }
 
+  @Deprecated(forRemoval = true)
   private static final class GsonNotPrettyHolder {
     private static final Gson gsonNotPretty = adapters()
       .create();
   }
 
+  @Deprecated(forRemoval = true)
   public static Gson newWithoutSpacingGson() {
     return GsonNotPrettyHolder.gsonNotPretty;
   }
 
-
+  @Deprecated(forRemoval = true)
   private static GsonBuilder adapters() {
     return addAdapters(new GsonBuilder()
       .disableHtmlEscaping());
@@ -103,6 +107,7 @@ public abstract class Utils {
     }
   }
 
+  @Deprecated(forRemoval = true)
   private static GsonBuilder addAdapters(GsonBuilder builder) {
     return builder
       .registerTypeAdapter(ElementalType.class, ElementalTypeAdapter.INSTANCE)
@@ -127,7 +132,7 @@ public abstract class Utils {
       .registerTypeAdapter(Box.class, BoxAdapter.INSTANCE);
   }
 
-
+  @Deprecated(forRemoval = true)
   public static Object convertNbtValue(NbtElement element) {
     return switch (element) {
       case null -> null;
@@ -147,12 +152,13 @@ public abstract class Utils {
   }
 
   // IO Methods
+  @Deprecated(forRemoval = true)
   public static final ExecutorService IO_EXECUTOR = Executors.newFixedThreadPool(2, new ThreadFactoryBuilder()
     .setDaemon(true)
     .setNameFormat("CobbleUtils IO - %d")
     .build());
 
-
+  @Deprecated(forRemoval = true)
   public static CompletableFuture<Boolean> writeFileAsync(
     String filePath,
     String filename,
@@ -180,6 +186,7 @@ public abstract class Utils {
     }
   }
 
+  @Deprecated(forRemoval = true)
   private static boolean writeFileSyncSafe(File file, String data) {
     try {
       Path parent = file.toPath().getParent();
@@ -187,7 +194,7 @@ public abstract class Utils {
         Files.createDirectories(parent);
       }
     } catch (IOException e) {
-      CobbleUtils.LOGGER.error("Error creating directories for " + file.getPath());
+      CobbleUtils.LOGGER_RAW.error("Error creating directories for " + file.getPath());
       e.printStackTrace();
       return false;
     }
@@ -195,6 +202,7 @@ public abstract class Utils {
     return writeFileSync(file, data); // ⬅ método legacy intacto
   }
 
+  @Deprecated(forRemoval = true)
   public static boolean writeFileSync(File file, String data) {
     try (FileWriter writer = new FileWriter(file, charset)) {
       writer.write(data);
@@ -205,6 +213,7 @@ public abstract class Utils {
     }
   }
 
+  @Deprecated(forRemoval = true)
   public static CompletableFuture<Boolean> readFileAsync(String filePath, String filename, Consumer<String> callback) {
     if (filePath == null || filename == null || callback == null) {
       return CompletableFuture.completedFuture(false);
@@ -227,6 +236,7 @@ public abstract class Utils {
     }, IO_EXECUTOR);
   }
 
+  @Deprecated(forRemoval = true)
   public static boolean readFileSync(File file, Consumer<String> callback) {
     if (!file.exists() || !file.isFile()) {
       return false;
@@ -253,13 +263,14 @@ public abstract class Utils {
     }
   }
 
-
+  @Deprecated(forRemoval = true)
   public static String readFileSync(File file) throws IOException {
     if (!file.exists() || !file.isFile())
       throw new IllegalArgumentException("File does not exist or is not a file: " + file.getPath());
     return Files.readString(file.toPath(), charset);
   }
 
+  @Deprecated(forRemoval = true)
   public static CompletableFuture<Boolean> writeFileAsync(File file, String content) {
     if (file == null || content == null) return CompletableFuture.completedFuture(false);
 
@@ -268,7 +279,7 @@ public abstract class Utils {
         Files.writeString(file.toPath(), content, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
         return true;
       } catch (IOException e) {
-        CobbleUtils.LOGGER.error("Error writing to file: " + file.getPath());
+        CobbleUtils.LOGGER_RAW.error("Error writing to file: " + file.getPath());
         return false;
       }
     }, IO_EXECUTOR);
@@ -277,7 +288,7 @@ public abstract class Utils {
   /**
    * @deprecated Use {@link #broadcastMessage(Text)} instead.
    */
-  @Deprecated
+  @Deprecated(forRemoval = true)
   public static void broadcastMessage(String message) {
     if (CobbleUtils.config.isRedisMessaging()) {
       RedisMessageHandler.sendBroadcast(message, "");
@@ -290,6 +301,7 @@ public abstract class Utils {
     }
   }
 
+  @Deprecated(forRemoval = true)
   public static void broadcastMessage(Text message) {
     if (CobbleUtils.config.isRedisMessaging()) {
       // Convert Text to String and send via Redis
@@ -304,6 +316,7 @@ public abstract class Utils {
     }
   }
 
+  @Deprecated(forRemoval = true)
   public static void broadcastMessage(String message, String prefix) {
     if (CobbleUtils.config.isRedisMessaging()) {
       RedisMessageHandler.sendBroadcast(message, prefix);
@@ -317,18 +330,22 @@ public abstract class Utils {
     }
   }
 
+  @Deprecated(forRemoval = true)
   public static ItemStack parseItemId(String id) {
     return parseItemId(id, 1);
   }
 
+  @Deprecated(forRemoval = true)
   public static ItemStack parseItemId(String id, int amount) {
     return new ItemStack(Registries.ITEM.get(Identifier.of(id)), amount);
   }
 
+  @Deprecated(forRemoval = true)
   public static File getAbsolutePath(String directoryPath) {
     return new File(Paths.get(new File("").getAbsolutePath()) + directoryPath);
   }
 
+  @Deprecated(forRemoval = true)
   public static List<File> getFiles(File directory) {
     List<File> fileList = new ArrayList<>();
     if (directory.exists() && directory.isDirectory()) {
@@ -343,11 +360,12 @@ public abstract class Utils {
         }
       }
     } else {
-      CobbleUtils.LOGGER.info("Directory " + directory.getPath() + " does not exist or is not a directory.");
+      CobbleUtils.LOGGER_RAW.info("Directory " + directory.getPath() + " does not exist or is not a directory.");
     }
     return fileList;
   }
 
+  @Deprecated(forRemoval = true)
   public static void removeFiles(String directoryPath) {
     File directory = getAbsolutePath(directoryPath);
     if (directory.exists() && directory.isDirectory()) {
@@ -362,10 +380,11 @@ public abstract class Utils {
         }
       }
     } else {
-      CobbleUtils.LOGGER.info("Directory " + directoryPath + " does not exist or is not a directory.");
+      CobbleUtils.LOGGER_RAW.info("Directory " + directoryPath + " does not exist or is not a directory.");
     }
   }
 
+  @Deprecated(forRemoval = true)
   public static ItemStack parseItemModel(ItemModel itemModel, int amount) {
     String item = itemModel.getItem();
     String nbt = itemModel.getNbt();
@@ -394,6 +413,7 @@ public abstract class Utils {
     return itemStack;
   }
 
+  @Deprecated(forRemoval = true)
   public static ItemStack addThingsItemStack(ItemStack itemStack, ItemModel itemModel, String nbt) {
     if (nbt != null && !nbt.isEmpty()) {
       String item = itemModel.getItem();
@@ -428,6 +448,7 @@ public abstract class Utils {
     return itemStack;
   }
 
+  @Deprecated(forRemoval = true)
   public static void createDirectoryIfNeeded(String directoryPath) {
     File directory = getAbsolutePath(directoryPath);
     if (!directory.exists()) {
@@ -435,6 +456,7 @@ public abstract class Utils {
     }
   }
 
+  @Deprecated(forRemoval = true)
   public static ItemStack getHead(String replace, int amount) {
     ItemStack itemStack = Items.PLAYER_HEAD.getDefaultStack();
     var profile = new GameProfile(UUID.randomUUID(), replace);
@@ -443,6 +465,7 @@ public abstract class Utils {
     return itemStack;
   }
 
+  @Deprecated(forRemoval = true)
   public static ItemStack parseItemId(String item, int amount, long customModelData) {
     ItemStack itemStack = parseItemId(item, amount);
     if (customModelData != 0)
@@ -450,6 +473,7 @@ public abstract class Utils {
     return itemStack;
   }
 
+  @Deprecated(forRemoval = true)
   public static StringBuilder replaceStringBuilder(StringBuilder sb, Map<String, String> placeholders) {
     for (Map.Entry<String, String> entry : placeholders.entrySet()) {
       String placeholder = entry.getKey();

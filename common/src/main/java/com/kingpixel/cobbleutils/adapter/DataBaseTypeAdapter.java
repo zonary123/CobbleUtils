@@ -19,7 +19,7 @@ public class DataBaseTypeAdapter extends TypeAdapter<DataBaseType> {
   @Override
   public void write(JsonWriter out, DataBaseType value) throws IOException {
     if (value == null) {
-      CobbleUtils.LOGGER.fatal("Database type is null, defaulting to JSON");
+      CobbleUtils.LOGGER_RAW.fatal("Database type is null, defaulting to JSON");
       out.value(DataBaseType.JSON.name());
       return;
     }
@@ -30,7 +30,7 @@ public class DataBaseTypeAdapter extends TypeAdapter<DataBaseType> {
   public DataBaseType read(JsonReader in) throws IOException {
     String value = in.nextString();
     if (value == null) {
-      CobbleUtils.LOGGER.fatal("Database type is null, defaulting to JSON");
+      CobbleUtils.LOGGER_RAW.fatal("Database type is null, defaulting to JSON");
       return DataBaseType.JSON;
     }
     for (DataBaseType type : DataBaseType.values()) {

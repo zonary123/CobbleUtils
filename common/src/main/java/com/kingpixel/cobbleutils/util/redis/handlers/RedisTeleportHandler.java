@@ -54,7 +54,7 @@ public class RedisTeleportHandler implements RedisHandler {
       LOCATION_CACHE.put(playerUUID, location);
 
       if (CobbleUtils.config.isDebug()) {
-        CobbleUtils.LOGGER.info(
+        CobbleUtils.LOGGER_RAW.info(
           "Teleport stored for player " + playerUUID +
             " to " + location.getWorld() +
             " (" + location.getX() + ", " +
@@ -64,7 +64,7 @@ public class RedisTeleportHandler implements RedisHandler {
       }
 
     } catch (Exception e) {
-      CobbleUtils.LOGGER.error("Failed to handle teleport message");
+      CobbleUtils.LOGGER_RAW.error("Failed to handle teleport message");
       e.printStackTrace();
     }
   }

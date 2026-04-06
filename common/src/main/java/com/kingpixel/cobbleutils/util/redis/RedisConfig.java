@@ -44,18 +44,21 @@ public class RedisConfig {
    * Redis server hostname or IP address.
    * Defaults to {@code "localhost"}.
    */
+  @Builder.Default
   private String host = "localhost";
 
   /**
    * Redis server port.
    * Defaults to {@code 6379} (standard Redis port).
    */
+  @Builder.Default
   private int port = 6379;
 
   /**
    * Redis server password for authentication.
    * Leave empty ({@code ""}) if the server does not require authentication.
    */
+  @Builder.Default
   private String password = "";
 
   /**
@@ -65,18 +68,21 @@ public class RedisConfig {
    * with this value, e.g. {@code "cobbleutils-messaging:my-handler-id"}.
    * Using different channel values per mod prevents message collisions.
    */
+  @Builder.Default
   private String channel = "cobbleutils-messaging";
 
   /**
    * Maximum number of connections in the Jedis connection pool.
    * Defaults to {@code 16}. Increase for high-throughput scenarios.
    */
+  @Builder.Default
   private int maxConnections = 16;
 
   /**
    * Maximum time in milliseconds to wait for a connection from the pool
    * before throwing an exception. Defaults to {@code 5000} (5 seconds).
    */
+  @Builder.Default
   private int timeout = 5000;
 
   /**

@@ -15,12 +15,12 @@ public class PartyAPI {
     try {
       partyImpl.getLeader(UUID.randomUUID());
       PARTY = partyImpl;
-      CobbleUtils.LOGGER.info(
+      CobbleUtils.LOGGER_RAW.info(
         "Registered party implementation: " + partyImpl.getClass().getName()
       );
     } catch (NoClassDefFoundError | NoSuchMethodError | Exception e) {
       e.printStackTrace();
-      CobbleUtils.LOGGER.info(
+      CobbleUtils.LOGGER_RAW.info(
         "Failed to register party implementation: " + partyImpl.getClass().getName()
       );
     }

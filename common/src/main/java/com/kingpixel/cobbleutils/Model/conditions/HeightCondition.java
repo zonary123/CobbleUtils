@@ -10,7 +10,9 @@ import net.minecraft.server.network.ServerPlayerEntity;
 @Data
 public class HeightCondition extends Condition {
   public static final String TYPE = "HEIGHT";
+  @Builder.Default
   private final int minHeight = 0;
+  @Builder.Default
   private final int maxHeight = 256;
 
   @Override

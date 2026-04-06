@@ -72,7 +72,7 @@ public class BlocksAPI {
       }
 
       if (CobbleUtils.config.isDebug()) {
-        CobbleUtils.LOGGER.info("Block age: " + age + "/" + maxAge + " for block " + getBlockId(block));
+        CobbleUtils.LOGGER_RAW.info("Block age: " + age + "/" + maxAge + " for block " + getBlockId(block));
       }
 
       // Regla: si age y maxAge son 0 => consideramos maduro
@@ -82,7 +82,7 @@ public class BlocksAPI {
 
       return age >= maxAge;
     } catch (NoSuchMethodError | Exception e) {
-      CobbleUtils.LOGGER.error("Error checking if block is mature: " + getBlockId(block));
+      CobbleUtils.LOGGER_RAW.error("Error checking if block is mature: " + getBlockId(block));
       e.printStackTrace();
       return false;
     }
@@ -129,7 +129,7 @@ public class BlocksAPI {
 
     if (isColumnBlock(block)) {
       if (CobbleUtils.config.isDebug()) {
-        CobbleUtils.LOGGER.info("Starting column count for block at " + pos);
+        CobbleUtils.LOGGER_RAW.info("Starting column count for block at " + pos);
       }
 
       BlockPos checkPos = pos;

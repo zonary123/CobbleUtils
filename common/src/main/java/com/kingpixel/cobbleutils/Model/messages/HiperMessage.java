@@ -198,7 +198,7 @@ public class HiperMessage implements JsonSerializer<HiperMessage>, JsonDeseriali
         content = parts[1];
         if (type == null) {
           type = MessageType.CHAT;
-          CobbleUtils.LOGGER.info("[HiperMessage] Unknown message type in rawMessage: " + rawMessage + ". Defaulting " +
+          CobbleUtils.LOGGER_RAW.info("[HiperMessage] Unknown message type in rawMessage: " + rawMessage + ". Defaulting " +
             "to CHAT." +
             " Valid types are: " + MessageType.defaults());
         }
@@ -217,7 +217,7 @@ public class HiperMessage implements JsonSerializer<HiperMessage>, JsonDeseriali
         case BOSSBAR_BROADCAST -> sendBossBarBroadcast(finalContent, prefix, cache, receivedFromRedis);
         case TITLE_SUBTITLE -> sendTitleSubtitle(playerUUID, finalContent, prefix, cache, receivedFromRedis);
         case TITLE_SUBTITLE_BROADCAST -> sendTitleSubtitleBroadcast(finalContent, prefix, cache, receivedFromRedis);
-        default -> CobbleUtils.LOGGER.warn("Unknown message type: " + type);
+        default -> CobbleUtils.LOGGER_RAW.warn("Unknown message type: " + type);
       }
       this.modifiedContent = null;
     });
@@ -340,7 +340,7 @@ public class HiperMessage implements JsonSerializer<HiperMessage>, JsonDeseriali
    * @param receivedFromRedis whether the message was received from Redis or not
    */
   private void sendBossBar(UUID player, String content, String prefix, boolean cache, boolean receivedFromRedis) {
-    CobbleUtils.LOGGER.info("Boss bar message not implemented yet.");
+    CobbleUtils.LOGGER_RAW.info("Boss bar message not implemented yet.");
   }
 
   /**
@@ -358,7 +358,7 @@ public class HiperMessage implements JsonSerializer<HiperMessage>, JsonDeseriali
       return;
     }
 
-    CobbleUtils.LOGGER.info("Boss bar broadcast not implemented yet.");
+    CobbleUtils.LOGGER_RAW.info("Boss bar broadcast not implemented yet.");
   }
 
   //==========================================================================//
@@ -533,21 +533,21 @@ public class HiperMessage implements JsonSerializer<HiperMessage>, JsonDeseriali
           // Skip if the identifier is invalid
           if (!soundName.contains("cobblemon:")) {
             if (id == null) {
-              CobbleUtils.LOGGER.warn("Invalid sound identifier: " + soundName);
+              CobbleUtils.LOGGER_RAW.warn("Invalid sound identifier: " + soundName);
               matcher.appendReplacement(cleaned, "");
               continue;
             }
 
             // Check if the sound actually exists in the registry
             if (!Registries.SOUND_EVENT.containsId(id)) {
-              CobbleUtils.LOGGER.warn("Sound not found in registry:" + id);
+              CobbleUtils.LOGGER_RAW.warn("Sound not found in registry:" + id);
               matcher.appendReplacement(cleaned, "");
               continue;
             }
 
             soundEvent = Registries.SOUND_EVENT.get(id);
             if (soundEvent == null) {
-              CobbleUtils.LOGGER.warn("Null SoundEvent for identifier: " + id);
+              CobbleUtils.LOGGER_RAW.warn("Null SoundEvent for identifier: " + id);
               matcher.appendReplacement(cleaned, "");
               continue;
             }
@@ -683,7 +683,7 @@ public class HiperMessage implements JsonSerializer<HiperMessage>, JsonDeseriali
           try {
             CobbleUtils.redisManager.publish(RedisMessageHandler.CHANNEL, redisMessage);
           } catch (Exception e) {
-            CobbleUtils.LOGGER.error("Failed to send HiperMessage through Redis: " + e.getMessage());
+            CobbleUtils.LOGGER_RAW.error("Failed to send HiperMessage through Redis: " + e.getMessage());
           }
         }, CobbleUtils.ASYNC.getExecutor())
         .exceptionally(e -> {
@@ -692,7 +692,7 @@ public class HiperMessage implements JsonSerializer<HiperMessage>, JsonDeseriali
         });
 
     } catch (Exception e) {
-      CobbleUtils.LOGGER.error("Error creating Redis message for HiperMessage: " + e.getMessage());
+      CobbleUtils.LOGGER_RAW.error("Error creating Redis message for HiperMessage: " + e.getMessage());
       e.printStackTrace();
     }
   }
@@ -716,7 +716,7 @@ public class HiperMessage implements JsonSerializer<HiperMessage>, JsonDeseriali
         try {
           playerUUID = UUID.fromString(redisMessage.get("playerUUID").getAsString());
         } catch (IllegalArgumentException ex) {
-          CobbleUtils.LOGGER.warn("Invalid playerUUID in Redis HiperMessage: " + redisMessage.get("playerUUID").getAsString());
+          CobbleUtils.LOGGER_RAW.warn("Invalid playerUUID in Redis HiperMessage: " + redisMessage.get("playerUUID").getAsString());
         }
       }
 
@@ -735,7 +735,7 @@ public class HiperMessage implements JsonSerializer<HiperMessage>, JsonDeseriali
       hiperMessage.sendMessage(playerUUID, prefix, false, true, placeholders, content);
 
     } catch (Exception e) {
-      CobbleUtils.LOGGER.error("Error handling Redis HiperMessage");
+      CobbleUtils.LOGGER_RAW.error("Error handling Redis HiperMessage");
     }
   }
 

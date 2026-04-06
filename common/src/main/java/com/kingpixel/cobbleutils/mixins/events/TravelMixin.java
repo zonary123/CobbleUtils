@@ -107,7 +107,7 @@ public abstract class TravelMixin {
         .player(player)
         .build());
     } catch (Exception e) {
-      CobbleUtils.LOGGER.error("Error in TravelMixin tick");
+      CobbleUtils.LOGGER_RAW.error("Error in TravelMixin tick");
       e.printStackTrace();
     }
   }

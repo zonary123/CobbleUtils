@@ -12,7 +12,7 @@ import net.minecraft.server.network.ServerPlayerEntity;
 public class WeatherCondition extends Condition {
 
   public static final String TYPE = "WEATHER";
-
+  @Builder.Default
   private final boolean requiresRaining = true;
 
   @Override

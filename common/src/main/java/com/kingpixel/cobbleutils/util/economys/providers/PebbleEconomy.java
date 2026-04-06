@@ -30,7 +30,7 @@ public class PebbleEconomy extends Economy {
       service.getEconomy();
       return true;
     } catch (Exception e) {
-      CobbleUtils.LOGGER.error("PebbleEconomy not present");
+      CobbleUtils.LOGGER_RAW.error("PebbleEconomy not present");
       return false;
     }
   }

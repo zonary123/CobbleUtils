@@ -12,6 +12,7 @@ import java.util.Set;
 @Data
 public class WorldCondition extends Condition {
   public static final String TYPE = "WORLD";
+  @Builder.Default
   private final Set<String> worlds = Set.of("minecraft:overworld");
 
   @Override

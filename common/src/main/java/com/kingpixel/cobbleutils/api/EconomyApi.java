@@ -32,14 +32,14 @@ public class EconomyApi {
     economys.removeIf(economy -> {
       try {
         if (economy.isPresent()) {
-          CobbleUtils.LOGGER.info("Economy found: " + economy.getIdentify());
+          CobbleUtils.LOGGER_RAW.info("Economy found: " + economy.getIdentify());
           return false;
         } else {
-          CobbleUtils.LOGGER.info("Economy not found: " + economy.getIdentify());
+          CobbleUtils.LOGGER_RAW.info("Economy not found: " + economy.getIdentify());
           return true;
         }
       } catch (NoClassDefFoundError | IncompatibleClassChangeError | Exception e) {
-        CobbleUtils.LOGGER.info("Economy not found: " + economy.getIdentify());
+        CobbleUtils.LOGGER_RAW.info("Economy not found: " + economy.getIdentify());
         return true;
       }
     });
@@ -177,20 +177,20 @@ public class EconomyApi {
                                       boolean needHasEnough) {
     if (needHasEnough && !hasEnoughMoney(fromPlayerUuid, money, economy, true)) {
       if (CobbleUtils.config.isDebug()) {
-        CobbleUtils.LOGGER.info("Player " + fromPlayerUuid + " does not have enough money to transfer " + money +
+        CobbleUtils.LOGGER_RAW.info("Player " + fromPlayerUuid + " does not have enough money to transfer " + money +
           " to " + toPlayerUuid + " using " + economy.getEconomyId());
       }
       return false;
     }
     if (addMoney(toPlayerUuid, money, economy)) {
       if (CobbleUtils.config.isDebug()) {
-        CobbleUtils.LOGGER.info("Transferred " + money + " from " + fromPlayerUuid + " to " + toPlayerUuid +
+        CobbleUtils.LOGGER_RAW.info("Transferred " + money + " from " + fromPlayerUuid + " to " + toPlayerUuid +
           " using " + economy.getEconomyId());
       }
       return removeMoney(fromPlayerUuid, money, economy);
     }
     if (CobbleUtils.config.isDebug()) {
-      CobbleUtils.LOGGER.info("Failed to transfer " + money + " from " + fromPlayerUuid + " to " + toPlayerUuid +
+      CobbleUtils.LOGGER_RAW.info("Failed to transfer " + money + " from " + fromPlayerUuid + " to " + toPlayerUuid +
         " using " + economy.getEconomyId());
     }
     return false;

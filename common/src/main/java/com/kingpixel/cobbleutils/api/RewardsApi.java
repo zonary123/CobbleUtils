@@ -18,7 +18,7 @@ public class RewardsApi {
   public static @Nullable ItemChance getReward(String id) {
     ItemChance itemChance = CobbleUtils.rewardsConfig.getRewards().getOrDefault(id, null);
     if (itemChance == null) {
-      CobbleUtils.LOGGER.error("Reward with id " + id + " not found!");
+      CobbleUtils.LOGGER_RAW.error("Reward with id " + id + " not found!");
     } else return itemChance;
     return null;
   }

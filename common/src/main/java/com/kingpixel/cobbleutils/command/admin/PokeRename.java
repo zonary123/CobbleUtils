@@ -66,7 +66,7 @@ public class PokeRename implements Command<ServerCommandSource> {
 
 
     } catch (Exception e) {
-      CobbleUtils.LOGGER.error(e.getMessage());
+      CobbleUtils.LOGGER_RAW.error(e.getMessage());
       return 0;
     }
     return 1;

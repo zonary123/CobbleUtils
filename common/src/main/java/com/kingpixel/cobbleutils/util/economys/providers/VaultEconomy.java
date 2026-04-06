@@ -29,7 +29,7 @@ public class VaultEconomy extends Economy {
   @Override
   public boolean isPresent() {
     if (Bukkit.getPluginManager().getPlugin("Vault") == null) {
-      CobbleUtils.LOGGER.info("Vault not found");
+      CobbleUtils.LOGGER_RAW.info("Vault not found");
       return false;
     }
 
@@ -37,7 +37,7 @@ public class VaultEconomy extends Economy {
       Bukkit.getServicesManager().getRegistration(net.milkbowl.vault.economy.Economy.class);
 
     if (rsp == null) {
-      CobbleUtils.LOGGER.info("Vault Economy provider not found");
+      CobbleUtils.LOGGER_RAW.info("Vault Economy provider not found");
       return false;
     }
 
@@ -45,7 +45,7 @@ public class VaultEconomy extends Economy {
 
     if (service == null) return false;
 
-    CobbleUtils.LOGGER.info("Hooked into Vault economy: " + service.getName());
+    CobbleUtils.LOGGER_RAW.info("Hooked into Vault economy: " + service.getName());
     return true;
   }
 

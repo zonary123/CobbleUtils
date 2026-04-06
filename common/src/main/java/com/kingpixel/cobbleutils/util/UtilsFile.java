@@ -496,4 +496,95 @@ public final class UtilsFile {
     );
   }
 
+  /**
+   * Reads plain text from a file.
+   *
+   * @param path file path
+   * @return text content, or null if file does not exist
+   * @throws IOException if reading fails
+   */
+  @Nullable
+  public static String readText(@Nonnull Path path) throws IOException {
+
+    if (Files.notExists(path)) return null;
+
+    ReadWriteLock lock = lock(path);
+    lock.readLock().lock();
+
+    try {
+      return Files.readString(path, StandardCharsets.UTF_8);
+    } finally {
+      lock.readLock().unlock();
+    }
+  }
+
+  /**
+   * Reads plain text asynchronously.
+   *
+   * @param path file path
+   * @return future containing text content
+   */
+  public static CompletableFuture<@Nullable String> readTextAsync(Path path) {
+    return CompletableFuture.supplyAsync(() -> {
+      try {
+        return readText(path);
+      } catch (IOException e) {
+        throw new RuntimeException(e);
+      }
+    }, IO_EXECUTOR);
+  }
+
+  /**
+   * Writes plain text to a file using atomic replacement.
+   *
+   * @param path    file path
+   * @param content text content
+   * @throws IOException if writing fails
+   */
+  public static void writeText(@Nonnull Path path, @Nonnull String content) throws IOException {
+
+    ReadWriteLock lock = lock(path);
+    lock.writeLock().lock();
+
+    try {
+      Files.createDirectories(path.getParent());
+
+      Path tmp = path.resolveSibling(path.getFileName() + ".tmp");
+
+      Files.writeString(
+        tmp,
+        content,
+        StandardCharsets.UTF_8,
+        StandardOpenOption.CREATE,
+        StandardOpenOption.TRUNCATE_EXISTING
+      );
+
+      try {
+        Files.move(tmp, path, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
+      } catch (AtomicMoveNotSupportedException e) {
+        Files.move(tmp, path, StandardCopyOption.REPLACE_EXISTING);
+      }
+
+    } finally {
+      lock.writeLock().unlock();
+    }
+  }
+
+  /**
+   * Writes plain text asynchronously.
+   *
+   * @param path    file path
+   * @param content text content
+   * @return future representing completion
+   */
+  public static CompletableFuture<Void> writeTextAsync(Path path, String content) {
+    return CompletableFuture.runAsync(() -> {
+      try {
+        writeText(path, content);
+      } catch (IOException e) {
+        throw new RuntimeException(e);
+      }
+    }, IO_EXECUTOR);
+  }
+
 }

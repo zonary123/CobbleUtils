@@ -317,7 +317,7 @@ public class AdvancedItemChance {
     }
 
     if (CobbleUtils.config.isDebug()) {
-      CobbleUtils.LOGGER.info("Free slots: " + freeSlots);
+      CobbleUtils.LOGGER_RAW.info("Free slots: " + freeSlots);
     }
 
     if (buttons.size() > freeSlots) {
@@ -428,5 +428,4 @@ public class AdvancedItemChance {
   }
 
 }
-
 

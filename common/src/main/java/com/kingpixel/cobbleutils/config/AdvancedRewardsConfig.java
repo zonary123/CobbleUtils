@@ -2,10 +2,11 @@ package com.kingpixel.cobbleutils.config;
 
 import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.Model.AdvancedItemChance;
-import com.kingpixel.cobbleutils.util.Utils;
+import com.kingpixel.cobbleutils.util.UtilsFile;
 import lombok.Data;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -21,28 +22,29 @@ public class AdvancedRewardsConfig {
 
   public void init() {
     TEMPLATE_REWARDS.clear();
-    File folder = Utils.getAbsolutePath(PATH);
+    File folder = new File(PATH);
     if (folder.exists()) {
       List<File> files = getAllJsonFilesRecursive(folder);
       for (File f : files) {
         try {
-          AdvancedItemChance advancedItemChance = Utils.newGson().fromJson(Utils.readFileSync(f), AdvancedItemChance.class);
+          AdvancedItemChance advancedItemChance = UtilsFile.read(f.toPath(), AdvancedItemChance.class);
+          if (advancedItemChance == null) continue;
           String id = f.getName().replace(".json", "");
-          Utils.writeFileSync(f, Utils.newGson().toJson(advancedItemChance, AdvancedItemChance.class));
+          UtilsFile.write(f.toPath(), advancedItemChance);
           if (TEMPLATE_REWARDS.containsKey(id)) {
-            CobbleUtils.LOGGER.error("Duplicate reward id found: " + id + " in file: " + f.getPath());
+            CobbleUtils.LOGGER_RAW.error("Duplicate reward id found: " + id + " in file: " + f.getPath());
           } else {
             TEMPLATE_REWARDS.put(id, advancedItemChance);
           }
         } catch (Exception e) {
-          CobbleUtils.LOGGER.error("Error loading reward file: " + f.getPath() + " - " + e.getMessage());
+          CobbleUtils.LOGGER_RAW.error("Error loading reward file: " + f.getPath() + " - " + e.getMessage());
         }
       }
     } else {
       folder.mkdirs();
       createDefaultFiles();
     }
-    CobbleUtils.LOGGER.info("Loaded " + TEMPLATE_REWARDS.size() + " reward files.");
+    CobbleUtils.LOGGER_RAW.info("Loaded " + TEMPLATE_REWARDS.size() + " reward files.");
   }
 
   private List<File> getAllJsonFilesRecursive(File folder) {
@@ -67,9 +69,12 @@ public class AdvancedRewardsConfig {
   private void createFile(String fileName, AdvancedItemChance advancedItemChance) {
     String id = fileName.replace(".json", "");
     TEMPLATE_REWARDS.put(id, advancedItemChance);
-    File file = Utils.getAbsolutePath(PATH + fileName + ".json");
-    Utils.writeFileSync(file, Utils.newGson().toJson(advancedItemChance,
-      AdvancedItemChance.class));
+    File file = new File(PATH + fileName + ".json");
+    try {
+      UtilsFile.write(file.toPath(), advancedItemChance);
+    } catch (IOException e) {
+      CobbleUtils.LOGGER_RAW.error("Error writing advanced reward file: " + file.getPath() + " - " + e.getMessage());
+    }
   }
 
 }

@@ -44,8 +44,8 @@ public class ImpactorEconomy extends Economy {
     try {
       service = EconomyService.instance();
       return service != null;
-    } catch (Exception e) {
-      CobbleUtils.LOGGER.error("Impactor not present");
+    } catch (NoClassDefFoundError | Exception e) {
+      CobbleUtils.LOGGER_RAW.error("Impactor not present");
       return false;
     }
   }

@@ -13,8 +13,9 @@ import net.minecraft.server.network.ServerPlayerEntity;
 public class TimeOfDayMinecraftCondition extends Condition {
 
   public static final String TYPE = "TIME_OF_DAY_MINECRAFT";
-
+  @Builder.Default
   private long minTime = 0;
+  @Builder.Default
   private long maxTime = 24000;
 
 

@@ -12,6 +12,7 @@ import net.minecraft.server.network.ServerPlayerEntity;
 @Data
 public class PermissionCondition extends Condition {
   public static final String TYPE = "PERMISSION";
+  @Builder.Default
   private String permission = "";
 
   @Override

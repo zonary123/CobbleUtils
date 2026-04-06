@@ -214,7 +214,7 @@ public class StorageCommand {
     try {
       source.sendFeedback(() -> Text.of(message), false);
     } catch (Exception e) {
-      CobbleUtils.LOGGER.warn("Error sending feedback message: " + e.getMessage());
+      CobbleUtils.LOGGER_RAW.warn("Error sending feedback message: " + e.getMessage());
     }
   }
 }

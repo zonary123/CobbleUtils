@@ -19,6 +19,7 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.util.UserCache;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
@@ -27,6 +28,7 @@ import org.json.JSONObject;
 import java.io.IOException;
 import java.util.Date;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
@@ -84,7 +86,7 @@ public class PlayerUtils {
   public static void sendMessage(UUID playerUUID, String message, String prefix, TypeMessage typeMessage) {
     if (message.isEmpty()) {
       if (CobbleUtils.config.isDebug()) {
-        CobbleUtils.LOGGER.info("Tried to send an empty message to player UUID: " + playerUUID);
+        CobbleUtils.LOGGER_RAW.info("Tried to send an empty message to player UUID: " + playerUUID);
       }
       return;
     }
@@ -145,7 +147,7 @@ public class PlayerUtils {
   public static void sendMessage(ServerPlayerEntity player, String message, String prefix, TypeMessage typeMessage) {
     if (message.isEmpty()) {
       if (CobbleUtils.config.isDebug()) {
-        CobbleUtils.LOGGER.info("Tried to send an empty message to player: " +
+        CobbleUtils.LOGGER_RAW.info("Tried to send an empty message to player: " +
           (player != null ? player.getGameProfile().getName() : "null"));
       }
       return;
@@ -291,18 +293,18 @@ public class PlayerUtils {
    * @return The head item of the player.
    */
   public static ItemStack getHeadItem(UUID playerUUID) {
-    if (playerUUID == null) return Utils.parseItemId("minecraft:player_head");
+    if (playerUUID == null) return ItemUtils.parseItemId("minecraft:player_head");
     var userCache = CobbleUtils.server.getUserCache();
-    if (userCache == null) return Utils.parseItemId("minecraft:player_head");
+    if (userCache == null) return ItemUtils.parseItemId("minecraft:player_head");
     if (!((UserCacheMixin) userCache).byUuid().containsKey(playerUUID))
-      return Utils.parseItemId("minecraft:player_head");
+      return ItemUtils.parseItemId("minecraft:player_head");
     var gameProfile = userCache.getByUuid(playerUUID);
     if (gameProfile.isPresent()) {
       ItemStack itemStack = Items.PLAYER_HEAD.getDefaultStack();
       itemStack.set(DataComponentTypes.PROFILE, new ProfileComponent(gameProfile.get()));
       return itemStack;
     }
-    return Utils.parseItemId("minecraft:player_head");
+    return ItemUtils.parseItemId("minecraft:player_head");
   }
 
   /**
@@ -312,8 +314,19 @@ public class PlayerUtils {
    * @return The head item of the player.
    */
   public static ItemStack getHeadItem(ServerPlayerEntity player) {
-    if (player == null) return Utils.parseItemId("minecraft:player_head");
+    if (player == null) return ItemUtils.parseItemId("minecraft:player_head");
     return getHeadItem(player.getUuid());
+  }
+
+  public static ItemStack getHeadItem(String player, int amount) {
+    ItemStack itemStack = Items.PLAYER_HEAD.getDefaultStack();
+    UserCache userCache = CobbleUtils.server.getUserCache();
+    if (userCache == null) return itemStack;
+    Optional<GameProfile> optionalGameProfile = userCache.findByName(player);
+    var profile = optionalGameProfile.orElseGet(() -> new GameProfile(UUID.randomUUID(), player));
+    itemStack.set(DataComponentTypes.PROFILE, new ProfileComponent(profile));
+    itemStack.setCount(amount);
+    return itemStack;
   }
 
   /**

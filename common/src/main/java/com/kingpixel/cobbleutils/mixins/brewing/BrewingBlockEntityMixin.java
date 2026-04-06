@@ -26,7 +26,7 @@ public abstract class BrewingBlockEntityMixin {
     BlockEntity blockEntity = world.getBlockEntity(pos);
     if (blockEntity == null) {
       if (CobbleUtils.config.isDebug()) {
-        CobbleUtils.LOGGER.info(CobbleUtils.MOD_ID,
+        CobbleUtils.LOGGER_RAW.info(CobbleUtils.MOD_ID,
           "No block entity found in brewing stand at position: " + pos.toString());
       }
       return;
@@ -35,7 +35,7 @@ public abstract class BrewingBlockEntityMixin {
     var customData = componentMap.get(DataComponentTypes.CUSTOM_DATA);
     if (customData == null) {
       if (CobbleUtils.config.isDebug()) {
-        CobbleUtils.LOGGER.info(CobbleUtils.MOD_ID,
+        CobbleUtils.LOGGER_RAW.info(CobbleUtils.MOD_ID,
           "No customData component found in brewing stand at position: " + pos.toString());
       }
       return;
@@ -43,7 +43,7 @@ public abstract class BrewingBlockEntityMixin {
     var nbt = customData.getNbt();
     if (nbt == null || !nbt.contains("lastPlayer")) {
       if (CobbleUtils.config.isDebug()) {
-        CobbleUtils.LOGGER.info(CobbleUtils.MOD_ID,
+        CobbleUtils.LOGGER_RAW.info(CobbleUtils.MOD_ID,
           "No lastPlayer data found in brewing stand at position: " + pos.toString());
       }
       return;
@@ -51,7 +51,7 @@ public abstract class BrewingBlockEntityMixin {
     UUID playerUUID = nbt.getUuid("lastPlayer");
     if (playerUUID == null) {
       if (CobbleUtils.config.isDebug()) {
-        CobbleUtils.LOGGER.info(CobbleUtils.MOD_ID,
+        CobbleUtils.LOGGER_RAW.info(CobbleUtils.MOD_ID,
           "Invalid lastPlayer UUID in brewing stand at position: " + pos.toString());
       }
       return;
@@ -59,7 +59,7 @@ public abstract class BrewingBlockEntityMixin {
     ServerPlayerEntity player = CobbleUtils.server.getPlayerManager().getPlayer(playerUUID);
     if (player == null) {
       if (CobbleUtils.config.isDebug()) {
-        CobbleUtils.LOGGER.info(CobbleUtils.MOD_ID,
+        CobbleUtils.LOGGER_RAW.info(CobbleUtils.MOD_ID,
           "No player found with UUID: " + playerUUID);
       }
       return;

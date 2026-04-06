@@ -17,7 +17,7 @@ public class ItemStackAdapter implements JsonSerializer<ItemStack>, JsonDeserial
     return ItemStack.CODEC.encodeStart(getOps(), src)
       .result()
       .orElseGet(() -> {
-        CobbleUtils.LOGGER.error("Error serializing ItemStack: " + src);
+        CobbleUtils.LOGGER_RAW.error("Error serializing ItemStack: " + src);
         return JsonNull.INSTANCE;
       });
   }
@@ -27,7 +27,7 @@ public class ItemStackAdapter implements JsonSerializer<ItemStack>, JsonDeserial
     return ItemStack.CODEC.parse(getOps(), json)
       .result()
       .orElseGet(() -> {
-        CobbleUtils.LOGGER.error("Error deserializing ItemStack: " + json);
+        CobbleUtils.LOGGER_RAW.error("Error deserializing ItemStack: " + json);
         return ItemStack.EMPTY;
       });
   }
@@ -38,7 +38,7 @@ public class ItemStackAdapter implements JsonSerializer<ItemStack>, JsonDeserial
         DynamicRegistryManager registryManager = CobbleUtils.server.getRegistryManager();
         ops = RegistryOps.of(JsonOps.INSTANCE, registryManager);
       } catch (Exception e) {
-        CobbleUtils.LOGGER.error("Error initializing RegistryOps for ItemStackAdapter");
+        CobbleUtils.LOGGER_RAW.error("Error initializing RegistryOps for ItemStackAdapter");
         e.printStackTrace();
       }
     }

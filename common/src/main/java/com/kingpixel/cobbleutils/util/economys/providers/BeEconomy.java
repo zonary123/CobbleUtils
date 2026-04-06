@@ -32,8 +32,8 @@ public class BeEconomy extends Economy {
       BEconomy.INSTANCE.initialize(CobbleUtils.server);
       service = BEconomy.INSTANCE.getAPI();
       return true;
-    } catch (Exception e) {
-      CobbleUtils.LOGGER.error("Failed to initialize BEconomy");
+    } catch (NoClassDefFoundError | Exception e) {
+      CobbleUtils.LOGGER_RAW.error("Failed to initialize BEconomy");
       return false;
     }
   }
@@ -44,7 +44,7 @@ public class BeEconomy extends Economy {
       try {
         return supplier.get();
       } catch (Exception e) {
-        CobbleUtils.LOGGER.error("Economy operation failed");
+        CobbleUtils.LOGGER_RAW.error("Economy operation failed");
         return EconomyResponse.failure("Error: " + e.getMessage());
       }
     });

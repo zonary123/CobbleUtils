@@ -28,7 +28,7 @@ public class SDMEconomy extends Economy {
       CurrencyHelper.getAllCurrency();
       return true;
     } catch (Exception e) {
-      CobbleUtils.LOGGER.error("SDM Economy not present");
+      CobbleUtils.LOGGER_RAW.error("SDM Economy not present");
       return false;
     }
   }
@@ -38,7 +38,7 @@ public class SDMEconomy extends Economy {
   // =========================================================
 
   private CurrencyPlayerData.PlayerCurrency getPlayerData(UUID uuid, String currency) {
-    CobbleUtils.LOGGER.warn(
+    CobbleUtils.LOGGER_RAW.warn(
       "SDM Economy integration may be unstable. Repository: https://github.com/zonary123/CobbleUtils"
     );
     return null; // Mantengo comportamiento actual

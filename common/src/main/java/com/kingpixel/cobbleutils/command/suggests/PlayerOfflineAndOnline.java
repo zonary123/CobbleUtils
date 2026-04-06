@@ -117,29 +117,58 @@ public class PlayerOfflineAndOnline {
         playerUUIDs.addAll(uuids);
 
       } catch (Exception ex) {
-        CobbleUtils.LOGGER.error("Error fetching player data: ");
+        CobbleUtils.LOGGER_RAW.error("Error fetching player data", ex);
       }
     });
   }
 
   /**
-   * Sugiere nombres de jugadores.
+   * Combina los nombres cacheados con los jugadores actualmente online.
+   * Garantiza que las sugerencias nunca estén vacías aunque el async no haya terminado.
+   */
+  private Collection<String> getAllPlayerNames() {
+    refreshIfNeeded();
+    Set<String> merged = new LinkedHashSet<>(playerNames);
+    if (CobbleUtils.server != null) {
+      for (ServerPlayerEntity online : CobbleUtils.server.getPlayerManager().getPlayerList()) {
+        merged.add(online.getGameProfile().getName());
+      }
+    }
+    return merged;
+  }
+
+  /**
+   * Combina los UUID cacheados con los jugadores actualmente online.
+   */
+  private Collection<String> getAllPlayerUUIDs() {
+    refreshIfNeeded();
+    Set<String> merged = new LinkedHashSet<>(getPlayerUUIDsAsString());
+    if (CobbleUtils.server != null) {
+      for (ServerPlayerEntity online : CobbleUtils.server.getPlayerManager().getPlayerList()) {
+        merged.add(online.getUuid().toString());
+      }
+    }
+    return merged;
+  }
+
+  /**
+   * Sugiere nombres de jugadores (online + offline cacheados).
    */
   public RequiredArgumentBuilder<ServerCommandSource, String> suggestPlayerName(
     String literal, List<String> permissions, int level) {
     return CommandManager.argument(literal, StringArgumentType.string())
       .requires(source -> PermissionApi.hasPermission(source, permissions, level))
-      .suggests((context, builder) -> CommandSource.suggestMatching(getPlayerNames(), builder));
+      .suggests((context, builder) -> CommandSource.suggestMatching(getAllPlayerNames(), builder));
   }
 
   /**
-   * Sugiere UUIDs de jugadores.
+   * Sugiere UUIDs de jugadores (online + offline cacheados).
    */
   public RequiredArgumentBuilder<ServerCommandSource, UUID> suggestPlayerUUID(
     String literal, List<String> permissions, int level) {
     return CommandManager.argument(literal, UuidArgumentType.uuid())
       .requires(source -> PermissionApi.hasPermission(source, permissions, level))
-      .suggests((context, builder) -> CommandSource.suggestMatching(getPlayerUUIDsAsString(), builder));
+      .suggests((context, builder) -> CommandSource.suggestMatching(getAllPlayerUUIDs(), builder));
   }
 
   /**
@@ -174,7 +203,7 @@ public class PlayerOfflineAndOnline {
       UserModel user = DataBaseFactory.dataBaseUsers.findUserByName(playerName);
       return Optional.ofNullable(user);
     } catch (Exception ex) {
-      CobbleUtils.LOGGER.error("Error fetching user by name: " + playerName);
+      CobbleUtils.LOGGER_RAW.error("Error fetching user by name: " + playerName);
 
       return Optional.empty();
     }

@@ -16,7 +16,7 @@ import java.util.Set;
 public class StructureCondition extends Condition {
 
   public static final String TYPE = "STRUCTURE";
-
+  @Builder.Default
   private Set<String> structures = new HashSet<>(Set.of(
     "minecraft:village",
     "minecraft:pillager_outpost",
@@ -31,7 +31,7 @@ public class StructureCondition extends Condition {
 
   @Override
   public boolean check(ServerPlayerEntity player) {
-    CobbleUtils.LOGGER.info("Not implemented yet, returning true for now");
+    CobbleUtils.LOGGER_RAW.info("Not implemented yet, returning true for now");
     return true;
   }
 

@@ -67,11 +67,11 @@ public class RedisMessageHandler implements RedisHandler {
           if (player != null) player.sendMessage(formatted, true);
         }
 
-        default -> CobbleUtils.LOGGER.warn("Unknown Redis message type: " + type);
+        default -> CobbleUtils.LOGGER_RAW.warn("Unknown Redis message type: " + type);
       }
 
     } catch (Exception e) {
-      CobbleUtils.LOGGER.error("Failed to handle Redis message: " + e.getMessage());
+      CobbleUtils.LOGGER_RAW.error("Failed to handle Redis message: ", e);
     }
   }
 

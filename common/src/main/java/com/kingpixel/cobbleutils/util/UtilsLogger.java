@@ -4,69 +4,53 @@ import com.kingpixel.cobbleutils.CobbleUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.io.File;
+import java.nio.file.Path;
 import java.time.DayOfWeek;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Class for logging with emojis 😎
  */
-public class UtilsLogger {
-  private static final Map<String, Logger> loggers = new HashMap<>();
-  private Logger logger; // Log for the console.
+public class UtilsLogger extends PrefixedLogger {
+  private static final Map<String, PrefixedLogger> loggers = new ConcurrentHashMap<>();
 
-  public Logger getLogger(String modId) {
-    return loggers.computeIfAbsent(modId, LogManager::getLogger);
+  public static Logger getLogger(String modId) {
+    String resolvedModId = normalizeModId(modId, CobbleUtils.MOD_ID);
+    return loggers.computeIfAbsent(resolvedModId,
+      key -> new PrefixedLogger(LogManager.getLogger(CobbleUtils.MOD_NAME), key));
   }
 
   // Constructor
   public UtilsLogger() {
-    logger = LogManager.getLogger(CobbleUtils.MOD_NAME);
+    super(LogManager.getLogger(CobbleUtils.MOD_NAME), CobbleUtils.MOD_ID);
   }
 
   public UtilsLogger(String name) {
-    logger = LogManager.getLogger(name);
-  }
-
-  // 🔵 INFO
-  public void info(String message) {
-    logger.info("ℹ️ " + message);
+    super(LogManager.getLogger(name), name);
   }
 
   public void info(String modId, String message) {
-    getLogger(modId).info("ℹ️ " + message);
+    getLogger(modId).info(message);
   }
 
   public void info(DayOfWeek dayOfWeek) {
-    logger.info("ℹ️ " + dayOfWeek);
-  }
-
-  // ⚠️ WARN
-  public void warn(String message) {
-    logger.warn("⚠️ " + message);
+    info(String.valueOf(dayOfWeek));
   }
 
   public void warn(String modId, String message) {
-    getLogger(modId).warn("⚠️ " + message);
-  }
-
-  // ❌ ERROR
-  public void error(String message) {
-    logger.error("❌ " + message);
+    getLogger(modId).warn(message);
   }
 
   public void error(String modId, String message) {
-    getLogger(modId).error("❌ " + message);
+    getLogger(modId).error(message);
   }
 
-  // 💀 FATAL
-  public void fatal(String message) {
-    logger.fatal("💀 " + message);
-  }
 
   public void fatal(String modId, String message) {
-    getLogger(modId).fatal("💀 " + message);
+    getLogger(modId).fatal(message);
   }
 
   // Enums used for the log file.
@@ -88,10 +72,9 @@ public class UtilsLogger {
 
     String output = emoji + " [" + level + "]: " + message;
 
-    CompletableFuture<Boolean> future = Utils.writeFileAsync(
-      CobbleUtils.PATH, "logs.txt", output
-    );
+    Path path = new File(new File("").getAbsolutePath() + CobbleUtils.PATH, "logs.txt").toPath();
+    CompletableFuture<Void> future = UtilsFile.writeTextAsync(path, output);
 
-    System.out.println(": " + future.join());
+    future.join();
   }
 }

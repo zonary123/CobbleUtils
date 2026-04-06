@@ -14,6 +14,7 @@ import java.util.Set;
 @Data
 public class ServerCondition extends Condition {
   public static final String TYPE = "SERVER";
+  @Builder.Default
   private final Set<String> servers = Set.of("lunarclient");
 
   @Override

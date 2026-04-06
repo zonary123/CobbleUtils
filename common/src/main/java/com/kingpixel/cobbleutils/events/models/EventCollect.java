@@ -39,7 +39,7 @@ public class EventCollect {
   public int getAmount() {
     if (cachedAmount) {
       if (CobbleUtils.config.isDebug()) {
-        CobbleUtils.LOGGER.info("EventCollect: Using preset amount: " + amount);
+        CobbleUtils.LOGGER_RAW.info("EventCollect: Using preset amount: " + amount);
       }
       return amount;
     }
@@ -47,7 +47,7 @@ public class EventCollect {
     if (state != null) {
       amount = BlocksAPI.getAmount(state.getBlock(), pos, state, world);
       if (CobbleUtils.config.isDebug()) {
-        CobbleUtils.LOGGER.info("EventCollect: BlocksApi amount for "
+        CobbleUtils.LOGGER_RAW.info("EventCollect: BlocksApi amount for "
           + state.getBlock().toString() + " at " + pos + ": " + amount);
       }
       if (amount != -1) {
@@ -58,7 +58,7 @@ public class EventCollect {
 
     amount = itemStack != null ? itemStack.getCount() : 1;
     if (CobbleUtils.config.isDebug()) {
-      CobbleUtils.LOGGER.info("EventCollect: Final fallback amount: " + amount);
+      CobbleUtils.LOGGER_RAW.info("EventCollect: Final fallback amount: " + amount);
     }
     cachedAmount = true;
     return amount;

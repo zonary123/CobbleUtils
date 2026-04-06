@@ -34,20 +34,20 @@ public class VaultEconomy extends EconomyAbstract {
   @Override
   public boolean isPresent() {
     if (Bukkit.getServer().getPluginManager().getPlugin("Vault") == null) {
-      CobbleUtils.LOGGER.info("Cannot find Vault!");
+      CobbleUtils.LOGGER_RAW.info("Cannot find Vault!");
       List<String> plugins = new ArrayList<>();
       for (Plugin plugin : Bukkit.getServer().getPluginManager().getPlugins()) {
         plugins.add(plugin.getName());
       }
-      CobbleUtils.LOGGER.info("Report this to zonary123 Plugins to Vault -> " + plugins);
+      CobbleUtils.LOGGER_RAW.info("Report this to zonary123 Plugins to Vault -> " + plugins);
     } else {
       RegisteredServiceProvider<Economy> rsp = Bukkit.getServer().getServicesManager().getRegistration(Economy.class);
       if (rsp == null) {
-        CobbleUtils.LOGGER.info("Registered Service Provider for Economy.class not found");
+        CobbleUtils.LOGGER_RAW.info("Registered Service Provider for Economy.class not found");
       } else {
         service = rsp.getProvider();
-        CobbleUtils.LOGGER.info("Economy successfully hooked up");
-        CobbleUtils.LOGGER.info("Economy: " + service.getName());
+        CobbleUtils.LOGGER_RAW.info("Economy successfully hooked up");
+        CobbleUtils.LOGGER_RAW.info("Economy: " + service.getName());
         return true;
       }
     }

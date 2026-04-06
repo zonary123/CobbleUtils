@@ -19,10 +19,12 @@ import com.kingpixel.cobbleutils.network.NetworkInitializer;
 import com.kingpixel.cobbleutils.tasks.RegistryTasks;
 import com.kingpixel.cobbleutils.util.*;
 import com.kingpixel.cobbleutils.util.async.AsyncContext;
+import com.kingpixel.cobbleutils.util.mongodb.MongoDBService;
 import com.kingpixel.cobbleutils.util.redis.RedisManager;
 import com.kingpixel.cobbleutils.util.redis.RedisService;
 import com.kingpixel.cobbleutils.util.redis.handlers.RedisMessageHandler;
 import com.kingpixel.cobbleutils.util.redis.handlers.RedisTeleportHandler;
+import com.kingpixel.cobbleutils.util.sql.SQLService;
 import dev.architectury.event.events.common.CommandRegistrationEvent;
 import dev.architectury.event.events.common.InteractionEvent;
 import dev.architectury.event.events.common.LifecycleEvent;
@@ -35,7 +37,6 @@ import net.fabricmc.loader.api.ModContainer;
 import net.fabricmc.loader.api.metadata.Person;
 import net.minecraft.command.CommandRegistryAccess;
 import net.minecraft.server.MinecraftServer;
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 
@@ -51,7 +52,7 @@ public class CobbleUtils {
   public static final String PATH_BREED = PATH + "/breed/";
   public static final String PATH_BREED_DATA = PATH_BREED + "data/";
   public static final UtilsLogger LOGGER = new UtilsLogger();
-  public static final Logger LOGGER_RAW = LogManager.getLogger(MOD_NAME);
+  public static final Logger LOGGER_RAW = UtilsLogger.getLogger(MOD_NAME);
 
   @Setter
   @Getter
@@ -100,7 +101,7 @@ public class CobbleUtils {
         new CobbleUtilsBridgeGTS();
       }
     } catch (NoClassDefFoundError | NoSuchMethodError | Exception ignored) {
-      LOGGER.error("Error while trying to get GtsEconomyProvider");
+      LOGGER_RAW.error("Error while trying to get GtsEconomyProvider");
     }
   }
 
@@ -119,8 +120,8 @@ public class CobbleUtils {
 
   private static void sign() {
     info(MOD_ID, "1.1.4", "CobbleUtils");
-    LOGGER.info("§e| §6Supported economies: Impactor, BlanketEconomy, CobbleDollars, SDMEconomy, PebbleEconomy and Vault");
-    LOGGER.info("§e+-------------------------------+");
+    LOGGER_RAW.info("§e| §6Supported economies: Impactor, BlanketEconomy, CobbleDollars, SDMEconomy, PebbleEconomy and Vault");
+    LOGGER_RAW.info("§e+-------------------------------+");
   }
 
   public static void info(String identifier, String github) {
@@ -144,16 +145,16 @@ public class CobbleUtils {
         authors = String.join(", ", mod.getMetadata().getAuthors().stream().map(Person::getName).toList());
       }
     }
-    LOGGER.info("§e+-------------------------------+");
-    LOGGER.info("§e| §6" + finalName);
-    LOGGER.info("§e+-------------------------------+");
-    LOGGER.info("§e| §6Version: §e" + finalVersion);
-    LOGGER.info("§e| §6Author: §e" + authors);
-    LOGGER.info("§e| §6Website: §9https://github.com/Zonary123/" + github);
-    LOGGER.info("§e| §6Discord: §9https://discord.com/invite/fKNc7FnXpa");
-    LOGGER.info("§e| §6Support: §9https://github.com/Zonary123/" + github + "/issues");
-    LOGGER.info("§e| §dDonate: §9https://ko-fi.com/zonary123");
-    LOGGER.info("§e+-------------------------------+");
+    LOGGER_RAW.info("§e+-------------------------------+");
+    LOGGER_RAW.info("§e| §6" + finalName);
+    LOGGER_RAW.info("§e+-------------------------------+");
+    LOGGER_RAW.info("§e| §6Version: §e" + finalVersion);
+    LOGGER_RAW.info("§e| §6Author: §e" + authors);
+    LOGGER_RAW.info("§e| §6Website: §9https://github.com/Zonary123/" + github);
+    LOGGER_RAW.info("§e| §6Discord: §9https://discord.com/invite/fKNc7FnXpa");
+    LOGGER_RAW.info("§e| §6Support: §9https://github.com/Zonary123/" + github + "/issues");
+    LOGGER_RAW.info("§e| §dDonate: §9https://ko-fi.com/zonary123");
+    LOGGER_RAW.info("§e+-------------------------------+");
   }
 
 
@@ -166,7 +167,7 @@ public class CobbleUtils {
         redisManager.registerHandler(new RedisTeleportHandler());
       }
     } catch (NoClassDefFoundError | NoSuchMethodError | Exception ignored) {
-      LOGGER.error("Error while trying to initialize RedisManager");
+      LOGGER_RAW.error("Error while trying to initialize RedisManager");
     }
 
     LifecycleEvent.SERVER_STARTING.register(server -> {
@@ -181,8 +182,6 @@ public class CobbleUtils {
     });
 
     LifecycleEvent.SERVER_STOPPING.register(server1 -> {
-      DataBaseFactory.close();
-      if (redisManager != null) redisManager.close();
       ChunkBlockStorageManager.shutdownAsync().join();
       com.kingpixel.cobbleutils.util.async.UtilsAsync.shutdownAll();
       shutdownAndAwait(EXECUTOR_COBBLEUTILS);
@@ -190,7 +189,11 @@ public class CobbleUtils {
       shutdownAndAwait(SCHEDULER_COBBLEUTILS);
     });
 
-    LifecycleEvent.SERVER_STOPPED.register(server -> RedisService.shutdown());
+    LifecycleEvent.SERVER_STOPPED.register(server -> {
+      RedisService.shutdown();
+      MongoDBService.shutdown();
+      SQLService.shutdown();
+    });
 
     PlayerEvent.PLAYER_JOIN.register((player) -> {
       runAsync(() -> {
@@ -225,11 +228,11 @@ public class CobbleUtils {
     executor.shutdown();
     try {
       if (!executor.awaitTermination(5, TimeUnit.SECONDS)) {
-        LOGGER.warn("Executor did not terminate in time, forcing shutdown...");
+        LOGGER_RAW.warn("Executor did not terminate in time, forcing shutdown...");
         executor.shutdownNow();
       }
     } catch (InterruptedException e) {
-      LOGGER.error("Executor shutdown was interrupted");
+      LOGGER_RAW.error("Executor shutdown was interrupted");
       e.printStackTrace();
       executor.shutdownNow();
     }

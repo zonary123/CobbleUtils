@@ -45,22 +45,22 @@ public abstract class LuckPermsUtil {
     if (PERMISSION_TYPE != null) return;
     if (haveFTBRanksApi()) {
       PERMISSION_TYPE = Permission.FTB_RANKS;
-      CobbleUtils.LOGGER.info("FTB Ranks detected");
+      CobbleUtils.LOGGER_RAW.info("FTB Ranks detected");
     } else if (haveBukkitPermissionApi()) {
       PERMISSION_TYPE = Permission.BUKKIT_PERMISSION_API;
-      CobbleUtils.LOGGER.info("Bukkit permissions detected");
+      CobbleUtils.LOGGER_RAW.info("Bukkit permissions detected");
     } else if (getLuckPermsApi() != null) {
       PERMISSION_TYPE = Permission.LUCKPERMS;
-      CobbleUtils.LOGGER.info("LuckPerms detected");
+      CobbleUtils.LOGGER_RAW.info("LuckPerms detected");
     } else if (haveFabricPermissionsApi()) {
       PERMISSION_TYPE = Permission.FABRIC_PERMISSIONS_API;
-      CobbleUtils.LOGGER.info("Fabric permissions detected");
+      CobbleUtils.LOGGER_RAW.info("Fabric permissions detected");
     } else {
-      CobbleUtils.LOGGER.error("No permission system detected");
+      CobbleUtils.LOGGER_RAW.error("No permission system detected");
       PERMISSION_TYPE = Permission.NONE;
     }
     if (PERMISSION_TYPE == null) {
-      CobbleUtils.LOGGER.fatal("No permission system detected, defaulting to NONE");
+      CobbleUtils.LOGGER_RAW.fatal("No permission system detected, defaulting to NONE");
     }
   }
 
@@ -68,46 +68,46 @@ public abstract class LuckPermsUtil {
     try {
       return FTBRanksAPI.getInstance() != null;
     } catch (IllegalStateException | NullPointerException | NoClassDefFoundError | NoSuchMethodError e) {
-      CobbleUtils.LOGGER.error("Error while trying to get FTB Ranks class");
+      CobbleUtils.LOGGER_RAW.error("Error while trying to get FTB Ranks class");
       return false;
     }
   }
 
   private static LuckPerms getLuckPermsApi() {
     try {
-      CobbleUtils.LOGGER.info("Trying to get LuckPerms provider");
+      CobbleUtils.LOGGER_RAW.info("Trying to get LuckPerms provider");
       luckPermsApi = LuckPermsProvider.get();
       return luckPermsApi;
     } catch (IllegalStateException | NullPointerException | NoClassDefFoundError | NoSuchMethodError e) {
-      CobbleUtils.LOGGER.error("Error while trying to get LuckPerms provider");
+      CobbleUtils.LOGGER_RAW.error("Error while trying to get LuckPerms provider");
       return null;
     }
   }
 
   private static boolean haveFabricPermissionsApi() {
     try {
-      CobbleUtils.LOGGER.info("Trying to get Permissions class from Fabric");
+      CobbleUtils.LOGGER_RAW.info("Trying to get Permissions class from Fabric");
       return Permissions.class != null;
     } catch (IllegalStateException | NullPointerException | NoClassDefFoundError | NoSuchMethodError e) {
-      CobbleUtils.LOGGER.error("Error while trying to get Permissions class from Fabric");
+      CobbleUtils.LOGGER_RAW.error("Error while trying to get Permissions class from Fabric");
       return false;
     }
   }
 
   private static boolean haveBukkitPermissionApi() {
     try {
-      CobbleUtils.LOGGER.info("Trying to get LuckPerms provider from Bukkit");
+      CobbleUtils.LOGGER_RAW.info("Trying to get LuckPerms provider from Bukkit");
       RegisteredServiceProvider<LuckPerms> provider = Bukkit.getServicesManager().getRegistration(LuckPerms.class);
       if (provider != null) {
         luckPermsApi = provider.getProvider();
       }
       if (luckPermsApi == null) {
-        CobbleUtils.LOGGER.error("Error while trying to get LuckPerms provider from Bukkit");
+        CobbleUtils.LOGGER_RAW.error("Error while trying to get LuckPerms provider from Bukkit");
         return false;
       }
       return true;
     } catch (IllegalStateException | NullPointerException | NoClassDefFoundError | NoSuchMethodError e) {
-      CobbleUtils.LOGGER.error("Error while trying to get LuckPerms provider from Bukkit");
+      CobbleUtils.LOGGER_RAW.error("Error while trying to get LuckPerms provider from Bukkit");
       return false;
     }
   }
@@ -151,7 +151,7 @@ public abstract class LuckPermsUtil {
   public static boolean checkLuckPermsPermission(ServerCommandSource source, List<String> permissions, int level) {
     setup();
     if (luckPermsApi == null) {
-      CobbleUtils.LOGGER.error("LuckPerms not found");
+      CobbleUtils.LOGGER_RAW.error("LuckPerms not found");
       return false;
     }
     UserManager userManager = luckPermsApi.getUserManager();
@@ -162,7 +162,7 @@ public abstract class LuckPermsUtil {
     if (user == null) {
       user = userManager.loadUser(player.getUuid()).join();
       if (user == null) {
-        CobbleUtils.LOGGER.error("User not found in LuckPerms");
+        CobbleUtils.LOGGER_RAW.error("User not found in LuckPerms");
         return false;
       }
     }
@@ -205,7 +205,7 @@ public abstract class LuckPermsUtil {
     return switch (PERMISSION_TYPE) {
       case LUCKPERMS, BUKKIT_PERMISSION_API -> {
         if (luckPermsApi == null) {
-          CobbleUtils.LOGGER.error("LuckPerms not found");
+          CobbleUtils.LOGGER_RAW.error("LuckPerms not found");
           yield 0;
         }
         UserManager userManager = luckPermsApi.getUserManager();
@@ -213,7 +213,7 @@ public abstract class LuckPermsUtil {
         if (user == null) {
           user = userManager.loadUser(player.getUuid()).join();
           if (user == null) {
-            CobbleUtils.LOGGER.error("User not found in LuckPerms");
+            CobbleUtils.LOGGER_RAW.error("User not found in LuckPerms");
             yield 0;
           }
         }
@@ -222,7 +222,7 @@ public abstract class LuckPermsUtil {
         if (metaData == null) yield null;
 
         if (CobbleUtils.config.isDebug()) {
-          CobbleUtils.LOGGER.info("MetaData for permission " + permission + " is " + metaData);
+          CobbleUtils.LOGGER_RAW.info("MetaData for permission " + permission + " is " + metaData);
         }
 
         // Intentar detectar tipo
@@ -251,7 +251,7 @@ public abstract class LuckPermsUtil {
       case LUCKPERMS, BUKKIT_PERMISSION_API -> {
         setup();
         if (luckPermsApi == null) {
-          CobbleUtils.LOGGER.error("LuckPerms not found");
+          CobbleUtils.LOGGER_RAW.error("LuckPerms not found");
           yield false;
         }
         UserManager userManager = luckPermsApi.getUserManager();
@@ -260,7 +260,7 @@ public abstract class LuckPermsUtil {
         if (user == null) {
           user = userManager.loadUser(player.getUuid()).join();
           if (user == null) {
-            CobbleUtils.LOGGER.error("User not found in LuckPerms");
+            CobbleUtils.LOGGER_RAW.error("User not found in LuckPerms");
             yield false;
           }
         }
@@ -308,7 +308,7 @@ public abstract class LuckPermsUtil {
       case LUCKPERMS, BUKKIT_PERMISSION_API -> {
         setup();
         if (luckPermsApi == null) {
-          CobbleUtils.LOGGER.error("LuckPerms not found");
+          CobbleUtils.LOGGER_RAW.error("LuckPerms not found");
           return false;
         }
         UserManager userManager = luckPermsApi.getUserManager();
@@ -317,7 +317,7 @@ public abstract class LuckPermsUtil {
         if (user == null) {
           user = userManager.loadUser(playerUUID).join();
           if (user == null) {
-            CobbleUtils.LOGGER.error("User not found in LuckPerms");
+            CobbleUtils.LOGGER_RAW.error("User not found in LuckPerms");
             return false;
           }
         }

@@ -21,6 +21,10 @@ import java.util.concurrent.TimeUnit;
  * @author Carlos Varas Alonso - 27/08/2025 15:11
  */
 public abstract class DataBaseUsers {
+  public static final String FIELD_UUID = "playerUUID";
+  public static final String FIELD_STORAGE = "storageList";
+  public static final String FIELD_IS_ONLINE = "isOnline";
+
   public static final Cache<UUID, UserModel> USERS = Caffeine.newBuilder()
     .expireAfterAccess(5, TimeUnit.SECONDS)
     .build();
@@ -107,7 +111,7 @@ public abstract class DataBaseUsers {
       if (idChance != null) {
         itemChance = idChance;
       } else {
-        CobbleUtils.LOGGER.error("Reward with id " + itemChance.getItem() + " not found!");
+        CobbleUtils.LOGGER_RAW.error("Reward with id " + itemChance.getItem() + " not found!");
         return false;
       }
     }

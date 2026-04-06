@@ -70,7 +70,7 @@ public class StorageMenu {
       if (userModel == null) return;
 
       if (userModel.getStorageList() == null) {
-        CobbleUtils.LOGGER.warn(
+        CobbleUtils.LOGGER_RAW.warn(
           "User " + targetUUID + " has null storage list, initializing to empty set."
         );
         userModel.setStorageList(new HashSet<>());

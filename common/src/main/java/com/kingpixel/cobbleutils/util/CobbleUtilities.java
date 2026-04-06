@@ -19,7 +19,7 @@ import net.minecraft.server.network.ServerPlayerEntity;
 public class CobbleUtilities {
 
   public static String getNameItem(String id) {
-    ItemStack itemStack = Utils.parseItemId(id);
+    ItemStack itemStack = ItemUtils.parseItemId(id);
     Item item = itemStack.getItem();
     return item.getName(itemStack).getString();
   }
@@ -29,7 +29,6 @@ public class CobbleUtilities {
    * Convert seconds to time
    *
    * @param totalSeconds The total seconds
-   *
    * @return The time in a string
    */
   public static String convertSecondsToTime(int totalSeconds) {
@@ -76,7 +75,7 @@ public class CobbleUtilities {
   }
 
   public static GooeyButton fillItem() {
-    return GooeyButton.builder().display(Utils.parseItemId(CobbleUtils.config.getFill())).build();
+    return GooeyButton.builder().display(ItemUtils.parseItemId(CobbleUtils.config.getFill())).build();
   }
 
   public static boolean executeCommand(ServerPlayerEntity player, String command) {
@@ -87,23 +86,21 @@ public class CobbleUtilities {
    * Execute a command
    *
    * @param command The command to execute
-   *
    * @return If the command was executed successfully
    */
   public static boolean executeCommand(String command) {
     CommandDispatcher<ServerCommandSource> disparador = CobbleUtils.server.getCommandManager().getDispatcher();
     ServerCommandSource serverSource = CobbleUtils.server.getCommandSource();
     ParseResults<ServerCommandSource> parse = disparador.parse(command, serverSource);
-    CobbleUtils.server.executeSync(() -> {
+
+    return CobbleUtils.server.submit(() -> {
       try {
-        disparador.execute(parse);
+        return disparador.execute(parse) == 1;
       } catch (CommandSyntaxException e) {
-        CobbleUtils.LOGGER.error("Error executing command: " + command);
-        CobbleUtils.LOGGER.error("Stacktrace: ");
-        e.printStackTrace();
+        CobbleUtils.LOGGER_RAW.error("Error executing command: %s".formatted(command), e);
+        return false;
       }
-    });
-    return true;
+    }).join();
 
   }
 
@@ -112,7 +109,6 @@ public class CobbleUtilities {
    * Get an ItemStack from a string with NBT
    *
    * @param item The item with NBT
-   *
    * @return The ItemStack
    */
   public static ItemStack getItem(String item) {
@@ -122,14 +118,14 @@ public class CobbleUtilities {
       itemStack.set(DataComponentTypes.CUSTOM_DATA, nbtComponent);
       return itemStack;
     } catch (Exception e) {
-      CobbleUtils.LOGGER.fatal("Failed to parse item for NBT: " + item);
-      CobbleUtils.LOGGER.fatal("Stacktrace: ");
+      CobbleUtils.LOGGER_RAW.fatal("Failed to parse item for NBT: " + item);
+      CobbleUtils.LOGGER_RAW.fatal("Stacktrace: ");
     }
     /*try {
       return ItemStack.fromNbt(NbtHelper.fromNbtProviderString(item));
     } catch (CommandSyntaxException e) {
-      CobbleUtils.LOGGER.fatal("Failed to parse item for NBT: " + item);
-      CobbleUtils.LOGGER.fatal("Stacktrace: ");
+      CobbleUtils.LOGGER_RAW.fatal("Failed to parse item for NBT: " + item);
+      CobbleUtils.LOGGER_RAW.fatal("Stacktrace: ");
       e.printStackTrace();
     }*/
     return ItemStack.EMPTY;

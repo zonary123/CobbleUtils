@@ -1,22 +1,22 @@
 package com.kingpixel.cobbleutils.config;
 
-import com.google.gson.Gson;
 import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.Model.*;
-import com.kingpixel.cobbleutils.util.Utils;
+import com.kingpixel.cobbleutils.util.UtilsFile;
 import com.kingpixel.cobbleutils.util.economys.v1.*;
 import com.kingpixel.cobbleutils.util.redis.RedisConfig;
 import lombok.Data;
 import lombok.Getter;
 import lombok.ToString;
 
+import java.io.File;
 import java.math.BigDecimal;
+import java.nio.file.Path;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 
 @Getter
 @Data
@@ -93,21 +93,25 @@ public class Config {
   }
 
   public void init() {
-    CompletableFuture<Boolean> futureRead = Utils.readFileAsync(CobbleUtils.PATH, "config.json",
-      el -> {
-        Gson gson = Utils.newGson();
-        CobbleUtils.config = gson.fromJson(el, Config.class);
-        String data = gson.toJson(CobbleUtils.config);
-        Utils.writeFileAsync(CobbleUtils.PATH, "config.json", data);
-      });
-
-    Boolean readResult = futureRead.join();
-    if (readResult == null || !readResult) {
-      CobbleUtils.LOGGER.info("No config.json file found for " + CobbleUtils.MOD_NAME + ". Attempting to generate one.");
-      Gson gson = Utils.newGson();
+    Path configPath = new File(new File("").getAbsolutePath() + CobbleUtils.PATH, "config.json").toPath();
+    try {
+      Config loaded = UtilsFile.read(configPath, Config.class);
+      if (loaded != null) {
+        CobbleUtils.config = loaded;
+        UtilsFile.write(configPath, CobbleUtils.config);
+      } else {
+        CobbleUtils.LOGGER_RAW.info("No config.json file found for " + CobbleUtils.MOD_NAME + ". Attempting to generate one.");
+        CobbleUtils.config = this;
+        UtilsFile.write(configPath, CobbleUtils.config);
+      }
+    } catch (Exception e) {
+      CobbleUtils.LOGGER_RAW.error("Error loading config.json: " + e.getMessage());
       CobbleUtils.config = this;
-      String data = gson.toJson(CobbleUtils.config);
-      Utils.writeFileAsync(CobbleUtils.PATH, "config.json", data);
+      try {
+        UtilsFile.write(configPath, CobbleUtils.config);
+      } catch (Exception writeEx) {
+        CobbleUtils.LOGGER_RAW.error("Error writing config.json: " + writeEx.getMessage());
+      }
     }
   }
 

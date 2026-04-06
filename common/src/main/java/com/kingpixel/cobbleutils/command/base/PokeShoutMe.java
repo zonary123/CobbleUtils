@@ -39,7 +39,7 @@ public class PokeShoutMe implements Command<CommandSource> {
           CommandManager.argument("slot", PartySlotArgumentType.Companion.partySlot())
             .executes(context -> {
               if (!context.getSource().isExecutedByPlayer()) {
-                CobbleUtils.LOGGER.error("This command can only be executed by a player");
+                CobbleUtils.LOGGER_RAW.error("This command can only be executed by a player");
                 return 0;
               }
               Pokemon pokemon = PartySlotArgumentType.Companion.getPokemon(context, "slot");

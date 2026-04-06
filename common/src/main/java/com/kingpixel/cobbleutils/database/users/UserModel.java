@@ -95,7 +95,7 @@ public class UserModel {
     // Cooldown check
     if (rewardInfo.getTimesClaimed() >= maxClaims && itemChance.getCooldown() != null) {
       if (rewardInfo.isOnCooldown(itemChance)) {
-        CobbleUtils.LOGGER.info("Item on cooldown. Remaining time: " +
+        CobbleUtils.LOGGER_RAW.info("Item on cooldown. Remaining time: " +
           PlayerUtils.getCooldown(rewardInfo.getRemainingCooldown(itemChance)) + " seconds"
         );
         return false;

@@ -20,12 +20,12 @@ public class TaskStorageNotification {
         var players = CobbleUtils.server.getPlayerManager().getPlayerList();
         for (ServerPlayerEntity player : players) {
           if (player == null) {
-            CobbleUtils.LOGGER.error("Player is null in scheduled task");
+            CobbleUtils.LOGGER_RAW.error("Player is null in scheduled task");
             continue;
           }
           var user = DataBaseFactory.dataBaseUsers.findUserByUUID(player.getUuid());
           if (user == null) {
-            CobbleUtils.LOGGER.error("UserModel is null for player " + player.getName().getString() + " (" + player.getUuid() + ")");
+            CobbleUtils.LOGGER_RAW.error("UserModel is null for player " + player.getName().getString() + " (" + player.getUuid() + ")");
             continue;
           }
           var storageList = user.getStorageList();

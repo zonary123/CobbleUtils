@@ -24,13 +24,13 @@ public class CobbleUtilsBridgeGTS implements GtsEconomy {
 
   public CobbleUtilsBridgeGTS() {
     if (!introduced) {
-      CobbleUtils.LOGGER.info("GtsEconomyProvider initialized");
+      CobbleUtils.LOGGER_RAW.info("GtsEconomyProvider initialized");
       try {
         Class.forName("org.pokesplash.gts.api.economy.GtsEconomy");
         GtsEconomyProvider.putEconomy(Priority.HIGHEST, this);
         introduced = true;
       } catch (NoClassDefFoundError | NoSuchMethodError | Exception ignored) {
-        CobbleUtils.LOGGER.warn("GtsEconomy class not found, skipping GtsEconomyProvider initialization.");
+        CobbleUtils.LOGGER_RAW.warn("GtsEconomy class not found, skipping GtsEconomyProvider initialization.");
       }
     }
   }
@@ -66,4 +66,3 @@ public class CobbleUtilsBridgeGTS implements GtsEconomy {
     }
   }
 }
-

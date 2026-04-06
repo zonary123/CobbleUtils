@@ -224,7 +224,7 @@ public class ImpactorEconomy extends EconomyAbstract {
     }
 
     if (CobbleUtils.config.isDebug())
-      CobbleUtils.LOGGER.error("Currency not found: " + currency + " using primary currency");
+      CobbleUtils.LOGGER_RAW.error("Currency not found: " + currency + " using primary currency");
 
     // Fallback to the primary currency if the specified one is not found.
     result = service.currencies().primary();

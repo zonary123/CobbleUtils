@@ -17,8 +17,9 @@ import java.util.Set;
 public class NearBlockCondition extends Condition {
 
   public static final String TYPE = "NEAR_BLOCK";
-
+  @Builder.Default
   private Set<String> blockIds = new HashSet<>();
+  @Builder.Default
   private int radius = 5;
 
   @Override

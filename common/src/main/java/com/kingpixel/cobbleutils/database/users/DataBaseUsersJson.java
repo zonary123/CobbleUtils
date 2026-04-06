@@ -3,7 +3,7 @@ package com.kingpixel.cobbleutils.database.users;
 import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.Model.DataBaseConfig;
 import com.kingpixel.cobbleutils.database.users.models.Storage;
-import com.kingpixel.cobbleutils.util.Utils;
+import com.kingpixel.cobbleutils.util.UtilsFile;
 import net.minecraft.entity.Entity;
 import net.minecraft.server.network.ServerPlayerEntity;
 import org.jetbrains.annotations.NotNull;
@@ -24,18 +24,18 @@ public class DataBaseUsersJson extends DataBaseUsers {
 
   @Override
   public void connect(DataBaseConfig config) {
-    CobbleUtils.LOGGER.info("DataBaseUsersJson connected");
+    CobbleUtils.LOGGER_RAW.info("DataBaseUsersJson connected");
   }
 
   @Override
   public void disconnect() {
-    CobbleUtils.LOGGER.info("DataBaseUsersJson disconnected");
+    CobbleUtils.LOGGER_RAW.info("DataBaseUsersJson disconnected");
   }
 
   @Override
   public UserModel findUserByUUID(@NotNull UUID uuid) {
     return DataBaseUsers.USERS.get(uuid, k -> {
-      File file = Utils.getAbsolutePath(PATH_USERS + k + ".json");
+      File file = new File(PATH_USERS + k + ".json");
       if (!file.exists()) return null;
       return readUserFile(file);
     });
@@ -45,7 +45,7 @@ public class DataBaseUsersJson extends DataBaseUsers {
   public UserModel findUserByName(@NotNull String name) {
     UserModel userModel = super.findUserByName(name);
     if (userModel != null) return userModel; // si está en la cache,
-    File folder = Utils.getAbsolutePath(PATH_USERS);
+    File folder = new File(PATH_USERS);
     File[] files = folder.listFiles();
     if (files == null) return null;
     return Arrays.stream(files)
@@ -63,16 +63,15 @@ public class DataBaseUsersJson extends DataBaseUsers {
   @Override
   public void saveOrUpdateUser(UserModel user) {
     if (user == null || user.getPlayerUUID() == null) return;
-    File folder = Utils.getAbsolutePath(PATH_USERS);
+    File folder = new File(PATH_USERS);
     if (!folder.exists()) folder.mkdirs();
-    File file = Utils.getAbsolutePath(PATH_USERS + user.getPlayerUUID() + ".json");
-    String data = Utils.newWithoutSpacingGson().toJson(user);
-    Utils.writeFileAsync(file, data);
+    File file = new File(PATH_USERS + user.getPlayerUUID() + ".json");
+    UtilsFile.writeAsync(file.toPath(), user);
   }
 
   @Override
   public List<UserModel> getAllUsers() {
-    File folder = Utils.getAbsolutePath(PATH_USERS);
+    File folder = new File(PATH_USERS);
     File[] files = folder.listFiles();
     if (files == null) return List.of();
     return Arrays.stream(files)
@@ -84,7 +83,7 @@ public class DataBaseUsersJson extends DataBaseUsers {
 
   @Override
   public List<UserModel> getUsersInactiveSince(long millis) {
-    File folder = Utils.getAbsolutePath(PATH_USERS);
+    File folder = new File(PATH_USERS);
     File[] files = folder.listFiles((dir, name) -> name.endsWith(".json")); // solo JSON
     if (files == null || files.length == 0) return List.of();
 
@@ -140,8 +139,7 @@ public class DataBaseUsersJson extends DataBaseUsers {
   // Método para leer un archivo JSON y convertirlo en UserModel
   private UserModel readUserFile(File file) {
     try {
-      String data = Utils.readFileSync(file);
-      return Utils.newWithoutSpacingGson().fromJson(data, UserModel.class);
+      return UtilsFile.read(file.toPath(), UserModel.class);
     } catch (IOException e) {
       e.printStackTrace(); // debug de lectura
     } catch (Exception e) {

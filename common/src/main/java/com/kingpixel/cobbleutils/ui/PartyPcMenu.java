@@ -140,7 +140,7 @@ public class PartyPcMenu {
   public void openPc(PartyPcMenuBuilder builder, int pos, List<Pokemon> pokemons) {
     if (isOnCooldown(builder.getPlayer())) {
       if (CobbleUtils.config.isDebug())
-        CobbleUtils.LOGGER.warn("Player " + builder.getPlayer().getName().getString() + " is on cooldown for opening PC menu.");
+        CobbleUtils.LOGGER_RAW.warn("Player " + builder.getPlayer().getName().getString() + " is on cooldown for opening PC menu.");
       return;
     }
     // Si no se pasa la lista, la generamos como antes
@@ -187,7 +187,7 @@ public class PartyPcMenu {
 
       long endTime = System.currentTimeMillis();
       if (CobbleUtils.config.isDebug()) {
-        CobbleUtils.LOGGER.info("Time taken to open PC menu: " + (endTime - startTime) + "ms");
+        CobbleUtils.LOGGER_RAW.info("Time taken to open PC menu: " + (endTime - startTime) + "ms");
       }
     });
   }
@@ -230,7 +230,7 @@ public class PartyPcMenu {
       CobbleUtils.server.execute(() -> UIManager.openUIForcefully(builder.getPlayer(), page));
       long endTime = System.currentTimeMillis();
       if (CobbleUtils.config.isDebug()) {
-        CobbleUtils.LOGGER.info("Time taken to open Party menu: " + (endTime - startTime) + "ms");
+        CobbleUtils.LOGGER_RAW.info("Time taken to open Party menu: " + (endTime - startTime) + "ms");
       }
     });
   }

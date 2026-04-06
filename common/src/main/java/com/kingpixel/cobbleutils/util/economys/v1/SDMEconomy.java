@@ -34,7 +34,7 @@ public class SDMEconomy extends EconomyAbstract {
 
   public CurrencyPlayerData.PlayerCurrency getPlayerData(UUID uuid, String currency) {
     //return CurrencyPlayerData.SERVER.getPlayerCurrency(uuid, currency).orElse(null);
-    CobbleUtils.LOGGER.info("This economy is not supported. it have problems you can try to repair it in the github: https://github.com/zonary123/CobbleUtils/blob/1.21.1/common/src/main/java/com/kingpixel/cobbleutils/util/economys/SDMEconomy.java");
+    CobbleUtils.LOGGER_RAW.info("This economy is not supported. it have problems you can try to repair it in the github: https://github.com/zonary123/CobbleUtils/blob/1.21.1/common/src/main/java/com/kingpixel/cobbleutils/util/economys/SDMEconomy.java");
     return null;
   }
 
@@ -42,7 +42,7 @@ public class SDMEconomy extends EconomyAbstract {
   public boolean deposit(UUID playerUuid, BigDecimal money, String currency) {
     var playerData = getPlayerData(playerUuid, currency);
     if (playerData == null) {
-      CobbleUtils.LOGGER.error("Player data not found for player: " + playerUuid + " and currency: " + currency);
+      CobbleUtils.LOGGER_RAW.error("Player data not found for player: " + playerUuid + " and currency: " + currency);
       return false;
     }
     playerData.balance += money.doubleValue();
@@ -53,7 +53,7 @@ public class SDMEconomy extends EconomyAbstract {
   public boolean withdraw(UUID playerUuid, BigDecimal money, String currency) {
     var playerData = getPlayerData(playerUuid, currency);
     if (playerData == null) {
-      CobbleUtils.LOGGER.error("Player data not found for player: " + playerUuid + " and currency: " + currency);
+      CobbleUtils.LOGGER_RAW.error("Player data not found for player: " + playerUuid + " and currency: " + currency);
       return false;
     }
     if (playerData.balance < money.doubleValue()) return false;
@@ -75,7 +75,7 @@ public class SDMEconomy extends EconomyAbstract {
   public boolean setBalance(UUID playerUuid, BigDecimal money, String currency) {
     var playerData = getPlayerData(playerUuid, currency);
     if (playerData == null) {
-      CobbleUtils.LOGGER.error("Player data not found for player: " + playerUuid + " and currency: " + currency);
+      CobbleUtils.LOGGER_RAW.error("Player data not found for player: " + playerUuid + " and currency: " + currency);
       return false;
     }
     playerData.balance = money.doubleValue();

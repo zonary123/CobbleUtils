@@ -14,6 +14,7 @@ import java.util.List;
 @Data
 public class MolangCondition extends Condition {
   public static final String TYPE = "MOLANG";
+  @Builder.Default
   private List<String> expression = List.of(
     ""
   );
@@ -25,7 +26,7 @@ public class MolangCondition extends Condition {
 
   @Override
   public boolean check(ServerPlayerEntity player) {
-    CobbleUtils.LOGGER.info("Not Implemented: MolangCondition");
+    CobbleUtils.LOGGER_RAW.info("Not Implemented: MolangCondition");
     return true;
   }
 

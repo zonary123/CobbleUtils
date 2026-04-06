@@ -6,7 +6,7 @@ import com.google.gson.JsonElement;
 import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.database.DataBaseFactory;
 import com.kingpixel.cobbleutils.database.users.UserModel;
-import com.kingpixel.cobbleutils.util.Utils;
+import com.kingpixel.cobbleutils.util.UtilsFile;
 import lombok.Data;
 import net.minecraft.item.ItemStack;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -49,13 +49,13 @@ public abstract class Storage {
   }
 
   public Document toDocument() {
-    String data = Utils.newWithoutSpacingGson().toJson(this);
+    String data = UtilsFile.getGson().toJson(this);
     return Document.parse(data);
   }
 
   public Storage fromDocument(Document document) {
     String data = document.toJson();
-    JsonElement jsonElement = Utils.newWithoutSpacingGson().fromJson(data, JsonElement.class);
-    return Utils.newWithoutSpacingGson().fromJson(jsonElement, this.getClass());
+    JsonElement jsonElement = UtilsFile.getGson().fromJson(data, JsonElement.class);
+    return UtilsFile.getGson().fromJson(jsonElement, this.getClass());
   }
 }

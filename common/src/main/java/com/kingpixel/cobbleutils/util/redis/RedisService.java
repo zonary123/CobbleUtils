@@ -64,7 +64,7 @@ public class RedisService {
     String connectionKey = (config.getHost() + ":" + config.getPort()).toLowerCase();
 
     return MANAGERS.computeIfAbsent(connectionKey, k -> {
-      CobbleUtils.LOGGER.info("Creating new Redis connection for: " + connectionKey);
+      CobbleUtils.LOGGER_RAW.info("Creating new Redis connection for: " + connectionKey);
       RedisManager manager = new RedisManager(config);
       manager.init();
       return manager;
@@ -78,7 +78,7 @@ public class RedisService {
    * (connection pools, subscriber threads, health check executors) are released.
    */
   public static void shutdown() {
-    CobbleUtils.LOGGER.info("Shutting down all Redis connections...");
+    CobbleUtils.LOGGER_RAW.info("Shutting down all Redis connections...");
     MANAGERS.values().forEach(RedisManager::close);
     MANAGERS.clear();
   }

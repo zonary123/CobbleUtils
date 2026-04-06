@@ -29,6 +29,7 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import java.math.BigDecimal;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
 /**
@@ -146,7 +147,7 @@ public class ItemChance {
       ItemModel itemClose = CobbleUtils.language.getItemClose();
       template.set(49, itemClose.getButton(action -> {
         UIManager.closeUI(action.getPlayer());
-      }));
+      }, 1, TimeUnit.SECONDS, 1));
 
       ItemModel itemNext = CobbleUtils.language.getItemNext();
       template.set(53, LinkedPageButton.builder()
@@ -253,10 +254,10 @@ public class ItemChance {
         } else if (item.startsWith("mod:")) {
           return getModItem(key);
         } else {
-          return Utils.parseItemId(item, 1);
+          return ItemUtils.parseItemId(item, 1);
         }
       } catch (Exception e) {
-        CobbleUtils.LOGGER.error("Error caching item: " + itemChance.getItem());
+        CobbleUtils.LOGGER_RAW.error("Error caching item: " + itemChance.getItem());
         return ItemStack.EMPTY;
       }
     }).copyWithCount(amount);
@@ -304,7 +305,7 @@ public class ItemChance {
             try {
               command = new String(java.util.Base64.getDecoder().decode(base64Command));
             } catch (IllegalArgumentException e) {
-              CobbleUtils.LOGGER.error("Failed to decode Base64 command: " + base64Command);
+              CobbleUtils.LOGGER_RAW.error("Failed to decode Base64 command: " + base64Command);
               e.printStackTrace();
               continue;
             }
@@ -332,14 +333,14 @@ public class ItemChance {
         itemStack = getCachedItem(itemChance, parseAmount(item.split(":")[1]) * amount).copy();
       }
       if (itemStack == null || itemStack.isEmpty()) {
-        CobbleUtils.LOGGER.error("Error giving reward, item not found: " + item);
+        CobbleUtils.LOGGER_RAW.error("Error giving reward, item not found: " + item);
         return false;
       }
       ItemStack finalItemStack = itemStack;
       CobbleUtils.server.executeSync(() -> player.getInventory().offerOrDrop(finalItemStack));
       return true;
     } catch (Exception e) {
-      CobbleUtils.LOGGER.error("Error giving reward: " + e.getMessage());
+      CobbleUtils.LOGGER_RAW.error("Error giving reward: " + e.getMessage());
       return false;
     }
   }
@@ -379,7 +380,7 @@ public class ItemChance {
           break;
       }
     } catch (NumberFormatException e) {
-      CobbleUtils.LOGGER.error("Invalid money format in item: " + item);
+      CobbleUtils.LOGGER_RAW.error("Invalid money format in item: " + item);
       return false;
     }
 
@@ -396,7 +397,7 @@ public class ItemChance {
     String[] split = item.split("#", 2);
     String[] itemSplit = split[0].split(":");
     String iditem = itemSplit[2] + ":" + itemSplit[3];
-    itemStack = Utils.parseItemId(iditem, amount);
+    itemStack = ItemUtils.parseItemId(iditem, amount);
     if (split.length < 2) return itemStack;
     String nbt = split[1];
     itemStack = ItemUtils.applyNbt(iditem, itemStack, nbt, amount);
@@ -517,7 +518,7 @@ public class ItemChance {
     } else if (item.startsWith("mod:")) {
       itemStack = getModItem(new ItemChance(item, 100));
     } else {
-      itemStack = Utils.parseItemId(item, amount);
+      itemStack = ItemUtils.parseItemId(item, amount);
     }
 
     return itemStack;
@@ -531,7 +532,7 @@ public class ItemChance {
         return entry.getValue().getItemStack();
       }
     }
-    return Utils.parseItemId("minecraft:command_block", 1);
+    return ItemUtils.parseItemId("minecraft:command_block", 1);
   }
 
   private static ItemStack parseMoneyItem(String item) {
@@ -604,7 +605,7 @@ public class ItemChance {
     } else if (item.startsWith("mod:")) {
       return ItemUtils.getTranslatedName(getModItem(itemChance));
     } else {
-      return ItemUtils.getTranslatedName(Utils.parseItemId(item));
+      return ItemUtils.getTranslatedName(ItemUtils.parseItemId(item));
     }
   }
 
@@ -660,7 +661,7 @@ public class ItemChance {
           throw new IllegalArgumentException("Formato inválido: " + item);
       }
     } catch (NumberFormatException e) {
-      CobbleUtils.LOGGER.error("Valor inválido en el item: " + item);
+      CobbleUtils.LOGGER_RAW.error("Valor inválido en el item: " + item);
       return "Formato de dinero inválido";
     }
 

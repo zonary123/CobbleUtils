@@ -46,7 +46,7 @@ public class MinIvsProperty implements CustomPokemonProperty {
       int amountOfStats = Integer.parseInt(parts[1]);
 
       if (CobbleUtils.config.isDebug()) {
-        CobbleUtils.LOGGER.info("Min -> " + min + " Amount of stats -> " + amountOfStats);
+        CobbleUtils.LOGGER_RAW.info("Min -> " + min + " Amount of stats -> " + amountOfStats);
       }
 
       List<Stats> statsCopy = new ArrayList<>(stats);
@@ -58,7 +58,7 @@ public class MinIvsProperty implements CustomPokemonProperty {
         int iv = Utils.getRandom().nextInt(min, 32);
 
         if (CobbleUtils.config.isDebug()) {
-          CobbleUtils.LOGGER.info("Setting IVs for " + pokemon.getSpecies().getName() + " to " + iv + " in " + stat.getShowdownId());
+          CobbleUtils.LOGGER_RAW.info("Setting IVs for " + pokemon.getSpecies().getName() + " to " + iv + " in " + stat.getShowdownId());
         }
 
         pokemon.getIvs().set(stat, iv);
@@ -67,10 +67,10 @@ public class MinIvsProperty implements CustomPokemonProperty {
         pokemon.getIvs().set(stats1, Utils.getRandom().nextInt(0, 32));
       }
     } catch (NumberFormatException e) {
-      CobbleUtils.LOGGER.error("Invalid value format for MinIvsProperty: " + this.value);
+      CobbleUtils.LOGGER_RAW.error("Invalid value format for MinIvsProperty: " + this.value);
       e.printStackTrace();
     } catch (Exception e) {
-      CobbleUtils.LOGGER.error("Unexpected error in applyMinIvs");
+      CobbleUtils.LOGGER_RAW.error("Unexpected error in applyMinIvs");
       e.printStackTrace();
     }
   }

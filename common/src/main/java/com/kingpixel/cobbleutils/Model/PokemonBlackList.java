@@ -4,8 +4,8 @@ import com.cobblemon.mod.common.api.pokemon.PokemonProperties;
 import com.cobblemon.mod.common.api.pokemon.egg.EggGroup;
 import com.cobblemon.mod.common.api.types.ElementalType;
 import com.cobblemon.mod.common.pokemon.Pokemon;
+import com.kingpixel.cobbleutils.util.NbtUtils;
 import com.kingpixel.cobbleutils.util.PokemonUtils;
-import com.kingpixel.cobbleutils.util.Utils;
 import lombok.Getter;
 import lombok.Setter;
 import net.minecraft.nbt.NbtCompound;
@@ -148,7 +148,7 @@ public class PokemonBlackList {
       List<Object> list = persistentDataMap.get(key);
       if (list == null || list.isEmpty()) continue;
       NbtElement element = persistentData.get(key);
-      if (list.contains("*") || list.contains(Utils.convertNbtValue(element))) return true;
+      if (list.contains("*") || list.contains(NbtUtils.convertNbtValue(element))) return true;
     }
 
     // Check cached result first to avoid redundant computation

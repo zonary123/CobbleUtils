@@ -28,8 +28,8 @@ public class CobbleDollarsEconomy extends Economy {
     try {
       CobbleDollars.INSTANCE.getImplementation();
       return true;
-    } catch (Exception e) {
-      CobbleUtils.LOGGER.error("CobbleDollars not present");
+    } catch (NoClassDefFoundError | Exception e) {
+      CobbleUtils.LOGGER_RAW.error("CobbleDollars not present");
       return false;
     }
   }
@@ -37,7 +37,7 @@ public class CobbleDollarsEconomy extends Economy {
   private CompletableFuture<EconomyResponse> runAsyncEconomyOp(CompletableFuture<EconomyResponse> future) {
     return CobbleUtils.ASYNC.supply(() ->
       future.exceptionally(ex -> {
-        CobbleUtils.LOGGER.error("Economy operation failed");
+        CobbleUtils.LOGGER_RAW.error("Economy operation failed");
         ex.printStackTrace();
         return EconomyResponse.failure("Error: " + ex.getMessage());
       }).join()

@@ -10,8 +10,8 @@ import com.cobblemon.mod.common.pokemon.Gender;
 import com.cobblemon.mod.common.pokemon.Nature;
 import com.cobblemon.mod.common.pokemon.Pokemon;
 import com.kingpixel.cobbleutils.CobbleUtils;
+import com.kingpixel.cobbleutils.util.NbtUtils;
 import com.kingpixel.cobbleutils.util.PokemonUtils;
-import com.kingpixel.cobbleutils.util.Utils;
 import lombok.Data;
 import net.minecraft.item.ItemStack;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -179,7 +179,7 @@ public class PokemonFormula {
           var persistentData = p.getPersistentData();
           var nbtElement = persistentData.get(key);
           if (nbtElement == null) return 0f;
-          var nbtValue = Utils.convertNbtValue(nbtElement);
+          var nbtValue = NbtUtils.convertNbtValue(nbtElement);
           if (nbtValue == null) return 0f;
           var value = map.getOrDefault(nbtValue, 0f);
           return value != null ? value : 0f;
@@ -223,7 +223,6 @@ public class PokemonFormula {
    * Gets the cached or calculated value of a Pokemon. (Pokemon not have a hashCode method so we cant use that for cache)
    *
    * @param pokemon The Pokemon to evaluate.
-   *
    * @return The computed value.
    */
   public Double getPokemonValue(Pokemon pokemon) {
@@ -240,7 +239,6 @@ public class PokemonFormula {
    * Builds the Pokemon-specific expression with dynamic variables set.
    *
    * @param pokemon The Pokemon to evaluate.
-   *
    * @return Expression ready to evaluate.
    */
   public Expression getPokemonExpression(Pokemon pokemon) {

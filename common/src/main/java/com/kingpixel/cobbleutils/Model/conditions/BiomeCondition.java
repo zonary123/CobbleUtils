@@ -13,6 +13,7 @@ import java.util.Set;
 @Data
 public class BiomeCondition extends Condition {
   public static final String TYPE = "BIOME";
+  @Builder.Default
   private final Set<String> biomes = Set.of("minecraft:plains");
 
   @Override
