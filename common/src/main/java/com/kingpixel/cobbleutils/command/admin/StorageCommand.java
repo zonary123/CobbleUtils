@@ -173,7 +173,7 @@ public class StorageCommand {
                   UUID playerUUID = getPlayerUUID(context);
                   String targetName = getTargetName(context);
 
-                  var user = DataBaseFactory.dataBaseUsers.findUserByUUID(playerUUID);
+                  var user = DataBaseFactory.dataBaseUsers.findUser(playerUUID);
                   if (user != null) {
                     CobbleUtils.language.getStorageMenu().open(player, playerUUID);
                     sendFeedback(context.getSource(), "📦 Displaying storage for " + targetName + ".");

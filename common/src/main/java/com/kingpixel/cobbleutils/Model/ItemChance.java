@@ -774,6 +774,12 @@ public class ItemChance {
     // Filter valid rewards
     List<ItemChance> validRewards = new ArrayList<>();
     for (ItemChance itemChance : itemChances) {
+      Boolean unique = itemChance.getUnique();
+
+      if (unique == null || !unique) {
+        validRewards.add(itemChance);
+        continue;
+      }
       if (DataBaseFactory.dataBaseUsers.isAvailableReward(player, itemChance)) {
         validRewards.add(itemChance);
       }

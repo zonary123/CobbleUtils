@@ -15,7 +15,6 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.TimeUnit;
 
 /**
  * @author Carlos Varas Alonso - 27/08/2025 15:11
@@ -26,12 +25,36 @@ public abstract class DataBaseUsers {
   public static final String FIELD_IS_ONLINE = "isOnline";
 
   public static final Cache<UUID, UserModel> USERS = Caffeine.newBuilder()
-    .expireAfterAccess(5, TimeUnit.SECONDS)
     .build();
 
   public abstract void connect(DataBaseConfig config);
 
   public abstract void disconnect();
+
+  /**
+   * Get a user from the cache.
+   *
+   * @param uuid The UUID of the player.
+   * @return The user model or null if not found.
+   */
+  @Nullable
+  public UserModel getUser(@NotNull UUID uuid) {
+    return USERS.getIfPresent(uuid);
+  }
+
+  /**
+   * Find a user, first in the cache and then in the database.
+   * No automatic caching should occur here to avoid memory leaks.
+   *
+   * @param uuid The UUID of the player.
+   * @return The user model or null if not found.
+   */
+  @Nullable
+  public UserModel findUser(@NotNull UUID uuid) {
+    UserModel user = getUser(uuid);
+    if (user != null) return user;
+    return findUserByUUID(uuid);
+  }
 
   @Nullable
   public abstract UserModel findUserByUUID(@NotNull UUID uuid);
@@ -41,7 +64,7 @@ public abstract class DataBaseUsers {
     var userCache = CobbleUtils.server.getUserCache();
     if (userCache == null) return null;
     var gameProfile = userCache.findByName(name);
-    return gameProfile.map(profile -> findUserByUUID(profile.getId())).orElse(null);
+    return gameProfile.map(profile -> findUser(profile.getId())).orElse(null);
   }
 
   public abstract void saveOrUpdateUser(UserModel user);
@@ -63,9 +86,14 @@ public abstract class DataBaseUsers {
     return null;
   }
 
+  /**
+   * Get a ServerPlayerEntity for a player by UUID, whether they are online or offline.
+   *
+   * @param playerUUID The UUID of the player.
+   * @return The player entity or null if not found.
+   */
   @Nullable
   public ServerPlayerEntity getPlayerOfflineOrOnline(UUID playerUUID) {
-    // Obtener perfil del jugador del argumento del comando
     var userCache = CobbleUtils.server.getUserCache();
     if (userCache == null) return null;
     var minecraftServer = CobbleUtils.server;
@@ -75,12 +103,10 @@ public abstract class DataBaseUsers {
     GameProfile requestedProfile = gameProfileOpt.get();
     ServerPlayerEntity requestedPlayer = minecraftServer.getPlayerManager().getPlayer(requestedProfile.getName());
 
-    // Si el jugador está online
     if (requestedPlayer != null) {
       return requestedPlayer;
     }
 
-    // Crear jugador temporal
     requestedPlayer = new ServerPlayerEntity(
       minecraftServer,
       minecraftServer.getOverworld(),
@@ -88,7 +114,6 @@ public abstract class DataBaseUsers {
       SyncedClientOptions.createDefault()
     );
 
-    // Intentar cargar datos del jugador offline
     var readViewOpt = minecraftServer.getPlayerManager()
       .loadPlayerData(requestedPlayer);
 

@@ -35,11 +35,22 @@ public class UserModel {
   private Set<Storage> storageList = new HashSet<>();
   private transient boolean dirty = false;
 
+  /**
+   * Constructor for an online player.
+   *
+   * @param player The online player entity.
+   */
   public UserModel(ServerPlayerEntity player) {
     this.playerUUID = player.getUuid();
     connect(player);
   }
 
+  /**
+   * Constructor for a user with basic info.
+   *
+   * @param uuid       The UUID of the player.
+   * @param playerName The name of the player.
+   */
   public UserModel(UUID uuid, String playerName) {
     this.playerUUID = uuid;
     this.playerName = playerName;
@@ -47,6 +58,11 @@ public class UserModel {
     this.ip = null;
   }
 
+  /**
+   * Constructor for a new user with default collections.
+   *
+   * @param uuid The UUID of the player.
+   */
   public UserModel(@NotNull UUID uuid) {
     this.playerUUID = uuid;
     this.lastLogin = null;
@@ -57,6 +73,11 @@ public class UserModel {
     this.rewardsClaimed = new HashMap<>();
   }
 
+  /**
+   * Update user info upon connection.
+   *
+   * @param player The online player entity.
+   */
   public void connect(ServerPlayerEntity player) {
     this.playerName = player.getGameProfile().getName();
     this.lastLogin = Instant.now();
@@ -92,7 +113,6 @@ public class UserModel {
     int maxClaims = itemChance.getAmount();
     RewardInfo rewardInfo = rewardsClaimed.computeIfAbsent(identifier, k -> new RewardInfo());
 
-    // Cooldown check
     if (rewardInfo.getTimesClaimed() >= maxClaims && itemChance.getCooldown() != null) {
       if (rewardInfo.isOnCooldown(itemChance)) {
         CobbleUtils.LOGGER_RAW.info("Item on cooldown. Remaining time: " +
@@ -106,7 +126,6 @@ public class UserModel {
 
     rewardInfo.addTimesClaimed();
 
-    // Set cooldown if max reached
     if (rewardInfo.getTimesClaimed() == maxClaims && itemChance.getCooldown() != null) {
       rewardInfo.setFinishCooldown(Instant.now().plus(itemChance.getCooldown().toMillis(), ChronoUnit.MILLIS));
     }
@@ -114,19 +133,30 @@ public class UserModel {
     return true;
   }
 
+  /**
+   * Sanitizes the user model by initializing null collections and removing invalid entries.
+   *
+   * @return true if changes were made.
+   */
   public boolean fix() {
     AtomicBoolean changed = new AtomicBoolean(false);
     if (rewardsClaimed == null) {
       rewardsClaimed = new HashMap<>();
       changed.set(true);
+      if (CobbleUtils.config.isDebug())
+        CobbleUtils.LOGGER_RAW.info("Fixed null rewardsClaimed for user: " + playerName);
     }
     if (storageList == null) {
       storageList = new HashSet<>();
       changed.set(true);
+      if (CobbleUtils.config.isDebug())
+        CobbleUtils.LOGGER_RAW.info("Fixed null storageList for user: " + playerName);
     }
     storageList.stream().filter(Objects::isNull).toList().forEach(storage -> {
       storageList.remove(storage);
       changed.set(true);
+      if (CobbleUtils.config.isDebug())
+        CobbleUtils.LOGGER_RAW.info("Removed null storage entry for user: " + playerName);
     });
     Iterator<Map.Entry<String, RewardInfo>> it = rewardsClaimed.entrySet().iterator();
 
@@ -138,6 +168,8 @@ public class UserModel {
       if (info == null) {
         it.remove();
         changed.set(true);
+        if (CobbleUtils.config.isDebug())
+          CobbleUtils.LOGGER_RAW.info("Removed null RewardInfo for user: " + playerName);
         continue;
       }
       if (info.getFinishCooldown() != null && now.isAfter(info.getFinishCooldown())) {
@@ -148,10 +180,21 @@ public class UserModel {
     return changed.get();
   }
 
+  /**
+   * Add a storage to the user.
+   *
+   * @param storage The storage to add.
+   */
   public void addStorage(Storage storage) {
     storageList.add(storage);
   }
 
+  /**
+   * Remove a storage by ID.
+   *
+   * @param storageId The ID of the storage to remove.
+   * @return The removed storage or null if not found.
+   */
   public Storage removeStorage(UUID storageId) {
     Storage toRemove = null;
     for (Storage storage : storageList) {
@@ -164,11 +207,19 @@ public class UserModel {
     return toRemove;
   }
 
+  /**
+   * Update the user state for disconnection.
+   */
   public void disconnect() {
     this.online = false;
     this.disconnectTime = Instant.now();
   }
 
+  /**
+   * Add multiple storages to the user.
+   *
+   * @param storage The list of storages to add.
+   */
   public void addStorage(List<Storage> storage) {
     storageList.addAll(storage);
   }

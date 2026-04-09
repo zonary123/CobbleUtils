@@ -25,18 +25,20 @@ import java.util.function.Supplier;
  * Instance-based MongoDB connection manager.
  * <p>
  * Wraps a single {@link MongoClient} that can be shared across multiple mods
- * connecting to the same MongoDB server. Use {@link MongoDBService#getOrCreateManager(DataBaseConfig)}
+ * connecting to the same MongoDB server. Use
+ * {@link MongoDBService#getOrCreateManager(DataBaseConfig)}
  * to obtain an instance and avoid duplicate connections.
  *
  * <h3>Lifecycle</h3>
  * <ol>
- *   <li>Create: {@code new MongoDBManager(config)}</li>
- *   <li>Initialize: {@link #init()}</li>
- *   <li>Use: {@link #getDatabase(String)}, {@link #getCollection(String)}</li>
- *   <li>Shutdown: {@link #close()}</li>
+ * <li>Create: {@code new MongoDBManager(config)}</li>
+ * <li>Initialize: {@link #init()}</li>
+ * <li>Use: {@link #getDatabase(String)}, {@link #getCollection(String)}</li>
+ * <li>Shutdown: {@link #close()}</li>
  * </ol>
  *
  * <h3>Example</h3>
+ * 
  * <pre>{@code
  * DataBaseConfig cfg = new DataBaseConfig(DataBaseType.MONGODB, "mydb", "mongodb://localhost:27017", "", "");
  * MongoDBManager mgr = MongoDBService.getOrCreateManager(cfg);
@@ -94,15 +96,15 @@ public class MongoDBManager {
       try {
         String url = Objects.requireNonNull(config.getUrl(), "MongoDB URL cannot be null");
         MongoClientSettings settings = MongoClientSettings.builder()
-          .applyConnectionString(new ConnectionString(url))
-          .applicationName("CobbleUtils-MongoDBManager")
-          .applyToConnectionPoolSettings(pool -> {
-            pool.maxSize(50);
-            pool.minSize(0);
-            pool.maxWaitTime(5, TimeUnit.SECONDS);
-          })
-          .applyToClusterSettings(cluster -> cluster.serverSelectionTimeout(5, TimeUnit.SECONDS))
-          .build();
+            .applyConnectionString(new ConnectionString(url))
+            .applicationName("CobbleUtils-MongoDBManager")
+            .applyToConnectionPoolSettings(pool -> {
+              pool.maxSize(50);
+              pool.minSize(0);
+              pool.maxWaitTime(5, TimeUnit.SECONDS);
+            })
+            .applyToClusterSettings(cluster -> cluster.serverSelectionTimeout(5, TimeUnit.SECONDS))
+            .build();
 
         newClient = MongoClients.create(settings);
         String databaseName = resolveDatabaseName(config);
@@ -116,9 +118,8 @@ public class MongoDBManager {
         this.connected = true;
         if (CobbleUtils.LOGGER_RAW.isInfoEnabled()) {
           CobbleUtils.LOGGER_RAW.info("[MongoDB] Connected successfully to {} / {}",
-            sanitizeForLog(config.getUrl()),
-            databaseName
-          );
+              sanitizeForLog(config.getUrl()),
+              databaseName);
         }
       } catch (Exception e) {
         this.connected = false;
@@ -143,7 +144,8 @@ public class MongoDBManager {
    */
   public MongoDatabase getDatabase(String databaseName) {
     MongoClient client = this.mongoClient.get();
-    if (client == null) throw new IllegalStateException("MongoDBManager not initialized. Call init() first.");
+    if (client == null)
+      throw new IllegalStateException("MongoDBManager not initialized. Call init() first.");
     return client.getDatabase(databaseName);
   }
 
@@ -156,7 +158,8 @@ public class MongoDBManager {
    */
   public MongoCollection<Document> getCollection(String collectionName) {
     MongoDatabase db = this.defaultDatabase.get();
-    if (db == null) throw new IllegalStateException("MongoDBManager not initialized. Call init() first.");
+    if (db == null)
+      throw new IllegalStateException("MongoDBManager not initialized. Call init() first.");
     return db.getCollection(collectionName);
   }
 
@@ -236,18 +239,22 @@ public class MongoDBManager {
   }
 
   /**
-   * Executes a function against a collection of the default database asynchronously.
+   * Executes a function against a collection of the default database
+   * asynchronously.
    */
-  public <T> CompletableFuture<T> withCollectionAsync(String collectionName, Function<MongoCollection<Document>, T> action) {
+  public <T> CompletableFuture<T> withCollectionAsync(String collectionName,
+      Function<MongoCollection<Document>, T> action) {
     Objects.requireNonNull(collectionName, "collectionName cannot be null");
     Objects.requireNonNull(action, "action cannot be null");
     return supplyAsync(() -> action.apply(getCollection(collectionName)));
   }
 
   /**
-   * Executes a consumer against a collection of the default database asynchronously.
+   * Executes a consumer against a collection of the default database
+   * asynchronously.
    */
-  public CompletableFuture<Void> withCollectionAsync(String collectionName, Consumer<MongoCollection<Document>> action) {
+  public CompletableFuture<Void> withCollectionAsync(String collectionName,
+      Consumer<MongoCollection<Document>> action) {
     Objects.requireNonNull(collectionName, "collectionName cannot be null");
     Objects.requireNonNull(action, "action cannot be null");
     return runAsync(() -> action.accept(getCollection(collectionName)));
@@ -264,7 +271,8 @@ public class MongoDBManager {
         try {
           client.close();
         } catch (Exception e) {
-          CobbleUtils.LOGGER_RAW.error("[MongoDB] Error closing MongoDB connection for {}", sanitizeForLog(config.getUrl()), e);
+          CobbleUtils.LOGGER_RAW.error("[MongoDB] Error closing MongoDB connection for {}",
+              sanitizeForLog(config.getUrl()), e);
         }
       }
       this.mongoClient.set(null);
@@ -274,18 +282,21 @@ public class MongoDBManager {
 
   private static String resolveDatabaseName(DataBaseConfig config) {
     String configured = config.getDatabase();
-    if (configured != null && !configured.isBlank()) return configured;
+    if (configured != null && !configured.isBlank())
+      return configured;
 
     try {
       String fromUrl = new ConnectionString(config.getUrl()).getDatabase();
-      if (fromUrl != null && !fromUrl.isBlank()) return fromUrl;
+      if (fromUrl != null && !fromUrl.isBlank())
+        return fromUrl;
     } catch (Exception ignored) {
     }
     return PING_DB;
   }
 
   private static String sanitizeForLog(String url) {
-    if (url == null) return "unknown";
+    if (url == null)
+      return "unknown";
     return url.replaceAll("://[^@]*+@", "://***@");
   }
 
@@ -295,8 +306,8 @@ public class MongoDBManager {
 
   private MongoDatabase requireDefaultDatabase() {
     MongoDatabase db = this.defaultDatabase.get();
-    if (db == null) throw new IllegalStateException("MongoDBManager not initialized. Call init() first.");
+    if (db == null)
+      throw new IllegalStateException("MongoDBManager not initialized. Call init() first.");
     return db;
   }
 }
-

@@ -45,7 +45,7 @@ public class UserInfoCommand {
                     .suggestPlayerUUID("target", List.of("cobbleutils.admin", "cobbleutils.command.userinfo"), 2)
                     .executes(context -> {
                       UUID target = UuidArgumentType.getUuid(context, "target");
-                      UserModel user = DataBaseFactory.dataBaseUsers.findUserByUUID(target);
+                      UserModel user = DataBaseFactory.dataBaseUsers.findUser(target);
                       info(target.toString(), user, context);
                       return 1;
                     })

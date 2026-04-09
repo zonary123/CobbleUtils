@@ -64,18 +64,19 @@ public class CobbleUtils {
   public static AdvancedRewardsConfig advancedRewardsConfig = new AdvancedRewardsConfig();
   public static SpawnRates spawnRates = new SpawnRates();
   // Lang
-  public static final AsyncContext ASYNC = com.kingpixel.cobbleutils.util.async.UtilsAsync.createContext(MOD_ID, MOD_NAME, 1, 2);
+  public static final AsyncContext ASYNC = com.kingpixel.cobbleutils.util.async.UtilsAsync.createContext(MOD_ID,
+      MOD_NAME, 1, 2);
   public static Lang language = new Lang();
   public static RedisManager redisManager;
   private static final ExecutorService EXECUTOR_COBBLEUTILS = Executors.newFixedThreadPool(1, new ThreadFactoryBuilder()
-    .setDaemon(true)
-    .setNameFormat("CobbleUtils Executor-%d")
-    .build());
-  public static final ScheduledExecutorService SCHEDULER_COBBLEUTILS = Executors.newScheduledThreadPool(1, new ThreadFactoryBuilder()
-    .setDaemon(true)
-    .setNameFormat("CobbleUtils Scheduled Executor-%d")
-    .build());
-
+      .setDaemon(true)
+      .setNameFormat("CobbleUtils Executor-%d")
+      .build());
+  public static final ScheduledExecutorService SCHEDULER_COBBLEUTILS = Executors.newScheduledThreadPool(1,
+      new ThreadFactoryBuilder()
+          .setDaemon(true)
+          .setNameFormat("CobbleUtils Scheduled Executor-%d")
+          .build());
 
   public static void init() {
     try {
@@ -109,7 +110,6 @@ public class CobbleUtils {
     RegistryTasks.register();
   }
 
-
   private static void files() {
     config.init();
     language.init();
@@ -120,7 +120,8 @@ public class CobbleUtils {
 
   private static void sign() {
     info(MOD_ID, "1.1.4", "CobbleUtils");
-    LOGGER_RAW.info("§e| §6Supported economies: Impactor, BlanketEconomy, CobbleDollars, SDMEconomy, PebbleEconomy and Vault");
+    LOGGER_RAW.info(
+        "§e| §6Supported economies: Impactor, BlanketEconomy, CobbleDollars, SDMEconomy, PebbleEconomy and Vault");
     LOGGER_RAW.info("§e+-------------------------------+");
   }
 
@@ -134,11 +135,11 @@ public class CobbleUtils {
     String authors = "Zonary123";
     if (ArchitecturyTarget.getCurrentTarget().equals("fabric")) {
       ModContainer mod = FabricLoader.getInstance().getAllMods()
-        .stream()
-        .filter(m -> m.getMetadata().getId().equals(identifier) ||
-          m.getMetadata().getName().equals(identifier))
-        .findFirst()
-        .orElse(null);
+          .stream()
+          .filter(m -> m.getMetadata().getId().equals(identifier) ||
+              m.getMetadata().getName().equals(identifier))
+          .findFirst()
+          .orElse(null);
       if (mod != null) {
         finalVersion = mod.getMetadata().getVersion().getFriendlyString();
         finalName = mod.getMetadata().getName();
@@ -156,7 +157,6 @@ public class CobbleUtils {
     LOGGER_RAW.info("§e| §dDonate: §9https://ko-fi.com/zonary123");
     LOGGER_RAW.info("§e+-------------------------------+");
   }
-
 
   private static void events() {
     files();
@@ -198,7 +198,8 @@ public class CobbleUtils {
     PlayerEvent.PLAYER_JOIN.register((player) -> {
       runAsync(() -> {
         UserModel user = DataBaseFactory.dataBaseUsers.findUserByUUID(player.getUuid());
-        if (user == null) user = new UserModel(player);
+        if (user == null)
+          user = new UserModel(player);
         user.connect(player);
         user.fix();
         DataBaseFactory.dataBaseUsers.saveOrUpdateUser(user);
@@ -262,7 +263,8 @@ public class CobbleUtils {
   private static Path path;
 
   public static Path getPath() {
-    if (path == null) path = new File("").toPath().resolve("config");
+    if (path == null)
+      path = new File("").toPath().resolve("config");
     return path;
   }
 

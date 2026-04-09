@@ -1,12 +1,11 @@
 package com.kingpixel.cobbleutils.ui;
 
-import ca.landonjw.gooeylibs2.api.UIManager;
-import ca.landonjw.gooeylibs2.api.button.Button;
-import ca.landonjw.gooeylibs2.api.button.linked.LinkType;
-import ca.landonjw.gooeylibs2.api.helpers.PaginationHelper;
-import ca.landonjw.gooeylibs2.api.page.GooeyPage;
-import ca.landonjw.gooeylibs2.api.page.LinkedPage;
-import ca.landonjw.gooeylibs2.api.template.types.ChestTemplate;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.UUID;
+import java.util.concurrent.TimeUnit;
+
 import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.Model.ItemModel;
 import com.kingpixel.cobbleutils.Model.PanelsConfig;
@@ -15,14 +14,16 @@ import com.kingpixel.cobbleutils.database.DataBaseFactory;
 import com.kingpixel.cobbleutils.database.users.UserModel;
 import com.kingpixel.cobbleutils.database.users.models.Storage;
 import com.kingpixel.cobbleutils.util.AdventureTranslator;
+
+import ca.landonjw.gooeylibs2.api.UIManager;
+import ca.landonjw.gooeylibs2.api.button.Button;
+import ca.landonjw.gooeylibs2.api.button.linked.LinkType;
+import ca.landonjw.gooeylibs2.api.helpers.PaginationHelper;
+import ca.landonjw.gooeylibs2.api.page.GooeyPage;
+import ca.landonjw.gooeylibs2.api.page.LinkedPage;
+import ca.landonjw.gooeylibs2.api.template.types.ChestTemplate;
 import lombok.Data;
 import net.minecraft.server.network.ServerPlayerEntity;
-
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.UUID;
-import java.util.concurrent.TimeUnit;
 
 /**
  * @author Carlos Varas Alonso
@@ -66,7 +67,7 @@ public class StorageMenu {
 
   public void open(ServerPlayerEntity executer, UUID targetUUID) {
     CobbleUtils.runAsync(() -> {
-      UserModel userModel = DataBaseFactory.dataBaseUsers.findUserByUUID(targetUUID);
+      UserModel userModel = DataBaseFactory.dataBaseUsers.findUser(targetUUID);
       if (userModel == null) return;
 
       if (userModel.getStorageList() == null) {
@@ -103,7 +104,7 @@ public class StorageMenu {
         ServerPlayerEntity player = action.getPlayer();
         UIManager.closeUI(player);
         CobbleUtils.runAsync(() -> {
-          UserModel data = DataBaseFactory.dataBaseUsers.findUserByUUID(targetUUID);
+          UserModel data = DataBaseFactory.dataBaseUsers.findUser(targetUUID);
           if (data == null || data.getStorageList().isEmpty()) {
             player.sendMessage(
               AdventureTranslator.toNative("&cYou don't have any pending rewards to claim."),

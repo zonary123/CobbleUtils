@@ -27,25 +27,37 @@ import java.util.UUID;
 public class DataBaseUsersMongoDB extends DataBaseUsers {
   private MongoCollection<Document> collectionUser;
 
+  /**
+   * Initialize the MongoDB database connection.
+   *
+   * @param config The database configuration.
+   */
   @Override
   public void connect(DataBaseConfig config) {
     MongoDBManager mongoDBManager = MongoDBService.getOrCreateManager(config);
-    collectionUser = mongoDBManager.getCollection("users");
+    collectionUser = mongoDBManager.getCollection("CobbleUtils", "users");
   }
 
+  /**
+   * Disconnect from the MongoDB database.
+   */
   @Override
   public void disconnect() {
-    // MongoDBService manages the lifecycle — no-op
   }
 
+  /**
+   * Find a user by UUID in the MongoDB database.
+   *
+   * @param uuid The UUID of the player.
+   * @return The user model or null if not found.
+   */
   @Override
   public @Nullable UserModel findUserByUUID(@NotNull UUID uuid) {
     try {
-      UserModel userModel = DataBaseUsers.USERS.getIfPresent(uuid);
-      if (userModel != null) return userModel;
       Document document = collectionUser.find(Filters.eq(DataBaseUsers.FIELD_UUID, uuid.toString())).first();
-      if (document == null) return null;
-      userModel = UtilsFile.getGson().fromJson(document.toJson(), UserModel.class);
+      if (document == null)
+        return null;
+      UserModel userModel = UtilsFile.getGson().fromJson(document.toJson(), UserModel.class);
       userModel.fix();
       return userModel;
     } catch (Exception e) {
@@ -54,33 +66,48 @@ public class DataBaseUsersMongoDB extends DataBaseUsers {
     }
   }
 
+  /**
+   * Find a user by name in the MongoDB database.
+   *
+   * @param name The name of the player.
+   * @return The user model or null if not found.
+   */
   @Override
   public @Nullable UserModel findUserByName(@NotNull String name) {
     try {
       UserModel userModel = super.findUserByName(name);
-      if (userModel != null) return userModel;
+      if (userModel != null)
+        return userModel;
       Document document = collectionUser.find(Filters.eq("playerName", name)).first();
-      return document != null
-        ? UtilsFile.getGson().fromJson(document.toJson(), UserModel.class)
-        : null;
+      if (document == null)
+        return null;
+      UserModel user = UtilsFile.getGson().fromJson(document.toJson(), UserModel.class);
+      if (user != null)
+        user.fix();
+      return user;
     } catch (Exception e) {
       CobbleUtils.LOGGER_RAW.error("Failed to find user by name: {}", name, e);
       return null;
     }
   }
 
+  /**
+   * Save or update a user in the MongoDB database.
+   *
+   * @param user The user model to save.
+   */
   @Override
   public void saveOrUpdateUser(UserModel user) {
-    if (user == null) return;
+    if (user == null)
+      return;
     try {
       String json = UtilsFile.getGson().toJson(user, UserModel.class);
       Document document = UtilsFile.getGson().fromJson(json, Document.class);
       document.remove(DataBaseUsers.FIELD_STORAGE);
       collectionUser.updateOne(
-        Filters.eq(DataBaseUsers.FIELD_UUID, user.getPlayerUUID().toString()),
-        new Document("$set", document),
-        new UpdateOptions().upsert(true)
-      );
+          Filters.eq(DataBaseUsers.FIELD_UUID, user.getPlayerUUID().toString()),
+          new Document("$set", document),
+          new UpdateOptions().upsert(true));
     } catch (Exception e) {
       CobbleUtils.LOGGER_RAW.error("Failed to save or update user: {}", user.getPlayerUUID(), e);
     }
@@ -92,7 +119,8 @@ public class DataBaseUsersMongoDB extends DataBaseUsers {
     for (Document doc : collectionUser.find()) {
       try {
         UserModel user = UtilsFile.getGson().fromJson(doc.toJson(), UserModel.class);
-        if (user != null) userList.add(user);
+        if (user != null)
+          userList.add(user);
       } catch (Exception e) {
         CobbleUtils.LOGGER_RAW.error("Failed to parse user document", e);
       }
@@ -108,7 +136,8 @@ public class DataBaseUsersMongoDB extends DataBaseUsers {
     for (Document doc : collectionUser.find(Filters.gte("lastLogin", thresholdIso))) {
       try {
         UserModel user = UtilsFile.getGson().fromJson(doc.toJson(), UserModel.class);
-        if (user != null) inactiveUsers.add(user);
+        if (user != null)
+          inactiveUsers.add(user);
       } catch (Exception e) {
         CobbleUtils.LOGGER_RAW.error("Failed to parse user document", e);
       }
@@ -121,10 +150,9 @@ public class DataBaseUsersMongoDB extends DataBaseUsers {
     UUID playerUUID = player.getUuid();
     try {
       collectionUser.updateOne(
-        Filters.eq(DataBaseUsers.FIELD_UUID, playerUUID.toString()),
-        new Document("$set", new Document(DataBaseUsers.FIELD_IS_ONLINE, false)
-          .append("disconnectTime", DateTimeFormatter.ISO_INSTANT.format(Instant.now())))
-      );
+          Filters.eq(DataBaseUsers.FIELD_UUID, playerUUID.toString()),
+          new Document("$set", new Document(DataBaseUsers.FIELD_IS_ONLINE, false)
+              .append("disconnectTime", DateTimeFormatter.ISO_INSTANT.format(Instant.now()))));
     } catch (Exception e) {
       CobbleUtils.LOGGER_RAW.error("Failed to update disconnect for: {}", playerUUID, e);
     }
@@ -134,9 +162,8 @@ public class DataBaseUsersMongoDB extends DataBaseUsers {
   public void addStorage(Storage storage, UUID playerUUID) {
     try {
       collectionUser.updateOne(
-        Filters.eq(DataBaseUsers.FIELD_UUID, playerUUID.toString()),
-        new Document("$push", new Document(DataBaseUsers.FIELD_STORAGE, storage.toDocument()))
-      );
+          Filters.eq(DataBaseUsers.FIELD_UUID, playerUUID.toString()),
+          new Document("$push", new Document(DataBaseUsers.FIELD_STORAGE, storage.toDocument())));
       DataBaseUsers.USERS.invalidate(playerUUID);
     } catch (Exception e) {
       CobbleUtils.LOGGER_RAW.error("Failed to add storage for: {}", playerUUID, e);
@@ -147,11 +174,11 @@ public class DataBaseUsersMongoDB extends DataBaseUsers {
   public void addStorage(List<Storage> storage, UUID playerUUID) {
     try {
       List<Document> storageDocs = new ArrayList<>();
-      for (Storage s : storage) storageDocs.add(s.toDocument());
+      for (Storage s : storage)
+        storageDocs.add(s.toDocument());
       collectionUser.updateOne(
-        Filters.eq(DataBaseUsers.FIELD_UUID, playerUUID.toString()),
-        new Document("$push", new Document(DataBaseUsers.FIELD_STORAGE, new Document("$each", storageDocs)))
-      );
+          Filters.eq(DataBaseUsers.FIELD_UUID, playerUUID.toString()),
+          new Document("$push", new Document(DataBaseUsers.FIELD_STORAGE, new Document("$each", storageDocs))));
       DataBaseUsers.USERS.invalidate(playerUUID);
     } catch (Exception e) {
       CobbleUtils.LOGGER_RAW.error("Failed to add storage list for: {}", playerUUID, e);
@@ -161,14 +188,15 @@ public class DataBaseUsersMongoDB extends DataBaseUsers {
   @Override
   public Storage removeStorage(Storage storage, UUID playerUUID) {
     UUID id = storage.getId();
-    if (id == null) return null;
+    if (id == null)
+      return null;
     try {
       collectionUser.updateOne(
-        Filters.eq(DataBaseUsers.FIELD_UUID, playerUUID.toString()),
-        new Document("$pull", new Document(DataBaseUsers.FIELD_STORAGE, new Document("id", id.toString())))
-      );
+          Filters.eq(DataBaseUsers.FIELD_UUID, playerUUID.toString()),
+          new Document("$pull", new Document(DataBaseUsers.FIELD_STORAGE, new Document("id", id.toString()))));
       UserModel user = findUserByUUID(playerUUID);
-      if (user == null) return null;
+      if (user == null)
+        return null;
       return user.removeStorage(id);
     } catch (Exception e) {
       CobbleUtils.LOGGER_RAW.error("Failed to remove storage for: {}", playerUUID, e);
@@ -181,14 +209,15 @@ public class DataBaseUsersMongoDB extends DataBaseUsers {
     List<UUID> onlinePlayers = new ArrayList<>();
     try {
       collectionUser.find(Filters.eq(DataBaseUsers.FIELD_IS_ONLINE, true))
-        .forEach(doc -> {
-          try {
-            String uuidStr = doc.getString(DataBaseUsers.FIELD_UUID);
-            if (uuidStr != null) onlinePlayers.add(UUID.fromString(uuidStr));
-          } catch (Exception e) {
-            CobbleUtils.LOGGER_RAW.error("Failed to parse online player", e);
-          }
-        });
+          .forEach(doc -> {
+            try {
+              String uuidStr = doc.getString(DataBaseUsers.FIELD_UUID);
+              if (uuidStr != null)
+                onlinePlayers.add(UUID.fromString(uuidStr));
+            } catch (Exception e) {
+              CobbleUtils.LOGGER_RAW.error("Failed to parse online player", e);
+            }
+          });
     } catch (Exception e) {
       CobbleUtils.LOGGER_RAW.error("Failed to get online players", e);
     }

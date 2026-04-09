@@ -13,6 +13,8 @@ import net.minecraft.nbt.NbtHelper;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
 
+import java.util.concurrent.CompletableFuture;
+
 /**
  * @author Carlos Varas Alonso - 10/06/2024 21:09
  */
@@ -78,7 +80,7 @@ public class CobbleUtilities {
     return GooeyButton.builder().display(ItemUtils.parseItemId(CobbleUtils.config.getFill())).build();
   }
 
-  public static boolean executeCommand(ServerPlayerEntity player, String command) {
+  public static CompletableFuture<Boolean> executeCommand(ServerPlayerEntity player, String command) {
     return executeCommand(command.replace("%player%", player.getGameProfile().getName()));
   }
 
@@ -88,7 +90,7 @@ public class CobbleUtilities {
    * @param command The command to execute
    * @return If the command was executed successfully
    */
-  public static boolean executeCommand(String command) {
+  public static CompletableFuture<Boolean> executeCommand(String command) {
     CommandDispatcher<ServerCommandSource> disparador = CobbleUtils.server.getCommandManager().getDispatcher();
     ServerCommandSource serverSource = CobbleUtils.server.getCommandSource();
     ParseResults<ServerCommandSource> parse = disparador.parse(command, serverSource);
@@ -100,7 +102,7 @@ public class CobbleUtilities {
         CobbleUtils.LOGGER_RAW.error("Error executing command: %s".formatted(command), e);
         return false;
       }
-    }).join();
+    });
 
   }
 

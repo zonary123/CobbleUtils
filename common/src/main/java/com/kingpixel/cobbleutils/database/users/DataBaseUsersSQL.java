@@ -45,6 +45,11 @@ public class DataBaseUsersSQL extends DataBaseUsers {
   private SQLManager sqlManager;
   private DataBaseType type;
 
+  /**
+   * Initialize the SQL database connection.
+   *
+   * @param config The database configuration.
+   */
   @Override
   public void connect(DataBaseConfig config) {
     this.type = config.getType();
@@ -52,12 +57,12 @@ public class DataBaseUsersSQL extends DataBaseUsers {
     createTables();
   }
 
+  /**
+   * Close the SQL database connection.
+   */
   @Override
   public void disconnect() {
-    // SQLService manages the lifecycle — no-op
   }
-
-  // ─── Schema ───────────────────────────────────────────────────────────────
 
   /**
    * Creates the {@code users} table if it does not already exist.
@@ -79,21 +84,26 @@ public class DataBaseUsersSQL extends DataBaseUsers {
 
   @Override
   public @Nullable UserModel findUserByUUID(@NotNull UUID uuid) {
-    UserModel cached = DataBaseUsers.USERS.getIfPresent(uuid);
-    if (cached != null) return cached;
-
     return sqlManager.query(
       "SELECT data FROM users WHERE playerUUID = ?",
       rs -> {
         if (!rs.next()) return null;
         UserModel user = UtilsFile.getGson().fromJson(rs.getString("data"), UserModel.class);
-        if (user != null) user.fix();
+        if (user != null) {
+          user.fix();
+        }
         return user;
       },
       uuid.toString()
     );
   }
 
+  /**
+   * Find a user by name in the SQL database.
+   *
+   * @param name The name of the player.
+   * @return The user model or null if not found.
+   */
   @Override
   public @Nullable UserModel findUserByName(@NotNull String name) {
     UserModel cached = super.findUserByName(name);
@@ -101,13 +111,21 @@ public class DataBaseUsersSQL extends DataBaseUsers {
 
     return sqlManager.query(
       "SELECT data FROM users WHERE playerName = ?",
-      rs -> rs.next()
-        ? UtilsFile.getGson().fromJson(rs.getString("data"), UserModel.class)
-        : null,
+      rs -> {
+        if (!rs.next()) return null;
+        UserModel user = UtilsFile.getGson().fromJson(rs.getString("data"), UserModel.class);
+        if (user != null) user.fix();
+        return user;
+      },
       name
     );
   }
 
+  /**
+   * Save or update a user in the SQL database.
+   *
+   * @param user The user model to save.
+   */
   @Override
   public void saveOrUpdateUser(UserModel user) {
     if (user == null || user.getPlayerUUID() == null) return;
@@ -140,25 +158,49 @@ public class DataBaseUsersSQL extends DataBaseUsers {
       " isOnline = VALUES(isOnline), lastLogin = VALUES(lastLogin)";
   }
 
+  /**
+   * Get all users in the SQL database.
+   *
+   * @return A list of all user models.
+   */
   @Override
   public List<UserModel> getAllUsers() {
     return sqlManager.queryList(
       "SELECT data FROM users",
-      rs -> UtilsFile.getGson().fromJson(rs.getString("data"), UserModel.class)
+      rs -> {
+        UserModel user = UtilsFile.getGson().fromJson(rs.getString("data"), UserModel.class);
+        if (user != null) user.fix();
+        return user;
+      }
     );
   }
 
+  /**
+   * Get users who have been inactive since a certain duration.
+   *
+   * @param millis The duration in milliseconds.
+   * @return A list of inactive user models.
+   */
   @Override
   public List<UserModel> getUsersInactiveSince(long millis) {
     Instant threshold = Instant.now().minus(millis, ChronoUnit.MILLIS);
     String thresholdIso = DateTimeFormatter.ISO_INSTANT.format(threshold);
     return sqlManager.queryList(
       "SELECT data FROM users WHERE lastLogin IS NOT NULL AND lastLogin >= ?",
-      rs -> UtilsFile.getGson().fromJson(rs.getString("data"), UserModel.class),
+      rs -> {
+        UserModel user = UtilsFile.getGson().fromJson(rs.getString("data"), UserModel.class);
+        if (user != null) user.fix();
+        return user;
+      },
       thresholdIso
     );
   }
 
+  /**
+   * Update the user state for disconnection in the SQL database.
+   *
+   * @param player The online player entity.
+   */
   @Override
   public void disconnected(ServerPlayerEntity player) {
     if (player == null) return;

@@ -23,11 +23,8 @@ public class TaskStorageNotification {
             CobbleUtils.LOGGER_RAW.error("Player is null in scheduled task");
             continue;
           }
-          var user = DataBaseFactory.dataBaseUsers.findUserByUUID(player.getUuid());
-          if (user == null) {
-            CobbleUtils.LOGGER_RAW.error("UserModel is null for player " + player.getName().getString() + " (" + player.getUuid() + ")");
-            continue;
-          }
+          var user = DataBaseFactory.dataBaseUsers.findUser(player.getUuid());
+          if (user == null) continue;
           var storageList = user.getStorageList();
           if (storageList == null) continue;
           int size = storageList.size();

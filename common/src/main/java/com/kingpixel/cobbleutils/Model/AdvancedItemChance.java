@@ -110,15 +110,15 @@ public class AdvancedItemChance {
   }
 
   private int getAmountReward(ServerPlayerEntity player) {
-    int amount = 1;
+    int maxAmount = 1;
+
     for (Map.Entry<String, Integer> entry : amountRewardsPermission.entrySet()) {
       if (PermissionApi.hasPermission(player, entry.getKey(), 2)) {
-        if (entry.getValue() > amount) {
-          amount = entry.getValue();
-        }
+        maxAmount = Math.max(maxAmount, entry.getValue());
       }
     }
-    return amount;
+
+    return maxAmount;
   }
 
   public void giveRewards(UUID playerUUID) {
@@ -139,65 +139,124 @@ public class AdvancedItemChance {
    * @param playerUUID UUID del jugador si está offline, null si es online.
    */
   private void giveRewardsInternal(ServerPlayerEntity player, boolean online, UUID playerUUID) {
+    AdvancedItemChance active = this;
+
     try {
-      AdvancedItemChance finish = this;
-      if (finish.getId() != null && !finish.getId().isEmpty()) {
-        finish = CobbleUtils.advancedRewardsConfig.getTEMPLATE_REWARDS().get(finish.getId());
-        if (finish == null) {
-          PlayerUtils.sendMessage(player,
-            "%prefix% &cThe Advanced Reward Template with id &e" + this.getId() + " &cdoes not exist, please notify the " +
-              "administrator" +
-              " of the error",
+      String id = this.getId();
+
+      if (id != null && !id.isEmpty()) {
+        Map<String, AdvancedItemChance> templates =
+          CobbleUtils.advancedRewardsConfig != null
+            ? CobbleUtils.advancedRewardsConfig.getTEMPLATE_REWARDS()
+            : null;
+
+        if (templates != null) {
+          AdvancedItemChance template = templates.get(id);
+          if (template != null) {
+            active = template;
+          } else {
+            PlayerUtils.sendMessage(
+              player,
+              "%prefix% &cReward template not found: &e" + id,
+              "&7[&cERROR&7]",
+              TypeMessage.CHAT
+            );
+          }
+        } else {
+          PlayerUtils.sendMessage(
+            player,
+            "%prefix% &cTemplate config is null",
             "&7[&cERROR&7]",
-            TypeMessage.CHAT);
-          finish = this;
+            TypeMessage.CHAT
+          );
         }
       }
 
       checker(player);
 
-      List<ItemChance> obtainedRewards = finish.getList(player);
-      List<ItemChance> allRewards = new ArrayList<>(obtainedRewards);
+      List<ItemChance> baseRewards = active.getList(player);
 
-      if (giveAll) {
-        obtainedRewards = ItemChance.getAllRewards(obtainedRewards, player);
-      } else {
-        obtainedRewards = ItemChance.getRewards(obtainedRewards, player, finish.getAmountReward(player));
+      if (baseRewards.isEmpty()) {
+        PlayerUtils.sendMessage(
+          player,
+          "%prefix% &cNo rewards available from loot table",
+          "&7[&cERROR&7]",
+          TypeMessage.CHAT
+        );
+        return;
       }
 
-      if (obtainedRewards.isEmpty()) {
-        PlayerUtils.sendMessage(player,
-          "%prefix% &cYou have not obtained any rewards, please try again",
+      List<ItemChance> allRewards = new ArrayList<>(baseRewards);
+
+      List<ItemChance> obtainedRewards;
+
+      if (giveAll) {
+        obtainedRewards = ItemChance.getAllRewards(baseRewards, player);
+      } else {
+        obtainedRewards = ItemChance.getRewards(
+          baseRewards,
+          player,
+          active.getAmountReward(player)
+        );
+      }
+
+      if (obtainedRewards == null || obtainedRewards.isEmpty()) {
+        PlayerUtils.sendMessage(
+          player,
+          "%prefix% &cNo rewards obtained after roll",
           "&7[&cERROR&7]",
-          TypeMessage.CHAT);
+          TypeMessage.CHAT
+        );
         return;
       }
 
       if (online) {
+
         for (ItemChance reward : obtainedRewards) {
-          reward.giveReward(player);
+          if (reward != null) {
+            reward.giveReward(player);
+          }
         }
 
-        List<ItemStack> showAllRewards = finish.getListDisplay(allRewards);
-        List<ItemStack> showObtainedRewards = finish.getListDisplay(obtainedRewards);
+        List<ItemStack> showAllRewards = active.getListDisplay(allRewards);
+        List<ItemStack> showObtainedRewards = active.getListDisplay(obtainedRewards);
 
-        if (finish.getNewSound() != null) finish.getNewSound().start(player);
-        if (finish.getParticle() != null) finish.getParticle().sendParticles(player, player);
-        initAnimation(finish.getAnimation(), player, showAllRewards, showObtainedRewards);
+        if (active.getNewSound() != null) {
+          active.getNewSound().start(player);
+        }
+
+        if (active.getParticle() != null) {
+          active.getParticle().sendParticles(player, player);
+        }
+
+        initAnimation(
+          active.getAnimation(),
+          player,
+          showAllRewards,
+          showObtainedRewards
+        );
 
       } else if (playerUUID != null) {
+
         List<Storage> storageList = new ArrayList<>();
+
         for (ItemChance reward : obtainedRewards) {
-          storageList.add(new StorageRewards(reward));
+          if (reward != null) {
+            storageList.add(new StorageRewards(reward));
+          }
         }
+
         DataBaseFactory.dataBaseUsers.addStorage(storageList, playerUUID);
       }
+
     } catch (Exception e) {
       e.printStackTrace();
-      PlayerUtils.sendMessage(player,
-        "%prefix% &cAn error occurred while trying to give you the rewards, please notify the administrator of the error date: " + new Date().toString(),
+      PlayerUtils.sendMessage(
+        player,
+        "%prefix% &cError while giving rewards. Contact admin. Time: " + new java.util.Date(),
         "&7[&cERROR&7]",
-        TypeMessage.CHAT);
+        TypeMessage.CHAT
+      );
     }
   }
 
@@ -418,13 +477,17 @@ public class AdvancedItemChance {
 
 
   private List<ItemChance> getList(ServerPlayerEntity player) {
-    List<ItemChance> itemChances = new ArrayList<>();
-    lootTable.forEach((key, value) -> {
-      if (PermissionApi.hasPermission(player, key, 2)) {
-        itemChances.addAll(value);
+    List<ItemChance> result = new ArrayList<>();
+
+    if (lootTable == null) return result;
+
+    for (Map.Entry<String, List<ItemChance>> entry : lootTable.entrySet()) {
+      if (entry.getValue() != null && PermissionApi.hasPermission(player, entry.getKey(), 2)) {
+        result.addAll(entry.getValue());
       }
-    });
-    return itemChances;
+    }
+
+    return result;
   }
 
 }

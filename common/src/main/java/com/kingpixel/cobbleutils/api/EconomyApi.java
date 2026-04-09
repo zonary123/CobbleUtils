@@ -10,6 +10,7 @@ import lombok.Getter;
 
 import java.math.BigDecimal;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @author Carlos Varas Alonso - 05/11/2024 23:58
@@ -17,61 +18,75 @@ import java.util.*;
 @Data
 public class EconomyApi {
   @Getter
-  private static Set<EconomyAbstract> economys = new HashSet<>();
+  private static final Set<EconomyAbstract> economys = ConcurrentHashMap.newKeySet();
 
+  /**
+   * Initialize and refresh available economy types.
+   */
   public static void setEconomyType() {
-    economys.clear();
-    economys.add(new UltraEEconomy());
-    economys.add(new ImpactorEconomy());
-    economys.add(new CobbleDollarsEconomy());
-    economys.add(new BeEconomy());
-    economys.add(new PebbleEconomy());
-    economys.add(new SDMEconomy());
-    economys.add(new VaultEconomy());
+    Set<EconomyAbstract> candidates = new HashSet<>();
+    candidates.add(new UltraEEconomy());
+    candidates.add(new ImpactorEconomy());
+    candidates.add(new CobbleDollarsEconomy());
+    candidates.add(new BeEconomy());
+    candidates.add(new PebbleEconomy());
+    candidates.add(new SDMEconomy());
+    candidates.add(new VaultEconomy());
 
-    economys.removeIf(economy -> {
+    candidates.removeIf(economy -> {
       try {
         if (economy.isPresent()) {
-          CobbleUtils.LOGGER_RAW.info("Economy found: " + economy.getIdentify());
+          CobbleUtils.LOGGER_RAW.info("Economy found: {}", economy.getIdentify());
           return false;
         } else {
-          CobbleUtils.LOGGER_RAW.info("Economy not found: " + economy.getIdentify());
+          CobbleUtils.LOGGER_RAW.info("Economy not found: {}", economy.getIdentify());
           return true;
         }
       } catch (NoClassDefFoundError | IncompatibleClassChangeError | Exception e) {
-        CobbleUtils.LOGGER_RAW.info("Economy not found: " + economy.getIdentify());
+        CobbleUtils.LOGGER_RAW.info("Economy not found: {}", economy.getIdentify());
         return true;
       }
     });
+
+    economys.clear();
+    economys.addAll(candidates);
   }
 
 
-  private static EconomyAbstract getEconomy(String EconomyId) {
+  private static EconomyAbstract getEconomy(String economyId) {
     if (economys.isEmpty()) {
       setEconomyType();
-      if (economys.isEmpty()) {
-        throw new RuntimeException("You dont have any economys, Supported: " +
-          "BeEconomy, CobbleDollarsEconomy, ImpactorEconomy, PebbleEconomy, SDMEconomy, VaultEconomy");
-      }
     }
-    if (economys.size() == 1) {
-      return economys.iterator().next();
-    } else {
-      for (EconomyAbstract economy : economys) {
-        if (economy.getIdentify().equalsIgnoreCase(EconomyId)) {
-          return economy;
-        }
+
+    List<EconomyAbstract> snapshot = economys.stream()
+      .filter(Objects::nonNull)
+      .toList();
+
+    if (snapshot.isEmpty()) {
+      throw new RuntimeException("You dont have any economys, Supported: " +
+        "BeEconomy, CobbleDollarsEconomy, ImpactorEconomy, PebbleEconomy, SDMEconomy, VaultEconomy");
+    }
+
+    if (snapshot.size() == 1) {
+      return snapshot.getFirst();
+    }
+
+    for (EconomyAbstract economy : snapshot) {
+      if (economy.getIdentify().equalsIgnoreCase(economyId)) {
+        return economy;
       }
     }
 
-    EconomyAbstract economy = getHighestPriorityEconomy();
-    if (economy == null) throw new RuntimeException("CobbleUtils could not find any economys with that id");
+    EconomyAbstract economy = getHighestPriorityEconomy(snapshot);
+    if (economy == null) throw new RuntimeException("CobbleUtils could not find any economys with id: " + economyId);
     return economy;
   }
 
-  private static EconomyAbstract getHighestPriorityEconomy() {
-    List<EconomyAbstract> economyList = new ArrayList<>(economys);
-    economyList.sort((e1, e2) -> {
+  private static EconomyAbstract getHighestPriorityEconomy(List<EconomyAbstract> economies) {
+    if (economies.isEmpty()) return null;
+
+    List<EconomyAbstract> sorted = new ArrayList<>(economies);
+    sorted.sort((e1, e2) -> {
       Priority p1 = CobbleUtils.config.getPriorityEconomy().stream()
         .filter(pe -> pe.getEconomyId().equals(e1.getIdentify()))
         .findFirst()
@@ -84,7 +99,7 @@ public class EconomyApi {
         .orElse(Priority.LOWEST);
       return p1.compareTo(p2);
     });
-    return economyList.isEmpty() ? null : economyList.getFirst();
+    return sorted.getFirst();
   }
 
 
