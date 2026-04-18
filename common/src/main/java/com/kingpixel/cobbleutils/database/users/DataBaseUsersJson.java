@@ -8,10 +8,10 @@ import net.minecraft.entity.Entity;
 import net.minecraft.server.network.ServerPlayerEntity;
 import org.jetbrains.annotations.NotNull;
 
-import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.Instant;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
@@ -20,7 +20,7 @@ import java.util.UUID;
  * @author Carlos Varas Alonso - 27/08/2025 15:11
  */
 public class DataBaseUsersJson extends DataBaseUsers {
-  private static final String PATH_USERS = CobbleUtils.PATH + "/users/";
+  private static final Path USERS_FOLDER = Path.of(CobbleUtils.PATH).resolve("users");
 
   /**
    * Initialize the JSON database connection.
@@ -42,8 +42,8 @@ public class DataBaseUsersJson extends DataBaseUsers {
 
   @Override
   public UserModel findUserByUUID(@NotNull UUID uuid) {
-    File file = new File(PATH_USERS + uuid + ".json");
-    if (!file.exists())
+    Path file = USERS_FOLDER.resolve(uuid + ".json");
+    if (!Files.exists(file))
       return null;
     return readUserFile(file);
   }
@@ -58,20 +58,12 @@ public class DataBaseUsersJson extends DataBaseUsers {
   public UserModel findUserByName(@NotNull String name) {
     UserModel userModel = super.findUserByName(name);
     if (userModel != null)
-      return userModel; // si está en la cache,
-    File folder = new File(PATH_USERS);
-    File[] files = folder.listFiles();
-    if (files == null)
-      return null;
-    return Arrays.stream(files)
-        .parallel() // procesa en paralelo;
-        .map(file -> {
-          UserModel user = readUserFile(file);
-          if (user != null && name.equalsIgnoreCase(user.getPlayerName()))
-            return user;
-          return null;
-        })
-        .filter(Objects::nonNull) // elimina los nulls
+      return userModel;
+    List<Path> files = UtilsFile.getAllJsonFiles(USERS_FOLDER);
+    return files.stream()
+        .parallel()
+        .map(this::readUserFile)
+        .filter(user -> user != null && name.equalsIgnoreCase(user.getPlayerName()))
         .findFirst()
         .orElse(null);
   }
@@ -85,36 +77,34 @@ public class DataBaseUsersJson extends DataBaseUsers {
   public void saveOrUpdateUser(UserModel user) {
     if (user == null || user.getPlayerUUID() == null)
       return;
-    File folder = new File(PATH_USERS);
-    if (!folder.exists())
-      folder.mkdirs();
-    File file = new File(PATH_USERS + user.getPlayerUUID() + ".json");
-    UtilsFile.writeAsync(file.toPath(), user);
+    try {
+      Files.createDirectories(USERS_FOLDER);
+      Path file = USERS_FOLDER.resolve(user.getPlayerUUID() + ".json");
+      UtilsFile.write(file, user);
+    } catch (Exception e) {
+      CobbleUtils.LOGGER_RAW.error("Failed to save user file: {}", user.getPlayerUUID(), e);
+    }
   }
 
   @Override
   public List<UserModel> getAllUsers() {
-    File folder = new File(PATH_USERS);
-    File[] files = folder.listFiles();
-    if (files == null)
-      return List.of();
-    return Arrays.stream(files)
-        .parallel() // procesa en paralelo;
+    List<Path> files = UtilsFile.getAllJsonFiles(USERS_FOLDER);
+    return files.stream()
+        .parallel()
         .map(this::readUserFile)
-        .filter(Objects::nonNull) // elimina los nulls
+        .filter(Objects::nonNull)
         .toList();
   }
 
   @Override
   public List<UserModel> getUsersInactiveSince(long millis) {
-    File folder = new File(PATH_USERS);
-    File[] files = folder.listFiles((dir, name) -> name.endsWith(".json")); // solo JSON
-    if (files == null || files.length == 0)
+    List<Path> files = UtilsFile.getAllJsonFiles(USERS_FOLDER);
+    if (files.isEmpty())
       return List.of();
 
     long currentTime = System.currentTimeMillis();
 
-    return Arrays.stream(files)
+    return files.stream()
         .parallel()
         .map(this::readUserFile)
         .filter(user -> isInactive(user, currentTime, millis))
@@ -140,6 +130,8 @@ public class DataBaseUsersJson extends DataBaseUsers {
     if (user == null)
       return;
     user.addStorage(storage);
+    saveOrUpdateUser(user);
+    invalidateUser(playerUUID);
   }
 
   @Override
@@ -150,6 +142,8 @@ public class DataBaseUsersJson extends DataBaseUsers {
     if (user == null)
       return;
     user.addStorage(storage);
+    saveOrUpdateUser(user);
+    invalidateUser(playerUUID);
   }
 
   @Override
@@ -159,7 +153,12 @@ public class DataBaseUsersJson extends DataBaseUsers {
     UserModel user = findUserByUUID(playerUUID);
     if (user == null)
       return null;
-    return user.removeStorage(storage.getId());
+    Storage removed = user.removeStorage(storage.getId());
+    if (removed != null) {
+      saveOrUpdateUser(user);
+      invalidateUser(playerUUID);
+    }
+    return removed;
   }
 
   @Override
@@ -172,19 +171,19 @@ public class DataBaseUsersJson extends DataBaseUsers {
   /**
    * Read a user file and return a UserModel.
    *
-   * @param file The file to read.
+   * @param file The path to read.
    * @return The user model or null if an error occurred.
    */
-  private UserModel readUserFile(File file) {
+  private UserModel readUserFile(Path file) {
     try {
-      UserModel user = UtilsFile.read(file.toPath(), UserModel.class);
+      UserModel user = UtilsFile.read(file, UserModel.class);
       if (user != null)
         user.fix();
       return user;
     } catch (IOException e) {
-      CobbleUtils.LOGGER_RAW.error("Failed to read user file: " + file.getName(), e);
+      CobbleUtils.LOGGER_RAW.error("Failed to read user file: {}", file.getFileName(), e);
     } catch (Exception e) {
-      CobbleUtils.LOGGER_RAW.error("Failed to parse user file: " + file.getName(), e);
+      CobbleUtils.LOGGER_RAW.error("Failed to parse user file: {}", file.getFileName(), e);
     }
     return null;
   }
@@ -194,7 +193,7 @@ public class DataBaseUsersJson extends DataBaseUsers {
     if (user == null)
       return false;
     Instant lastLogin = user.getLastLogin();
-    return lastLogin == null || (currentTime - lastLogin.toEpochMilli() <= threshold);
+    return lastLogin == null || (currentTime - lastLogin.toEpochMilli() >= threshold);
   }
 
 }

@@ -38,6 +38,27 @@ public abstract class Economy {
   public abstract CompletableFuture<EconomyResponse> withdraw(UUID playerId, String currencyId, BigDecimal amount, String reason);
 
   /**
+   * Gets the display name of the currency.
+   */
+  public String getDisplayName(String currencyId) {
+    return currencyId;
+  }
+
+  /**
+   * Gets the symbol of the currency.
+   */
+  public String getSymbol(String currencyId) {
+    return CobbleUtils.language.getDefaultSymbol();
+  }
+
+  /**
+   * Gets the number of decimals for the currency.
+   */
+  public int getDecimals(String currencyId) {
+    return 2;
+  }
+
+  /**
    * Format a monetary amount as a string.
    */
   public String format(BigDecimal money, String currency) {
@@ -115,13 +136,6 @@ public abstract class Economy {
     });
   }
 
-  public String getSymbol(String currency) {
-    return CobbleUtils.language.getDefaultSymbol();
-  }
-
-  public int getDecimals(String currency) {
-    return 2;
-  }
 
   public CompletableFuture<ServerPlayerEntity> getPlayer(UUID playerId) {
     return CobbleUtils.server.submit(() -> CobbleUtils.server.getPlayerManager().getPlayer(playerId));

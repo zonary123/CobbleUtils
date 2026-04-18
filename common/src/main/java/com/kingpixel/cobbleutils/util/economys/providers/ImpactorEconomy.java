@@ -1,24 +1,24 @@
 package com.kingpixel.cobbleutils.util.economys.providers;
 
+import java.math.BigDecimal;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
+
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.util.AdventureTranslator;
 import com.kingpixel.cobbleutils.util.economys.Economy;
 import com.kingpixel.cobbleutils.util.economys.EconomyResponse;
+
 import lombok.EqualsAndHashCode;
-import lombok.NonNull;
 import net.impactdev.impactor.api.economy.EconomyService;
 import net.impactdev.impactor.api.economy.accounts.Account;
 import net.impactdev.impactor.api.economy.currency.Currency;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
-
-import java.math.BigDecimal;
-import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
 
 @EqualsAndHashCode(callSuper = true)
 public class ImpactorEconomy extends Economy {
@@ -71,13 +71,10 @@ public class ImpactorEconomy extends Economy {
       .thenApply(account -> {
         if (account == null) return EconomyResponse.failure("Account not found");
 
-        BigDecimal before = account.balance();
         var result = account.deposit(amount);
-
         if (!result.successful()) return EconomyResponse.failure("Deposit failed");
 
-        BigDecimal after = account.balance();
-        return EconomyResponse.success(amount, after);
+        return EconomyResponse.success(amount, account.balance());
       })
       .exceptionally(ex -> EconomyResponse.failure("Error during deposit: " + ex.getMessage()));
   }
@@ -88,63 +85,14 @@ public class ImpactorEconomy extends Economy {
       .thenApply(account -> {
         if (account == null) return EconomyResponse.failure("Account not found");
 
-        BigDecimal before = account.balance();
-        if (before.compareTo(amount) < 0) return EconomyResponse.failure("Insufficient funds");
+        if (account.balance().compareTo(amount) < 0) return EconomyResponse.failure("Insufficient funds");
 
         var result = account.withdraw(amount);
         if (!result.successful()) return EconomyResponse.failure("Withdraw failed");
 
-        BigDecimal after = account.balance();
-        return EconomyResponse.success(amount, after);
+        return EconomyResponse.success(amount, account.balance());
       })
       .exceptionally(ex -> EconomyResponse.failure("Error during withdrawal: " + ex.getMessage()));
-  }
-
-  @Override
-  public CompletableFuture<EconomyResponse> setBalance(UUID playerId, String currencyId, BigDecimal amount, String reason) {
-    return getBalance(playerId, currencyId).thenCompose(balanceResp -> {
-      BigDecimal current = balanceResp.balance();
-      BigDecimal diff = amount.subtract(current);
-
-      if (diff.compareTo(BigDecimal.ZERO) > 0) return deposit(playerId, currencyId, diff, reason);
-      if (diff.compareTo(BigDecimal.ZERO) < 0) return withdraw(playerId, currencyId, diff.abs(), reason);
-      return CompletableFuture.completedFuture(EconomyResponse.success(BigDecimal.ZERO, current));
-    });
-  }
-
-  @Override
-  public CompletableFuture<EconomyResponse> hasEnoughMoney(UUID playerId, String currencyId, BigDecimal amount) {
-    return getBalance(playerId, currencyId)
-      .thenApply(balanceResp -> balanceResp.balance().compareTo(amount) >= 0
-        ? EconomyResponse.success(BigDecimal.ZERO, balanceResp.balance())
-        : EconomyResponse.failure("Not enough money"));
-  }
-
-  @Override
-  public CompletableFuture<EconomyResponse> transfer(@NonNull UUID fromPlayerId, @NonNull UUID toPlayerId,
-                                                     @NonNull String currencyId, @NonNull BigDecimal amount,
-                                                     @NonNull String reason) {
-    if (fromPlayerId.equals(toPlayerId))
-      return CompletableFuture.completedFuture(EconomyResponse.failure("Cannot transfer to the same player"));
-
-    return hasEnoughMoney(fromPlayerId, currencyId, amount).thenCompose(hasMoneyResp -> {
-      if (!hasMoneyResp.success())
-        return CompletableFuture.completedFuture(EconomyResponse.failure("Source player has insufficient funds"));
-
-      return withdraw(fromPlayerId, currencyId, amount, reason).thenCompose(withdrawResp -> {
-        if (!withdrawResp.success())
-          return CompletableFuture.completedFuture(EconomyResponse.failure("Failed to withdraw from source player"));
-
-        return deposit(toPlayerId, currencyId, amount, reason).thenApply(depositResp -> {
-          if (!depositResp.success()) {
-            // Rollback
-            deposit(fromPlayerId, currencyId, amount, "rollback");
-            return EconomyResponse.failure("Failed to deposit to target player, rollback applied");
-          }
-          return EconomyResponse.success(amount, depositResp.balance());
-        });
-      });
-    });
   }
 
   // =========================================================
@@ -181,7 +129,7 @@ public class ImpactorEconomy extends Economy {
 
   private CompletableFuture<Account> getAccountAsync(UUID uuid, String currency) {
     return service.hasAccount(uuid).thenCompose(hasAccount -> {
-      if (!hasAccount) return service.account(uuid);
+      if (Boolean.FALSE.equals(hasAccount)) return service.account(uuid);
       return service.account(getCurrency(currency), uuid);
     });
   }
@@ -201,4 +149,5 @@ public class ImpactorEconomy extends Economy {
 
     return service.currencies().primary();
   }
+
 }

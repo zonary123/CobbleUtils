@@ -66,14 +66,15 @@ public class StorageMenu {
   }
 
   public void open(ServerPlayerEntity executer, UUID targetUUID) {
+    boolean isOwner = executer.getUuid().equals(targetUUID);
     CobbleUtils.runAsync(() -> {
+      // Invalidate cache to ensure fresh data
+      DataBaseFactory.dataBaseUsers.invalidateUser(targetUUID);
       UserModel userModel = DataBaseFactory.dataBaseUsers.findUser(targetUUID);
       if (userModel == null) return;
 
       if (userModel.getStorageList() == null) {
-        CobbleUtils.LOGGER_RAW.warn(
-          "User " + targetUUID + " has null storage list, initializing to empty set."
-        );
+        CobbleUtils.LOGGER_RAW.warn("User {} has null storage list, initializing to empty set.", targetUUID);
         userModel.setStorageList(new HashSet<>());
       }
 
@@ -86,61 +87,65 @@ public class StorageMenu {
 
       for (Storage storage : userModel.getStorageList()) {
         try {
-          buttons.add(storage.getButton(userModel));
+          buttons.add(storage.getButton(userModel, targetUUID));
         } catch (Exception e) {
-          e.printStackTrace();
+          CobbleUtils.LOGGER_RAW.error("Invalid storage entry for user {}", targetUUID, e);
           invalidStorages.add(storage);
         }
       }
 
-      // Limpieza de storages inválidos
-      for (Storage storage : invalidStorages) {
-        userModel.getStorageList().remove(storage);
-        DataBaseFactory.dataBaseUsers.removeStorage(storage, targetUUID);
+      if (!invalidStorages.isEmpty()) {
+        DataBaseFactory.dataBaseUsers.removeStorageBatch(invalidStorages, targetUUID);
       }
 
-      // CLAIM ALL
-      claimAll.applyTemplate(template, claimAll.getButton(action -> {
-        ServerPlayerEntity player = action.getPlayer();
-        UIManager.closeUI(player);
-        CobbleUtils.runAsync(() -> {
-          UserModel data = DataBaseFactory.dataBaseUsers.findUser(targetUUID);
-          if (data == null || data.getStorageList().isEmpty()) {
+      // CLAIM ALL — only show for the owner, not admins viewing someone else's storage
+      if (isOwner) {
+        claimAll.applyTemplate(template, claimAll.getButton(action -> {
+          ServerPlayerEntity player = action.getPlayer();
+          UIManager.closeUI(player);
+          CobbleUtils.runAsync(() -> {
+            // Invalidate + re-fetch to get truly fresh data
+            DataBaseFactory.dataBaseUsers.invalidateUser(targetUUID);
+            UserModel data = DataBaseFactory.dataBaseUsers.findUser(targetUUID);
+            if (data == null || data.getStorageList().isEmpty()) {
+              player.sendMessage(
+                AdventureTranslator.toNative("&cYou don't have any pending rewards to claim."),
+                false
+              );
+              return;
+            }
+
+            // Work on a copy — never mutate the cached object
+            List<Storage> toClaim = new ArrayList<>(data.getStorageList());
+            List<Storage> claimed = new ArrayList<>();
+
+            for (Storage storage : toClaim) {
+              try {
+                if (storage.giveToPlayer(player)) {
+                  claimed.add(storage);
+                } else {
+                  player.sendMessage(
+                    AdventureTranslator.toNative("&cCould not claim reward: &e" + storage.getDisplay().getName().getString() + " &c(inventory full?)"),
+                    false
+                  );
+                }
+              } catch (Exception e) {
+                CobbleUtils.LOGGER_RAW.error("Error claiming storage for {}", targetUUID, e);
+              }
+            }
+
+            if (!claimed.isEmpty()) {
+              DataBaseFactory.dataBaseUsers.removeStorageBatch(claimed, targetUUID);
+            }
+
             player.sendMessage(
-              AdventureTranslator.toNative("&cYou don't have any pending rewards to claim."),
+              AdventureTranslator.toNative("&aYou have successfully claimed &e" + claimed.size() + " &arewards!"),
               false
             );
-            return;
-          }
-
-          List<Storage> toClaim = new ArrayList<>(data.getStorageList());
-
-
-          int claimed = 0;
-          for (Storage storage : toClaim) {
-            try {
-              if (storage.giveToPlayer(player)) {
-                claimed++;
-                data.getStorageList().remove(storage);
-                DataBaseFactory.dataBaseUsers.removeStorage(storage, targetUUID);
-              } else {
-                player.sendMessage(
-                  AdventureTranslator.toNative("&cCould not claim reward: &e" + storage.getDisplay().getName().getString()),
-                  false
-                );
-              }
-            } catch (Exception e) {
-              e.printStackTrace();
-            }
-          }
-
-          player.sendMessage(
-            AdventureTranslator.toNative("&aYou have successfully claimed &e" + claimed + " &arewards!"),
-            false
-          );
-          CobbleUtils.server.execute(() -> CobbleUtils.language.getStorageMenu().open(player, targetUUID));
-        });
-      }, 1, TimeUnit.SECONDS, 1));
+            CobbleUtils.server.execute(() -> CobbleUtils.language.getStorageMenu().open(player, targetUUID));
+          });
+        }, 1, TimeUnit.SECONDS, 1));
+      }
 
       // Navegación
       previousPage.applyTemplate(template, previousPage.getLinkedPageButton(LinkType.Previous));

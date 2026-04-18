@@ -33,16 +33,27 @@ public abstract class Storage {
 
   public abstract boolean giveToPlayer(ServerPlayerEntity playerEntity);
 
-  public GooeyButton getButton(UserModel userModel) {
+  public GooeyButton getButton(UserModel userModel, UUID targetUUID) {
     return GooeyButton.builder()
       .display(getDisplay())
       .onClick(action -> {
         ServerPlayerEntity player = action.getPlayer();
+        // Only the owner can claim — not an admin viewing
+        if (!player.getUuid().equals(targetUUID)) return;
         UIManager.closeUI(player);
         if (this.giveToPlayer(player)) {
-          userModel.getStorageList().remove(this);
-          CobbleUtils.runAsync(() -> DataBaseFactory.dataBaseUsers.removeStorage(this, player.getUuid()));
-          CobbleUtils.language.getStorageMenu().open(player, player.getUuid());
+          CobbleUtils.runAsync(() -> {
+            DataBaseFactory.dataBaseUsers.removeStorage(this, targetUUID);
+            CobbleUtils.server.execute(() ->
+              CobbleUtils.language.getStorageMenu().open(player, targetUUID));
+          });
+        } else {
+          player.sendMessage(
+            net.minecraft.text.Text.of("§cCould not claim this reward. Is your inventory full?"),
+            false
+          );
+          CobbleUtils.server.execute(() ->
+            CobbleUtils.language.getStorageMenu().open(player, targetUUID));
         }
       })
       .build();

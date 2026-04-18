@@ -186,7 +186,7 @@ public class DataBaseUsersSQL extends DataBaseUsers {
     Instant threshold = Instant.now().minus(millis, ChronoUnit.MILLIS);
     String thresholdIso = DateTimeFormatter.ISO_INSTANT.format(threshold);
     return sqlManager.queryList(
-      "SELECT data FROM users WHERE lastLogin IS NOT NULL AND lastLogin >= ?",
+      "SELECT data FROM users WHERE lastLogin IS NOT NULL AND lastLogin <= ?",
       rs -> {
         UserModel user = UtilsFile.getGson().fromJson(rs.getString("data"), UserModel.class);
         if (user != null) user.fix();
@@ -221,7 +221,7 @@ public class DataBaseUsersSQL extends DataBaseUsers {
     if (user == null) return;
     user.addStorage(storage);
     saveOrUpdateUser(user);
-    DataBaseUsers.USERS.invalidate(playerUUID);
+    invalidateUser(playerUUID);
   }
 
   @Override
@@ -231,7 +231,7 @@ public class DataBaseUsersSQL extends DataBaseUsers {
     if (user == null) return;
     user.addStorage(storage);
     saveOrUpdateUser(user);
-    DataBaseUsers.USERS.invalidate(playerUUID);
+    invalidateUser(playerUUID);
   }
 
   @Override
@@ -242,7 +242,7 @@ public class DataBaseUsersSQL extends DataBaseUsers {
     Storage removed = user.removeStorage(storage.getId());
     if (removed != null) {
       saveOrUpdateUser(user);
-      DataBaseUsers.USERS.invalidate(playerUUID);
+      invalidateUser(playerUUID);
     }
     return removed;
   }

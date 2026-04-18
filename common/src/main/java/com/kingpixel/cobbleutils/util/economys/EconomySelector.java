@@ -1,8 +1,6 @@
 package com.kingpixel.cobbleutils.util.economys;
 
-import com.kingpixel.cobbleutils.util.economys.providers.ImpactorEconomy;
 import lombok.*;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 import java.math.BigDecimal;
@@ -10,7 +8,8 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * @author Carlos Varas Alonso - 16/03/2025 3:20
+ * Selector for economy operations.
+ * Allows choosing a specific economy and currency for transactions.
  */
 @Data
 @NoArgsConstructor
@@ -19,7 +18,7 @@ import java.util.concurrent.CompletableFuture;
 public class EconomySelector {
   private Economy economy;
   @Builder.Default
-  private String economyId = ImpactorEconomy.IDENTIFY;
+  private String economyId = "IMPACTOR";
   @Builder.Default
   private String currency = "impactor:dollars";
 
@@ -29,13 +28,14 @@ public class EconomySelector {
   }
 
   @NotNull
-  @ApiStatus.Experimental
   private Economy getEconomy() {
-    return new ImpactorEconomy();
-    //if (economy != null) return economy;
-    //economy = EconomyApi.getEconomy(economyId);
-    //if (economy == null) throw new IllegalStateException("Economy not found: " + economyId);
-    //return economy;
+    if (economy != null) return economy;
+    economy = EconomyApi.getEconomy(economyId);
+    if (economy == null) {
+      throw new IllegalStateException("No economy found for ID: " + economyId + 
+          ". Available: " + EconomyApi.getEconomies().stream().map(Economy::getIdentify).toList());
+    }
+    return economy;
   }
 
   public CompletableFuture<EconomyResponse> getBalance(UUID playerUuid) {

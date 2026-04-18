@@ -44,17 +44,13 @@ import java.util.function.Consumer;
 public class AdvancedItemChance {
   // TODO: Add queue for the ANIMATIONS
   private String id;
-  // Title of the menu rewards
   private boolean showMenu;
   private String title;
-  // Options for the rewards
   private boolean giveAll;
   private final Map<String, Integer> amountRewardsPermission;
-  // Effects and animations
   private Sound newSound;
   private Particle particle;
   private Animations animation;
-  // Rewards
   private final Map<String, List<ItemChance>> lootTable;
 
   public AdvancedItemChance() {
@@ -65,7 +61,6 @@ public class AdvancedItemChance {
     this.amountRewardsPermission = new HashMap<>();
     this.amountRewardsPermission.put("", 1);
     this.amountRewardsPermission.put("group.vip", 1);
-    //this.sound = "minecraft:block.note_block.harp";
     this.newSound = new Sound();
     this.particle = new Particle();
     this.animation = Animations.NONE;
@@ -122,9 +117,18 @@ public class AdvancedItemChance {
   }
 
   public void giveRewards(UUID playerUUID) {
-    var player = CobbleUtils.server.getPlayerManager().getPlayer(playerUUID);
-    CobbleUtilsSuggests.SUGGESTS_PLAYER_OFFLINE_AND_ONLINE.getPlayer(playerUUID)
-      .ifPresent(dataResultPlayer -> giveRewardsInternal(dataResultPlayer.player(), player != null, playerUUID));
+    var onlinePlayer = CobbleUtils.server.getPlayerManager().getPlayer(playerUUID);
+    if (onlinePlayer != null) {
+      giveRewardsInternal(onlinePlayer, true, playerUUID);
+      return;
+    }
+    // Player is offline — try to get a fake player entity for permission checks etc.
+    var optResult = CobbleUtilsSuggests.SUGGESTS_PLAYER_OFFLINE_AND_ONLINE.getPlayer(playerUUID);
+    if (optResult.isPresent()) {
+      giveRewardsInternal(optResult.get().player(), false, playerUUID);
+    } else {
+      CobbleUtils.LOGGER_RAW.error("Cannot give rewards: player {} not found (offline or online)", playerUUID);
+    }
   }
 
   public void giveRewards(ServerPlayerEntity player) {
@@ -132,11 +136,9 @@ public class AdvancedItemChance {
   }
 
   /**
-   * Lógica común para dar recompensas a un jugador.
-   *
-   * @param player     Jugador objetivo.
-   * @param online     Si el jugador está online.
-   * @param playerUUID UUID del jugador si está offline, null si es online.
+   * @param player     Target player entity.
+   * @param online     Whether the player is online.
+   * @param playerUUID UUID of the player.
    */
   private void giveRewardsInternal(ServerPlayerEntity player, boolean online, UUID playerUUID) {
     AdvancedItemChance active = this;
@@ -200,7 +202,7 @@ public class AdvancedItemChance {
         );
       }
 
-      if (obtainedRewards == null || obtainedRewards.isEmpty()) {
+      if (obtainedRewards.isEmpty()) {
         PlayerUtils.sendMessage(
           player,
           "%prefix% &cNo rewards obtained after roll",
@@ -217,6 +219,8 @@ public class AdvancedItemChance {
             reward.giveReward(player);
           }
         }
+
+        DataBaseFactory.dataBaseUsers.claimRewardsBatch(playerUUID, obtainedRewards);
 
         List<ItemStack> showAllRewards = active.getListDisplay(allRewards);
         List<ItemStack> showObtainedRewards = active.getListDisplay(obtainedRewards);
@@ -246,11 +250,12 @@ public class AdvancedItemChance {
           }
         }
 
-        DataBaseFactory.dataBaseUsers.addStorage(storageList, playerUUID);
+        // Single user fetch, apply both claims and storage, single save
+        DataBaseFactory.dataBaseUsers.claimRewardsAndAddStorage(playerUUID, obtainedRewards, storageList);
       }
 
     } catch (Exception e) {
-      e.printStackTrace();
+      CobbleUtils.LOGGER_RAW.error("Error giving rewards to {}", playerUUID, e);
       PlayerUtils.sendMessage(
         player,
         "%prefix% &cError while giving rewards. Contact admin. Time: " + new java.util.Date(),
@@ -401,23 +406,16 @@ public class AdvancedItemChance {
     CobbleUtils.server.execute(() -> UIManager.openUIForcefully(player, page));
   }
 
-  // Add this field to your class
-  private transient double cachedTotalWeight = -1;
-
   public List<Button> getButtons(ServerPlayerEntity player, AdvancedItemChance finish) {
     List<Button> buttons = new ArrayList<>();
 
-    // ✅ Only recalculate if cache is invalid
-    if (cachedTotalWeight < 0) {
-      double total = 0;
-      List<ItemChance> itemChances = finish.getList(player);
-      for (ItemChance item : itemChances) {
-        total += item.getChance();
-      }
-      cachedTotalWeight = total;
+    // Calculate total weight fresh each time — loot table may change via config reload
+    double totalWeight = 0;
+    List<ItemChance> itemChances = finish.getList(player);
+    for (ItemChance item : itemChances) {
+      totalWeight += item.getChance();
     }
 
-    // ✅ Build buttons using cached total weight
     for (Map.Entry<String, List<ItemChance>> entry : lootTable.entrySet()) {
       String key = entry.getKey();
       List<ItemChance> chances = entry.getValue();
@@ -425,7 +423,7 @@ public class AdvancedItemChance {
       for (ItemChance itemChance : chances) {
         boolean hasPermission = PermissionApi.hasPermission(player, key, 2);
         double chance = hasPermission ? itemChance.getChance() : 0.0;
-        buttons.add(getButton(itemChance, key, chance, hasPermission, cachedTotalWeight));
+        buttons.add(getButton(itemChance, key, chance, hasPermission, totalWeight));
       }
     }
 

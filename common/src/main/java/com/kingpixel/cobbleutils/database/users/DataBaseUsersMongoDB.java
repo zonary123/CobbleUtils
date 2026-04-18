@@ -2,6 +2,7 @@ package com.kingpixel.cobbleutils.database.users;
 
 import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.Model.DataBaseConfig;
+import com.kingpixel.cobbleutils.Model.ItemChance;
 import com.kingpixel.cobbleutils.database.users.models.Storage;
 import com.kingpixel.cobbleutils.util.UtilsFile;
 import com.kingpixel.cobbleutils.util.mongodb.MongoDBManager;
@@ -133,7 +134,7 @@ public class DataBaseUsersMongoDB extends DataBaseUsers {
     Instant thresholdInstant = Instant.now().minus(millis, ChronoUnit.MILLIS);
     String thresholdIso = DateTimeFormatter.ISO_INSTANT.format(thresholdInstant);
     List<UserModel> inactiveUsers = new ArrayList<>();
-    for (Document doc : collectionUser.find(Filters.gte("lastLogin", thresholdIso))) {
+    for (Document doc : collectionUser.find(Filters.lte("lastLogin", thresholdIso))) {
       try {
         UserModel user = UtilsFile.getGson().fromJson(doc.toJson(), UserModel.class);
         if (user != null)
@@ -163,8 +164,9 @@ public class DataBaseUsersMongoDB extends DataBaseUsers {
     try {
       collectionUser.updateOne(
           Filters.eq(DataBaseUsers.FIELD_UUID, playerUUID.toString()),
-          new Document("$push", new Document(DataBaseUsers.FIELD_STORAGE, storage.toDocument())));
-      DataBaseUsers.USERS.invalidate(playerUUID);
+          new Document("$push", new Document(DataBaseUsers.FIELD_STORAGE, storage.toDocument())),
+          new UpdateOptions().upsert(true));
+      invalidateUser(playerUUID);
     } catch (Exception e) {
       CobbleUtils.LOGGER_RAW.error("Failed to add storage for: {}", playerUUID, e);
     }
@@ -178,8 +180,9 @@ public class DataBaseUsersMongoDB extends DataBaseUsers {
         storageDocs.add(s.toDocument());
       collectionUser.updateOne(
           Filters.eq(DataBaseUsers.FIELD_UUID, playerUUID.toString()),
-          new Document("$push", new Document(DataBaseUsers.FIELD_STORAGE, new Document("$each", storageDocs))));
-      DataBaseUsers.USERS.invalidate(playerUUID);
+          new Document("$push", new Document(DataBaseUsers.FIELD_STORAGE, new Document("$each", storageDocs))),
+          new UpdateOptions().upsert(true));
+      invalidateUser(playerUUID);
     } catch (Exception e) {
       CobbleUtils.LOGGER_RAW.error("Failed to add storage list for: {}", playerUUID, e);
     }
@@ -194,13 +197,118 @@ public class DataBaseUsersMongoDB extends DataBaseUsers {
       collectionUser.updateOne(
           Filters.eq(DataBaseUsers.FIELD_UUID, playerUUID.toString()),
           new Document("$pull", new Document(DataBaseUsers.FIELD_STORAGE, new Document("id", id.toString()))));
-      UserModel user = findUserByUUID(playerUUID);
-      if (user == null)
-        return null;
-      return user.removeStorage(id);
+      invalidateUser(playerUUID);
+      return storage;
     } catch (Exception e) {
       CobbleUtils.LOGGER_RAW.error("Failed to remove storage for: {}", playerUUID, e);
       return null;
+    }
+  }
+
+  /**
+   * Batch remove — single $pull with $in instead of N individual queries.
+   */
+  @Override
+  public void removeStorageBatch(List<Storage> storages, UUID playerUUID) {
+    if (storages == null || storages.isEmpty() || playerUUID == null) return;
+    try {
+      List<String> ids = new ArrayList<>();
+      for (Storage s : storages) {
+        if (s.getId() != null) ids.add(s.getId().toString());
+      }
+      if (ids.isEmpty()) return;
+      collectionUser.updateOne(
+        Filters.eq(DataBaseUsers.FIELD_UUID, playerUUID.toString()),
+        new Document("$pull", new Document(DataBaseUsers.FIELD_STORAGE,
+          new Document("id", new Document("$in", ids)))));
+      invalidateUser(playerUUID);
+    } catch (Exception e) {
+      CobbleUtils.LOGGER_RAW.error("Failed to batch remove storage for: {}", playerUUID, e);
+    }
+  }
+
+  @Override
+  public void claimRewardsAndAddStorage(UUID playerUUID, List<ItemChance> rewards, List<Storage> storages) {
+    if (playerUUID == null) return;
+    try {
+      Document updates = new Document();
+
+      if (rewards != null && !rewards.isEmpty()) {
+        UserModel user = findUser(playerUUID);
+        if (user == null) {
+          user = new UserModel(playerUUID);
+          saveOrUpdateUser(user);
+        }
+        for (ItemChance reward : rewards) {
+          if (reward == null) continue;
+          ItemChance resolved = reward;
+          if (resolved.getItem().startsWith("id:")) {
+            ItemChance idChance = com.kingpixel.cobbleutils.api.RewardsApi.getReward(resolved.getItem().substring(3));
+            if (idChance != null) resolved = idChance;
+          }
+          user.claimReward(resolved);
+        }
+        // Atomic $set per individual reward key to avoid overwriting concurrent changes
+        for (var entry : user.getRewardsClaimed().entrySet()) {
+          String rewardKey = "rewardsClaimed." + entry.getKey();
+          String infoJson = UtilsFile.getGson().toJson(entry.getValue());
+          updates.append(rewardKey, Document.parse(infoJson));
+        }
+      }
+
+      Document updateDoc = new Document();
+      if (!updates.isEmpty()) {
+        updateDoc.append("$set", updates);
+      }
+
+      if (storages != null && !storages.isEmpty()) {
+        List<Document> storageDocs = new ArrayList<>();
+        for (Storage s : storages) storageDocs.add(s.toDocument());
+        updateDoc.append("$push", new Document(DataBaseUsers.FIELD_STORAGE, new Document("$each", storageDocs)));
+      }
+
+      if (!updateDoc.isEmpty()) {
+        collectionUser.updateOne(
+          Filters.eq(DataBaseUsers.FIELD_UUID, playerUUID.toString()),
+          updateDoc,
+          new UpdateOptions().upsert(true));
+      }
+      invalidateUser(playerUUID);
+    } catch (Exception e) {
+      CobbleUtils.LOGGER_RAW.error("Failed to claimRewardsAndAddStorage for: {}", playerUUID, e);
+    }
+  }
+
+  @Override
+  public void claimRewardsBatch(UUID playerUUID, List<ItemChance> rewards) {
+    if (rewards == null || rewards.isEmpty()) return;
+    try {
+      UserModel user = findUser(playerUUID);
+      if (user == null) return;
+      for (ItemChance reward : rewards) {
+        if (reward == null) continue;
+        ItemChance resolved = reward;
+        if (resolved.getItem().startsWith("id:")) {
+          ItemChance idChance = com.kingpixel.cobbleutils.api.RewardsApi.getReward(resolved.getItem().substring(3));
+          if (idChance != null) resolved = idChance;
+        }
+        user.claimReward(resolved);
+      }
+      // Atomic $set per individual reward key
+      Document setFields = new Document();
+      for (var entry : user.getRewardsClaimed().entrySet()) {
+        String rewardKey = "rewardsClaimed." + entry.getKey();
+        String infoJson = UtilsFile.getGson().toJson(entry.getValue());
+        setFields.append(rewardKey, Document.parse(infoJson));
+      }
+      if (!setFields.isEmpty()) {
+        collectionUser.updateOne(
+          Filters.eq(DataBaseUsers.FIELD_UUID, playerUUID.toString()),
+          new Document("$set", setFields));
+      }
+      invalidateUser(playerUUID);
+    } catch (Exception e) {
+      CobbleUtils.LOGGER_RAW.error("Failed to batch claim rewards for: {}", playerUUID, e);
     }
   }
 

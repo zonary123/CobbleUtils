@@ -55,18 +55,6 @@ public class CobbleDollarsEconomy extends Economy {
   }
 
   @Override
-  public CompletableFuture<EconomyResponse> setBalance(UUID playerUuid, String currency, BigDecimal amount, String reason) {
-    return getCobblePlayer(playerUuid)
-      .thenApply(cdPlayer -> {
-        if (cdPlayer == null) return EconomyResponse.failure("Player not found");
-        BigInteger value = amount.toBigInteger();
-        cdPlayer.cobbleDollars$setCobbleDollars(value);
-        BigDecimal after = new BigDecimal(cdPlayer.cobbleDollars$getCobbleDollars());
-        return EconomyResponse.success(amount, after);
-      });
-  }
-
-  @Override
   public CompletableFuture<EconomyResponse> deposit(UUID playerUuid, String currency, BigDecimal amount, String reason) {
     if (amount.signum() < 0)
       return CompletableFuture.completedFuture(EconomyResponse.failure("Cannot deposit negative amount"));
@@ -75,8 +63,7 @@ public class CobbleDollarsEconomy extends Economy {
       .thenApply(cdPlayer -> {
         if (cdPlayer == null) return EconomyResponse.failure("Player not found");
         cdPlayer.cobbleDollars$setCobbleDollars(cdPlayer.cobbleDollars$getCobbleDollars().add(amount.toBigInteger()));
-        BigDecimal after = new BigDecimal(cdPlayer.cobbleDollars$getCobbleDollars());
-        return EconomyResponse.success(amount, after);
+        return EconomyResponse.success(amount, new BigDecimal(cdPlayer.cobbleDollars$getCobbleDollars()));
       });
   }
 
@@ -91,19 +78,7 @@ public class CobbleDollarsEconomy extends Economy {
         BigDecimal before = new BigDecimal(cdPlayer.cobbleDollars$getCobbleDollars());
         if (before.compareTo(amount) < 0) return EconomyResponse.failure("Insufficient funds");
         cdPlayer.cobbleDollars$setCobbleDollars(cdPlayer.cobbleDollars$getCobbleDollars().subtract(amount.toBigInteger()));
-        BigDecimal after = new BigDecimal(cdPlayer.cobbleDollars$getCobbleDollars());
-        return EconomyResponse.success(amount, after);
-      });
-  }
-
-  @Override
-  public CompletableFuture<EconomyResponse> hasEnoughMoney(UUID playerId, String currencyId, BigDecimal amount) {
-    return getBalance(playerId, currencyId)
-      .thenApply(response -> {
-        if (!response.success()) return response;
-        return response.balance().compareTo(amount) >= 0
-          ? EconomyResponse.success(BigDecimal.ZERO, response.balance())
-          : EconomyResponse.failure("Insufficient funds");
+        return EconomyResponse.success(amount, new BigDecimal(cdPlayer.cobbleDollars$getCobbleDollars()));
       });
   }
 

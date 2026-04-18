@@ -5,9 +5,9 @@ import com.kingpixel.cobbleutils.Model.ItemChance;
 import com.kingpixel.cobbleutils.util.UtilsFile;
 import lombok.Data;
 
-import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -17,48 +17,37 @@ import java.util.Map;
  */
 @Data
 public class RewardsConfig {
-  private static final String PATH = CobbleUtils.PATH + "/rewards/";
+  private static final Path FOLDER = Path.of(CobbleUtils.PATH).resolve("rewards");
   private final Map<String, ItemChance> rewards = new HashMap<>();
 
   public void init() {
     rewards.clear();
-    File folder = new File(PATH);
-    if (folder.exists()) {
-      List<File> files = getAllJsonFilesRecursive(folder);
-      for (File f : files) {
+    if (Files.exists(FOLDER)) {
+      List<Path> files = UtilsFile.getAllJsonFiles(FOLDER);
+      for (Path f : files) {
         try {
-          ItemChance itemChance = UtilsFile.read(f.toPath(), ItemChance.class);
-          String id = f.getName().replace(".json", "");
-          UtilsFile.write(f.toPath(), itemChance);
+          ItemChance itemChance = UtilsFile.read(f, ItemChance.class);
+          if (itemChance == null) continue;
+          String id = f.getFileName().toString().replace(".json", "");
+          UtilsFile.write(f, itemChance);
           if (rewards.containsKey(id)) {
-            CobbleUtils.LOGGER_RAW.error("Duplicate reward id found: " + id + " in file: " + f.getPath());
+            CobbleUtils.LOGGER_RAW.error("Duplicate reward id found: " + id + " in file: " + f);
           } else {
             rewards.put(id, itemChance);
           }
         } catch (Exception e) {
-          CobbleUtils.LOGGER_RAW.error("Error loading reward file: " + f.getPath() + " - " + e.getMessage());
+          CobbleUtils.LOGGER_RAW.error("Error loading reward file: " + f + " - " + e.getMessage());
         }
       }
     } else {
-      folder.mkdirs();
+      try {
+        Files.createDirectories(FOLDER);
+      } catch (IOException e) {
+        CobbleUtils.LOGGER_RAW.error("Error creating rewards folder: " + e.getMessage());
+      }
       createDefaultFiles();
     }
     CobbleUtils.LOGGER_RAW.info("Loaded " + rewards.size() + " reward files.");
-  }
-
-  private List<File> getAllJsonFilesRecursive(File folder) {
-    List<File> files = new ArrayList<>();
-    File[] list = folder.listFiles();
-    if (list != null) {
-      for (File f : list) {
-        if (f.isDirectory()) {
-          files.addAll(getAllJsonFilesRecursive(f));
-        } else if (f.isFile() && f.getName().endsWith(".json")) {
-          files.add(f);
-        }
-      }
-    }
-    return files;
   }
 
   private void createDefaultFiles() {
@@ -72,11 +61,11 @@ public class RewardsConfig {
   private void createFile(String fileName, ItemChance itemChance) {
     String id = fileName.replace(".json", "");
     rewards.put(id, itemChance);
-    File file = new File(PATH + fileName + ".json");
+    Path file = FOLDER.resolve(fileName + ".json");
     try {
-      UtilsFile.write(file.toPath(), itemChance);
+      UtilsFile.write(file, itemChance);
     } catch (IOException e) {
-      e.printStackTrace();
+      CobbleUtils.LOGGER_RAW.error("Error writing reward file: " + file + " - " + e.getMessage());
     }
   }
 }

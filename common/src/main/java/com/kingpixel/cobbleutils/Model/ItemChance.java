@@ -771,7 +771,7 @@ public class ItemChance {
       return Collections.emptyList();
     }
 
-    // Filter valid rewards
+    // Filter valid rewards — unique items that are exhausted/on cooldown are excluded
     List<ItemChance> validRewards = new ArrayList<>();
     for (ItemChance itemChance : itemChances) {
       Boolean unique = itemChance.getUnique();
@@ -807,8 +807,10 @@ public class ItemChance {
       }
     }
 
-    // Add guaranteed rewards to the result
     List<ItemChance> rewards = new ArrayList<>();
+
+    // Track unique identifiers already selected in THIS roll to avoid duplicates
+    Set<String> selectedUniqueIds = new HashSet<>();
 
     // Calculate totalChance only for normal rewards
     double totalChance = 0.0;
@@ -816,16 +818,31 @@ public class ItemChance {
       totalChance += itemChance.getChance();
     }
 
-    // Randomly select the remaining rewards
+    // Randomly select rewards, removing unique items from pool after selection
     for (int i = 0; i < numberOfRewards; i++) {
-      if (normalRewards.isEmpty()) break; // No more normal rewards
+      if (normalRewards.isEmpty() || totalChance <= 0) break;
       double randomPoint = Utils.getRandom().nextDouble(totalChance);
       double cumulativeChance = 0.0;
 
-      for (ItemChance itemChance : normalRewards) {
+      for (int j = 0; j < normalRewards.size(); j++) {
+        ItemChance itemChance = normalRewards.get(j);
         cumulativeChance += itemChance.getChance();
         if (randomPoint < cumulativeChance) {
-          rewards.add(itemChance);
+          Boolean unique = itemChance.getUnique();
+          String identifier = itemChance.getIdentifier();
+          if (unique != null && unique && identifier != null) {
+            if (selectedUniqueIds.contains(identifier)) {
+              // Already selected this unique — re-roll
+              break;
+            }
+            selectedUniqueIds.add(identifier);
+            rewards.add(itemChance);
+            normalRewards.remove(j);
+            totalChance -= itemChance.getChance();
+            if (totalChance < 0) totalChance = 0;
+          } else {
+            rewards.add(itemChance);
+          }
           break;
         }
       }
@@ -842,8 +859,19 @@ public class ItemChance {
    * @param player      The player to give the rewards to.
    */
   public static List<ItemChance> getAllRewards(List<ItemChance> itemChances, ServerPlayerEntity player) {
-    List<ItemChance> finalItemChances = new ArrayList<>(itemChances);
-    finalItemChances.removeIf(itemChance -> !DataBaseFactory.dataBaseUsers.isAvailableReward(player, itemChance));
+    List<ItemChance> finalItemChances = new ArrayList<>();
+    for (ItemChance itemChance : itemChances) {
+      Boolean unique = itemChance.getUnique();
+      // Non-unique items are always available — skip DB check entirely
+      if (unique == null || !unique) {
+        finalItemChances.add(itemChance);
+        continue;
+      }
+      // Only check DB for unique items
+      if (DataBaseFactory.dataBaseUsers.isAvailableReward(player, itemChance)) {
+        finalItemChances.add(itemChance);
+      }
+    }
     return finalItemChances;
   }
 

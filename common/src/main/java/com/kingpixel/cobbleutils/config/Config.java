@@ -9,7 +9,6 @@ import lombok.Data;
 import lombok.Getter;
 import lombok.ToString;
 
-import java.io.File;
 import java.math.BigDecimal;
 import java.nio.file.Path;
 import java.text.DecimalFormat;
@@ -93,17 +92,10 @@ public class Config {
   }
 
   public void init() {
-    Path configPath = new File(new File("").getAbsolutePath() + CobbleUtils.PATH, "config.json").toPath();
+    Path configPath = Path.of(CobbleUtils.PATH).resolve("config.json");
     try {
-      Config loaded = UtilsFile.read(configPath, Config.class);
-      if (loaded != null) {
-        CobbleUtils.config = loaded;
-        UtilsFile.write(configPath, CobbleUtils.config);
-      } else {
-        CobbleUtils.LOGGER_RAW.info("No config.json file found for " + CobbleUtils.MOD_NAME + ". Attempting to generate one.");
-        CobbleUtils.config = this;
-        UtilsFile.write(configPath, CobbleUtils.config);
-      }
+      CobbleUtils.config = UtilsFile.readOrCreate(configPath, Config.class, Config::new);
+      UtilsFile.write(configPath, CobbleUtils.config);
     } catch (Exception e) {
       CobbleUtils.LOGGER_RAW.error("Error loading config.json: " + e.getMessage());
       CobbleUtils.config = this;

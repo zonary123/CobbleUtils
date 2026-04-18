@@ -1,11 +1,8 @@
 package com.kingpixel.cobbleutils.database.users;
 
 import com.kingpixel.cobbleutils.CobbleUtils;
-import com.kingpixel.cobbleutils.Model.DurationValue;
 import com.kingpixel.cobbleutils.Model.ItemChance;
-import com.kingpixel.cobbleutils.database.DataBaseFactory;
 import com.kingpixel.cobbleutils.database.users.models.Storage;
-import com.kingpixel.cobbleutils.util.PlayerUtils;
 import lombok.Data;
 import net.minecraft.server.network.ServerPlayerEntity;
 import org.jetbrains.annotations.NotNull;
@@ -20,8 +17,11 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * User model for CobbleUtils
- * Handles player info, last login, and claimed rewards.
+ * User model for CobbleUtils.
+ * <p>
+ * Uses a dirty-tracking pattern: mutating methods mark the model as dirty.
+ * Call {@link #isDirty()} before saving to skip unnecessary DB writes.
+ * Call {@link #clearDirty()} after a successful save.
  */
 @Data
 public class UserModel {
@@ -33,64 +33,73 @@ public class UserModel {
   private String ip;
   private Map<String, RewardInfo> rewardsClaimed = new HashMap<>();
   private Set<Storage> storageList = new HashSet<>();
-  private transient boolean dirty = false;
+  private transient AtomicBoolean dirty = new AtomicBoolean(false);
 
-  /**
-   * Constructor for an online player.
-   *
-   * @param player The online player entity.
-   */
+  public AtomicBoolean getDirty() {
+    if (dirty == null) dirty = new AtomicBoolean(false);
+    return dirty;
+  }
+
   public UserModel(ServerPlayerEntity player) {
     this.playerUUID = player.getUuid();
     connect(player);
   }
 
-  /**
-   * Constructor for a user with basic info.
-   *
-   * @param uuid       The UUID of the player.
-   * @param playerName The name of the player.
-   */
   public UserModel(UUID uuid, String playerName) {
     this.playerUUID = uuid;
     this.playerName = playerName;
     this.lastLogin = null;
     this.ip = null;
+    init();
   }
 
-  /**
-   * Constructor for a new user with default collections.
-   *
-   * @param uuid The UUID of the player.
-   */
   public UserModel(@NotNull UUID uuid) {
     this.playerUUID = uuid;
+    this.playerName = null;
     this.lastLogin = null;
     this.ip = null;
     this.online = false;
     this.disconnectTime = null;
-    this.storageList = new HashSet<>();
-    this.rewardsClaimed = new HashMap<>();
+    init();
+    getDirty().set(true);
   }
 
   /**
-   * Update user info upon connection.
-   *
-   * @param player The online player entity.
+   * Ensures all collections are initialized and non-null.
+   * Called from constructors that don't go through {@link #connect(ServerPlayerEntity)}.
    */
+  private void init() {
+    if (rewardsClaimed == null) rewardsClaimed = new HashMap<>();
+    if (storageList == null) storageList = new HashSet<>();
+  }
+
+  public void markDirty() {
+    getDirty().set(true);
+  }
+
+  /**
+   * Atomically clears the dirty flag.
+   *
+   * @return true if the flag was dirty (and is now cleared), false if it was already clean.
+   */
+  public boolean clearDirty() {
+    return getDirty().compareAndSet(true, false);
+  }
+
+  public boolean isDirty() {
+    return getDirty().get();
+  }
+
   public void connect(ServerPlayerEntity player) {
     this.playerName = player.getGameProfile().getName();
     this.lastLogin = Instant.now();
     this.ip = player.getIp();
     this.online = true;
     this.disconnectTime = null;
-    if (rewardsClaimed == null) rewardsClaimed = new HashMap<>();
-    if (storageList == null) storageList = new HashSet<>();
+    init();
+    getDirty().set(true);
   }
 
-  /**
-   * Returns a human-readable summary of the user.
-   */
   public String getUserInfo() {
     DateTimeFormatter formatter = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.FULL)
       .withLocale(Locale.getDefault())
@@ -105,96 +114,116 @@ public class UserModel {
   }
 
   /**
-   * Checks if an ItemChance reward is available for the user.
+   * Pure CHECK — does NOT mutate state. Safe to call from filters/menus.
    */
   public boolean isAvailableReward(ItemChance itemChance) {
     String identifier = itemChance.getIdentifier();
-    if (identifier == null) return true; // Unlimited item
-    int maxClaims = itemChance.getAmount();
-    RewardInfo rewardInfo = rewardsClaimed.computeIfAbsent(identifier, k -> new RewardInfo());
+    if (identifier == null) return true;
+    int maxClaims = itemChance.getAmount() != null ? itemChance.getAmount() : 1;
+    RewardInfo rewardInfo = rewardsClaimed.get(identifier);
+    if (rewardInfo == null) return true;
 
-    if (rewardInfo.getTimesClaimed() >= maxClaims && itemChance.getCooldown() != null) {
-      if (rewardInfo.isOnCooldown(itemChance)) {
-        CobbleUtils.LOGGER_RAW.info("Item on cooldown. Remaining time: " +
-          PlayerUtils.getCooldown(rewardInfo.getRemainingCooldown(itemChance)) + " seconds"
-        );
-        return false;
-      } else {
-        rewardInfo.reset();
+    if (rewardInfo.getTimesClaimed() >= maxClaims) {
+      if (itemChance.getCooldown() != null && !rewardInfo.isOnCooldown()) {
+        return true;
       }
+      if (itemChance.getCooldown() == null) {
+        return false;
+      }
+      if (CobbleUtils.config.isDebug()) {
+        CobbleUtils.LOGGER_RAW.info("Item '{}' on cooldown. Remaining: {}ms",
+          identifier, rewardInfo.getRemainingCooldown());
+      }
+      return false;
     }
 
-    rewardInfo.addTimesClaimed();
-
-    if (rewardInfo.getTimesClaimed() == maxClaims && itemChance.getCooldown() != null) {
-      rewardInfo.setFinishCooldown(Instant.now().plus(itemChance.getCooldown().toMillis(), ChronoUnit.MILLIS));
-    }
-    DataBaseFactory.dataBaseUsers.saveOrUpdateUser(this);
     return true;
   }
 
   /**
-   * Sanitizes the user model by initializing null collections and removing invalid entries.
-   *
-   * @return true if changes were made.
+   * MUTATION — marks a reward as claimed. Marks dirty. Does NOT save to DB.
+   */
+  public void claimReward(ItemChance itemChance) {
+    String identifier = itemChance.getIdentifier();
+    if (identifier == null) return;
+    int maxClaims = itemChance.getAmount() != null ? itemChance.getAmount() : 1;
+    RewardInfo rewardInfo = rewardsClaimed.computeIfAbsent(identifier, k -> new RewardInfo());
+
+    if (rewardInfo.getTimesClaimed() >= maxClaims && itemChance.getCooldown() != null && !rewardInfo.isOnCooldown()) {
+      rewardInfo.reset();
+    }
+
+    rewardInfo.addTimesClaimed();
+
+    if (rewardInfo.getTimesClaimed() >= maxClaims && itemChance.getCooldown() != null) {
+      rewardInfo.setFinishCooldown(Instant.now().plus(itemChance.getCooldown().toMillis(), ChronoUnit.MILLIS));
+    }
+    getDirty().set(true);
+  }
+
+  /**
+   * Repairs null/corrupt data after deserialization. Returns true if anything was fixed.
    */
   public boolean fix() {
-    AtomicBoolean changed = new AtomicBoolean(false);
+    boolean changed = false;
+
     if (rewardsClaimed == null) {
       rewardsClaimed = new HashMap<>();
-      changed.set(true);
-      if (CobbleUtils.config.isDebug())
-        CobbleUtils.LOGGER_RAW.info("Fixed null rewardsClaimed for user: " + playerName);
+      changed = true;
     }
     if (storageList == null) {
       storageList = new HashSet<>();
-      changed.set(true);
-      if (CobbleUtils.config.isDebug())
-        CobbleUtils.LOGGER_RAW.info("Fixed null storageList for user: " + playerName);
+      changed = true;
     }
-    storageList.stream().filter(Objects::isNull).toList().forEach(storage -> {
-      storageList.remove(storage);
-      changed.set(true);
-      if (CobbleUtils.config.isDebug())
-        CobbleUtils.LOGGER_RAW.info("Removed null storage entry for user: " + playerName);
-    });
-    Iterator<Map.Entry<String, RewardInfo>> it = rewardsClaimed.entrySet().iterator();
 
+    // Resolve playerName if missing (e.g. created via UserModel(UUID) for offline cross-server)
+    if ((playerName == null || playerName.isBlank()) && playerUUID != null && CobbleUtils.server != null) {
+      var userCache = CobbleUtils.server.getUserCache();
+      if (userCache != null) {
+        var profile = userCache.getByUuid(playerUUID);
+        if (profile.isPresent()) {
+          playerName = profile.get().getName();
+          changed = true;
+        }
+      }
+    }
+
+    // Remove null entries and entries with null id (would cause NPE in removeStorage)
+    if (storageList.removeIf(s -> s == null || s.getId() == null)) {
+      changed = true;
+    }
+
+    Iterator<Map.Entry<String, RewardInfo>> it = rewardsClaimed.entrySet().iterator();
     Instant now = Instant.now();
 
     while (it.hasNext()) {
       Map.Entry<String, RewardInfo> entry = it.next();
+      String key = entry.getKey();
       RewardInfo info = entry.getValue();
-      if (info == null) {
+
+      // Remove entries with blank keys, null values, or negative timesClaimed
+      if (key == null || key.isBlank() || info == null || info.getTimesClaimed() < 0) {
         it.remove();
-        changed.set(true);
-        if (CobbleUtils.config.isDebug())
-          CobbleUtils.LOGGER_RAW.info("Removed null RewardInfo for user: " + playerName);
+        changed = true;
         continue;
       }
+
+      // Remove expired cooldowns — no longer relevant
       if (info.getFinishCooldown() != null && now.isAfter(info.getFinishCooldown())) {
         it.remove();
-        changed.set(true);
+        changed = true;
       }
     }
-    return changed.get();
+
+    if (changed) getDirty().set(true);
+    return changed;
   }
 
-  /**
-   * Add a storage to the user.
-   *
-   * @param storage The storage to add.
-   */
   public void addStorage(Storage storage) {
     storageList.add(storage);
+    getDirty().set(true);
   }
 
-  /**
-   * Remove a storage by ID.
-   *
-   * @param storageId The ID of the storage to remove.
-   * @return The removed storage or null if not found.
-   */
   public Storage removeStorage(UUID storageId) {
     Storage toRemove = null;
     for (Storage storage : storageList) {
@@ -203,39 +232,34 @@ public class UserModel {
         break;
       }
     }
-    if (toRemove != null) storageList.remove(toRemove);
+    if (toRemove != null) {
+      storageList.remove(toRemove);
+      getDirty().set(true);
+    }
     return toRemove;
   }
 
-  /**
-   * Update the user state for disconnection.
-   */
   public void disconnect() {
     this.online = false;
     this.disconnectTime = Instant.now();
+    getDirty().set(true);
   }
 
-  /**
-   * Add multiple storages to the user.
-   *
-   * @param storage The list of storages to add.
-   */
   public void addStorage(List<Storage> storage) {
-    storageList.addAll(storage);
+    if (storage != null && !storage.isEmpty()) {
+      storageList.addAll(storage);
+      getDirty().set(true);
+    }
   }
 
-
-  /**
-   * Stores information about claimed rewards for a user.
-   */
   @Data
-  private static class RewardInfo {
+  static class RewardInfo {
     private int timesClaimed;
     private Instant finishCooldown;
 
     public RewardInfo() {
       this.timesClaimed = 0;
-      this.finishCooldown = null; // Start null to avoid premature cooldown
+      this.finishCooldown = null;
     }
 
     public void addTimesClaimed() {
@@ -247,25 +271,16 @@ public class UserModel {
       this.finishCooldown = null;
     }
 
-    public boolean isOnCooldown(ItemChance itemChance) {
-      DurationValue cooldown = itemChance.getCooldown();
-      if (finishCooldown == null || cooldown == null) return false;
-      if (cooldown.toMillis() <= 0) return true;
-      Instant nextAvailable = finishCooldown.plusMillis(cooldown.toMillis());
-      return Instant.now().isBefore(nextAvailable);
+    public boolean isOnCooldown() {
+      if (finishCooldown == null) return false;
+      return Instant.now().isBefore(finishCooldown);
     }
 
-    public long getRemainingCooldown(ItemChance itemChance) {
-      DurationValue cooldown = itemChance.getCooldown();
-      if (finishCooldown == null || cooldown == null) return 0;
-      if (cooldown.toMillis() <= 0) return Long.MAX_VALUE; // Cooldown infinito
-
-      Instant nextAvailable = finishCooldown.plusMillis(cooldown.toMillis());
-      long remaining = Duration.between(Instant.now(), nextAvailable).toMillis();
-
+    public long getRemainingCooldown() {
+      if (finishCooldown == null) return 0;
+      long remaining = Duration.between(Instant.now(), finishCooldown).toMillis();
       return Math.max(0, remaining);
     }
-
 
   }
 }

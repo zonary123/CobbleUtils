@@ -4,7 +4,6 @@ import com.kingpixel.cobbleutils.CobbleUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.io.File;
 import java.nio.file.Path;
 import java.time.DayOfWeek;
 import java.util.Map;
@@ -72,7 +71,7 @@ public class UtilsLogger extends PrefixedLogger {
 
     String output = emoji + " [" + level + "]: " + message;
 
-    Path path = new File(new File("").getAbsolutePath() + CobbleUtils.PATH, "logs.txt").toPath();
+    Path path = Path.of(CobbleUtils.PATH).resolve("logs.txt");
     CompletableFuture<Void> future = UtilsFile.writeTextAsync(path, output);
 
     future.join();

@@ -1,6 +1,8 @@
 package com.kingpixel.cobbleutils.util.economys;
 
 import java.math.BigDecimal;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 /**
  * Represents the result of an economy operation.
@@ -16,10 +18,6 @@ public record EconomyResponse(
 
   public boolean isSuccess() {
     return success();
-  }
-
-  public Number getAmount() {
-    return amount;
   }
 
   /**
@@ -68,5 +66,32 @@ public record EconomyResponse(
    */
   public static EconomyResponse notImplemented() {
     return new EconomyResponse(BigDecimal.ZERO, BigDecimal.ZERO, ResponseType.NOT_IMPLEMENTED, "Operation not implemented");
+  }
+
+  // =========================================================
+  // Fluent API
+  // =========================================================
+
+  /**
+   * If the operation was successful, apply the function to the response.
+   */
+  public <T> T map(Function<EconomyResponse, T> mapper) {
+    return mapper.apply(this);
+  }
+
+  /**
+   * Executes the consumer if the operation was successful.
+   */
+  public EconomyResponse ifSuccess(Consumer<EconomyResponse> consumer) {
+    if (success()) consumer.accept(this);
+    return this;
+  }
+
+  /**
+   * Executes the consumer if the operation failed.
+   */
+  public EconomyResponse ifFailure(Consumer<String> consumer) {
+    if (!success()) consumer.accept(errorMessage);
+    return this;
   }
 }

@@ -9,6 +9,7 @@ import com.kingpixel.cobbleutils.api.PermissionApi;
 import com.kingpixel.cobbleutils.api.RewardsApi;
 import com.kingpixel.cobbleutils.command.suggests.CobbleUtilsSuggests;
 import com.kingpixel.cobbleutils.database.DataBaseFactory;
+import com.kingpixel.cobbleutils.database.users.models.Storage;
 import com.kingpixel.cobbleutils.database.users.models.StorageItemStack;
 import com.kingpixel.cobbleutils.database.users.models.StoragePokemon;
 import com.kingpixel.cobbleutils.database.users.models.StorageRewards;
@@ -58,16 +59,9 @@ public class StorageCommand {
                         .then(
                           CommandManager.argument("slot", PartySlotArgumentType.Companion.partySlot())
                             .executes(context -> {
-                              ServerCommandSource source = context.getSource();
-                              UUID targetUUID = getPlayerUUID(context);
-                              String targetName = getTargetName(context);
                               Pokemon pokemon = PartySlotArgumentType.Companion.getPokemon(context, "slot").clone(true, DynamicRegistryManager.EMPTY);
-
-                              DataBaseFactory.dataBaseUsers.addStorage(new StoragePokemon(pokemon), targetUUID);
-                              sendFeedback(source,
-                                "✅ Added Pokémon " + pokemon.getDisplayName(false).getString() + " to " + targetName +
-                                  "'s storage.");
-                              return 1;
+                              return addStorageSafe(context, new StoragePokemon(pokemon),
+                                "Pokémon " + pokemon.getDisplayName(false).getString());
                             })
                         )
                     )
@@ -76,14 +70,9 @@ public class StorageCommand {
                         .then(
                           CommandManager.argument(ARG_POKEMON, PokemonPropertiesArgumentType.Companion.properties())
                             .executes(context -> {
-                              ServerCommandSource source = context.getSource();
-                              UUID targetUUID = getPlayerUUID(context);
-                              String targetName = getTargetName(context);
                               Pokemon pokemon = PokemonPropertiesArgumentType.Companion.getPokemonProperties(context, ARG_POKEMON).create();
-                              DataBaseFactory.dataBaseUsers.addStorage(new StoragePokemon(pokemon), targetUUID);
-                              sendFeedback(source, "✅ Added Pokémon " + pokemon.getDisplayName(false).getString() +
-                                " to " + targetName + "'s storage.");
-                              return 1;
+                              return addStorageSafe(context, new StoragePokemon(pokemon),
+                                "Pokémon " + pokemon.getDisplayName(false).getString());
                             })
                         )
                     )
@@ -94,18 +83,14 @@ public class StorageCommand {
                     .then(
                       CommandManager.literal("hand")
                         .executes(context -> {
-                          ServerCommandSource source = context.getSource();
-                          ServerPlayerEntity sender = source.getPlayerOrThrow();
-                          UUID targetUUID = getPlayerUUID(context);
-                          String targetName = getTargetName(context);
+                          ServerPlayerEntity sender = context.getSource().getPlayerOrThrow();
                           var itemStack = sender.getMainHandStack().copy();
                           if (itemStack.isEmpty()) {
-                            sendFeedback(source, "⚠️ You must be holding an item to use this command.");
+                            sendFeedback(context.getSource(), "⚠️ You must be holding an item to use this command.");
                             return 0;
                           }
-                          DataBaseFactory.dataBaseUsers.addStorage(new StorageItemStack(itemStack), targetUUID);
-                          sendFeedback(source, "✅ Added " + itemStack.getCount() + "x " + itemStack.getName().getString() + " to " + targetName + "'s storage.");
-                          return 1;
+                          return addStorageSafe(context, new StorageItemStack(itemStack),
+                            itemStack.getCount() + "x " + itemStack.getName().getString());
                         })
                     )
                     .then(
@@ -115,18 +100,14 @@ public class StorageCommand {
                             .then(
                               CommandManager.argument(ARG_ITEM, ItemStackArgumentType.itemStack(registry))
                                 .executes(context -> {
-                                  ServerCommandSource source = context.getSource();
-                                  UUID targetUUID = getPlayerUUID(context);
-                                  String targetName = getTargetName(context);
                                   int amount = IntegerArgumentType.getInteger(context, ARG_AMOUNT);
                                   var itemStack = ItemStackArgumentType.getItemStackArgument(context, ARG_ITEM).createStack(amount, true);
                                   if (itemStack.isEmpty()) {
-                                    sendFeedback(source, "⚠️ The specified item stack is empty.");
+                                    sendFeedback(context.getSource(), "⚠️ The specified item stack is empty.");
                                     return 0;
                                   }
-                                  DataBaseFactory.dataBaseUsers.addStorage(new StorageItemStack(itemStack), targetUUID);
-                                  sendFeedback(source, "✅ Added " + amount + "x " + itemStack.getName().getString() + " to " + targetName + "'s storage.");
-                                  return 1;
+                                  return addStorageSafe(context, new StorageItemStack(itemStack),
+                                    amount + "x " + itemStack.getName().getString());
                                 })
                             )
                         )
@@ -138,25 +119,18 @@ public class StorageCommand {
                     .then(
                       CommandManager.argument("data", StringArgumentType.greedyString())
                         .executes(context -> {
-                          ServerCommandSource source = context.getSource();
-                          UUID targetUUID = getPlayerUUID(context);
-                          String targetName = getTargetName(context);
                           String data = StringArgumentType.getString(context, "data");
                           ItemChance itemChance = null;
                           if (data.startsWith("id:")) {
-                            String id = data.substring(3);
-                            itemChance = RewardsApi.getReward(id);
+                            itemChance = RewardsApi.getReward(data.substring(3));
                           } else {
                             itemChance = new ItemChance(data, 100);
                           }
                           if (itemChance == null) {
-                            sendFeedback(source, "⚠️ Reward '" + data + "' not found.");
+                            sendFeedback(context.getSource(), "⚠️ Reward '" + data + "' not found.");
                             return 0;
                           }
-
-                          DataBaseFactory.dataBaseUsers.addStorage(new StorageRewards(itemChance), targetUUID);
-                          sendFeedback(source, "✅ Added reward '" + data + "' to " + targetName + "'s storage.");
-                          return 1;
+                          return addStorageSafe(context, new StorageRewards(itemChance), "reward '" + data + "'");
                         })
                     )
                 )
@@ -208,6 +182,32 @@ public class StorageCommand {
 
   private static String getTargetName(CommandContext<ServerCommandSource> context) {
     return context.getArgument(ARG_PLAYER, String.class);
+  }
+
+  /**
+   * Validates target player and adds storage. Returns 1 on success, 0 on failure.
+   */
+  private static int addStorageSafe(CommandContext<ServerCommandSource> context, Storage storage, String description) {
+    ServerCommandSource source = context.getSource();
+    String targetName = getTargetName(context);
+    UUID targetUUID = getPlayerUUID(context);
+
+    if (targetUUID == null) {
+      sendFeedback(source, "⚠️ Player '" + targetName + "' not found.");
+      return 0;
+    }
+
+    // Ensure user exists in DB before adding storage
+    var user = DataBaseFactory.dataBaseUsers.findUser(targetUUID);
+    if (user == null) {
+      user = new com.kingpixel.cobbleutils.database.users.UserModel(targetUUID);
+      user.fix();
+      DataBaseFactory.dataBaseUsers.saveOrUpdateUser(user);
+    }
+
+    DataBaseFactory.dataBaseUsers.addStorage(storage, targetUUID);
+    sendFeedback(source, "✅ Added " + description + " to " + targetName + "'s storage.");
+    return 1;
   }
 
   private static void sendFeedback(ServerCommandSource source, String message) {

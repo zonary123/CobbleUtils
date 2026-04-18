@@ -40,6 +40,10 @@ public final class ConditionAdapter implements JsonDeserializer<Condition>, Json
     TYPES.put(id, clazz);
   }
 
+  public static Map<String, Class<? extends Condition>> getRegisteredTypes() {
+    return Map.copyOf(TYPES);
+  }
+
   @Override
   public Condition deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context)
     throws JsonParseException {

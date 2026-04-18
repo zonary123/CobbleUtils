@@ -10,7 +10,7 @@ import com.kingpixel.cobbleutils.util.UtilsFile;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.io.File;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -292,24 +292,19 @@ public class Lang {
    * Method to initialize the config.
    */
   public void init() {
-    File file = new File(CobbleUtils.PATH_LANG, CobbleUtils.config.getLang() + ".json");
+    Path langPath = Path.of(CobbleUtils.PATH_LANG).resolve(CobbleUtils.config.getLang() + ".json");
     try {
-      Lang langFromFile = UtilsFile.read(file.toPath(), Lang.class);
-      if (langFromFile != null) {
-        CobbleUtils.language = langFromFile;
-        if (CobbleUtils.language.getTitlemenurewards() == null)
-          CobbleUtils.language.setTitlemenurewards("&eRewards Menu");
-        UtilsFile.write(file.toPath(), CobbleUtils.language);
-      } else {
-        CobbleUtils.LOGGER_RAW.info("No lang.json file found for " + CobbleUtils.MOD_NAME + ". Attempting to generate one.");
-        UtilsFile.write(file.toPath(), this);
-      }
+      CobbleUtils.language = UtilsFile.readOrCreate(langPath, Lang.class, Lang::new);
+      if (CobbleUtils.language.getTitlemenurewards() == null)
+        CobbleUtils.language.setTitlemenurewards("&eRewards Menu");
+      UtilsFile.write(langPath, CobbleUtils.language);
     } catch (Exception e) {
-      CobbleUtils.LOGGER_RAW.error("Error loading lang file: " + file.getPath() + " - " + e.getMessage());
+      CobbleUtils.LOGGER_RAW.error("Error loading lang file: " + langPath + " - " + e.getMessage());
+      CobbleUtils.language = this;
       try {
-        UtilsFile.write(file.toPath(), this);
+        UtilsFile.write(langPath, this);
       } catch (Exception ex) {
-        ex.printStackTrace();
+        CobbleUtils.LOGGER_RAW.error("Error writing lang file: " + langPath + " - " + ex.getMessage());
       }
     }
   }

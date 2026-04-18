@@ -59,28 +59,10 @@ public class BeEconomy extends Economy {
   }
 
   @Override
-  public CompletableFuture<EconomyResponse> setBalance(UUID playerId, String currencyId, BigDecimal amount, String reason) {
-    return runAsync(() -> {
-      BigDecimal before = service.getBalance(playerId, currencyId);
-      BigDecimal diff = amount.subtract(before);
-
-      if (diff.compareTo(BigDecimal.ZERO) > 0) {
-        service.addBalance(playerId, diff, currencyId);
-      } else if (diff.compareTo(BigDecimal.ZERO) < 0) {
-        service.setBalance(playerId, amount, currencyId);
-      }
-
-      BigDecimal after = service.getBalance(playerId, currencyId);
-      return EconomyResponse.success(diff, after);
-    });
-  }
-
-  @Override
   public CompletableFuture<EconomyResponse> deposit(UUID playerId, String currencyId, BigDecimal amount, String reason) {
     return runAsync(() -> {
       service.addBalance(playerId, amount, currencyId);
-      BigDecimal after = service.getBalance(playerId, currencyId);
-      return EconomyResponse.success(amount, after);
+      return EconomyResponse.success(amount, service.getBalance(playerId, currencyId));
     });
   }
 
@@ -90,45 +72,7 @@ public class BeEconomy extends Economy {
       BigDecimal before = service.getBalance(playerId, currencyId);
       if (before.compareTo(amount) < 0) return EconomyResponse.failure("Insufficient funds");
       service.setBalance(playerId, before.subtract(amount), currencyId);
-      BigDecimal after = service.getBalance(playerId, currencyId);
-      return EconomyResponse.success(amount, after);
-    });
-  }
-
-  @Override
-  public CompletableFuture<EconomyResponse> hasEnoughMoney(UUID playerId, String currencyId, BigDecimal amount) {
-    return getBalance(playerId, currencyId).thenApply(resp ->
-      resp.balance().compareTo(amount) >= 0
-        ? EconomyResponse.success(BigDecimal.ZERO, resp.balance())
-        : EconomyResponse.failure("Not enough money")
-    );
-  }
-
-  @Override
-  public CompletableFuture<EconomyResponse> transfer(@NonNull UUID fromPlayerId, @NonNull UUID toPlayerId,
-                                                     @NonNull String currencyId, @NonNull BigDecimal amount,
-                                                     @NonNull String reason) {
-    if (fromPlayerId.equals(toPlayerId))
-      return CompletableFuture.completedFuture(EconomyResponse.failure("Cannot transfer to the same player"));
-
-    // Check funds y luego ejecutar todo de manera segura
-    return hasEnoughMoney(fromPlayerId, currencyId, amount).thenCompose(hasMoneyResp -> {
-      if (!hasMoneyResp.success())
-        return CompletableFuture.completedFuture(EconomyResponse.failure("Source player lacks funds"));
-
-      return withdraw(fromPlayerId, currencyId, amount, reason).thenCompose(withdrawResp -> {
-        if (!withdrawResp.success())
-          return CompletableFuture.completedFuture(EconomyResponse.failure("Failed to withdraw from source"));
-
-        return deposit(toPlayerId, currencyId, amount, reason).thenCompose(depositResp -> {
-          if (!depositResp.success()) {
-            // rollback asincrónico
-            return deposit(fromPlayerId, currencyId, amount, "rollback")
-              .thenApply(rollbackResp -> EconomyResponse.failure("Failed to deposit to target, rollback applied"));
-          }
-          return CompletableFuture.completedFuture(EconomyResponse.success(amount, depositResp.balance()));
-        });
-      });
+      return EconomyResponse.success(amount, service.getBalance(playerId, currencyId));
     });
   }
 

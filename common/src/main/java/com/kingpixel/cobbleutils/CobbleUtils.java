@@ -24,12 +24,14 @@ import com.kingpixel.cobbleutils.util.redis.RedisManager;
 import com.kingpixel.cobbleutils.util.redis.RedisService;
 import com.kingpixel.cobbleutils.util.redis.handlers.RedisMessageHandler;
 import com.kingpixel.cobbleutils.util.redis.handlers.RedisTeleportHandler;
+import com.kingpixel.cobbleutils.util.redis.handlers.RedisUserCacheHandler;
 import com.kingpixel.cobbleutils.util.sql.SQLService;
 import dev.architectury.event.events.common.CommandRegistrationEvent;
 import dev.architectury.event.events.common.InteractionEvent;
 import dev.architectury.event.events.common.LifecycleEvent;
 import dev.architectury.event.events.common.PlayerEvent;
 import dev.architectury.injectables.targets.ArchitecturyTarget;
+import dev.architectury.platform.Platform;
 import lombok.Getter;
 import lombok.Setter;
 import net.fabricmc.loader.api.FabricLoader;
@@ -40,17 +42,16 @@ import net.minecraft.server.MinecraftServer;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 
-import java.io.File;
 import java.nio.file.Path;
 import java.util.concurrent.*;
 
 public class CobbleUtils {
   public static final String MOD_ID = "cobbleutils";
   public static final String MOD_NAME = "CobbleUtils";
-  public static final String PATH = "/config/cobbleutils";
-  public static final String PATH_LANG = PATH + "/lang/";
-  public static final String PATH_BREED = PATH + "/breed/";
-  public static final String PATH_BREED_DATA = PATH_BREED + "data/";
+  public static final String PATH = Platform.getConfigFolder().resolve("cobbleutils").toString();
+  public static final String PATH_LANG = Path.of(PATH).resolve("lang").toString();
+  public static final String PATH_BREED = Path.of(PATH).resolve("breed").toString();
+  public static final String PATH_BREED_DATA = Path.of(PATH_BREED).resolve("data").toString();
   public static final UtilsLogger LOGGER = new UtilsLogger();
   public static final Logger LOGGER_RAW = UtilsLogger.getLogger(MOD_NAME);
 
@@ -65,18 +66,18 @@ public class CobbleUtils {
   public static SpawnRates spawnRates = new SpawnRates();
   // Lang
   public static final AsyncContext ASYNC = com.kingpixel.cobbleutils.util.async.UtilsAsync.createContext(MOD_ID,
-      MOD_NAME, 1, 2);
+    MOD_NAME, 1, 1);
   public static Lang language = new Lang();
   public static RedisManager redisManager;
   private static final ExecutorService EXECUTOR_COBBLEUTILS = Executors.newFixedThreadPool(1, new ThreadFactoryBuilder()
-      .setDaemon(true)
-      .setNameFormat("CobbleUtils Executor-%d")
-      .build());
+    .setDaemon(true)
+    .setNameFormat("CobbleUtils Executor-%d")
+    .build());
   public static final ScheduledExecutorService SCHEDULER_COBBLEUTILS = Executors.newScheduledThreadPool(1,
-      new ThreadFactoryBuilder()
-          .setDaemon(true)
-          .setNameFormat("CobbleUtils Scheduled Executor-%d")
-          .build());
+    new ThreadFactoryBuilder()
+      .setDaemon(true)
+      .setNameFormat("CobbleUtils Scheduled Executor-%d")
+      .build());
 
   public static void init() {
     try {
@@ -121,7 +122,7 @@ public class CobbleUtils {
   private static void sign() {
     info(MOD_ID, "1.1.4", "CobbleUtils");
     LOGGER_RAW.info(
-        "§e| §6Supported economies: Impactor, BlanketEconomy, CobbleDollars, SDMEconomy, PebbleEconomy and Vault");
+      "§e| §6Supported economies: Impactor, BlanketEconomy, CobbleDollars, SDMEconomy, PebbleEconomy and Vault");
     LOGGER_RAW.info("§e+-------------------------------+");
   }
 
@@ -135,11 +136,11 @@ public class CobbleUtils {
     String authors = "Zonary123";
     if (ArchitecturyTarget.getCurrentTarget().equals("fabric")) {
       ModContainer mod = FabricLoader.getInstance().getAllMods()
-          .stream()
-          .filter(m -> m.getMetadata().getId().equals(identifier) ||
-              m.getMetadata().getName().equals(identifier))
-          .findFirst()
-          .orElse(null);
+        .stream()
+        .filter(m -> m.getMetadata().getId().equals(identifier) ||
+          m.getMetadata().getName().equals(identifier))
+        .findFirst()
+        .orElse(null);
       if (mod != null) {
         finalVersion = mod.getMetadata().getVersion().getFriendlyString();
         finalName = mod.getMetadata().getName();
@@ -165,6 +166,7 @@ public class CobbleUtils {
         redisManager = config.getRedis().getManager();
         redisManager.registerHandler(new RedisMessageHandler());
         redisManager.registerHandler(new RedisTeleportHandler());
+        redisManager.registerHandler(new RedisUserCacheHandler());
       }
     } catch (NoClassDefFoundError | NoSuchMethodError | Exception ignored) {
       LOGGER_RAW.error("Error while trying to initialize RedisManager");
@@ -260,16 +262,12 @@ public class CobbleUtils {
     return UtilsAsync.runAsync(runnable, executor);
   }
 
-  private static Path path;
-
   public static Path getPath() {
-    if (path == null)
-      path = new File("").toPath().resolve("config");
-    return path;
+    return Platform.getConfigFolder();
   }
 
   public static Path getPathMod() {
-    return getPath().resolve(MOD_ID);
+    return Platform.getConfigFolder().resolve(MOD_ID);
   }
 
 }
