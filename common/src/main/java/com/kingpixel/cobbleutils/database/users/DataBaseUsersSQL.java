@@ -17,6 +17,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * SQL-backed implementation of {@link DataBaseUsers}.
@@ -44,6 +45,7 @@ public class DataBaseUsersSQL extends DataBaseUsers {
 
   private SQLManager sqlManager;
   private DataBaseType type;
+  private DataBaseConfig config;
 
   /**
    * Initialize the SQL database connection.
@@ -52,6 +54,7 @@ public class DataBaseUsersSQL extends DataBaseUsers {
    */
   @Override
   public void connect(DataBaseConfig config) {
+    this.config = config;
     this.type = config.getType();
     this.sqlManager = SQLService.getOrCreateManager(config);
     createTables();
@@ -62,6 +65,11 @@ public class DataBaseUsersSQL extends DataBaseUsers {
    */
   @Override
   public void disconnect() {
+    if (config != null) {
+      SQLService.releaseManager(config);
+    }
+    sqlManager = null;
+    config = null;
   }
 
   /**
@@ -85,6 +93,21 @@ public class DataBaseUsersSQL extends DataBaseUsers {
   @Override
   public @Nullable UserModel findUserByUUID(@NotNull UUID uuid) {
     return sqlManager.query(
+      "SELECT data FROM users WHERE playerUUID = ?",
+      rs -> {
+        if (!rs.next()) return null;
+        UserModel user = UtilsFile.getGson().fromJson(rs.getString("data"), UserModel.class);
+        if (user != null) {
+          user.fix();
+        }
+        return user;
+      },
+      uuid.toString()
+    );
+  }
+
+  public CompletableFuture<UserModel> findUserByUUIDAsync(@NotNull UUID uuid) {
+    return sqlManager.queryAsync(
       "SELECT data FROM users WHERE playerUUID = ?",
       rs -> {
         if (!rs.next()) return null;
@@ -143,6 +166,28 @@ public class DataBaseUsersSQL extends DataBaseUsers {
       user.isOnline() ? 1 : 0,
       lastLogin
     );
+  }
+
+  public CompletableFuture<Void> saveOrUpdateUserAsync(UserModel user) {
+    if (user == null || user.getPlayerUUID() == null) {
+      return CompletableFuture.completedFuture(null);
+    }
+
+    String data = UtilsFile.getGson().toJson(user, UserModel.class);
+    String lastLogin = user.getLastLogin() != null
+      ? DateTimeFormatter.ISO_INSTANT.format(user.getLastLogin())
+      : null;
+
+    String sql = buildUpsertSql();
+    return sqlManager.executeAsync(
+      sql,
+      user.getPlayerUUID().toString(),
+      user.getPlayerName(),
+      data,
+      user.isOnline() ? 1 : 0,
+      lastLogin
+    ).thenAccept(ignored -> {
+    });
   }
 
   /**
@@ -222,6 +267,19 @@ public class DataBaseUsersSQL extends DataBaseUsers {
     user.addStorage(storage);
     saveOrUpdateUser(user);
     invalidateUser(playerUUID);
+  }
+
+  public CompletableFuture<Void> addStorageAsync(Storage storage, UUID playerUUID) {
+    if (storage == null || playerUUID == null) {
+      return CompletableFuture.completedFuture(null);
+    }
+    return findUserByUUIDAsync(playerUUID).thenCompose(user -> {
+      if (user == null) {
+        return CompletableFuture.completedFuture(null);
+      }
+      user.addStorage(storage);
+      return saveOrUpdateUserAsync(user).thenRun(() -> invalidateUser(playerUUID));
+    });
   }
 
   @Override

@@ -9,6 +9,7 @@ import com.kingpixel.cobbleutils.api.PermissionApi;
 import com.kingpixel.cobbleutils.api.RewardsApi;
 import com.kingpixel.cobbleutils.command.suggests.CobbleUtilsSuggests;
 import com.kingpixel.cobbleutils.database.DataBaseFactory;
+import com.kingpixel.cobbleutils.database.users.UserModel;
 import com.kingpixel.cobbleutils.database.users.models.Storage;
 import com.kingpixel.cobbleutils.database.users.models.StorageItemStack;
 import com.kingpixel.cobbleutils.database.users.models.StoragePokemon;
@@ -146,14 +147,21 @@ public class StorageCommand {
                   ServerPlayerEntity player = context.getSource().getPlayerOrThrow();
                   UUID playerUUID = getPlayerUUID(context);
                   String targetName = getTargetName(context);
-
-                  var user = DataBaseFactory.dataBaseUsers.findUser(playerUUID);
-                  if (user != null) {
-                    CobbleUtils.language.getStorageMenu().open(player, playerUUID);
-                    sendFeedback(context.getSource(), "📦 Displaying storage for " + targetName + ".");
-                  } else {
+                  if (playerUUID == null) {
                     sendFeedback(context.getSource(), "⚠️ Player " + targetName + " was not found.");
+                    return 0;
                   }
+                  CobbleUtils.runAsync(() -> {
+                    var user = DataBaseFactory.dataBaseUsers.findUser(playerUUID);
+                    CobbleUtils.server.execute(() -> {
+                      if (user != null) {
+                        CobbleUtils.language.getStorageMenu().open(player, playerUUID);
+                        sendFeedback(context.getSource(), "📦 Displaying storage for " + targetName + ".");
+                      } else {
+                        sendFeedback(context.getSource(), "⚠️ Player " + targetName + " was not found.");
+                      }
+                    });
+                  });
                   return 1;
                 })
             )
@@ -197,16 +205,19 @@ public class StorageCommand {
       return 0;
     }
 
-    // Ensure user exists in DB before adding storage
-    var user = DataBaseFactory.dataBaseUsers.findUser(targetUUID);
-    if (user == null) {
-      user = new com.kingpixel.cobbleutils.database.users.UserModel(targetUUID);
-      user.fix();
-      DataBaseFactory.dataBaseUsers.saveOrUpdateUser(user);
-    }
+    CobbleUtils.runAsync(() -> {
+      // Ensure user exists in DB before adding storage
+      UserModel user = DataBaseFactory.dataBaseUsers.findUser(targetUUID);
+      if (user == null) {
+        user = new UserModel(targetUUID);
+        user.fix();
+        DataBaseFactory.dataBaseUsers.saveOrUpdateUser(user);
+      }
 
-    DataBaseFactory.dataBaseUsers.addStorage(storage, targetUUID);
-    sendFeedback(source, "✅ Added " + description + " to " + targetName + "'s storage.");
+      DataBaseFactory.dataBaseUsers.addStorage(storage, targetUUID);
+      CobbleUtils.server.execute(() ->
+        sendFeedback(source, "✅ Added " + description + " to " + targetName + "'s storage."));
+    });
     return 1;
   }
 

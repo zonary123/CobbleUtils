@@ -20,6 +20,7 @@ import java.util.Locale;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 
@@ -67,6 +68,9 @@ public class SQLManager {
   private static final String SQL_ASYNC_THREAD_NAME = "SQL-IO";
 
   private final DataBaseConfig config;
+  private final SqlExecutionProfile profile;
+  private final String asyncContextId;
+  private final String asyncThreadName;
 
   @Getter
   private volatile HikariDataSource dataSource;
@@ -85,6 +89,9 @@ public class SQLManager {
    */
   public SQLManager(DataBaseConfig config) {
     this.config = config;
+    this.profile = SqlExecutionProfiles.resolve(config);
+    this.asyncContextId = SQL_ASYNC_CONTEXT_ID + ":" + buildConnectionKey(config);
+    this.asyncThreadName = SQL_ASYNC_THREAD_NAME + "-" + config.getType().name();
   }
 
   /**
@@ -106,8 +113,8 @@ public class SQLManager {
         case MYSQL, MARIADB -> {
           hikariConfig.setUsername(config.getUser());
           hikariConfig.setPassword(config.getPassword());
-          hikariConfig.setMaximumPoolSize(10);
-          hikariConfig.setMinimumIdle(2);
+          hikariConfig.setMaximumPoolSize(profile.poolMaxSize());
+          hikariConfig.setMinimumIdle(profile.poolMinIdle());
         }
         case H2 -> {
           // H2 supports optional auth
@@ -115,13 +122,13 @@ public class SQLManager {
             hikariConfig.setUsername(config.getUser());
             hikariConfig.setPassword(config.getPassword());
           }
-          hikariConfig.setMaximumPoolSize(1);
-          hikariConfig.setMinimumIdle(1);
+          hikariConfig.setMaximumPoolSize(profile.poolMaxSize());
+          hikariConfig.setMinimumIdle(profile.poolMinIdle());
         }
         default -> {
           // SQLite: embedded, no auth, single connection
-          hikariConfig.setMaximumPoolSize(1);
-          hikariConfig.setMinimumIdle(1);
+          hikariConfig.setMaximumPoolSize(profile.poolMaxSize());
+          hikariConfig.setMinimumIdle(profile.poolMinIdle());
         }
       }
 
@@ -140,13 +147,28 @@ public class SQLManager {
         // Enable WAL mode for SQLite (better concurrent read performance)
         if (config.getType() == DataBaseType.SQLITE) {
           try (var stmt = conn.createStatement()) {
-            stmt.execute("PRAGMA journal_mode=WAL");
-            stmt.execute("PRAGMA synchronous=NORMAL");
+            if (profile.sqliteWal()) {
+              stmt.execute("PRAGMA journal_mode=WAL");
+            }
+            if (profile.sqliteSynchronousNormal()) {
+              stmt.execute("PRAGMA synchronous=NORMAL");
+            }
+            if (profile.sqliteBusyTimeoutMs() > 0) {
+              stmt.execute("PRAGMA busy_timeout=" + profile.sqliteBusyTimeoutMs());
+            }
           }
         }
       }
 
-      CobbleUtils.LOGGER_RAW.info("SQL pool initialized for " + config.getType());
+      CobbleUtils.LOGGER_RAW.info(
+        "SQL pool initialized for {} (pool {}/{}, async {}/{}, timeout {}ms)",
+        config.getType(),
+        profile.poolMinIdle(),
+        profile.poolMaxSize(),
+        profile.asyncMinThreads(),
+        profile.asyncMaxThreads(),
+        profile.operationTimeoutMs()
+      );
 
     } catch (Exception e) {
       CobbleUtils.LOGGER_RAW.error("Could not initialize SQL pool for " + config.getType() + ": " + e.getMessage());
@@ -159,7 +181,7 @@ public class SQLManager {
    */
   public <T> CompletableFuture<T> supplyAsync(Supplier<T> supplier) {
     Objects.requireNonNull(supplier, "supplier cannot be null");
-    return getSqlAsyncContext().supply(supplier);
+    return getSqlAsyncContext().supply(supplier, profile.operationTimeoutMs(), TimeUnit.MILLISECONDS);
   }
 
   /**
@@ -380,8 +402,16 @@ public class SQLManager {
     return value == null ? "" : value.trim();
   }
 
-  private static AsyncContext getSqlAsyncContext() {
-    return UtilsAsync.createContext(SQL_ASYNC_CONTEXT_ID, SQL_ASYNC_THREAD_NAME, 2, 4);
+  private AsyncContext getSqlAsyncContext() {
+    return UtilsAsync.createContext(
+      asyncContextId,
+      asyncThreadName,
+      profile.asyncMinThreads(),
+      profile.asyncMaxThreads(),
+      profile.asyncQueueSize(),
+      profile.operationTimeoutMs(),
+      TimeUnit.MILLISECONDS
+    );
   }
 
   /**
