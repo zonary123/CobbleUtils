@@ -9,12 +9,10 @@ import net.minecraft.server.network.ServerPlayerEntity;
 @ToString(callSuper = true)
 @Builder
 @Data
-public class HeightCondition extends Condition {
-  public static final String TYPE = "HEIGHT";
+public class SneakingCondition extends Condition {
+  public static final String TYPE = "SNEAKING";
   @Builder.Default
-  private int minHeight = 0;
-  @Builder.Default
-  private int maxHeight = 256;
+  private boolean requiresSneaking = true;
 
   @Override
   public String getType() {
@@ -23,14 +21,12 @@ public class HeightCondition extends Condition {
 
   @Override
   public boolean check(ServerPlayerEntity player) {
-    int y = player.getBlockPos().getY();
-    return y >= minHeight && y <= maxHeight;
+    return player.isSneaking() == requiresSneaking;
   }
 
   @Override
   public String getReason(ServerPlayerEntity player) {
-    return "You need to be between Y levels " + minHeight + " and " + maxHeight;
+    return requiresSneaking ? "You must be sneaking" : "You must not be sneaking";
   }
-
-
 }
+

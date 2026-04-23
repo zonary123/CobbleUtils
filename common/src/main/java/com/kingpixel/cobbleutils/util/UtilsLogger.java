@@ -27,27 +27,32 @@ public class UtilsLogger extends PrefixedLogger {
     super(LogManager.getLogger(CobbleUtils.MOD_NAME), CobbleUtils.MOD_ID);
   }
 
+  @Deprecated(forRemoval = true)
   public UtilsLogger(String name) {
     super(LogManager.getLogger(name), name);
   }
 
+  @Deprecated(forRemoval = true)
   public void info(String modId, String message) {
     getLogger(modId).info(message);
   }
 
+  @Deprecated(forRemoval = true)
   public void info(DayOfWeek dayOfWeek) {
     info(String.valueOf(dayOfWeek));
   }
 
+  @Deprecated(forRemoval = true)
   public void warn(String modId, String message) {
     getLogger(modId).warn(message);
   }
 
+  @Deprecated(forRemoval = true)
   public void error(String modId, String message) {
     getLogger(modId).error(message);
   }
 
-
+  @Deprecated(forRemoval = true)
   public void fatal(String modId, String message) {
     getLogger(modId).fatal(message);
   }
@@ -60,7 +65,7 @@ public class UtilsLogger extends PrefixedLogger {
     FATAL
   }
 
-  // Write method to save logs to file (async)
+  // Write method to save logs to file (async)  @Deprecated(forRemoval = true)
   private void write(Level level, String message) {
     String emoji = switch (level) {
       case INFO -> "ℹ️";

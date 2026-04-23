@@ -1,9 +1,10 @@
 package com.kingpixel.cobbleutils.Model.conditions;
 
-import com.kingpixel.cobbleutils.CobbleUtils;
 import lombok.*;
 import net.minecraft.server.network.ServerPlayerEntity;
 
+import java.time.DayOfWeek;
+import java.time.LocalDate;
 import java.util.Set;
 
 @EqualsAndHashCode(callSuper = true)
@@ -12,10 +13,10 @@ import java.util.Set;
 @ToString(callSuper = true)
 @Builder
 @Data
-public class ServerCondition extends Condition {
-  public static final String TYPE = "SERVER";
+public class DayOfWeekCondition extends Condition {
+  public static final String TYPE = "DAY_OF_WEEK";
   @Builder.Default
-  private Set<String> servers = Set.of("lunarclient");
+  private Set<String> days = Set.of("MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY", "SUNDAY");
 
   @Override
   public String getType() {
@@ -24,13 +25,13 @@ public class ServerCondition extends Condition {
 
   @Override
   public boolean check(ServerPlayerEntity player) {
-    return CobbleUtils.getServerName() != null && servers.contains(CobbleUtils.getServerName());
+    String today = LocalDate.now().getDayOfWeek().name();
+    return days.stream().anyMatch(d -> d.equalsIgnoreCase(today));
   }
 
   @Override
   public String getReason(ServerPlayerEntity player) {
-    return "You need to be on one of the following servers: " + String.join(", ", servers);
+    return "This action is only available on: " + String.join(", ", days);
   }
-
-
 }
+

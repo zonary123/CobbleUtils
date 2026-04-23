@@ -16,6 +16,7 @@ import com.kingpixel.cobbleutils.Model.DataBaseType;
 import com.kingpixel.cobbleutils.Model.DurationValue;
 import com.kingpixel.cobbleutils.Model.ItemChance;
 import com.kingpixel.cobbleutils.Model.ItemModel;
+import com.kingpixel.cobbleutils.Model.ScheduleValue;
 import com.kingpixel.cobbleutils.Model.conditions.Condition;
 import com.kingpixel.cobbleutils.Model.messages.HiperMessage;
 import com.kingpixel.cobbleutils.Model.zones.zoneshapes.ZoneShape;
@@ -121,6 +122,7 @@ public abstract class Utils {
       .registerTypeAdapter(Instant.class, InstantTypeAdapter.INSTANCE)
       .registerTypeAdapter(ItemChance.class, ItemChanceAdapter.INSTANCE)
       .registerTypeAdapter(DurationValue.class, DurationValue.INSTANCE)
+      .registerTypeAdapter(ScheduleValue.class, ScheduleValue.INSTANCE)
       .registerTypeAdapter(DataBaseType.class, DataBaseTypeAdapter.INSTANCE)
       .registerTypeAdapter(Storage.class, StorageAdapter.INSTANCE)
       .registerTypeAdapter(Condition.class, ConditionAdapter.INSTANCE)

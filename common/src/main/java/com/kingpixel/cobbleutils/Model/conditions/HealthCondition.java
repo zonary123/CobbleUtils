@@ -9,12 +9,12 @@ import net.minecraft.server.network.ServerPlayerEntity;
 @ToString(callSuper = true)
 @Builder
 @Data
-public class HeightCondition extends Condition {
-  public static final String TYPE = "HEIGHT";
+public class HealthCondition extends Condition {
+  public static final String TYPE = "HEALTH";
   @Builder.Default
-  private int minHeight = 0;
+  private float minHealth = 0f;
   @Builder.Default
-  private int maxHeight = 256;
+  private float maxHealth = 20f;
 
   @Override
   public String getType() {
@@ -23,14 +23,13 @@ public class HeightCondition extends Condition {
 
   @Override
   public boolean check(ServerPlayerEntity player) {
-    int y = player.getBlockPos().getY();
-    return y >= minHeight && y <= maxHeight;
+    float health = player.getHealth();
+    return health >= minHealth && health <= maxHealth;
   }
 
   @Override
   public String getReason(ServerPlayerEntity player) {
-    return "You need to be between Y levels " + minHeight + " and " + maxHeight;
+    return "Your health must be between " + minHealth + " and " + maxHealth + " (current: " + player.getHealth() + ")";
   }
-
-
 }
+

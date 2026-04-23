@@ -53,6 +53,9 @@ dependencies {
     // Calculator API
     api("net.objecthunter:exp4j:0.4.8")
 
+    // Cron scheduling
+    implementation("com.cronutils:cron-utils:9.2.1")
+
     // Redis
     implementation("redis.clients:jedis:${property("redis_version")}")
 

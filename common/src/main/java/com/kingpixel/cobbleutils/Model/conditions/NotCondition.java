@@ -3,18 +3,19 @@ package com.kingpixel.cobbleutils.Model.conditions;
 import lombok.*;
 import net.minecraft.server.network.ServerPlayerEntity;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @EqualsAndHashCode(callSuper = true)
 @AllArgsConstructor
 @NoArgsConstructor
 @ToString(callSuper = true)
 @Builder
 @Data
-public class HeightCondition extends Condition {
-  public static final String TYPE = "HEIGHT";
+public class NotCondition extends Condition {
+  public static final String TYPE = "NOT";
   @Builder.Default
-  private int minHeight = 0;
-  @Builder.Default
-  private int maxHeight = 256;
+  private Condition condition = null;
 
   @Override
   public String getType() {
@@ -23,14 +24,14 @@ public class HeightCondition extends Condition {
 
   @Override
   public boolean check(ServerPlayerEntity player) {
-    int y = player.getBlockPos().getY();
-    return y >= minHeight && y <= maxHeight;
+    if (condition == null) return true;
+    return !condition.check(player);
   }
 
   @Override
   public String getReason(ServerPlayerEntity player) {
-    return "You need to be between Y levels " + minHeight + " and " + maxHeight;
+    if (condition == null) return "No condition to negate";
+    return "NOT: " + condition.getReason(player);
   }
-
-
 }
+

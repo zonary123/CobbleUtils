@@ -9,12 +9,12 @@ import net.minecraft.server.network.ServerPlayerEntity;
 @ToString(callSuper = true)
 @Builder
 @Data
-public class HeightCondition extends Condition {
-  public static final String TYPE = "HEIGHT";
+public class ExperienceLevelCondition extends Condition {
+  public static final String TYPE = "EXPERIENCE_LEVEL";
   @Builder.Default
-  private int minHeight = 0;
+  private int minLevel = 0;
   @Builder.Default
-  private int maxHeight = 256;
+  private int maxLevel = Integer.MAX_VALUE;
 
   @Override
   public String getType() {
@@ -23,14 +23,13 @@ public class HeightCondition extends Condition {
 
   @Override
   public boolean check(ServerPlayerEntity player) {
-    int y = player.getBlockPos().getY();
-    return y >= minHeight && y <= maxHeight;
+    int level = player.experienceLevel;
+    return level >= minLevel && level <= maxLevel;
   }
 
   @Override
   public String getReason(ServerPlayerEntity player) {
-    return "You need to be between Y levels " + minHeight + " and " + maxHeight;
+    return "Your experience level must be between " + minLevel + " and " + maxLevel;
   }
-
-
 }
+

@@ -30,7 +30,6 @@ import java.util.Date;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -152,7 +151,7 @@ public class PlayerUtils {
       }
       return;
     }
-    CompletableFuture.runAsync(() -> {
+    CobbleUtils.ASYNC.runAsync(() -> {
         if (CobbleUtils.config.isRedisMessaging()) {
           if (player == null) return;
           sendMessage(player.getUuid(), message, prefix, typeMessage);
@@ -172,7 +171,7 @@ public class PlayerUtils {
           }
           case BROADCAST -> broadcast(message, prefix);
         }
-      }, CobbleUtils.ASYNC.getExecutor())
+      })
       .orTimeout(30, TimeUnit.SECONDS)
       .exceptionally(e -> {
         e.printStackTrace();

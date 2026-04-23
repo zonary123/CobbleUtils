@@ -12,6 +12,7 @@ import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import lombok.Getter;
 import org.bson.Document;
+import org.bson.codecs.configuration.CodecRegistries;
 
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
@@ -38,7 +39,7 @@ import java.util.function.Supplier;
  * </ol>
  *
  * <h3>Example</h3>
- * 
+ *
  * <pre>{@code
  * DataBaseConfig cfg = new DataBaseConfig(DataBaseType.MONGODB, "mydb", "mongodb://localhost:27017", "", "");
  * MongoDBManager mgr = MongoDBService.getOrCreateManager(cfg);
@@ -96,15 +97,19 @@ public class MongoDBManager {
       try {
         String url = Objects.requireNonNull(config.getUrl(), "MongoDB URL cannot be null");
         MongoClientSettings settings = MongoClientSettings.builder()
-            .applyConnectionString(new ConnectionString(url))
-            .applicationName("CobbleUtils-MongoDBManager")
-            .applyToConnectionPoolSettings(pool -> {
-              pool.maxSize(50);
-              pool.minSize(0);
-              pool.maxWaitTime(5, TimeUnit.SECONDS);
-            })
-            .applyToClusterSettings(cluster -> cluster.serverSelectionTimeout(5, TimeUnit.SECONDS))
-            .build();
+          .applyConnectionString(new ConnectionString(url))
+          .applicationName("CobbleUtils-MongoDBManager")
+          .codecRegistry(CodecRegistries.fromRegistries(
+            CodecRegistries.fromProviders(MongoCodecProvider.INSTANCE),
+            MongoClientSettings.getDefaultCodecRegistry()
+          ))
+          .applyToConnectionPoolSettings(pool -> {
+            pool.maxSize(50);
+            pool.minSize(0);
+            pool.maxWaitTime(5, TimeUnit.SECONDS);
+          })
+          .applyToClusterSettings(cluster -> cluster.serverSelectionTimeout(5, TimeUnit.SECONDS))
+          .build();
 
         newClient = MongoClients.create(settings);
         String databaseName = resolveDatabaseName(config);
@@ -118,8 +123,8 @@ public class MongoDBManager {
         this.connected = true;
         if (CobbleUtils.LOGGER_RAW.isInfoEnabled()) {
           CobbleUtils.LOGGER_RAW.info("[MongoDB] Connected successfully to {} / {}",
-              sanitizeForLog(config.getUrl()),
-              databaseName);
+            sanitizeForLog(config.getUrl()),
+            databaseName);
         }
       } catch (Exception e) {
         this.connected = false;
@@ -243,7 +248,7 @@ public class MongoDBManager {
    * asynchronously.
    */
   public <T> CompletableFuture<T> withCollectionAsync(String collectionName,
-      Function<MongoCollection<Document>, T> action) {
+                                                      Function<MongoCollection<Document>, T> action) {
     Objects.requireNonNull(collectionName, "collectionName cannot be null");
     Objects.requireNonNull(action, "action cannot be null");
     return supplyAsync(() -> action.apply(getCollection(collectionName)));
@@ -254,7 +259,7 @@ public class MongoDBManager {
    * asynchronously.
    */
   public CompletableFuture<Void> withCollectionAsync(String collectionName,
-      Consumer<MongoCollection<Document>> action) {
+                                                     Consumer<MongoCollection<Document>> action) {
     Objects.requireNonNull(collectionName, "collectionName cannot be null");
     Objects.requireNonNull(action, "action cannot be null");
     return runAsync(() -> action.accept(getCollection(collectionName)));
@@ -272,7 +277,7 @@ public class MongoDBManager {
           client.close();
         } catch (Exception e) {
           CobbleUtils.LOGGER_RAW.error("[MongoDB] Error closing MongoDB connection for {}",
-              sanitizeForLog(config.getUrl()), e);
+            sanitizeForLog(config.getUrl()), e);
         }
       }
       this.mongoClient.set(null);

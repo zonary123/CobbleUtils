@@ -7,13 +7,14 @@ import java.util.Set;
 
 @EqualsAndHashCode(callSuper = true)
 @AllArgsConstructor
+@NoArgsConstructor
 @ToString(callSuper = true)
 @Builder
 @Data
 public class WorldCondition extends Condition {
   public static final String TYPE = "WORLD";
   @Builder.Default
-  private final Set<String> worlds = Set.of("minecraft:overworld");
+  private Set<String> worlds = Set.of("minecraft:overworld");
 
   @Override
   public String getType() {

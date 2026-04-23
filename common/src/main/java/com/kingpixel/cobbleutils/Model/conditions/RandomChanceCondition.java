@@ -3,18 +3,19 @@ package com.kingpixel.cobbleutils.Model.conditions;
 import lombok.*;
 import net.minecraft.server.network.ServerPlayerEntity;
 
+import java.util.Random;
+
 @EqualsAndHashCode(callSuper = true)
 @AllArgsConstructor
 @NoArgsConstructor
 @ToString(callSuper = true)
 @Builder
 @Data
-public class HeightCondition extends Condition {
-  public static final String TYPE = "HEIGHT";
+public class RandomChanceCondition extends Condition {
+  public static final String TYPE = "RANDOM_CHANCE";
+  private static final Random RANDOM = new Random();
   @Builder.Default
-  private int minHeight = 0;
-  @Builder.Default
-  private int maxHeight = 256;
+  private double chance = 0.5;
 
   @Override
   public String getType() {
@@ -23,14 +24,12 @@ public class HeightCondition extends Condition {
 
   @Override
   public boolean check(ServerPlayerEntity player) {
-    int y = player.getBlockPos().getY();
-    return y >= minHeight && y <= maxHeight;
+    return RANDOM.nextDouble() < chance;
   }
 
   @Override
   public String getReason(ServerPlayerEntity player) {
-    return "You need to be between Y levels " + minHeight + " and " + maxHeight;
+    return "Random chance (" + (chance * 100) + "%) was not met";
   }
-
-
 }
+

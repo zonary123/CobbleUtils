@@ -52,6 +52,7 @@ public class CobbleUtils {
   public static final String PATH_LANG = Path.of(PATH).resolve("lang").toString();
   public static final String PATH_BREED = Path.of(PATH).resolve("breed").toString();
   public static final String PATH_BREED_DATA = Path.of(PATH_BREED).resolve("data").toString();
+  @Deprecated(forRemoval = true)
   public static final UtilsLogger LOGGER = new UtilsLogger();
   public static final Logger LOGGER_RAW = UtilsLogger.getLogger(MOD_NAME);
 

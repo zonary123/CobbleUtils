@@ -9,12 +9,10 @@ import net.minecraft.server.network.ServerPlayerEntity;
 @ToString(callSuper = true)
 @Builder
 @Data
-public class HeightCondition extends Condition {
-  public static final String TYPE = "HEIGHT";
+public class InWaterCondition extends Condition {
+  public static final String TYPE = "IN_WATER";
   @Builder.Default
-  private int minHeight = 0;
-  @Builder.Default
-  private int maxHeight = 256;
+  private boolean requiresInWater = true;
 
   @Override
   public String getType() {
@@ -23,14 +21,12 @@ public class HeightCondition extends Condition {
 
   @Override
   public boolean check(ServerPlayerEntity player) {
-    int y = player.getBlockPos().getY();
-    return y >= minHeight && y <= maxHeight;
+    return player.isTouchingWater() == requiresInWater;
   }
 
   @Override
   public String getReason(ServerPlayerEntity player) {
-    return "You need to be between Y levels " + minHeight + " and " + maxHeight;
+    return requiresInWater ? "You must be in water" : "You must not be in water";
   }
-
-
 }
+

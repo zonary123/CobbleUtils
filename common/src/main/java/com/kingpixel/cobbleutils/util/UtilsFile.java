@@ -14,6 +14,7 @@ import com.google.gson.reflect.TypeToken;
 import com.kingpixel.cobbleutils.Model.DataBaseType;
 import com.kingpixel.cobbleutils.Model.DurationValue;
 import com.kingpixel.cobbleutils.Model.ItemChance;
+import com.kingpixel.cobbleutils.Model.ScheduleValue;
 import com.kingpixel.cobbleutils.Model.conditions.Condition;
 import com.kingpixel.cobbleutils.Model.messages.HiperMessage;
 import com.kingpixel.cobbleutils.Model.zones.zoneshapes.ZoneShape;
@@ -32,11 +33,13 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.lang.reflect.Type;
+import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.time.Instant;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -95,6 +98,7 @@ public final class UtilsFile {
     registerAdapter(Instant.class, InstantTypeAdapter.INSTANCE);
     registerAdapter(ItemChance.class, ItemChanceAdapter.INSTANCE);
     registerAdapter(DurationValue.class, DurationValue.INSTANCE);
+    registerAdapter(ScheduleValue.class, ScheduleValue.INSTANCE);
     registerAdapter(DataBaseType.class, DataBaseTypeAdapter.INSTANCE);
     registerAdapter(Storage.class, StorageAdapter.INSTANCE);
     registerAdapter(HiperMessage.class, HiperMessage.EMPTY);
@@ -104,6 +108,9 @@ public final class UtilsFile {
     registerAdapter(BlockPos.class, BlockPosAdapter.INSTANCE);
     registerAdapter(ZoneShape.class, ZoneShapeAdapter.INSTANCE);
     registerAdapter(Condition.class, ConditionAdapter.INSTANCE);
+    // Java type adapters
+    registerAdapter(BigDecimal.class, BigDecimalAdapter.INSTANCE);
+    registerAdapter(Optional.class, OptionalAdapter.INSTANCE);
     // Cobblemon adapters
     registerAdapter(Pokemon.class, PokemonAdapter.INSTANCE);
     registerAdapter(Move.class, MoveTemplateAdapter.INSTANCE);

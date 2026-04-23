@@ -26,10 +26,35 @@ public final class ConditionAdapter implements JsonDeserializer<Condition>, Json
     register(WeatherCondition.TYPE, WeatherCondition.class);
     register(NearBlockCondition.TYPE, NearBlockCondition.class);
     register(StructureCondition.TYPE, StructureCondition.class);
+    // Player state conditions
+    register(GameModeCondition.TYPE, GameModeCondition.class);
+    register(HealthCondition.TYPE, HealthCondition.class);
+    register(HungerCondition.TYPE, HungerCondition.class);
+    register(ExperienceLevelCondition.TYPE, ExperienceLevelCondition.class);
+    register(HoldingItemCondition.TYPE, HoldingItemCondition.class);
+    register(HasItemCondition.TYPE, HasItemCondition.class);
+    register(SneakingCondition.TYPE, SneakingCondition.class);
+    register(OnFireCondition.TYPE, OnFireCondition.class);
+    register(InWaterCondition.TYPE, InWaterCondition.class);
+    register(LightLevelCondition.TYPE, LightLevelCondition.class);
+    register(EffectCondition.TYPE, EffectCondition.class);
+    register(RealTimeCondition.TYPE, RealTimeCondition.class);
+    register(DayOfWeekCondition.TYPE, DayOfWeekCondition.class);
+    register(DayOfMonthCondition.TYPE, DayOfMonthCondition.class);
+    register(MonthCondition.TYPE, MonthCondition.class);
+    register(YearCondition.TYPE, YearCondition.class);
+    register(DateRangeCondition.TYPE, DateRangeCondition.class);
+    register(WeekOfYearCondition.TYPE, WeekOfYearCondition.class);
+    register(RandomChanceCondition.TYPE, RandomChanceCondition.class);
+    // Logic conditions
+    register(NotCondition.TYPE, NotCondition.class);
+    register(AndCondition.TYPE, AndCondition.class);
+    register(OrCondition.TYPE, OrCondition.class);
     // Cobblemon conditions
     register(MolangCondition.TYPE, MolangCondition.class);
     register(HasPokemonPartyCondition.TYPE, HasPokemonPartyCondition.class);
     register(HasPokemonPartyAmountCondition.TYPE, HasPokemonPartyAmountCondition.class);
+    register(PokemonLevelCondition.TYPE, PokemonLevelCondition.class);
   }
 
   private ConditionAdapter() {

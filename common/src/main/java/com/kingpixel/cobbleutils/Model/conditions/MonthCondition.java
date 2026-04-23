@@ -3,18 +3,19 @@ package com.kingpixel.cobbleutils.Model.conditions;
 import lombok.*;
 import net.minecraft.server.network.ServerPlayerEntity;
 
+import java.time.LocalDate;
+import java.util.Set;
+
 @EqualsAndHashCode(callSuper = true)
 @AllArgsConstructor
 @NoArgsConstructor
 @ToString(callSuper = true)
 @Builder
 @Data
-public class HeightCondition extends Condition {
-  public static final String TYPE = "HEIGHT";
+public class MonthCondition extends Condition {
+  public static final String TYPE = "MONTH";
   @Builder.Default
-  private int minHeight = 0;
-  @Builder.Default
-  private int maxHeight = 256;
+  private Set<Integer> months = Set.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12);
 
   @Override
   public String getType() {
@@ -23,14 +24,13 @@ public class HeightCondition extends Condition {
 
   @Override
   public boolean check(ServerPlayerEntity player) {
-    int y = player.getBlockPos().getY();
-    return y >= minHeight && y <= maxHeight;
+    int month = LocalDate.now().getMonthValue();
+    return months.contains(month);
   }
 
   @Override
   public String getReason(ServerPlayerEntity player) {
-    return "You need to be between Y levels " + minHeight + " and " + maxHeight;
+    return "This action is only available in months: " + months;
   }
-
-
 }
+

@@ -6,6 +6,7 @@ import net.minecraft.server.network.ServerPlayerEntity;
 
 @EqualsAndHashCode(callSuper = true)
 @AllArgsConstructor
+@NoArgsConstructor
 @ToString(callSuper = true)
 @Builder
 @Data
@@ -13,7 +14,9 @@ public class WeatherCondition extends Condition {
 
   public static final String TYPE = "WEATHER";
   @Builder.Default
-  private final boolean requiresRaining = true;
+  private boolean requiresRaining = true;
+  @Builder.Default
+  private boolean requiresThundering = false;
 
   @Override
   public String getType() {
@@ -22,8 +25,10 @@ public class WeatherCondition extends Condition {
 
   @Override
   public boolean check(ServerPlayerEntity player) {
-    boolean raining = player.getWorld().isRaining();
-    return requiresRaining == raining;
+    if (requiresThundering) {
+      return player.getWorld().isThundering();
+    }
+    return requiresRaining == player.getWorld().isRaining();
   }
 
   @Override

@@ -24,7 +24,6 @@ import net.minecraft.util.Identifier;
 import javax.annotation.Nullable;
 import java.lang.reflect.Type;
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -657,7 +656,7 @@ public class HiperMessage implements JsonSerializer<HiperMessage>, JsonDeseriali
    */
   private void sendToRedis(String messageType, String content, String prefix, UUID playerUUID, Map<String, String> placeholders) {
     try {
-      CompletableFuture.runAsync(() -> {
+      CobbleUtils.ASYNC.runAsync(() -> {
           JsonObject redisMessage = new JsonObject();
           redisMessage.addProperty("type", "hipermessage");
           redisMessage.addProperty("messageType", messageType);
@@ -685,7 +684,7 @@ public class HiperMessage implements JsonSerializer<HiperMessage>, JsonDeseriali
           } catch (Exception e) {
             CobbleUtils.LOGGER_RAW.error("Failed to send HiperMessage through Redis: " + e.getMessage());
           }
-        }, CobbleUtils.ASYNC.getExecutor())
+        })
         .exceptionally(e -> {
           e.printStackTrace();
           return null;
