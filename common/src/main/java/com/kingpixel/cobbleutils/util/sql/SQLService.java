@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Central service that manages shared {@link SQLManager} instances.
@@ -50,7 +51,7 @@ public class SQLService {
    * Map of active SQL managers keyed by {@code "TYPE:URL"}.
    * Ensures a single HikariCP pool per unique database endpoint.
    */
-  private static final Map<String, SQLManager> MANAGERS = new ConcurrentHashMap<>();
+  private static final Map<String, ManagerRef> MANAGERS = new ConcurrentHashMap<>();
 
   /**
    * Retrieves an existing {@link SQLManager} for the given database endpoint,
@@ -65,11 +66,33 @@ public class SQLService {
   public static SQLManager getOrCreateManager(DataBaseConfig config) {
     String connectionKey = SQLManager.buildConnectionKey(config);
 
-    return MANAGERS.computeIfAbsent(connectionKey, k -> {
+    ManagerRef ref = MANAGERS.compute(connectionKey, (k, current) -> {
+      if (current != null) {
+        current.references().incrementAndGet();
+        return current;
+      }
       CobbleUtils.LOGGER_RAW.info("Creating new SQL connection pool for " + config.getType());
       SQLManager manager = new SQLManager(config);
       manager.init();
-      return manager;
+      return new ManagerRef(manager, new AtomicInteger(1));
+    });
+
+    return ref.manager();
+  }
+
+  /**
+   * Releases one usage reference for a manager created with {@link #getOrCreateManager(DataBaseConfig)}.
+   * When no consumers remain, the underlying pool is closed.
+   */
+  public static void releaseManager(DataBaseConfig config) {
+    String connectionKey = SQLManager.buildConnectionKey(config);
+    MANAGERS.computeIfPresent(connectionKey, (k, ref) -> {
+      int remaining = ref.references().decrementAndGet();
+      if (remaining <= 0) {
+        ref.manager().close();
+        return null;
+      }
+      return ref;
     });
   }
 
@@ -81,7 +104,10 @@ public class SQLService {
    */
   public static void shutdown() {
     CobbleUtils.LOGGER_RAW.info("Shutting down all SQL connection pools...");
-    MANAGERS.values().forEach(SQLManager::close);
+    MANAGERS.values().forEach(ref -> ref.manager().close());
     MANAGERS.clear();
+  }
+
+  private record ManagerRef(SQLManager manager, AtomicInteger references) {
   }
 }

@@ -76,6 +76,29 @@ public class UtilsAsync {
     });
   }
 
+  /**
+   * Returns a healthy context with explicit queue and timeout configuration.
+   */
+  public static AsyncContext createContext(
+    String modId,
+    String threadName,
+    int minThreads,
+    int maxThreads,
+    int queueSize,
+    long timeout,
+    TimeUnit unit
+  ) {
+    return contexts.asMap().compute(modId, (id, existing) -> {
+      if (existing != null && existing.isHealthy()) {
+        return existing;
+      }
+      if (existing != null) {
+        existing.shutdownNow();
+      }
+      return new AsyncContext(threadName, minThreads, maxThreads, queueSize, timeout, unit);
+    });
+  }
+
   // Overload simple (por compatibilidad)
   /**
    * Convenience overload with a fixed single-thread executor.
