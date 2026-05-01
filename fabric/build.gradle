@@ -30,6 +30,7 @@ configurations {
     runtimeClasspath.extendsFrom common
     developmentFabric.extendsFrom common
 }
+def fabricPluginMessagingJar = rootProject.file("common/libs/FabricPluginMessaging-fabric-1.21.1-1.0.0.jar")
 
 dependencies {
     modImplementation("net.fabricmc:fabric-loader:${rootProject.fabric_loader_version}")
@@ -45,6 +46,7 @@ dependencies {
     shadowCommon(project(path: ":common", configuration: "transformProductionFabric"))
 
     include(modImplementation("com.github.MemencioPerez:libby-fabric:2.0.0"))
+    libby(files(fabricPluginMessagingJar))
 
     // Caffeine
     libby("com.github.ben-manes.caffeine:caffeine:${property("caffeine_version")}")

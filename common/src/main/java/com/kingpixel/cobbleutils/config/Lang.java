@@ -292,7 +292,7 @@ public class Lang {
    * Method to initialize the config.
    */
   public void init() {
-    Path langPath = Path.of(CobbleUtils.PATH_LANG).resolve(CobbleUtils.config.getLang() + ".json");
+    Path langPath = CobbleUtils.getPathMod().resolve("lang").resolve(CobbleUtils.config.getLang() + ".json");
     try {
       CobbleUtils.language = UtilsFile.readOrCreate(langPath, Lang.class, Lang::new);
       if (CobbleUtils.language.getTitlemenurewards() == null)

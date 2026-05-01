@@ -127,7 +127,7 @@ public class DataBaseUsersSQL extends DataBaseUsers {
    * @param user The user model to save.
    */
   @Override
-  public void saveOrUpdateUser(UserModel user) {
+  public void save(UserModel user) {
     if (user == null || user.getPlayerUUID() == null) return;
 
     String data = UtilsFile.getGson().toJson(user, UserModel.class);
@@ -220,7 +220,7 @@ public class DataBaseUsersSQL extends DataBaseUsers {
     UserModel user = findUserByUUID(playerUUID);
     if (user == null) return;
     user.addStorage(storage);
-    saveOrUpdateUser(user);
+    save(user);
     invalidateUser(playerUUID);
   }
 
@@ -230,7 +230,7 @@ public class DataBaseUsersSQL extends DataBaseUsers {
     UserModel user = findUserByUUID(playerUUID);
     if (user == null) return;
     user.addStorage(storage);
-    saveOrUpdateUser(user);
+    save(user);
     invalidateUser(playerUUID);
   }
 
@@ -241,7 +241,7 @@ public class DataBaseUsersSQL extends DataBaseUsers {
     if (user == null) return null;
     Storage removed = user.removeStorage(storage.getId());
     if (removed != null) {
-      saveOrUpdateUser(user);
+      save(user);
       invalidateUser(playerUUID);
     }
     return removed;

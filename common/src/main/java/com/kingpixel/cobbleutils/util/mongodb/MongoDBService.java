@@ -3,6 +3,9 @@ package com.kingpixel.cobbleutils.util.mongodb;
 import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.Model.DataBaseConfig;
 import com.mongodb.ConnectionString;
+import com.mongodb.client.MongoCollection;
+import org.bson.Document;
+
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 
@@ -12,7 +15,10 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -218,5 +224,38 @@ public class MongoDBService {
    */
   public static int getActiveConnections() {
     return MANAGERS.size();
+  }
+
+  /**
+   * Returns a collection from the shared manager for this config.
+   * Prefer this helper in downstream mods to keep Mongo access centralized in CobbleUtils.
+   */
+  public static MongoCollection<Document> getCollection(DataBaseConfig config, String collectionName) {
+    Objects.requireNonNull(collectionName, "collectionName cannot be null");
+    return getOrCreateManager(config).getCollection(collectionName);
+  }
+
+  /**
+   * Runs a function against a collection asynchronously through the shared manager.
+   */
+  public static <T> CompletableFuture<T> withCollectionAsync(
+    DataBaseConfig config,
+    String collectionName,
+    Function<MongoCollection<Document>, T> action
+  ) {
+    Objects.requireNonNull(action, "action cannot be null");
+    return getOrCreateManager(config).withCollectionAsync(collectionName, action);
+  }
+
+  /**
+   * Runs a consumer against a collection asynchronously through the shared manager.
+   */
+  public static CompletableFuture<Void> withCollectionAsync(
+    DataBaseConfig config,
+    String collectionName,
+    Consumer<MongoCollection<Document>> action
+  ) {
+    Objects.requireNonNull(action, "action cannot be null");
+    return getOrCreateManager(config).withCollectionAsync(collectionName, action);
   }
 }

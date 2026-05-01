@@ -9,7 +9,6 @@ import com.kingpixel.cobbleutils.util.MinecraftUtils;
 import com.kingpixel.cobbleutils.util.redis.handlers.RedisTeleportHandler;
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.network.packet.s2c.play.PositionFlag;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
@@ -79,7 +78,7 @@ public class Location {
   }
 
   private void teleportToCrossServer(ServerPlayerEntity player) {
-    ServerPlayNetworking.send(player, new ProxyPacket("Connect", server));
+    ProxyPacket.sendServer(player, server);
     JsonObject json = new JsonObject();
 
     json.addProperty("type", "teleport");

@@ -202,7 +202,7 @@ public class StorageCommand {
     if (user == null) {
       user = new com.kingpixel.cobbleutils.database.users.UserModel(targetUUID);
       user.fix();
-      DataBaseFactory.dataBaseUsers.saveOrUpdateUser(user);
+      DataBaseFactory.dataBaseUsers.save(user);
     }
 
     DataBaseFactory.dataBaseUsers.addStorage(storage, targetUUID);

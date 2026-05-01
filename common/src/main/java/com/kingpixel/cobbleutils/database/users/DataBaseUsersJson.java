@@ -20,7 +20,7 @@ import java.util.UUID;
  * @author Carlos Varas Alonso - 27/08/2025 15:11
  */
 public class DataBaseUsersJson extends DataBaseUsers {
-  private static final Path USERS_FOLDER = Path.of(CobbleUtils.PATH).resolve("users");
+  private static final Path USERS_FOLDER = CobbleUtils.getPathMod().resolve("users");
 
   /**
    * Initialize the JSON database connection.
@@ -74,7 +74,7 @@ public class DataBaseUsersJson extends DataBaseUsers {
    * @param user The user model to save.
    */
   @Override
-  public void saveOrUpdateUser(UserModel user) {
+  public void save(UserModel user) {
     if (user == null || user.getPlayerUUID() == null)
       return;
     try {
@@ -119,7 +119,7 @@ public class DataBaseUsersJson extends DataBaseUsers {
     if (user == null)
       return;
     user.disconnect();
-    saveOrUpdateUser(user);
+    save(user);
   }
 
   @Override
@@ -130,7 +130,7 @@ public class DataBaseUsersJson extends DataBaseUsers {
     if (user == null)
       return;
     user.addStorage(storage);
-    saveOrUpdateUser(user);
+    save(user);
     invalidateUser(playerUUID);
   }
 
@@ -142,7 +142,7 @@ public class DataBaseUsersJson extends DataBaseUsers {
     if (user == null)
       return;
     user.addStorage(storage);
-    saveOrUpdateUser(user);
+    save(user);
     invalidateUser(playerUUID);
   }
 
@@ -155,7 +155,7 @@ public class DataBaseUsersJson extends DataBaseUsers {
       return null;
     Storage removed = user.removeStorage(storage.getId());
     if (removed != null) {
-      saveOrUpdateUser(user);
+      save(user);
       invalidateUser(playerUUID);
     }
     return removed;

@@ -92,7 +92,7 @@ public class Config {
   }
 
   public void init() {
-    Path configPath = Path.of(CobbleUtils.PATH).resolve("config.json");
+    Path configPath = CobbleUtils.getPathMod().resolve("config.json");
     try {
       CobbleUtils.config = UtilsFile.readOrCreate(configPath, Config.class, Config::new);
       UtilsFile.write(configPath, CobbleUtils.config);

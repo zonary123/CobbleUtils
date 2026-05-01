@@ -20,9 +20,15 @@ import net.objecthunter.exp4j.Expression;
 import net.objecthunter.exp4j.ExpressionBuilder;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
 /**
@@ -34,6 +40,37 @@ import java.util.function.Function;
  */
 @Data
 public class PokemonFormula {
+  private static final String SOURCE_BUILT_IN = "builtin";
+  private static final String SOURCE_GLOBAL = "global";
+  private static final String SOURCE_CUSTOM = "custom";
+
+  public enum VariableCategory {
+    CORE,
+    POKEMON,
+    STATS,
+    RIDING,
+    PERSISTENT,
+    EXTERNAL
+  }
+
+  public interface PokemonFormulaVariableProvider {
+    void register(PokemonFormula formula, VariableRegistrar registrar);
+  }
+
+  public interface VariableRegistrar {
+    void register(String key, Function<Pokemon, Float> resolver, String description, VariableCategory category, int priority);
+  }
+
+  public record VariableInfo(
+    String key,
+    float value,
+    String description,
+    VariableCategory category,
+    int priority,
+    String source
+  ) {
+  }
+
   private boolean showVariablesInConsole = false;
   private String formula;
   // Base configurations
@@ -60,9 +97,12 @@ public class PokemonFormula {
   // Held item prices
   private HeldItemPrice heldItemPrice = new HeldItemPrice();
 
-  // Dynamic variable resolvers: register any formula variable with a function
-  private transient final Map<String, Function<Pokemon, Float>> variableResolvers = new HashMap<>();
+  private static final Map<String, VariableResolverEntry> GLOBAL_VARIABLES = new ConcurrentHashMap<>();
+  private static final Map<String, PokemonFormulaVariableProvider> PROVIDERS = new ConcurrentHashMap<>();
 
+  // Dynamic variable resolvers for this formula instance
+  private transient final Map<String, VariableResolverEntry> customVariables = new ConcurrentHashMap<>();
+  private transient final Map<String, VariableResolverEntry> variableResolvers = new LinkedHashMap<>();
 
   public PokemonFormula() {
     this.formula = "base + types + heldItem + gender + labels + nature + ability + ivsAverage + ivsTotal + " +
@@ -71,6 +111,166 @@ public class PokemonFormula {
 
     initDefaults();
     registerVariables();
+  }
+
+  public static void registerGlobalVariable(String name, Function<Pokemon, Float> resolver) {
+    registerGlobalVariable(name, resolver, "Global variable");
+  }
+
+  public static void registerGlobalVariable(String name, Function<Pokemon, Float> resolver, String description) {
+    registerGlobalVariable(name, resolver, description, VariableCategory.EXTERNAL, 100);
+  }
+
+  public static void registerGlobalVariable(
+    String name,
+    Function<Pokemon, Float> resolver,
+    String description,
+    VariableCategory category,
+    int priority
+  ) {
+    String normalized = normalizeVariableName(name);
+    Objects.requireNonNull(resolver, "resolver cannot be null");
+    GLOBAL_VARIABLES.put(normalized, new VariableResolverEntry(
+      normalized,
+      resolver,
+      defaultDescription(description),
+      category == null ? VariableCategory.EXTERNAL : category,
+      priority,
+      SOURCE_GLOBAL
+    ));
+  }
+
+  public static void unregisterGlobalVariable(String name) {
+    GLOBAL_VARIABLES.remove(normalizeVariableName(name));
+  }
+
+  public static void registerProvider(String modId, PokemonFormulaVariableProvider provider) {
+    Objects.requireNonNull(provider, "provider cannot be null");
+    PROVIDERS.put(normalizeVariableName(modId), provider);
+  }
+
+  public static void unregisterProvider(String modId) {
+    PROVIDERS.remove(normalizeVariableName(modId));
+  }
+
+  public void registerCustomVariable(String name, Function<Pokemon, Float> resolver) {
+    registerCustomVariable(name, resolver, "Custom variable");
+  }
+
+  public void registerCustomVariable(String name, Function<Pokemon, Float> resolver, String description) {
+    registerCustomVariable(name, resolver, description, VariableCategory.EXTERNAL, 200);
+  }
+
+  public void registerCustomVariable(
+    String name,
+    Function<Pokemon, Float> resolver,
+    String description,
+    VariableCategory category,
+    int priority
+  ) {
+    String normalized = normalizeVariableName(name);
+    Objects.requireNonNull(resolver, "resolver cannot be null");
+    customVariables.put(normalized, new VariableResolverEntry(
+      normalized,
+      resolver,
+      defaultDescription(description),
+      category == null ? VariableCategory.EXTERNAL : category,
+      priority,
+      SOURCE_CUSTOM
+    ));
+  }
+
+  public void unregisterCustomVariable(String name) {
+    customVariables.remove(normalizeVariableName(name));
+  }
+
+  /**
+   * Returns all variable keys currently available for this formula.
+   * Useful to render a menu or debug list.
+   */
+  public List<String> getAvailableVariables() {
+    registerVariables();
+    return variableResolvers.values().stream()
+      .sorted(variableSort())
+      .map(VariableResolverEntry::key)
+      .toList();
+  }
+
+  /**
+   * Returns variable descriptions indexed by key.
+   */
+  public Map<String, String> getVariableDescriptions() {
+    registerVariables();
+    Map<String, String> out = new LinkedHashMap<>();
+    variableResolvers.values().stream()
+      .sorted(variableSort())
+      .forEach(entry -> out.put(entry.key(), entry.description()));
+    return out;
+  }
+
+  /**
+   * Evaluates every variable for the given pokemon and returns key/value pairs.
+   */
+  public Map<String, Float> evaluateVariables(Pokemon pokemon) {
+    Map<String, Float> values = new LinkedHashMap<>();
+    for (VariableInfo info : evaluateVariableInfo(pokemon)) {
+      values.put(info.key(), info.value());
+    }
+    return values;
+  }
+
+  /**
+   * Evaluates all variables with metadata for debug menus/logging.
+   */
+  public List<VariableInfo> evaluateVariableInfo(Pokemon pokemon) {
+    registerVariables();
+    List<VariableInfo> values = new ArrayList<>();
+    variableResolvers.values().stream()
+      .sorted(variableSort())
+      .forEach(entry -> values.add(new VariableInfo(
+        entry.key(),
+        safeResolve(entry, pokemon),
+        entry.description(),
+        entry.category(),
+        entry.priority(),
+        entry.source()
+      )));
+    return values;
+  }
+
+  /**
+   * Returns a multi-line debug dump with all variables and current values.
+   */
+  public String getVariablesDebugDump(Pokemon pokemon) {
+    StringBuilder sb = new StringBuilder();
+    sb.append("Pokemon formula variables for ")
+      .append(pokemon.getDisplayName(false).getString())
+      .append(" (formula=")
+      .append(formula)
+      .append(")\n");
+
+    evaluateVariableInfo(pokemon).forEach(info -> sb
+      .append(" - ")
+      .append(info.key())
+      .append(" = ")
+      .append(info.value())
+      .append(" [")
+      .append(info.category())
+      .append(" | ")
+      .append(info.source())
+      .append("]\n"));
+
+    return sb.toString().trim();
+  }
+
+  /**
+   * Sends all current variable values to the player chat for quick debugging.
+   */
+  public void sendVariablesDebug(ServerPlayerEntity player, Pokemon pokemon) {
+    if (player == null || pokemon == null) {
+      return;
+    }
+    player.sendMessage(Text.literal(getVariablesDebugDump(pokemon)), false);
   }
 
   /**
@@ -83,7 +283,9 @@ public class PokemonFormula {
     for (ElementalType elementalType : ElementalTypes.all()) {
       types.put(elementalType.getShowdownId(), 0f);
     }
-    for (Gender g : Gender.values()) gender.put(g, 0f);
+    for (Gender g : Gender.values()) {
+      gender.put(g, 0f);
+    }
     nature.put("example", 0f);
     ball.put("cobblemon:poke_ball", 0f);
     labels.put("legendary", 0f);
@@ -108,73 +310,49 @@ public class PokemonFormula {
 
   /**
    * Registers all variable resolvers used inside the formula.
-   * To add a new variable, simply put it here.
+   * Built-ins are loaded first, then provider/global/custom variables (same key overrides).
    */
   private void registerVariables() {
     variableResolvers.clear();
-    // Base stat value
-    variableResolvers.put("base", this::getBase);
-    // Type values
-    variableResolvers.put("types", this::getTypes);
-    // Held Item
-    variableResolvers.put("heldItem", this::getHeldItem);
-    // Shiny
-    variableResolvers.put("shiny", p -> p.getShiny() ? shiny : notShiny);
-    // Gender
-    variableResolvers.put("gender", this::getGender);
-    // Labels
-    variableResolvers.put("labels", this::getLabel);
-    // Nature
-    variableResolvers.put("nature", this::getNature);
-    // Ability
-    variableResolvers.put("ability", this::getAbility);
-    // Form
-    variableResolvers.put("form", this::getForm);
-    // Ball
-    variableResolvers.put("ball", this::getBall);
-    // Aspect
-    variableResolvers.put("aspect", this::getAspect);
-    // Breedable
-    variableResolvers.put("breedable", this::getBreedable);
-    // Friendship
-    variableResolvers.put("friendship", p -> (float) Math.max(p.getFriendship(), 1));
-    // Level
-    variableResolvers.put("level", p -> (float) Math.max(p.getLevel(), 1));
-    // Evolutions count
-    variableResolvers.put("evolutions", this::getEvolversCount);
-    // Rarity
-    variableResolvers.put("rarity", p -> {
-      String rarityId = PokemonUtils.getRarityS(p);
-      return rarity.getOrDefault(rarityId, 0f);
-    });
-    // Stats IVs and EVs
-    variableResolvers.put("ivsTotal", p -> (float) Math.max(PokemonUtils.getIvsTotal(p.getIvs()), 1));
-    variableResolvers.put("ivsAverage", p -> (float) Math.max(PokemonUtils.getIvsAverage(p.getIvs()), 1));
-    variableResolvers.put("totalPerfectIvs", p -> (float) Math.max(PokemonUtils.getTotalPerfectIvs(p.getIvs()), 0));
-    variableResolvers.put("evsTotal", p -> (float) Math.max(PokemonUtils.getEvsTotal(p.getEvs()), 1));
-    variableResolvers.put("evsAverage", p -> (float) Math.max(PokemonUtils.getEvsAverage(p.getEvs()), 1));
+
+    registerBuiltInVariable("base", this::getBase, "Base value by pokemon id", VariableCategory.CORE, 0);
+    registerBuiltInVariable("types", this::getTypes, "Type bonus (sum or max)", VariableCategory.POKEMON, 10);
+    registerBuiltInVariable("heldItem", this::getHeldItem, "Held item configured value", VariableCategory.POKEMON, 20);
+    registerBuiltInVariable("shiny", p -> p.getShiny() ? shiny : notShiny, "Shiny bonus", VariableCategory.POKEMON, 30);
+    registerBuiltInVariable("gender", this::getGender, "Gender multiplier", VariableCategory.POKEMON, 40);
+    registerBuiltInVariable("labels", this::getLabel, "Label bonus (sum or max)", VariableCategory.POKEMON, 50);
+    registerBuiltInVariable("nature", this::getNature, "Nature bonus", VariableCategory.POKEMON, 60);
+    registerBuiltInVariable("ability", this::getAbility, "Ability bonus", VariableCategory.POKEMON, 70);
+    registerBuiltInVariable("form", this::getForm, "Pokemon form bonus", VariableCategory.POKEMON, 80);
+    registerBuiltInVariable("ball", this::getBall, "Caught ball bonus", VariableCategory.POKEMON, 90);
+    registerBuiltInVariable("aspect", this::getAspect, "Aspect bonus (sum or max)", VariableCategory.POKEMON, 100);
+    registerBuiltInVariable("breedable", this::getBreedable, "Breedable bonus", VariableCategory.POKEMON, 110);
+    registerBuiltInVariable("friendship", p -> (float) Math.max(p.getFriendship(), 1), "Friendship value", VariableCategory.POKEMON, 120);
+    registerBuiltInVariable("level", p -> (float) Math.max(p.getLevel(), 1), "Pokemon level", VariableCategory.POKEMON, 130);
+    registerBuiltInVariable("evolutions", this::getEvolversCount, "Pre-evolution depth", VariableCategory.POKEMON, 140);
+    registerBuiltInVariable("rarity", p -> rarity.getOrDefault(PokemonUtils.getRarityS(p), 0f), "Rarity bonus", VariableCategory.POKEMON, 150);
+
+    registerBuiltInVariable("ivsTotal", p -> (float) Math.max(PokemonUtils.getIvsTotal(p.getIvs()), 1), "Total IVs", VariableCategory.STATS, 160);
+    registerBuiltInVariable("ivsAverage", p -> (float) Math.max(PokemonUtils.getIvsAverage(p.getIvs()), 1), "Average IVs", VariableCategory.STATS, 170);
+    registerBuiltInVariable("totalPerfectIvs", p -> (float) Math.max(PokemonUtils.getTotalPerfectIvs(p.getIvs()), 0), "Perfect IV count", VariableCategory.STATS, 180);
+    registerBuiltInVariable("evsTotal", p -> (float) Math.max(PokemonUtils.getEvsTotal(p.getEvs()), 1), "Total EVs", VariableCategory.STATS, 190);
+    registerBuiltInVariable("evsAverage", p -> (float) Math.max(PokemonUtils.getEvsAverage(p.getEvs()), 1), "Average EVs", VariableCategory.STATS, 200);
+
     for (Stats stats : PokemonUtils.STATS_LIST) {
-      var showdownId = stats.getShowdownId();
-      // IVs and EVs per stat
-      variableResolvers.put("iv_" + showdownId, p -> (float) Math.max(p.getIvs().getOrDefault(stats), 1));
-      variableResolvers.put("ev_" + showdownId, p -> (float) Math.max(p.getEvs().getOrDefault(stats), 1));
-      // Hyper Trained IVs
-      variableResolvers.put("ht_iv_" + showdownId,
-        p -> {
-          int iv = p.getIvs().getHyperTrainedIVs().getOrDefault(stats, 0);
-          return (float) iv;
-        });
+      String showdownId = stats.getShowdownId();
+      registerBuiltInVariable("iv_" + showdownId, p -> (float) Math.max(p.getIvs().getOrDefault(stats), 1), "IV by stat " + showdownId, VariableCategory.STATS, 210);
+      registerBuiltInVariable("ev_" + showdownId, p -> (float) Math.max(p.getEvs().getOrDefault(stats), 1), "EV by stat " + showdownId, VariableCategory.STATS, 220);
+      registerBuiltInVariable("ht_iv_" + showdownId, p -> (float) p.getIvs().getHyperTrainedIVs().getOrDefault(stats, 0), "Hyper trained IV by stat " + showdownId, VariableCategory.STATS, 230);
     }
 
-    // Riding stats
     for (RidingStat value : RidingStat.values()) {
-      var showdownId = value.name();
-      variableResolvers.put("riding_" + showdownId, p -> p.getRideBoost(value));
+      String key = "riding_" + value.name();
+      registerBuiltInVariable(key, p -> p.getRideBoost(value), "Riding boost " + value.name(), VariableCategory.RIDING, 240);
     }
 
-    // Persistent data variables are registered dynamically during evaluation
-    persistentDataValues.forEach((key, map) -> {
-      variableResolvers.put(key, p -> {
+    persistentDataValues.forEach((key, map) -> registerBuiltInVariable(
+      key,
+      p -> {
         try {
           var persistentData = p.getPersistentData();
           var nbtElement = persistentData.get(key);
@@ -184,14 +362,90 @@ public class PokemonFormula {
           var value = map.getOrDefault(nbtValue, 0f);
           return value != null ? value : 0f;
         } catch (Exception e) {
-          CobbleUtils.LOGGER.error("Error getting persistent data variable '" + key + "' for Pokemon: " + p.getDisplayName(false).getString());
+          CobbleUtils.LOGGER_RAW.error("Error getting persistent data variable '{}' for pokemon {}", key, p.getDisplayName(false).getString(), e);
           return 0f;
         }
-      });
-    });
+      },
+      "Persistent data variable",
+      VariableCategory.PERSISTENT,
+      250
+    ));
+
+    registerProviderVariables();
+
+    GLOBAL_VARIABLES.forEach((key, entry) -> variableResolvers.put(key, entry.withSource(SOURCE_GLOBAL)));
+    customVariables.forEach((key, entry) -> variableResolvers.put(key, entry.withSource(SOURCE_CUSTOM)));
 
     if (showVariablesInConsole) {
-      CobbleUtils.LOGGER.info("Pokemon formula available variables: " + variableResolvers.keySet());
+      CobbleUtils.LOGGER_RAW.info("Pokemon formula available variables: {}", variableResolvers.keySet());
+    }
+  }
+
+  private void registerProviderVariables() {
+    PROVIDERS.forEach((providerId, provider) -> {
+      try {
+        provider.register(this, (key, resolver, description, category, priority) -> {
+          String normalized = normalizeVariableName(key);
+          variableResolvers.put(normalized, new VariableResolverEntry(
+            normalized,
+            resolver,
+            defaultDescription(description),
+            category == null ? VariableCategory.EXTERNAL : category,
+            priority,
+            providerId
+          ));
+        });
+      } catch (Exception e) {
+        CobbleUtils.LOGGER_RAW.error("Error registering pokemon formula provider '{}'", providerId, e);
+      }
+    });
+  }
+
+  private void registerBuiltInVariable(
+    String key,
+    Function<Pokemon, Float> resolver,
+    String description,
+    VariableCategory category,
+    int priority
+  ) {
+    variableResolvers.put(key, new VariableResolverEntry(
+      key,
+      resolver,
+      defaultDescription(description),
+      category,
+      priority,
+      SOURCE_BUILT_IN
+    ));
+  }
+
+  private static String normalizeVariableName(String name) {
+    if (name == null || name.isBlank()) {
+      throw new IllegalArgumentException("Variable name cannot be null/blank");
+    }
+    return name.trim();
+  }
+
+  private static String defaultDescription(String description) {
+    return (description == null || description.isBlank()) ? "No description" : description;
+  }
+
+  private static Comparator<VariableResolverEntry> variableSort() {
+    return Comparator
+      .comparing(VariableResolverEntry::category)
+      .thenComparingInt(VariableResolverEntry::priority)
+      .thenComparing(VariableResolverEntry::key);
+  }
+
+  private float safeResolve(VariableResolverEntry entry, Pokemon pokemon) {
+    try {
+      Float value = entry.resolver().apply(pokemon);
+      if (value == null || value.isNaN() || value.isInfinite()) {
+        return 0f;
+      }
+      return value;
+    } catch (Exception e) {
+      CobbleUtils.LOGGER_RAW.error("Error resolving pokemon formula variable '{}'", entry.key(), e);
+      return 0f;
     }
   }
 
@@ -208,98 +462,63 @@ public class PokemonFormula {
     return value;
   }
 
-
   private Float getEvolversCount(Pokemon pokemon) {
-    int count = 0;
-    PreEvolution preEvolution;
-    do {
-      preEvolution = pokemon.getPreEvolution();
-      count++;
-    } while (preEvolution != null && preEvolution != pokemon.getPreEvolution());
-    return (float) count;
+    PreEvolution preEvolution = pokemon.getPreEvolution();
+    return preEvolution == null ? 0f : 1f;
   }
 
   /**
-   * Gets the cached or calculated value of a Pokemon. (Pokemon not have a hashCode method so we cant use that for cache)
-   *
-   * @param pokemon The Pokemon to evaluate.
-   * @return The computed value.
+   * Gets the calculated value of a Pokemon.
    */
   public Double getPokemonValue(Pokemon pokemon) {
     try {
       if (formula == null || formula.isEmpty()) return 0.0;
       return getPokemonExpression(pokemon).evaluate();
     } catch (Exception e) {
-      e.printStackTrace();
+      CobbleUtils.LOGGER_RAW.error("Error evaluating pokemon formula for {}", pokemon.getDisplayName(false).getString(), e);
       return 0.0;
     }
   }
 
   /**
    * Builds the Pokemon-specific expression with dynamic variables set.
-   *
-   * @param pokemon The Pokemon to evaluate.
-   * @return Expression ready to evaluate.
    */
   public Expression getPokemonExpression(Pokemon pokemon) {
     ServerPlayerEntity player = pokemon.getOwnerPlayer();
     Expression expr = getExpression();
     if (showVariablesInConsole) {
-      StringBuilder sb = new StringBuilder();
-      sb.append("Evaluating Pokemon: ").append(pokemon.getDisplayName(false).getString()).append(" | ID: ").append(pokemon.showdownId()).append(" | Hash: ").append(System.identityHashCode(pokemon));
-      CobbleUtils.LOGGER.info(sb.toString());
+      String head = "Evaluating Pokemon: " + pokemon.getDisplayName(false).getString() + " | ID: " + pokemon.showdownId() + " | Hash: " + System.identityHashCode(pokemon);
+      CobbleUtils.LOGGER_RAW.info(head);
       if (player != null) {
-        player.sendMessage(Text.literal(sb.toString()));
+        player.sendMessage(Text.literal(head), false);
       }
     }
-    variableResolvers.forEach((name, resolver) -> {
-      float value = resolver.apply(pokemon);
-      expr.setVariable(name, value);
+
+    variableResolvers.values().forEach(entry -> {
+      float value = safeResolve(entry, pokemon);
+      expr.setVariable(entry.key(), value);
       if (showVariablesInConsole) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("Variable set: ").append(name).append(" = ").append(value);
-        CobbleUtils.LOGGER.info(sb.toString());
+        String line = "Variable set: " + entry.key() + " = " + value;
+        CobbleUtils.LOGGER_RAW.info(line);
         if (player != null) {
-          player.sendMessage(Text.literal(sb.toString()));
+          player.sendMessage(Text.literal(line), false);
         }
       }
     });
     return expr;
   }
 
-
-  /**
-   * Builds the base expression if not already built.
-   *
-   * @return The Expression object.
-   */
-  private transient ExpressionBuilder baseBuilder;
-
   private Expression getExpression() {
-    // Reusar el builder si ya está creado
-    if (baseBuilder == null) {
-      // Solo registramos las variables una vez
-      registerVariables();
-
-      // Creamos el builder y registramos todas las variables disponibles
-      baseBuilder = new ExpressionBuilder(formula.isEmpty() ? "0" : formula);
-      variableResolvers.keySet().forEach(baseBuilder::variable);
-
-      if (showVariablesInConsole) {
-        CobbleUtils.LOGGER.info("[PokemonFormula] ExpressionBuilder created for formula: " + formula);
-      }
-    }
-
-    // Cada .build() devuelve una expresión independiente (segura en hilos)
-    Expression expr = baseBuilder.build();
+    registerVariables();
+    ExpressionBuilder builder = new ExpressionBuilder((formula == null || formula.isEmpty()) ? "0" : formula);
+    variableResolvers.values().forEach(entry -> builder.variable(entry.key()));
 
     if (showVariablesInConsole) {
-      CobbleUtils.LOGGER.info("[PokemonFormula] Expression built instance ready for evaluation.");
+      CobbleUtils.LOGGER_RAW.info("[PokemonFormula] Expression built for formula: {}", formula);
     }
 
-    return expr;
+    return builder.build();
   }
-
 
   // ---- Variable resolvers ----
 
@@ -351,9 +570,9 @@ public class PokemonFormula {
   }
 
   private float getLabel(Pokemon pokemon) {
-    var labels = pokemon.getForm().getLabels();
+    var pokemonLabels = pokemon.getForm().getLabels();
     float value = 0f;
-    for (String label : labels) {
+    for (String label : pokemonLabels) {
       if (accumulationLabels) {
         value += this.labels.getOrDefault(label, 0f);
       } else {
@@ -368,7 +587,7 @@ public class PokemonFormula {
     String identifier = pokemonNature.getName().toString();
     float value = nature.getOrDefault(identifier, 0f);
     if (value != 0f) return value;
-    return nature.getOrDefault(pokemon.getNature().getDisplayName(), 0f);
+    return nature.getOrDefault(pokemonNature.getDisplayName(), 0f);
   }
 
   private float getBreedable(Pokemon pokemon) {
@@ -376,6 +595,19 @@ public class PokemonFormula {
       return breedable.getOrDefault(PokemonUtils.isBreedable(pokemon), 0f);
     }
     return 0f;
+  }
+
+  private record VariableResolverEntry(
+    String key,
+    Function<Pokemon, Float> resolver,
+    String description,
+    VariableCategory category,
+    int priority,
+    String source
+  ) {
+    private VariableResolverEntry withSource(String updatedSource) {
+      return new VariableResolverEntry(key, resolver, description, category, priority, updatedSource);
+    }
   }
 
   /**

@@ -17,7 +17,7 @@ import java.util.Map;
  */
 @Data
 public class AdvancedRewardsConfig {
-  private static final Path FOLDER = Path.of(CobbleUtils.PATH).resolve("advancedRewards");
+  private static final Path FOLDER = CobbleUtils.getPathMod().resolve("advancedRewards");
   private final Map<String, AdvancedItemChance> TEMPLATE_REWARDS = new HashMap<>();
 
   public void init() {

@@ -11,6 +11,7 @@ import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import lombok.Getter;
+import org.bson.BsonDocument;
 import org.bson.Document;
 import org.bson.codecs.configuration.CodecRegistries;
 
@@ -126,6 +127,19 @@ public class MongoDBManager {
             sanitizeForLog(config.getUrl()),
             databaseName);
         }
+      } catch (NoSuchMethodError e) {
+        this.connected = false;
+        if (newClient != null) {
+          try {
+            newClient.close();
+          } catch (Exception closeException) {
+            CobbleUtils.LOGGER_RAW.warn("[MongoDB] Failed to cleanup client after init linkage failure", closeException);
+          }
+        }
+        throw new IllegalStateException(
+          "MongoDB driver/BSON runtime mismatch detected: " + e.getMessage() + ". " + dependencyHint(),
+          e
+        );
       } catch (Exception e) {
         this.connected = false;
         if (newClient != null) {
@@ -195,6 +209,11 @@ public class MongoDBManager {
       client.getDatabase(PING_DB).runCommand(new Document("ping", 1));
       this.connected = true;
       return true;
+    } catch (NoSuchMethodError e) {
+      this.connected = false;
+      CobbleUtils.LOGGER_RAW.error("[MongoDB] Runtime mismatch during healthcheck: {}. {}",
+        e.getMessage(), dependencyHint(), e);
+      return false;
     } catch (Exception e) {
       this.connected = false;
       CobbleUtils.LOGGER_RAW.warn("[MongoDB] Healthcheck failed for {}", sanitizeForLog(config.getUrl()), e);
@@ -307,6 +326,22 @@ public class MongoDBManager {
 
   private static AsyncContext getMongoAsyncContext() {
     return UtilsAsync.createContext(MONGO_ASYNC_CONTEXT_ID, MONGO_ASYNC_THREAD_NAME, 2, 4);
+  }
+
+  private static String dependencyHint() {
+    String mongoVersion = packageVersion(MongoClientSettings.class);
+    String bsonVersion = packageVersion(BsonDocument.class);
+    return "Resolved versions -> mongodb-driver: " + mongoVersion + ", bson: " + bsonVersion
+      + ". Ensure all mods use a single compatible Mongo/BSON stack.";
+  }
+
+  private static String packageVersion(Class<?> type) {
+    Package pkg = type.getPackage();
+    if (pkg == null) return "unknown";
+    String implementation = pkg.getImplementationVersion();
+    if (implementation != null && !implementation.isBlank()) return implementation;
+    String specification = pkg.getSpecificationVersion();
+    return (specification == null || specification.isBlank()) ? "unknown" : specification;
   }
 
   private MongoDatabase requireDefaultDatabase() {

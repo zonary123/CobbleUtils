@@ -15,7 +15,6 @@ import com.kingpixel.cobbleutils.database.blocks.ChunkBlockStorageManager;
 import com.kingpixel.cobbleutils.database.users.DataBaseUsers;
 import com.kingpixel.cobbleutils.database.users.UserModel;
 import com.kingpixel.cobbleutils.events.ItemRightClickEvents;
-import com.kingpixel.cobbleutils.network.NetworkInitializer;
 import com.kingpixel.cobbleutils.tasks.RegistryTasks;
 import com.kingpixel.cobbleutils.util.*;
 import com.kingpixel.cobbleutils.util.async.AsyncContext;
@@ -48,10 +47,8 @@ import java.util.concurrent.*;
 public class CobbleUtils {
   public static final String MOD_ID = "cobbleutils";
   public static final String MOD_NAME = "CobbleUtils";
-  public static final String PATH = Platform.getConfigFolder().resolve("cobbleutils").toString();
-  public static final String PATH_LANG = Path.of(PATH).resolve("lang").toString();
-  public static final String PATH_BREED = Path.of(PATH).resolve("breed").toString();
-  public static final String PATH_BREED_DATA = Path.of(PATH_BREED).resolve("data").toString();
+  public static final String PATH = getPathMod().toString();
+  public static final String PATH_LANG = getPathMod().resolve("lang").toString();
   @Deprecated(forRemoval = true)
   public static final UtilsLogger LOGGER = new UtilsLogger();
   public static final Logger LOGGER_RAW = UtilsLogger.getLogger(MOD_NAME);
@@ -93,7 +90,6 @@ public class CobbleUtils {
     }
     tasks();
     events();
-    NetworkInitializer.register();
   }
 
   public static void load() {
@@ -205,7 +201,7 @@ public class CobbleUtils {
           user = new UserModel(player);
         user.connect(player);
         user.fix();
-        DataBaseFactory.dataBaseUsers.saveOrUpdateUser(user);
+        DataBaseFactory.dataBaseUsers.save(user);
         DataBaseUsers.USERS.put(player.getUuid(), user);
       });
     });

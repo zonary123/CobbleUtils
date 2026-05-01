@@ -2,19 +2,22 @@ package com.kingpixel.cobbleutils.database.users.models;
 
 import ca.landonjw.gooeylibs2.api.UIManager;
 import ca.landonjw.gooeylibs2.api.button.GooeyButton;
-import com.google.gson.JsonElement;
 import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.database.DataBaseFactory;
 import com.kingpixel.cobbleutils.database.users.UserModel;
-import com.kingpixel.cobbleutils.util.UtilsFile;
 import lombok.Data;
 import net.minecraft.item.ItemStack;
 import net.minecraft.server.network.ServerPlayerEntity;
-import org.bson.Document;
 
 import java.util.UUID;
 
 /**
+ * Domain model for pending (unclaimed) player rewards.
+ * <p>
+ * This class intentionally contains NO storage-backend types (BSON, JDBC, etc.).
+ * Serialization to/from backing-store formats is handled exclusively by the
+ * repository implementations (e.g. {@code DataBaseUsersMongoDB}).
+ *
  * @author Carlos Varas Alonso - 06/10/2025 5:11
  */
 @Data
@@ -58,15 +61,5 @@ public abstract class Storage {
       })
       .build();
   }
-
-  public Document toDocument() {
-    String data = UtilsFile.getGson().toJson(this);
-    return Document.parse(data);
-  }
-
-  public Storage fromDocument(Document document) {
-    String data = document.toJson();
-    JsonElement jsonElement = UtilsFile.getGson().fromJson(data, JsonElement.class);
-    return UtilsFile.getGson().fromJson(jsonElement, this.getClass());
-  }
 }
+

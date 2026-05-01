@@ -7,6 +7,7 @@ import com.kingpixel.cobbleutils.database.users.models.Storage;
 import com.kingpixel.cobbleutils.util.UtilsFile;
 import com.kingpixel.cobbleutils.util.mongodb.MongoDBManager;
 import com.kingpixel.cobbleutils.util.mongodb.MongoDBService;
+import com.kingpixel.cobbleutils.util.mongodb.MongoDBUtils;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.UpdateOptions;
@@ -36,7 +37,7 @@ public class DataBaseUsersMongoDB extends DataBaseUsers {
   @Override
   public void connect(DataBaseConfig config) {
     MongoDBManager mongoDBManager = MongoDBService.getOrCreateManager(config);
-    collectionUser = mongoDBManager.getCollection("CobbleUtils", "users");
+    collectionUser = mongoDBManager.getCollection("users");
   }
 
   /**
@@ -55,7 +56,7 @@ public class DataBaseUsersMongoDB extends DataBaseUsers {
   @Override
   public @Nullable UserModel findUserByUUID(@NotNull UUID uuid) {
     try {
-      Document document = collectionUser.find(Filters.eq(DataBaseUsers.FIELD_UUID, uuid.toString())).first();
+      Document document = collectionUser.find(MongoDBUtils.uuidFilter(DataBaseUsers.FIELD_UUID, uuid)).first();
       if (document == null)
         return null;
       UserModel userModel = UtilsFile.getGson().fromJson(document.toJson(), UserModel.class);
@@ -98,7 +99,7 @@ public class DataBaseUsersMongoDB extends DataBaseUsers {
    * @param user The user model to save.
    */
   @Override
-  public void saveOrUpdateUser(UserModel user) {
+  public void save(UserModel user) {
     if (user == null)
       return;
     try {
@@ -106,12 +107,22 @@ public class DataBaseUsersMongoDB extends DataBaseUsers {
       Document document = UtilsFile.getGson().fromJson(json, Document.class);
       document.remove(DataBaseUsers.FIELD_STORAGE);
       collectionUser.updateOne(
-          Filters.eq(DataBaseUsers.FIELD_UUID, user.getPlayerUUID().toString()),
+          MongoDBUtils.uuidFilter(DataBaseUsers.FIELD_UUID, user.getPlayerUUID()),
           new Document("$set", document),
           new UpdateOptions().upsert(true));
     } catch (Exception e) {
       CobbleUtils.LOGGER_RAW.error("Failed to save or update user: {}", user.getPlayerUUID(), e);
     }
+  }
+
+  // ─── Internal BSON helpers ─────────────────────────────────────────────────
+
+  /**
+   * Converts a {@link Storage} to a MongoDB {@link Document} using GSON serialization.
+   * Keeps BSON types contained within this class — callers use {@link Storage} only.
+   */
+  private Document storageToDocument(Storage storage) {
+    return Document.parse(UtilsFile.getGson().toJson(storage));
   }
 
   @Override
@@ -151,7 +162,7 @@ public class DataBaseUsersMongoDB extends DataBaseUsers {
     UUID playerUUID = player.getUuid();
     try {
       collectionUser.updateOne(
-          Filters.eq(DataBaseUsers.FIELD_UUID, playerUUID.toString()),
+          MongoDBUtils.uuidFilter(DataBaseUsers.FIELD_UUID, playerUUID),
           new Document("$set", new Document(DataBaseUsers.FIELD_IS_ONLINE, false)
               .append("disconnectTime", DateTimeFormatter.ISO_INSTANT.format(Instant.now()))));
     } catch (Exception e) {
@@ -163,8 +174,8 @@ public class DataBaseUsersMongoDB extends DataBaseUsers {
   public void addStorage(Storage storage, UUID playerUUID) {
     try {
       collectionUser.updateOne(
-          Filters.eq(DataBaseUsers.FIELD_UUID, playerUUID.toString()),
-          new Document("$push", new Document(DataBaseUsers.FIELD_STORAGE, storage.toDocument())),
+          MongoDBUtils.uuidFilter(DataBaseUsers.FIELD_UUID, playerUUID),
+          new Document("$push", new Document(DataBaseUsers.FIELD_STORAGE, storageToDocument(storage))),
           new UpdateOptions().upsert(true));
       invalidateUser(playerUUID);
     } catch (Exception e) {
@@ -177,9 +188,9 @@ public class DataBaseUsersMongoDB extends DataBaseUsers {
     try {
       List<Document> storageDocs = new ArrayList<>();
       for (Storage s : storage)
-        storageDocs.add(s.toDocument());
+        storageDocs.add(storageToDocument(s));
       collectionUser.updateOne(
-          Filters.eq(DataBaseUsers.FIELD_UUID, playerUUID.toString()),
+          MongoDBUtils.uuidFilter(DataBaseUsers.FIELD_UUID, playerUUID),
           new Document("$push", new Document(DataBaseUsers.FIELD_STORAGE, new Document("$each", storageDocs))),
           new UpdateOptions().upsert(true));
       invalidateUser(playerUUID);
@@ -195,7 +206,7 @@ public class DataBaseUsersMongoDB extends DataBaseUsers {
       return null;
     try {
       collectionUser.updateOne(
-          Filters.eq(DataBaseUsers.FIELD_UUID, playerUUID.toString()),
+          MongoDBUtils.uuidFilter(DataBaseUsers.FIELD_UUID, playerUUID),
           new Document("$pull", new Document(DataBaseUsers.FIELD_STORAGE, new Document("id", id.toString()))));
       invalidateUser(playerUUID);
       return storage;
@@ -218,7 +229,7 @@ public class DataBaseUsersMongoDB extends DataBaseUsers {
       }
       if (ids.isEmpty()) return;
       collectionUser.updateOne(
-        Filters.eq(DataBaseUsers.FIELD_UUID, playerUUID.toString()),
+        MongoDBUtils.uuidFilter(DataBaseUsers.FIELD_UUID, playerUUID),
         new Document("$pull", new Document(DataBaseUsers.FIELD_STORAGE,
           new Document("id", new Document("$in", ids)))));
       invalidateUser(playerUUID);
@@ -237,7 +248,7 @@ public class DataBaseUsersMongoDB extends DataBaseUsers {
         UserModel user = findUser(playerUUID);
         if (user == null) {
           user = new UserModel(playerUUID);
-          saveOrUpdateUser(user);
+          save(user);
         }
         for (ItemChance reward : rewards) {
           if (reward == null) continue;
@@ -263,13 +274,13 @@ public class DataBaseUsersMongoDB extends DataBaseUsers {
 
       if (storages != null && !storages.isEmpty()) {
         List<Document> storageDocs = new ArrayList<>();
-        for (Storage s : storages) storageDocs.add(s.toDocument());
+        for (Storage s : storages) storageDocs.add(storageToDocument(s));
         updateDoc.append("$push", new Document(DataBaseUsers.FIELD_STORAGE, new Document("$each", storageDocs)));
       }
 
       if (!updateDoc.isEmpty()) {
         collectionUser.updateOne(
-          Filters.eq(DataBaseUsers.FIELD_UUID, playerUUID.toString()),
+          MongoDBUtils.uuidFilter(DataBaseUsers.FIELD_UUID, playerUUID),
           updateDoc,
           new UpdateOptions().upsert(true));
       }
@@ -303,7 +314,7 @@ public class DataBaseUsersMongoDB extends DataBaseUsers {
       }
       if (!setFields.isEmpty()) {
         collectionUser.updateOne(
-          Filters.eq(DataBaseUsers.FIELD_UUID, playerUUID.toString()),
+          MongoDBUtils.uuidFilter(DataBaseUsers.FIELD_UUID, playerUUID),
           new Document("$set", setFields));
       }
       invalidateUser(playerUUID);

@@ -7,6 +7,7 @@ import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.Model.DataBaseConfig;
 import com.kingpixel.cobbleutils.Model.ItemChance;
 import com.kingpixel.cobbleutils.api.RewardsApi;
+import com.kingpixel.cobbleutils.database.repository.UserRepository;
 import com.kingpixel.cobbleutils.database.users.models.Storage;
 import com.kingpixel.cobbleutils.util.redis.RedisManager;
 import com.kingpixel.cobbleutils.util.redis.handlers.RedisUserCacheHandler;
@@ -21,9 +22,13 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 /**
+ * Abstract base for all user-data backends (MongoDB, SQL, JSON).
+ * <p>
+ * External code should program to {@link UserRepository}, not this class.
+ *
  * @author Carlos Varas Alonso - 27/08/2025 15:11
  */
-public abstract class DataBaseUsers {
+public abstract class DataBaseUsers implements UserRepository {
   public static final String FIELD_UUID = "playerUUID";
   public static final String FIELD_STORAGE = "storageList";
   public static final String FIELD_IS_ONLINE = "isOnline";
@@ -95,7 +100,8 @@ public abstract class DataBaseUsers {
     return gameProfile.map(profile -> findUser(profile.getId())).orElse(null);
   }
 
-  public abstract void saveOrUpdateUser(UserModel user);
+  @Override
+  public abstract void save(@NotNull UserModel user);
 
   /**
    * Saves the user only if it has been modified (dirty flag).
@@ -103,10 +109,10 @@ public abstract class DataBaseUsers {
    *
    * @return true if the user was saved, false if skipped (not dirty or already being saved).
    */
-  public boolean saveIfDirty(UserModel user) {
-    if (user == null) return false;
+  @Override
+  public boolean saveIfDirty(@NotNull UserModel user) {
     if (!user.clearDirty()) return false;
-    saveOrUpdateUser(user);
+    save(user);
     return true;
   }
 

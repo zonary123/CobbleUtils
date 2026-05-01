@@ -7,7 +7,6 @@ import com.mojang.brigadier.arguments.DoubleArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
-import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -59,7 +58,8 @@ public class TeleportCommand {
 
     ServerPlayerEntity player = getPlayer(context, playerName);
     if (player == null) return 0;
-    ServerPlayNetworking.send(player, new ProxyPacket("Connect", server));
+
+    ProxyPacket.sendServer(player, server);
     return 1;
   }
 

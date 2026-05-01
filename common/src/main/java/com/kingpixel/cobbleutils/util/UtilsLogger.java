@@ -76,7 +76,7 @@ public class UtilsLogger extends PrefixedLogger {
 
     String output = emoji + " [" + level + "]: " + message;
 
-    Path path = Path.of(CobbleUtils.PATH).resolve("logs.txt");
+    Path path = CobbleUtils.getPathMod().resolve("logs.txt");
     CompletableFuture<Void> future = UtilsFile.writeTextAsync(path, output);
 
     future.join();

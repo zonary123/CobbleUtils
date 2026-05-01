@@ -1,5 +1,6 @@
 package com.kingpixel.cobbleutils.Model.messages;
 
+import com.cobblemon.mod.common.net.messages.client.effect.SpawnSnowstormParticlePacket;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.gson.*;
@@ -600,29 +601,50 @@ public class HiperMessage implements JsonSerializer<HiperMessage>, JsonDeseriali
 
         // ---------------- PARTÍCULAS ----------------
         else if (matcher.group("particle") != null) {
-          ParticleEffect particle = (ParticleEffect) Registries.PARTICLE_TYPE
-            .get(Identifier.tryParse(matcher.group("particle")));
+          Identifier particleId = Identifier.tryParse(matcher.group("particle"));
+          if (particleId == null) {
+            continue;
+          }
 
-          if (particle != null) {
-            int count = (int) parseOrDefault(matcher.group("count"), 20f);
-            CobbleUtils.server.execute(() -> {
-              ParticleS2CPacket packet;
+          int count = (int) parseOrDefault(matcher.group("count"), 20f);
+          CobbleUtils.server.execute(() -> {
+            if ("cobblemon".equals(particleId.getNamespace())) {
               if (player == null) {
                 for (ServerPlayerEntity p : CobbleUtils.server.getPlayerManager().getPlayerList()) {
                   if (p == null) continue;
-                  packet = new ParticleS2CPacket(particle, true,
-                    (float) p.getX(), (float) p.getY() + 1, (float) p.getZ(),
-                    0.5f, 0.5f, 0.5f, 0.1f, count);
-                  p.networkHandler.sendPacket(packet);
+                  for (int i = 0; i < Math.max(1, count); i++) {
+                    new SpawnSnowstormParticlePacket(particleId, p.getPos()).sendToPlayer(p);
+                  }
                 }
                 return;
               }
-              packet = new ParticleS2CPacket(particle, true,
-                (float) player.getX(), (float) player.getY() + 1, (float) player.getZ(),
-                0.5f, 0.5f, 0.5f, 0.1f, count);
-              player.networkHandler.sendPacket(packet);
-            });
-          }
+              for (int i = 0; i < Math.max(1, count); i++) {
+                new SpawnSnowstormParticlePacket(particleId, player.getPos()).sendToPlayer(player);
+              }
+              return;
+            }
+
+            if (!(Registries.PARTICLE_TYPE.get(particleId) instanceof ParticleEffect particle)) {
+              CobbleUtils.LOGGER_RAW.warn("Unknown particle '{}' in HiperMessage", particleId);
+              return;
+            }
+
+            ParticleS2CPacket packet;
+            if (player == null) {
+              for (ServerPlayerEntity p : CobbleUtils.server.getPlayerManager().getPlayerList()) {
+                if (p == null) continue;
+                packet = new ParticleS2CPacket(particle, true,
+                  (float) p.getX(), (float) p.getY() + 1, (float) p.getZ(),
+                  0.5f, 0.5f, 0.5f, 0.1f, count);
+                p.networkHandler.sendPacket(packet);
+              }
+              return;
+            }
+            packet = new ParticleS2CPacket(particle, true,
+              (float) player.getX(), (float) player.getY() + 1, (float) player.getZ(),
+              0.5f, 0.5f, 0.5f, 0.1f, count);
+            player.networkHandler.sendPacket(packet);
+          });
         }
       } catch (Exception e) {
         e.printStackTrace();
