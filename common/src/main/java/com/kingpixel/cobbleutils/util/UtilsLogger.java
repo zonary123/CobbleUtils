@@ -4,10 +4,8 @@ import com.kingpixel.cobbleutils.CobbleUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.nio.file.Path;
 import java.time.DayOfWeek;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -55,30 +53,5 @@ public class UtilsLogger extends PrefixedLogger {
   @Deprecated(forRemoval = true)
   public void fatal(String modId, String message) {
     getLogger(modId).fatal(message);
-  }
-
-  // Enums used for the log file.
-  private enum Level {
-    INFO,
-    ERROR,
-    WARN,
-    FATAL
-  }
-
-  // Write method to save logs to file (async)  @Deprecated(forRemoval = true)
-  private void write(Level level, String message) {
-    String emoji = switch (level) {
-      case INFO -> "ℹ️";
-      case WARN -> "⚠️";
-      case ERROR -> "❌";
-      case FATAL -> "💀";
-    };
-
-    String output = emoji + " [" + level + "]: " + message;
-
-    Path path = CobbleUtils.getPathMod().resolve("logs.txt");
-    CompletableFuture<Void> future = UtilsFile.writeTextAsync(path, output);
-
-    future.join();
   }
 }

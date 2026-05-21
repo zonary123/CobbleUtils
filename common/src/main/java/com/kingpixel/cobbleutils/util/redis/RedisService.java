@@ -58,6 +58,7 @@ public class RedisService {
    * and ready to accept handler registrations and publish calls.
    *
    * @param config The Redis configuration specifying host, port, password, and channel.
+   *
    * @return A shared, initialized {@link RedisManager} instance.
    */
   public static RedisManager getOrCreateManager(RedisConfig config) {
@@ -79,6 +80,10 @@ public class RedisService {
    */
   public static void shutdown() {
     CobbleUtils.LOGGER_RAW.info("Shutting down all Redis connections...");
+    if (MANAGERS.isEmpty()) {
+      CobbleUtils.LOGGER_RAW.info("No active Redis connections to shut down.");
+      return;
+    }
     MANAGERS.values().forEach(RedisManager::close);
     MANAGERS.clear();
   }

@@ -14,7 +14,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class TaskStorageNotification {
   public static void register() {
-    CobbleUtils.SCHEDULER_COBBLEUTILS.scheduleAtFixedRate(() -> {
+    CobbleUtils.ASYNC.scheduleAtFixedRate(() -> {
       try {
         if (CobbleUtils.server == null) return;
         var players = CobbleUtils.server.getPlayerManager().getPlayerList();

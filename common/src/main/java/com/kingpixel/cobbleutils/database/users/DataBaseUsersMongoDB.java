@@ -37,7 +37,7 @@ public class DataBaseUsersMongoDB extends DataBaseUsers {
   @Override
   public void connect(DataBaseConfig config) {
     MongoDBManager mongoDBManager = MongoDBService.getOrCreateManager(config);
-    collectionUser = mongoDBManager.getCollection("users");
+    collectionUser = mongoDBManager.getCollection(config.getDatabase(), "users");
   }
 
   /**
@@ -107,9 +107,9 @@ public class DataBaseUsersMongoDB extends DataBaseUsers {
       Document document = UtilsFile.getGson().fromJson(json, Document.class);
       document.remove(DataBaseUsers.FIELD_STORAGE);
       collectionUser.updateOne(
-          MongoDBUtils.uuidFilter(DataBaseUsers.FIELD_UUID, user.getPlayerUUID()),
-          new Document("$set", document),
-          new UpdateOptions().upsert(true));
+        MongoDBUtils.uuidFilter(DataBaseUsers.FIELD_UUID, user.getPlayerUUID()),
+        new Document("$set", document),
+        new UpdateOptions().upsert(true));
     } catch (Exception e) {
       CobbleUtils.LOGGER_RAW.error("Failed to save or update user: {}", user.getPlayerUUID(), e);
     }
@@ -162,9 +162,9 @@ public class DataBaseUsersMongoDB extends DataBaseUsers {
     UUID playerUUID = player.getUuid();
     try {
       collectionUser.updateOne(
-          MongoDBUtils.uuidFilter(DataBaseUsers.FIELD_UUID, playerUUID),
-          new Document("$set", new Document(DataBaseUsers.FIELD_IS_ONLINE, false)
-              .append("disconnectTime", DateTimeFormatter.ISO_INSTANT.format(Instant.now()))));
+        MongoDBUtils.uuidFilter(DataBaseUsers.FIELD_UUID, playerUUID),
+        new Document("$set", new Document(DataBaseUsers.FIELD_IS_ONLINE, false)
+          .append("disconnectTime", DateTimeFormatter.ISO_INSTANT.format(Instant.now()))));
     } catch (Exception e) {
       CobbleUtils.LOGGER_RAW.error("Failed to update disconnect for: {}", playerUUID, e);
     }
@@ -174,9 +174,9 @@ public class DataBaseUsersMongoDB extends DataBaseUsers {
   public void addStorage(Storage storage, UUID playerUUID) {
     try {
       collectionUser.updateOne(
-          MongoDBUtils.uuidFilter(DataBaseUsers.FIELD_UUID, playerUUID),
-          new Document("$push", new Document(DataBaseUsers.FIELD_STORAGE, storageToDocument(storage))),
-          new UpdateOptions().upsert(true));
+        MongoDBUtils.uuidFilter(DataBaseUsers.FIELD_UUID, playerUUID),
+        new Document("$push", new Document(DataBaseUsers.FIELD_STORAGE, storageToDocument(storage))),
+        new UpdateOptions().upsert(true));
       invalidateUser(playerUUID);
     } catch (Exception e) {
       CobbleUtils.LOGGER_RAW.error("Failed to add storage for: {}", playerUUID, e);
@@ -190,9 +190,9 @@ public class DataBaseUsersMongoDB extends DataBaseUsers {
       for (Storage s : storage)
         storageDocs.add(storageToDocument(s));
       collectionUser.updateOne(
-          MongoDBUtils.uuidFilter(DataBaseUsers.FIELD_UUID, playerUUID),
-          new Document("$push", new Document(DataBaseUsers.FIELD_STORAGE, new Document("$each", storageDocs))),
-          new UpdateOptions().upsert(true));
+        MongoDBUtils.uuidFilter(DataBaseUsers.FIELD_UUID, playerUUID),
+        new Document("$push", new Document(DataBaseUsers.FIELD_STORAGE, new Document("$each", storageDocs))),
+        new UpdateOptions().upsert(true));
       invalidateUser(playerUUID);
     } catch (Exception e) {
       CobbleUtils.LOGGER_RAW.error("Failed to add storage list for: {}", playerUUID, e);
@@ -206,8 +206,8 @@ public class DataBaseUsersMongoDB extends DataBaseUsers {
       return null;
     try {
       collectionUser.updateOne(
-          MongoDBUtils.uuidFilter(DataBaseUsers.FIELD_UUID, playerUUID),
-          new Document("$pull", new Document(DataBaseUsers.FIELD_STORAGE, new Document("id", id.toString()))));
+        MongoDBUtils.uuidFilter(DataBaseUsers.FIELD_UUID, playerUUID),
+        new Document("$pull", new Document(DataBaseUsers.FIELD_STORAGE, new Document("id", id.toString()))));
       invalidateUser(playerUUID);
       return storage;
     } catch (Exception e) {
@@ -328,15 +328,15 @@ public class DataBaseUsersMongoDB extends DataBaseUsers {
     List<UUID> onlinePlayers = new ArrayList<>();
     try {
       collectionUser.find(Filters.eq(DataBaseUsers.FIELD_IS_ONLINE, true))
-          .forEach(doc -> {
-            try {
-              String uuidStr = doc.getString(DataBaseUsers.FIELD_UUID);
-              if (uuidStr != null)
-                onlinePlayers.add(UUID.fromString(uuidStr));
-            } catch (Exception e) {
-              CobbleUtils.LOGGER_RAW.error("Failed to parse online player", e);
-            }
-          });
+        .forEach(doc -> {
+          try {
+            String uuidStr = doc.getString(DataBaseUsers.FIELD_UUID);
+            if (uuidStr != null)
+              onlinePlayers.add(UUID.fromString(uuidStr));
+          } catch (Exception e) {
+            CobbleUtils.LOGGER_RAW.error("Failed to parse online player", e);
+          }
+        });
     } catch (Exception e) {
       CobbleUtils.LOGGER_RAW.error("Failed to get online players", e);
     }

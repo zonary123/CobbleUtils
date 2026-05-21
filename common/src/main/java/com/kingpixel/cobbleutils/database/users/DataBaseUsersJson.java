@@ -52,6 +52,7 @@ public class DataBaseUsersJson extends DataBaseUsers {
    * Find a user by name in the JSON database.
    *
    * @param name The name of the player.
+   *
    * @return The user model or null if not found.
    */
   @Override
@@ -61,11 +62,11 @@ public class DataBaseUsersJson extends DataBaseUsers {
       return userModel;
     List<Path> files = UtilsFile.getAllJsonFiles(USERS_FOLDER);
     return files.stream()
-        .parallel()
-        .map(this::readUserFile)
-        .filter(user -> user != null && name.equalsIgnoreCase(user.getPlayerName()))
-        .findFirst()
-        .orElse(null);
+      .parallel()
+      .map(this::readUserFile)
+      .filter(user -> user != null && name.equalsIgnoreCase(user.getPlayerName()))
+      .findFirst()
+      .orElse(null);
   }
 
   /**
@@ -74,8 +75,8 @@ public class DataBaseUsersJson extends DataBaseUsers {
    * @param user The user model to save.
    */
   @Override
-  public void save(UserModel user) {
-    if (user == null || user.getPlayerUUID() == null)
+  public void save(@NotNull UserModel user) {
+    if (user.getPlayerUUID() == null)
       return;
     try {
       Files.createDirectories(USERS_FOLDER);
@@ -90,10 +91,10 @@ public class DataBaseUsersJson extends DataBaseUsers {
   public List<UserModel> getAllUsers() {
     List<Path> files = UtilsFile.getAllJsonFiles(USERS_FOLDER);
     return files.stream()
-        .parallel()
-        .map(this::readUserFile)
-        .filter(Objects::nonNull)
-        .toList();
+      .parallel()
+      .map(this::readUserFile)
+      .filter(Objects::nonNull)
+      .toList();
   }
 
   @Override
@@ -105,10 +106,10 @@ public class DataBaseUsersJson extends DataBaseUsers {
     long currentTime = System.currentTimeMillis();
 
     return files.stream()
-        .parallel()
-        .map(this::readUserFile)
-        .filter(user -> isInactive(user, currentTime, millis))
-        .toList();
+      .parallel()
+      .map(this::readUserFile)
+      .filter(user -> isInactive(user, currentTime, millis))
+      .toList();
   }
 
   @Override
@@ -164,14 +165,15 @@ public class DataBaseUsersJson extends DataBaseUsers {
   @Override
   public List<UUID> getOnlinePlayers() {
     return CobbleUtils.server.getPlayerManager().getPlayerList().stream()
-        .map(Entity::getUuid)
-        .toList();
+      .map(Entity::getUuid)
+      .toList();
   }
 
   /**
    * Read a user file and return a UserModel.
    *
    * @param file The path to read.
+   *
    * @return The user model or null if an error occurred.
    */
   private UserModel readUserFile(Path file) {

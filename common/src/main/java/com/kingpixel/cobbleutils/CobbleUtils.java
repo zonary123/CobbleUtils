@@ -1,7 +1,6 @@
 package com.kingpixel.cobbleutils;
 
 import com.cobblemon.mod.common.api.properties.CustomPokemonProperty;
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.kingpixel.cobbleutils.Model.properties.LegendaryPropertyType;
 import com.kingpixel.cobbleutils.Model.properties.MinIvsPropertyType;
 import com.kingpixel.cobbleutils.command.CommandTree;
@@ -16,8 +15,11 @@ import com.kingpixel.cobbleutils.database.users.DataBaseUsers;
 import com.kingpixel.cobbleutils.database.users.UserModel;
 import com.kingpixel.cobbleutils.events.ItemRightClickEvents;
 import com.kingpixel.cobbleutils.tasks.RegistryTasks;
-import com.kingpixel.cobbleutils.util.*;
+import com.kingpixel.cobbleutils.util.CobbleUtilsBridgeGTS;
+import com.kingpixel.cobbleutils.util.SpawnRates;
+import com.kingpixel.cobbleutils.util.UtilsLogger;
 import com.kingpixel.cobbleutils.util.async.AsyncContext;
+import com.kingpixel.cobbleutils.util.async.UtilsAsync;
 import com.kingpixel.cobbleutils.util.mongodb.MongoDBService;
 import com.kingpixel.cobbleutils.util.redis.RedisManager;
 import com.kingpixel.cobbleutils.util.redis.RedisService;
@@ -42,13 +44,23 @@ import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 
 import java.nio.file.Path;
-import java.util.concurrent.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.TimeUnit;
 
+/**
+ * Main initializer and lifecycle management hub for the CobbleUtils platform.
+ *
+ * <p>Coordinates database mapping handshakes, redis subscription telemetry hooks,
+ * asynchronous thread execution queues, and clean resource shutdowns during the
+ * server lifecycle transition phases.</p>
+ */
 public class CobbleUtils {
   public static final String MOD_ID = "cobbleutils";
   public static final String MOD_NAME = "CobbleUtils";
   public static final String PATH = getPathMod().toString();
   public static final String PATH_LANG = getPathMod().resolve("lang").toString();
+
   @Deprecated(forRemoval = true)
   public static final UtilsLogger LOGGER = new UtilsLogger();
   public static final Logger LOGGER_RAW = UtilsLogger.getLogger(MOD_NAME);
@@ -62,36 +74,35 @@ public class CobbleUtils {
   public static RewardsConfig rewardsConfig = new RewardsConfig();
   public static AdvancedRewardsConfig advancedRewardsConfig = new AdvancedRewardsConfig();
   public static SpawnRates spawnRates = new SpawnRates();
-  // Lang
-  public static final AsyncContext ASYNC = com.kingpixel.cobbleutils.util.async.UtilsAsync.createContext(MOD_ID,
-    MOD_NAME, 1, 1);
+
+  /**
+   * The central, optimized multi-threaded context managing asynchronous operations for CobbleUtils.
+   */
+  public static final AsyncContext ASYNC = UtilsAsync.createContext(MOD_ID, MOD_NAME, 1, 4);
   public static Lang language = new Lang();
   public static RedisManager redisManager;
-  private static final ExecutorService EXECUTOR_COBBLEUTILS = Executors.newFixedThreadPool(1, new ThreadFactoryBuilder()
-    .setDaemon(true)
-    .setNameFormat("CobbleUtils Executor-%d")
-    .build());
-  public static final ScheduledExecutorService SCHEDULER_COBBLEUTILS = Executors.newScheduledThreadPool(1,
-    new ThreadFactoryBuilder()
-      .setDaemon(true)
-      .setNameFormat("CobbleUtils Scheduled Executor-%d")
-      .build());
 
+  /**
+   * Primary bootstrapper invoked by the mod loader framework entrypoint.
+   */
   public static void init() {
     try {
       Class.forName("org.bson.conversions.Bson");
     } catch (ClassNotFoundException e) {
-      e.printStackTrace();
+      LOGGER_RAW.warn("Bson library class not found, MongoDB features might be limited.", e);
     }
     try {
       server = (MinecraftServer) FabricLoader.getInstance().getGameInstance();
     } catch (Exception e) {
-      e.printStackTrace();
+      LOGGER_RAW.error("Failed to fetch MinecraftServer instance from FabricLoader", e);
     }
     tasks();
     events();
   }
 
+  /**
+   * Triggers file deployments, dependency validations, and external API hooks.
+   */
   public static void load() {
     files();
     sign();
@@ -99,8 +110,8 @@ public class CobbleUtils {
       if (config.isGtsSupport()) {
         new CobbleUtilsBridgeGTS();
       }
-    } catch (NoClassDefFoundError | NoSuchMethodError | Exception ignored) {
-      LOGGER_RAW.error("Error while trying to get GtsEconomyProvider");
+    } catch (NoClassDefFoundError | NoSuchMethodError | Exception e) {
+      LOGGER_RAW.error("Error while trying to initialize GtsEconomyProvider: " + e.getMessage());
     }
   }
 
@@ -127,11 +138,18 @@ public class CobbleUtils {
     info(identifier, null, github);
   }
 
+  /**
+   * Prints structural diagnostics and support index data out onto the active server console stream.
+   *
+   * @param identifier Target mod bundle tracking ID.
+   * @param version    Fallback version token string.
+   * @param github     The root path token matching the upstream GitHub project branch destination.
+   */
   public static void info(String identifier, String version, String github) {
     String finalVersion = version;
     String finalName = identifier;
     String authors = "Zonary123";
-    if (ArchitecturyTarget.getCurrentTarget().equals("fabric")) {
+    if ("fabric".equals(ArchitecturyTarget.getCurrentTarget())) {
       ModContainer mod = FabricLoader.getInstance().getAllMods()
         .stream()
         .filter(m -> m.getMetadata().getId().equals(identifier) ||
@@ -152,10 +170,13 @@ public class CobbleUtils {
     LOGGER_RAW.info("§e| §6Website: §9https://github.com/Zonary123/" + github);
     LOGGER_RAW.info("§e| §6Discord: §9https://discord.com/invite/fKNc7FnXpa");
     LOGGER_RAW.info("§e| §6Support: §9https://github.com/Zonary123/" + github + "/issues");
-    LOGGER_RAW.info("§e| §dDonate: §9https://ko-fi.com/zonary123");
+    LOGGER_RAW.info("§e| §6Donate: §9https://ko-fi.com/zonary123");
     LOGGER_RAW.info("§e+-------------------------------+");
   }
 
+  /**
+   * Binds logical handlers onto the global application processing network pipelines.
+   */
   private static void events() {
     files();
     try {
@@ -165,8 +186,8 @@ public class CobbleUtils {
         redisManager.registerHandler(new RedisTeleportHandler());
         redisManager.registerHandler(new RedisUserCacheHandler());
       }
-    } catch (NoClassDefFoundError | NoSuchMethodError | Exception ignored) {
-      LOGGER_RAW.error("Error while trying to initialize RedisManager");
+    } catch (NoClassDefFoundError | NoSuchMethodError | Exception e) {
+      LOGGER_RAW.error("Error while trying to initialize RedisManager: " + e.getMessage());
     }
 
     LifecycleEvent.SERVER_STARTING.register(server -> {
@@ -181,34 +202,65 @@ public class CobbleUtils {
     });
 
     LifecycleEvent.SERVER_STOPPING.register(server1 -> {
-      ChunkBlockStorageManager.shutdownAsync().join();
-      com.kingpixel.cobbleutils.util.async.UtilsAsync.shutdownAll();
-      shutdownAndAwait(EXECUTOR_COBBLEUTILS);
-      shutdownAndAwait(Utils.IO_EXECUTOR);
-      shutdownAndAwait(SCHEDULER_COBBLEUTILS);
+      try {
+        // Safe staging: serializes active blocks data into memory buffers before the worlds start to unload.
+        ChunkBlockStorageManager.shutdownAsync();
+      } catch (Exception e) {
+        LOGGER_RAW.error("Error staging ChunkBlockStorageManager data: ", e);
+      }
     });
 
     LifecycleEvent.SERVER_STOPPED.register(server -> {
-      RedisService.shutdown();
-      MongoDBService.shutdown();
-      SQLService.shutdown();
+      LOGGER_RAW.info("[SERVER_STOPPED] Initiating global shutdown sequence...");
+
+      try {
+        LOGGER_RAW.info("Flushing and closing shared multi-mod thread pools (UtilsAsync)...");
+        com.kingpixel.cobbleutils.util.async.UtilsAsync.shutdownAll();
+      } catch (Exception e) {
+        LOGGER_RAW.error("Error shutting down global UtilsAsync: ", e);
+      }
+
+      LOGGER_RAW.info("Closing core database connections...");
+      try {
+        RedisService.shutdown();
+      } catch (Exception ignored) {
+      }
+
+      try {
+        MongoDBService.shutdown();
+      } catch (Exception ignored) {
+      }
+
+      try {
+        SQLService.shutdown();
+      } catch (Exception ignored) {
+      }
+
+      CobbleUtils.LOGGER_RAW.info("CobbleUtils backup and database services closed successfully.");
     });
 
-    PlayerEvent.PLAYER_JOIN.register((player) -> {
-      runAsync(() -> {
-        UserModel user = DataBaseFactory.dataBaseUsers.findUserByUUID(player.getUuid());
-        if (user == null)
+    PlayerEvent.PLAYER_JOIN.register((player) -> runAsync(() -> {
+      try {
+        UserModel user = DataBaseFactory.users().findUserByUUID(player.getUuid());
+        if (user == null) {
           user = new UserModel(player);
+        }
         user.connect(player);
         user.fix();
-        DataBaseFactory.dataBaseUsers.save(user);
+        DataBaseFactory.users().save(user);
         DataBaseUsers.USERS.put(player.getUuid(), user);
-      });
-    });
+      } catch (Exception e) {
+        LOGGER_RAW.error("Failed to process PLAYER_JOIN asynchronously for " + player.getName().getString(), e);
+      }
+    }));
 
     PlayerEvent.PLAYER_QUIT.register((player) -> runAsync(() -> {
-      DataBaseFactory.dataBaseUsers.disconnected(player);
-      DataBaseFactory.dataBaseUsers.removeIfNecessary(player.getUuid());
+      try {
+        DataBaseFactory.users().disconnected(player);
+        DataBaseFactory.users().removeIfNecessary(player.getUuid());
+      } catch (Exception e) {
+        LOGGER_RAW.error("Failed to process PLAYER_QUIT asynchronously for " + player.getName().getString(), e);
+      }
     }));
 
     CommandRegistrationEvent.EVENT.register((dispatcher, registry, selection) -> {
@@ -221,50 +273,66 @@ public class CobbleUtils {
     InteractionEvent.RIGHT_CLICK_ITEM.register(ItemRightClickEvents::register);
   }
 
+  /**
+   * Shuts down an ExecutorService instance cleanly, allowing a brief grace period before forcing termination.
+   *
+   * @param executor Target structural ThreadPool executor demanding final decommissioning.
+   */
   public static void shutdownAndAwait(ExecutorService executor) {
     if (executor == null || executor.isShutdown()) {
       return;
     }
     executor.shutdown();
     try {
-      if (!executor.awaitTermination(5, TimeUnit.SECONDS)) {
-        LOGGER_RAW.warn("Executor did not terminate in time, forcing shutdown...");
+      if (!executor.awaitTermination(3, TimeUnit.SECONDS)) {
+        LOGGER_RAW.warn("An executor did not terminate within 3 seconds, forcing hard shutdown...");
         executor.shutdownNow();
       }
     } catch (InterruptedException e) {
-      LOGGER_RAW.error("Executor shutdown was interrupted");
-      e.printStackTrace();
+      LOGGER_RAW.error("Executor shutdown process was interrupted, forcing immediate shutdown.");
       executor.shutdownNow();
+      Thread.currentThread().interrupt();
     }
   }
 
   /**
-   * Run async with CobbleUtils executor
+   * Dispatches a task to execute natively on the default background worker pool thread context.
    *
-   * @param runnable
-   * @return CompletableFuture<Void>
+   * @param runnable Abstract functional interface housing executable instructions.
+   *
+   * @return A CompletableFuture object tracking completion properties of the task.
    */
   public static CompletableFuture<Void> runAsync(Runnable runnable) {
-    return runAsync(runnable, EXECUTOR_COBBLEUTILS);
+    return ASYNC.runAsync(runnable);
   }
 
   /**
-   * Run async with custom executor
+   * Dispatches a task onto the context worker pool pipeline (Maintains backward framework signature compatibility).
    *
-   * @param runnable
-   * @param executor
-   * @return CompletableFuture<Void>
+   * @param runnable Abstract functional interface housing executable instructions.
+   * @param executor Context parameters mapped to alternate pool frameworks.
+   *
+   * @return A CompletableFuture tracking task evaluation.
    */
   public static CompletableFuture<Void> runAsync(Runnable runnable, ExecutorService executor) {
-    return UtilsAsync.runAsync(runnable, executor);
+    return ASYNC.runAsync(runnable);
   }
 
+  /**
+   * Returns the canonical configuration path matching the primary gaming instance environment.
+   *
+   * @return System configuration directory Path.
+   */
   public static Path getPath() {
     return Platform.getConfigFolder();
   }
 
+  /**
+   * Returns the sub-allocated structural file config storage space dedicated exclusively to this mod ID namespace.
+   *
+   * @return Core mod config base directory Path.
+   */
   public static Path getPathMod() {
     return Platform.getConfigFolder().resolve(MOD_ID);
   }
-
 }

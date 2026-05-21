@@ -4,10 +4,9 @@ import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.Model.DataBaseConfig;
 import com.mongodb.ConnectionString;
 import com.mongodb.client.MongoCollection;
-import org.bson.Document;
-
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
+import org.bson.Document;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -202,10 +201,12 @@ public class MongoDBService {
    * Gracefully shuts down all MongoDB connections.
    */
   public static void shutdown() {
+    if (MANAGERS.isEmpty()) {
+      CobbleUtils.LOGGER_RAW.info("[MongoDB] No active connections found.");
+      return;
+    }
 
-    if (MANAGERS.isEmpty()) return;
-
-    CobbleUtils.LOGGER_RAW.info("[MongoDB] Shutting down {} connections...", MANAGERS.size());
+    CobbleUtils.LOGGER_RAW.info("[MongoDB] Shutting down {} connections...", getActiveConnections());
 
     MANAGERS.forEach((key, manager) -> {
       try {

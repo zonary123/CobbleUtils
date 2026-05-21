@@ -59,7 +59,6 @@ public class PokemonUtils {
    *
    * @param lore    The lore to replace
    * @param pokemon The pokemon to get the data
-   *
    * @return The lore with the replaced placeholders
    */
   public static List<String> replace(List<String> lore, Pokemon pokemon) {
@@ -90,7 +89,6 @@ public class PokemonUtils {
    * Get the showdown id of the pokemon
    *
    * @param pokemon The pokemon to get the id
-   *
    * @return The showdown id of the pokemon
    */
   public static String getIdentifierPokemon(Pokemon pokemon) {
@@ -101,7 +99,6 @@ public class PokemonUtils {
    * Replace the placeholders with the pokemon data
    *
    * @param pokemon The pokemon to get the data
-   *
    * @return The lore with the replaced placeholders
    */
   public static List<String> replaceLore(Pokemon pokemon) {
@@ -112,7 +109,6 @@ public class PokemonUtils {
    * Replace the placeholders with the pokemon data
    *
    * @param pokemon The pokemon to get the data
-   *
    * @return The string with the replaced placeholders
    */
   public static String replace(Pokemon pokemon) {
@@ -245,7 +241,6 @@ public class PokemonUtils {
    *
    * @param message The string to replace
    * @param pokemon The pokemon to get the data
-   *
    * @return The string with the replaced placeholders
    */
   public static String replace(String message, Pokemon pokemon) {
@@ -266,7 +261,6 @@ public class PokemonUtils {
    *
    * @param message  The string to replace
    * @param pokemons The pokemon to get the data
-   *
    * @return The string with the replaced placeholders
    */
   public static String replace(String message, List<Pokemon> pokemons) {
@@ -294,48 +288,34 @@ public class PokemonUtils {
   }
 
   private static final Set<String> NORMAL_ASPECTS = Set.of(
-    "male", "female", "genderless", "milkable", "family"
+    "male", "female", "genderless", "milkable", "family", "bucket-"
   );
 
   private static String getForm(Pokemon pokemon) {
     if (pokemon == null) return CobbleUtils.language.getUnknown();
 
-    String aspect = "Normal";
-    Set<String> aspects = pokemon.getAspects();
-
-    if (!aspects.isEmpty()) {
-      // Take an arbitrary element from the set (last inserted if LinkedHashSet)
-      String s = null;
-      for (String a : aspects) s = a; // efficient, no extra objects
-
-      if (s != null) {
-        // Extract relevant part if it contains dashes
-        int dashIndex = s.lastIndexOf('-');
-        if (dashIndex != -1 && dashIndex + 1 < s.length()) {
-          s = s.substring(dashIndex + 1); // only the last section
-        }
-
-        // Check if it's considered a "Normal" aspect
-        if (!NORMAL_ASPECTS.contains(s.toLowerCase())) {
-          aspect = s;
-        }
-      }
-    }
-
-    // Egg handling
     if (isEgg(pokemon)) {
       String eggForm = pokemon.getPersistentData().getString("form");
       return eggForm.isEmpty() ? "Normal" : eggForm;
     }
 
-    // Regular forms
     String formName = pokemon.getForm().getName();
-    if (formName.equalsIgnoreCase("normal")) {
-      return aspect;
+    if (!formName.equalsIgnoreCase("normal")) {
+      return CobbleUtils.language.getForms().getOrDefault(formName, formName);
     }
 
-    // Specific form translations
-    return CobbleUtils.language.getForms().getOrDefault(formName, formName);
+    for (String raw : pokemon.getAspects()) {
+      String s = raw;
+      int dashIndex = s.lastIndexOf('-');
+      if (dashIndex != -1 && dashIndex + 1 < s.length()) {
+        s = s.substring(dashIndex + 1);
+      }
+      if (!NORMAL_ASPECTS.contains(s.toLowerCase())) {
+        return s;
+      }
+    }
+
+    return "Normal";
   }
 
 
@@ -390,7 +370,6 @@ public class PokemonUtils {
    * Check if the pokemon is breedable
    *
    * @param pokemon The pokemon to check
-   *
    * @return If the pokemon is breedable
    */
   public static boolean isBreedable(Pokemon pokemon) {
@@ -406,7 +385,6 @@ public class PokemonUtils {
    * Get the owner name of the pokemon
    *
    * @param pokemon The pokemon to get the owner name
-   *
    * @return The owner name of the pokemon
    */
   public static String getOwnerName(Pokemon pokemon) {
@@ -420,7 +398,6 @@ public class PokemonUtils {
    * Get the size of the pokemon
    *
    * @param pokemon The pokemon to get the size
-   *
    * @return The size of the pokemon
    */
   public static String getSize(Pokemon pokemon) {
@@ -431,7 +408,6 @@ public class PokemonUtils {
    * Get the total of the IVs
    *
    * @param iVs The IVs to get the total
-   *
    * @return The total of the IVs
    */
   public static Integer getIvsTotal(IVs iVs) {
@@ -444,7 +420,6 @@ public class PokemonUtils {
    * Get the average of the IVs
    *
    * @param iVs The IVs to get the average
-   *
    * @return The average of the IVs
    */
   public static Integer getIvsAverage(IVs iVs) {
@@ -464,7 +439,6 @@ public class PokemonUtils {
    * Get the total number of max IVs (31)
    *
    * @param iVs The IVs to get the number max Ivs
-   *
    * @return The number of the maxed IVs
    */
   public static Integer getTotalPerfectIvs(IVs iVs) {
@@ -479,7 +453,6 @@ public class PokemonUtils {
    * Get the total of the EVs
    *
    * @param eVs The EVs to get the total
-   *
    * @return The total of the EVs
    */
   public static Integer getEvsTotal(EVs eVs) {
@@ -493,7 +466,6 @@ public class PokemonUtils {
    * Get the average of the EVs
    *
    * @param eVs The EVs to get the average
-   *
    * @return The average of the EVs
    */
   public static Integer getEvsAverage(EVs eVs) {
@@ -512,7 +484,6 @@ public class PokemonUtils {
    * Get the ability translation
    *
    * @param ability The ability to translate
-   *
    * @return The ability translation
    */
   public static String getAbilityTranslate(Ability ability) {
@@ -524,7 +495,6 @@ public class PokemonUtils {
    * Get the nature translation
    *
    * @param nature The nature to translate
-   *
    * @return The nature translation
    */
   public static String getNatureTranslate(Nature nature) {
@@ -548,7 +518,6 @@ public class PokemonUtils {
    * Get the type of the pokemon
    *
    * @param pokemon The pokemon to get the type
-   *
    * @return The type of the pokemon
    */
   public static String getType(Pokemon pokemon) {
@@ -573,7 +542,6 @@ public class PokemonUtils {
    * Get the move translation
    *
    * @param move The move to translate
-   *
    * @return The move translation
    */
 
@@ -597,7 +565,6 @@ public class PokemonUtils {
    * Get the stat translation
    *
    * @param stat The stat to translate
-   *
    * @return The stat translation
    */
   public static String getStatTranslate(Stat stat) {
@@ -617,7 +584,6 @@ public class PokemonUtils {
    * Get the pokeball translation
    *
    * @param caughtBall The pokeball to translate
-   *
    * @return The pokeball translation
    */
   public static String getPokeBallTranslate(PokeBall caughtBall) {
@@ -637,7 +603,6 @@ public class PokemonUtils {
    * Get the gender translation
    *
    * @param gender The gender to translate
-   *
    * @return The gender translation
    */
   public static String getGenderTranslate(Gender gender) {
@@ -649,7 +614,6 @@ public class PokemonUtils {
    * Get the rarity of the pokemon
    *
    * @param pokemon The pokemon to get the rarity
-   *
    * @return The rarity of the pokemon
    */
   public static double getRarity(Pokemon pokemon) {
@@ -662,7 +626,6 @@ public class PokemonUtils {
    * Get the rarity of the pokemon
    *
    * @param pokemon The pokemon to get the rarity
-   *
    * @return The rarity of the pokemon
    */
   public static String getRarityS(Pokemon pokemon) {
@@ -703,7 +666,6 @@ public class PokemonUtils {
    * Get the size of the pokemon
    *
    * @param pokemon The pokemon to get the size
-   *
    * @return The size of the pokemon
    */
   public static String getSizeName(Pokemon pokemon) {
@@ -716,7 +678,6 @@ public class PokemonUtils {
    * Check if the pokemon has the hidden ability
    *
    * @param pokemon The pokemon to check
-   *
    * @return If the pokemon has the hidden ability
    */
   public static boolean isAH(Pokemon pokemon) {

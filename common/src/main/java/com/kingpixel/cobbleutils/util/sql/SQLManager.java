@@ -20,7 +20,6 @@ import java.util.Locale;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 
 /**
@@ -69,13 +68,13 @@ public class SQLManager {
   private final DataBaseConfig config;
 
   @Getter
-  private volatile HikariDataSource dataSource;
+  private HikariDataSource dataSource;
 
   /**
    * Whether this manager has an active connection pool.
    */
   @Getter
-  private final AtomicBoolean connected = new AtomicBoolean(false);
+  private volatile boolean connected;
 
   /**
    * Creates a new manager bound to the given configuration.
@@ -135,22 +134,24 @@ public class SQLManager {
 
       // Verify connectivity and apply DB-specific setup
       try (Connection conn = dataSource.getConnection()) {
-        connected.set(conn.isValid(3));
+        connected = conn.isValid(3);
 
         // Enable WAL mode for SQLite (better concurrent read performance)
         if (config.getType() == DataBaseType.SQLITE) {
           try (var stmt = conn.createStatement()) {
+            //noinspection SqlDialectInspection,SqlNoDataSourceInspection
             stmt.execute("PRAGMA journal_mode=WAL");
+            //noinspection SqlDialectInspection,SqlNoDataSourceInspection
             stmt.execute("PRAGMA synchronous=NORMAL");
           }
         }
       }
 
-      CobbleUtils.LOGGER_RAW.info("SQL pool initialized for " + config.getType());
+      CobbleUtils.LOGGER_RAW.info("SQL pool initialized for {}", config.getType());
 
     } catch (Exception e) {
-      CobbleUtils.LOGGER_RAW.error("Could not initialize SQL pool for " + config.getType() + ": " + e.getMessage());
-      throw new RuntimeException("Failed to initialize SQL pool", e);
+      CobbleUtils.LOGGER_RAW.error("Could not initialize SQL pool for {}: {}", config.getType(), e.getMessage());
+      throw new SQLManagerException("Failed to initialize SQL pool", e);
     }
   }
 
@@ -188,7 +189,7 @@ public class SQLManager {
       try (Connection connection = getConnection()) {
         return action.apply(connection);
       } catch (SQLException e) {
-        throw new RuntimeException(e);
+        throw new SQLManagerException("Async SQL connection action failed", e);
       }
     });
   }
@@ -202,7 +203,7 @@ public class SQLManager {
       try (Connection connection = getConnection()) {
         action.accept(connection);
       } catch (SQLException e) {
-        throw new RuntimeException(e);
+        throw new SQLManagerException("Async SQL connection consumer failed", e);
       }
     });
   }
@@ -261,7 +262,10 @@ public class SQLManager {
   }
 
   static String buildConnectionKey(DataBaseConfig config) {
-    String normalizedUrl = normalizeJdbcUrl(config).toLowerCase(Locale.ROOT);
+    String normalizedUrl = normalizeJdbcUrl(config);
+    if (config.getType() == DataBaseType.MYSQL || config.getType() == DataBaseType.MARIADB) {
+      normalizedUrl = normalizedUrl.toLowerCase(Locale.ROOT);
+    }
     String normalizedUser = normalize(config.getUser()).toLowerCase(Locale.ROOT);
     int credentialsHash = Objects.hash(normalizedUser, normalize(config.getPassword()));
     return config.getType() + ":" + normalizedUrl + ":" + Integer.toHexString(credentialsHash);
@@ -435,8 +439,8 @@ public class SQLManager {
       bindParams(stmt, params);
       return stmt.executeUpdate();
     } catch (SQLException e) {
-      CobbleUtils.LOGGER_RAW.error("SQL execute error: " + sql + " -> " + e.getMessage());
-      throw new RuntimeException(e);
+      CobbleUtils.LOGGER_RAW.error("SQL execute error: {} -> {}", sql, e.getMessage());
+      throw new SQLManagerException("SQL execute failed", e);
     }
   }
 
@@ -480,20 +484,21 @@ public class SQLManager {
         try {
           conn.rollback();
         } catch (SQLException rollbackEx) {
-          CobbleUtils.LOGGER_RAW.error("SQL rollback error: " + rollbackEx.getMessage());
+          CobbleUtils.LOGGER_RAW.error("SQL rollback error: {}", rollbackEx.getMessage());
         }
-        CobbleUtils.LOGGER_RAW.error("SQL batch error: " + e.getMessage());
-        throw new RuntimeException(e);
+        CobbleUtils.LOGGER_RAW.error("SQL batch error: {}", e.getMessage());
+        throw new SQLManagerException("SQL batch failed", e);
       } finally {
         // Always restore auto-commit
         try {
           conn.setAutoCommit(true);
         } catch (SQLException ignored) {
+          // Intentionally ignored: restoring auto-commit failed during cleanup.
         }
       }
     } catch (SQLException e) {
-      CobbleUtils.LOGGER_RAW.error("SQL batch connection error: " + e.getMessage());
-      throw new RuntimeException(e);
+      CobbleUtils.LOGGER_RAW.error("SQL batch connection error: {}", e.getMessage());
+      throw new SQLManagerException("SQL batch connection failed", e);
     }
   }
 
@@ -537,8 +542,8 @@ public class SQLManager {
         return mapper.map(rs);
       }
     } catch (SQLException e) {
-      CobbleUtils.LOGGER_RAW.error("SQL query error: " + sql + " -> " + e.getMessage());
-      throw new RuntimeException(e);
+      CobbleUtils.LOGGER_RAW.error("SQL query error: {} -> {}", sql, e.getMessage());
+      throw new SQLManagerException("SQL query failed", e);
     }
   }
 
@@ -585,7 +590,7 @@ public class SQLManager {
         return results;
       }
     } catch (SQLException e) {
-      CobbleUtils.LOGGER_RAW.error("SQL queryList error: " + e.getMessage());
+      CobbleUtils.LOGGER_RAW.error("SQL queryList error: {}", e.getMessage());
       return List.of();
     }
   }
@@ -618,10 +623,10 @@ public class SQLManager {
   public boolean isAlive() {
     try (Connection conn = getConnection()) {
       boolean valid = conn.isValid(3);
-      connected.set(valid);
+      connected = valid;
       return valid;
     } catch (Exception e) {
-      connected.set(false);
+      connected = false;
       return false;
     }
   }
@@ -630,14 +635,20 @@ public class SQLManager {
    * Gracefully closes the HikariCP connection pool and releases all resources.
    */
   public void close() {
-    connected.set(false);
+    connected = false;
     HikariDataSource ds = this.dataSource;
     if (ds != null && !ds.isClosed()) {
       try {
         ds.close();
       } catch (Exception e) {
-        CobbleUtils.LOGGER_RAW.error("Error closing SQL connection pool: " + e.getMessage());
+        CobbleUtils.LOGGER_RAW.error("Error closing SQL connection pool: {}", e.getMessage());
       }
+    }
+  }
+
+  public static final class SQLManagerException extends RuntimeException {
+    public SQLManagerException(String message, Throwable cause) {
+      super(message, cause);
     }
   }
 

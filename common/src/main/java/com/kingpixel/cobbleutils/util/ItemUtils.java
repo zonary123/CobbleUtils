@@ -191,7 +191,17 @@ public class ItemUtils {
 
   public static String getTranslatedName(ItemStack itemStack) {
     if (itemStack.isEmpty()) return CobbleUtils.language.getUnknown();
-    if (itemStack.get(DataComponentTypes.CUSTOM_NAME) != null) return itemStack.getName().getString();
+    if (itemStack.get(DataComponentTypes.CUSTOM_NAME) != null) {
+      return sanitizeCustomItemName(itemStack.getName().getString());
+    }
     return "<lang:" + itemStack.getItem().getTranslationKey() + ">";
+  }
+
+  /**
+   * Neutralizes MiniMessage-like tags from user-controlled item names.
+   */
+  private static String sanitizeCustomItemName(String name) {
+    if (name == null || name.isEmpty()) return CobbleUtils.language.getUnknown();
+    return name.replace('<', '＜').replace('>', '＞');
   }
 }

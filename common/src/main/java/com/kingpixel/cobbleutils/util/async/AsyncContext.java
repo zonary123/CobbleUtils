@@ -2,43 +2,19 @@ package com.kingpixel.cobbleutils.util.async;
 
 import com.kingpixel.cobbleutils.CobbleUtils;
 
+import java.util.Set;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CancellationException;
 
 /**
- * Production-grade async execution context for Minecraft mods.
+ * Production-grade asynchronous execution context custom-tailored for Minecraft mods.
  *
- * <p>Features:</p>
- * <ul>
- *   <li>Configurable thread pools with queue bounds</li>
- *   <li>Automatic fallback executor when main pool is saturated</li>
- *   <li>Scheduled task execution with graceful cancellation</li>
- *   <li>Comprehensive metrics and monitoring</li>
- *   <li>Safe shutdown with timeout and resource cleanup</li>
- *   <li>Daemon threads with exception tracking</li>
- * </ul>
- *
- * <h3>Usage</h3>
- * <pre>{@code
- * AsyncContext ctx = new AsyncContext("MyMod", 2, 4, 1000, 30, TimeUnit.SECONDS);
- *
- * // Async supply with result
- * CompletableFuture<String> result = ctx.supply(() -> expensiveComputation());
- *
- * // Fire-and-forget
- * ctx.runAsync(() -> saveToDB());
- *
- * // Scheduled task
- * ctx.schedule(() -> syncPlayers(), 5, TimeUnit.SECONDS);
- *
- * // On server shutdown
- * ctx.shutdown();
- * }</pre>
+ * <p>This class safely manages background worker threads, preventing heavy computations
+ * from clogging the server's Main Tick Loop. It features an automated fallback mechanism
+ * to absorb unexpected traffic bursts, immediate self-cleaning scheduled tasks to prevent
+ * memory leaks, and a multi-threaded scheduler shielded from pool exhaustion.</p>
  */
 public class AsyncContext {
 
@@ -59,11 +35,11 @@ public class AsyncContext {
   /* ========================================= */
 
   /**
-   * Creates an AsyncContext with default queue size and timeout.
+   * Creates an AsyncContext initialized with a default queue capacity of 1000 tasks and a 30-second timeout.
    *
-   * @param threadName   prefix for thread names
-   * @param minThreads   minimum pool threads
-   * @param maxThreads   maximum pool threads
+   * @param threadName The naming prefix assigned to worker threads for profile debugging (e.g., "MyMod").
+   * @param minThreads The minimum core size of active threads maintained in the main worker pool.
+   * @param maxThreads The maximum pool ceiling allowed for concurrent workers under high load conditions.
    */
   public AsyncContext(String threadName, int minThreads, int maxThreads) {
     this(
@@ -77,14 +53,16 @@ public class AsyncContext {
   }
 
   /**
-   * Creates a fully configured AsyncContext.
+   * Creates a fully optimized and customized AsyncContext instance.
    *
-   * @param threadName       prefix for thread names
-   * @param minThreads       minimum pool threads
-   * @param maxThreads       maximum pool threads
-   * @param queueSize        max pending tasks before fallback
-   * @param timeout          default timeout for operations
-   * @param timeoutUnit      unit of timeout
+   * @param threadName  The naming prefix assigned to worker threads for profile debugging.
+   * @param minThreads  The minimum core size of active threads maintained in the main worker pool.
+   * @param maxThreads  The maximum pool ceiling allowed for concurrent workers under high load conditions.
+   * @param queueSize   Max pending tasks tolerated by the queue before routing to fallback execution.
+   * @param timeout     Default time duration threshold applied to guard async transactions.
+   * @param timeoutUnit The dimensional unit of time mapping to the timeout duration parameter.
+   *
+   * @throws IllegalArgumentException If core bounds are negative, or maximum pool sizes drop below core values.
    */
   public AsyncContext(
     String threadName,
@@ -104,16 +82,18 @@ public class AsyncContext {
 
     AtomicInteger counter = new AtomicInteger();
 
+    // Thread Factory: Configures clear names and marks threads as daemon so they do not block JVM shutdown.
     ThreadFactory factory = r -> {
       Thread t = new Thread(r);
       t.setName(threadName + "-" + counter.incrementAndGet());
       t.setDaemon(true);
       t.setUncaughtExceptionHandler((thread, ex) ->
         CobbleUtils.LOGGER_RAW.error("[AsyncContext:{}] Uncaught error in {}: {}",
-            threadName, thread.getName(), ex.getMessage(), ex));
+          threadName, thread.getName(), ex.getMessage(), ex));
       return t;
     };
 
+    // Primary Asynchronous Executor Pool
     this.executor = new ThreadPoolExecutor(
       minThreads,
       maxThreads,
@@ -124,9 +104,12 @@ public class AsyncContext {
       new ThreadPoolExecutor.AbortPolicy()
     );
 
+    // Warm up core threads to prevent performance drops (lag spikes) during first tasks
     this.executor.prestartAllCoreThreads();
 
-    this.scheduler = new ScheduledThreadPoolExecutor(1, r -> {
+    // Optimized Scheduler: Uses multiple threads to prevent slow tasks from delaying other scheduled events
+    int schedulerThreads = Math.max(2, Runtime.getRuntime().availableProcessors() / 4);
+    this.scheduler = new ScheduledThreadPoolExecutor(schedulerThreads, r -> {
       Thread t = factory.newThread(r);
       t.setName(threadName + "-Scheduler");
       return t;
@@ -135,6 +118,7 @@ public class AsyncContext {
     this.scheduler.setExecuteExistingDelayedTasksAfterShutdownPolicy(false);
     this.scheduler.setContinueExistingPeriodicTasksAfterShutdownPolicy(false);
 
+    // Fallback executor pool for emergencies and tasks overflow
     int fallbackMaxThreads = Math.max(2, maxThreads);
     int fallbackQueueSize = Math.max(128, queueSize / 2);
     this.fallbackExecutor = new ThreadPoolExecutor(
@@ -153,68 +137,64 @@ public class AsyncContext {
   /* ========================================= */
 
   /**
-   * Executes a supplier asynchronously with default timeout.
+   * Executes a computing supplier asynchronously, bound to the contextual default timeout limit.
    *
-   * @param supplier the computation to execute
-   * @param <T>      result type
-   * @return future with result or exception
+   * @param supplier The operational calculation logic requiring out-of-core evaluation.
+   * @param <T>      The target evaluation return type.
+   *
+   * @return A CompletableFuture object slated to mirror the resulting computed output value.
    */
   public <T> CompletableFuture<T> supply(Supplier<T> supplier) {
     return supply(supplier, defaultTimeout, defaultTimeoutUnit);
   }
 
   /**
-   * Executes a supplier asynchronously with custom timeout.
-   *
-   * <p>The returned future will complete exceptionally if:
-   * <ul>
-   *   <li>Timeout expires</li>
-   *   <li>Supplier throws an exception</li>
-   *   <li>AsyncContext is shutting down</li>
-   *   <li>All executors are saturated</li>
-   * </ul>
-   *
-   * @param supplier the computation to execute
-   * @param timeout  max time to wait
-   * @param unit     unit of timeout
-   * @param <T>      result type
-   * @return future with result or exception
+   * Executes a computing supplier asynchronously, bound to a customized operation timeout limit.
    */
   public <T> CompletableFuture<T> supply(
     Supplier<T> supplier,
     long timeout,
     TimeUnit unit
   ) {
-
     CompletableFuture<T> future = new CompletableFuture<>();
 
     Runnable task = () -> {
       try {
-        future.complete(supplier.get());
+        if (!future.isDone()) {
+          future.complete(supplier.get());
+        }
       } catch (Exception exception) {
         future.completeExceptionally(exception);
       }
     };
 
     submit(task, future);
-
     return future.orTimeout(timeout, unit);
   }
 
   /**
-   * Executes a runnable asynchronously (fire-and-forget).
+   * Submits a fire-and-forget task scheduled to run natively on a background worker thread.
    *
-   * <p>Exceptions are logged but don't propagate. For exception handling,
-   * use {@link #supply(Supplier)} with a wrapped runnable.
+   * @param runnable The targeted executable instructions targeted for background evaluation.
    *
-   * @param runnable the task to execute
-   * @return future that completes when task finishes
+   * @return A CompletableFuture tracking abstract completion (Void) of the background routine.
    */
   public CompletableFuture<Void> runAsync(Runnable runnable) {
-    return supply(() -> {
-      runnable.run();
-      return null;
-    });
+    CompletableFuture<Void> future = new CompletableFuture<>();
+
+    Runnable task = () -> {
+      try {
+        runnable.run();
+        future.complete(null);
+      } catch (Exception exception) {
+        // Enforces transparency, preventing critical database/file saving failures from masking out.
+        CobbleUtils.LOGGER_RAW.error("[AsyncContext:{}] Error caught in async fire-and-forget background task", threadNamePrefix, exception);
+        future.completeExceptionally(exception);
+      }
+    };
+
+    submit(task, future);
+    return future.orTimeout(defaultTimeout, defaultTimeoutUnit);
   }
 
   /* ========================================= */
@@ -222,58 +202,52 @@ public class AsyncContext {
   /* ========================================= */
 
   /**
-   * Schedules a one-time task to execute after a delay (returns ScheduledFuture).
-   *
-   * @param task   the task to execute
-   * @param delay  time to wait before execution
-   * @param unit   unit of delay
-   * @return future representing the scheduled task (can be cancelled)
+   * Schedules a one-time execution sequence triggered precisely after a specific delay expires.
    */
   public ScheduledFuture<?> scheduleWithFuture(Runnable task, long delay, TimeUnit unit) {
-    if (isSchedulerAlive()) {
-      try {
-        ScheduledFuture<?> future = scheduler.schedule(() -> safeRun(task), delay, unit);
-        registerScheduledTask(future);
-        return future;
-      } catch (RejectedExecutionException ex) {
-        executeOnFallback(task, null);
-        CompletableFuture<Void> failed = new CompletableFuture<>();
-        failed.completeExceptionally(ex);
-        return new ScheduledFutureCompletableFutureAdapter(failed);
-      }
-    } else {
+    if (!isSchedulerAlive()) {
       executeOnFallback(task, null);
       CompletableFuture<Void> failed = new CompletableFuture<>();
-      failed.completeExceptionally(new IllegalStateException("Scheduler is not alive"));
+      failed.completeExceptionally(new IllegalStateException("Scheduler infrastructure is offline"));
+      return new ScheduledFutureCompletableFutureAdapter(failed);
+    }
+
+    try {
+      // Internal reference holder array utilized to let the inner routine slice itself out upon teardown.
+      final ScheduledFuture<?>[] futureHolder = new ScheduledFuture<?>[1];
+
+      Runnable wrappedTask = () -> {
+        try {
+          safeRun(task);
+        } finally {
+          // Automatic scoped removal: Garbage collector reclaims metadata objects immediately.
+          if (futureHolder[0] != null) {
+            scheduledTasks.remove(futureHolder[0]);
+          }
+        }
+      };
+
+      ScheduledFuture<?> future = scheduler.schedule(wrappedTask, delay, unit);
+      futureHolder[0] = future;
+      scheduledTasks.add(future);
+      return future;
+    } catch (RejectedExecutionException ex) {
+      executeOnFallback(task, null);
+      CompletableFuture<Void> failed = new CompletableFuture<>();
+      failed.completeExceptionally(ex);
       return new ScheduledFutureCompletableFutureAdapter(failed);
     }
   }
 
   /**
-   * Schedules a one-time task to execute after a delay (fire-and-forget, void return).
-   *
-   * <p>This method maintains binary compatibility with older code.
-   * Prefer {@link #scheduleWithFuture} to get a ScheduledFuture for cancellation.
-   *
-   * @param task   the task to execute
-   * @param delay  time to wait before execution
-   * @param unit   unit of delay
+   * Schedules a one-time execution sequence triggered after a delay (Maintains backwards binary compatibility).
    */
   public void schedule(Runnable task, long delay, TimeUnit unit) {
     scheduleWithFuture(task, delay, unit);
   }
 
   /**
-   * Schedules a periodic task that repeats at fixed rate (returns ScheduledFuture).
-   *
-   * <p>If the task throws an exception, it will be logged but the periodic
-   * execution continues. To stop a periodic task, cancel the returned future.
-   *
-   * @param task         the task to repeat
-   * @param initialDelay delay before first execution
-   * @param period       time between executions
-   * @param unit         unit of delays
-   * @return future representing the periodic task (can be cancelled to stop)
+   * Establishes a repeating periodic execution sequence anchored to a strict fixed rate interval.
    */
   public ScheduledFuture<?> scheduleAtFixedRateWithFuture(
     Runnable task,
@@ -281,40 +255,33 @@ public class AsyncContext {
     long period,
     TimeUnit unit
   ) {
-    if (isSchedulerAlive()) {
-      try {
-        ScheduledFuture<?> future = scheduler.scheduleAtFixedRate(
-          () -> safeRun(task),
-          initialDelay,
-          period,
-          unit
-        );
-        registerScheduledTask(future);
-        return future;
-      } catch (RejectedExecutionException ex) {
-        executeOnFallback(task, null);
-        CompletableFuture<Void> failed = new CompletableFuture<>();
-        failed.completeExceptionally(ex);
-        return new ScheduledFutureCompletableFutureAdapter(failed);
-      }
-    } else {
+    if (!isSchedulerAlive()) {
       executeOnFallback(task, null);
       CompletableFuture<Void> failed = new CompletableFuture<>();
-      failed.completeExceptionally(new IllegalStateException("Scheduler is not alive"));
+      failed.completeExceptionally(new IllegalStateException("Scheduler infrastructure is offline"));
+      return new ScheduledFutureCompletableFutureAdapter(failed);
+    }
+
+    try {
+      // Recurrent execution tasks sit inside the collection until canceled externally or during context teardown.
+      ScheduledFuture<?> future = scheduler.scheduleAtFixedRate(
+        () -> safeRun(task),
+        initialDelay,
+        period,
+        unit
+      );
+      scheduledTasks.add(future);
+      return future;
+    } catch (RejectedExecutionException ex) {
+      executeOnFallback(task, null);
+      CompletableFuture<Void> failed = new CompletableFuture<>();
+      failed.completeExceptionally(ex);
       return new ScheduledFutureCompletableFutureAdapter(failed);
     }
   }
 
   /**
-   * Schedules a periodic task that repeats at fixed rate (fire-and-forget, void return).
-   *
-   * <p>This method maintains binary compatibility with older code.
-   * Prefer {@link #scheduleAtFixedRateWithFuture} to get a ScheduledFuture for cancellation.
-   *
-   * @param task         the task to repeat
-   * @param initialDelay delay before first execution
-   * @param period       time between executions
-   * @param unit         unit of delays
+   * Establishes a repeating periodic execution sequence (Maintains backwards binary compatibility).
    */
   public void scheduleAtFixedRate(
     Runnable task,
@@ -340,15 +307,16 @@ public class AsyncContext {
     }
 
     try {
-      executor.submit(task);
+      // CRITICAL ARCHITECTURAL OPTIMIZATION: .execute() is chosen over .submit() intentionally to prevent
+      // ThreadPoolExecutor from wrapping the task into a nested FutureTask, which breaks CompletableFuture try-catch bubbles.
+      executor.execute(task);
     } catch (RejectedExecutionException ex) {
       executeOnFallback(task, future);
     }
   }
 
   /**
-   * Adapter to make CompletableFuture implement ScheduledFuture.
-   * Used for failed scheduled tasks.
+   * Internal proxy adapter transforming vanilla CompletableFuture states to fit ScheduledFuture signatures.
    */
   private static class ScheduledFutureCompletableFutureAdapter implements ScheduledFuture<Void> {
     private final CompletableFuture<Void> delegate;
@@ -393,7 +361,6 @@ public class AsyncContext {
     }
   }
 
-
   private void executeOnFallback(Runnable task, CompletableFuture<?> future) {
     fallbackExecutions.incrementAndGet();
     try {
@@ -406,7 +373,7 @@ public class AsyncContext {
   private void handleRejectedSubmission(CompletableFuture<?> future, RejectedExecutionException exception) {
     if (!running.get()) {
       if (future != null) {
-        future.completeExceptionally(new CancellationException("AsyncContext is shutting down"));
+        future.completeExceptionally(new CancellationException("AsyncContext has already initiated a shutdown cycle"));
       }
       return;
     }
@@ -414,7 +381,7 @@ public class AsyncContext {
       future.completeExceptionally(exception);
       return;
     }
-    CobbleUtils.LOGGER_RAW.warn("[AsyncContext:{}] Async task rejected: all executors saturated", threadNamePrefix, exception);
+    CobbleUtils.LOGGER_RAW.warn("[AsyncContext:{}] Task rejected: All fallback core execution layers are fully saturated under stress", threadNamePrefix, exception);
   }
 
   private void safeRun(Runnable task) {
@@ -427,43 +394,16 @@ public class AsyncContext {
       if (!running.get()) {
         return;
       }
-      CobbleUtils.LOGGER_RAW.error("[AsyncContext:{}] Task execution failed", threadNamePrefix, exception);
+      CobbleUtils.LOGGER_RAW.error("[AsyncContext:{}] Critical failure encountered inside internal task processing", threadNamePrefix, exception);
     }
-  }
-
-  private void registerScheduledTask(ScheduledFuture<?> future) {
-    scheduledTasks.add(future);
-    // Periodic cleanup of completed tasks to prevent memory growth
-    scheduledTasks.removeIf(ScheduledFuture::isDone);
-  }
-
-  private void cancelScheduledTasks(boolean mayInterrupt) {
-    int cancelled = 0;
-    for (ScheduledFuture<?> future : scheduledTasks) {
-      try {
-        if (future.cancel(mayInterrupt)) {
-          cancelled++;
-        }
-      } catch (Exception ignored) {
-        // ignore cancellation errors
-      }
-    }
-    if (cancelled > 0) {
-      CobbleUtils.LOGGER_RAW.debug("[AsyncContext:{}] Cancelled {} scheduled tasks", threadNamePrefix, cancelled);
-    }
-    scheduledTasks.clear();
   }
 
   private boolean isExecutorAlive() {
-    return running.get()
-      && !executor.isShutdown()
-      && !executor.isTerminated();
+    return running.get() && !executor.isShutdown() && !executor.isTerminated();
   }
 
   private boolean isSchedulerAlive() {
-    return running.get()
-      && !scheduler.isShutdown()
-      && !scheduler.isTerminated();
+    return running.get() && !scheduler.isShutdown() && !scheduler.isTerminated();
   }
 
   /* ========================================= */
@@ -471,10 +411,7 @@ public class AsyncContext {
   /* ========================================= */
 
   /**
-   * Gracefully shuts down all executors with timeout.
-   *
-   * <p>Tries to complete pending tasks within the default timeout,
-   * then forces shutdown if necessary. All scheduled tasks are cancelled.
+   * Orchestrates an orderly, phased Graceful Shutdown sequence across all threaded sub-pools.
    */
   public void shutdown() {
     running.set(false);
@@ -487,34 +424,32 @@ public class AsyncContext {
     try {
       if (!executor.awaitTermination(defaultTimeout, defaultTimeoutUnit)) {
         executor.shutdownNow();
-        CobbleUtils.LOGGER_RAW.warn("[AsyncContext:{}] Executor did not terminate gracefully, forced shutdown", threadNamePrefix);
+        CobbleUtils.LOGGER_RAW.warn("[AsyncContext:{}] Primary executor pool failed to drain timely. Enforcing forced teardown.", threadNamePrefix);
       }
 
       if (!scheduler.awaitTermination(5, TimeUnit.SECONDS)) {
         scheduler.shutdownNow();
-        CobbleUtils.LOGGER_RAW.warn("[AsyncContext:{}] Scheduler did not terminate gracefully, forced shutdown", threadNamePrefix);
+        CobbleUtils.LOGGER_RAW.warn("[AsyncContext:{}] Core scheduler pool failed to drain timely. Enforcing forced teardown.", threadNamePrefix);
       }
 
       if (!fallbackExecutor.awaitTermination(5, TimeUnit.SECONDS)) {
         fallbackExecutor.shutdownNow();
-        CobbleUtils.LOGGER_RAW.warn("[AsyncContext:{}] Fallback executor did not terminate gracefully, forced shutdown", threadNamePrefix);
+        CobbleUtils.LOGGER_RAW.warn("[AsyncContext:{}] Secondary fallback execution pool failed to drain timely. Enforcing forced teardown.", threadNamePrefix);
       }
 
-      CobbleUtils.LOGGER_RAW.info("[AsyncContext:{}] Graceful shutdown complete", threadNamePrefix);
+      CobbleUtils.LOGGER_RAW.info("[AsyncContext:{}] Graceful execution pool teardown completed successfully.", threadNamePrefix);
 
     } catch (InterruptedException e) {
       executor.shutdownNow();
       scheduler.shutdownNow();
       fallbackExecutor.shutdownNow();
       Thread.currentThread().interrupt();
-      CobbleUtils.LOGGER_RAW.error("[AsyncContext:{}] Interrupted during shutdown", threadNamePrefix, e);
+      CobbleUtils.LOGGER_RAW.error("[AsyncContext:{}] Teardown cycle was violently interrupted during termination waits", threadNamePrefix, e);
     }
   }
 
   /**
-   * Forces immediate shutdown, cancelling all pending tasks.
-   *
-   * <p>This is aggressive and should only be used in emergency scenarios.
+   * Triggers an immediate, aggressive shutdown sweep across the entire execution environment, forcing thread interrupts.
    */
   public void shutdownNow() {
     running.set(false);
@@ -522,68 +457,61 @@ public class AsyncContext {
     executor.shutdownNow();
     scheduler.shutdownNow();
     fallbackExecutor.shutdownNow();
-    CobbleUtils.LOGGER_RAW.warn("[AsyncContext:{}] Emergency shutdown triggered", threadNamePrefix);
+    CobbleUtils.LOGGER_RAW.warn("[AsyncContext:{}] Emergency hard termination sequence invoked.", threadNamePrefix);
+  }
+
+  private void cancelScheduledTasks(boolean mayInterrupt) {
+    int cancelled = 0;
+    for (ScheduledFuture<?> future : scheduledTasks) {
+      try {
+        if (future.cancel(mayInterrupt)) {
+          cancelled++;
+        }
+      } catch (Exception ignored) {
+      }
+    }
+    if (cancelled > 0) {
+      CobbleUtils.LOGGER_RAW.debug("[AsyncContext:{}] Revoked a total of {} active scheduled tasks during core pool teardown", threadNamePrefix, cancelled);
+    }
+    scheduledTasks.clear();
   }
 
   /* ========================================= */
   /* =============== METRICS ================== */
   /* ========================================= */
 
-  /**
-   * Returns the number of threads currently executing tasks.
-   */
   public int getActiveThreads() {
     return executor.getActiveCount();
   }
 
-  /**
-   * Returns the total number of tasks completed by the executor.
-   */
   public long getCompletedTasks() {
     return executor.getCompletedTaskCount();
   }
 
-  /**
-   * Returns the number of tasks pending in the executor queue.
-   */
   public int getQueueSize() {
     return executor.getQueue().size();
   }
 
-  /**
-   * Returns the load factor (active threads / max threads) [0.0, 1.0].
-   */
   public double getLoadFactor() {
     return (double) executor.getActiveCount() / executor.getMaximumPoolSize();
   }
 
-  /**
-   * Returns the number of times the fallback executor was used due to saturation.
-   */
   public int getFallbackExecutions() {
     return fallbackExecutions.get();
   }
 
-  /**
-   * Returns the number of scheduled tasks currently pending or running.
-   */
   public int getPendingScheduledTasks() {
+    scheduledTasks.removeIf(ScheduledFuture::isDone);
     return scheduledTasks.size();
   }
 
-  /**
-   * Returns comprehensive health status.
-   */
   public boolean isHealthy() {
     return isExecutorAlive() && isSchedulerAlive();
   }
 
-  /**
-   * Returns a summary of executor statistics.
-   */
   public String getStatsSummary() {
     return String.format(
-      "[%s] Threads: %d/%d | Queue: %d | Completed: %d | Fallback: %d | Scheduled: %d | Load: %.1f%%",
+      "[%s] Workers: %d/%d | Queue: %d | Resolved: %d | Fallbacks: %d | Scheduled: %d | Load: %.1f%%",
       threadNamePrefix,
       getActiveThreads(),
       executor.getMaximumPoolSize(),
@@ -595,4 +523,3 @@ public class AsyncContext {
     );
   }
 }
-

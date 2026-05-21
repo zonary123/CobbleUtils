@@ -7,16 +7,11 @@ import com.cobblemon.mod.common.api.types.adapters.ElementalTypeAdapter;
 import com.cobblemon.mod.common.pokemon.Pokemon;
 import com.cobblemon.mod.common.util.adapters.IntRangeAdapter;
 import com.cobblemon.mod.common.util.adapters.NbtCompoundAdapter;
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.internal.bind.DateTypeAdapter;
 import com.kingpixel.cobbleutils.CobbleUtils;
-import com.kingpixel.cobbleutils.Model.DataBaseType;
-import com.kingpixel.cobbleutils.Model.DurationValue;
-import com.kingpixel.cobbleutils.Model.ItemChance;
-import com.kingpixel.cobbleutils.Model.ItemModel;
-import com.kingpixel.cobbleutils.Model.ScheduleValue;
+import com.kingpixel.cobbleutils.Model.*;
 import com.kingpixel.cobbleutils.Model.conditions.Condition;
 import com.kingpixel.cobbleutils.Model.messages.HiperMessage;
 import com.kingpixel.cobbleutils.Model.zones.zoneshapes.ZoneShape;
@@ -42,30 +37,35 @@ import net.minecraft.util.math.Box;
 import net.minecraft.util.math.Vec3d;
 
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.charset.Charset;
-import java.nio.charset.MalformedInputException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
 import java.time.Instant;
 import java.util.*;
-import java.util.concurrent.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
+/**
+ * Miscellaneous utility bridge providing bridging helpers for item parsing,
+ * broadcast routing channels, and legacy file management delegations.
+ */
 public abstract class Utils {
-  /**
-   * @deprecated Use {@link Utils#getRandom()} instead.
-   */
+
   @Deprecated(forRemoval = true)
   public static final Random RANDOM = new Random();
 
   private static final Charset charset = StandardCharsets.UTF_8;
 
+  /**
+   * Retrieves a high-performance thread-isolated random generator scalar.
+   *
+   * @return Active ThreadLocalRandom context instance.
+   */
   public static ThreadLocalRandom getRandom() {
     return ThreadLocalRandom.current();
   }
@@ -99,6 +99,11 @@ public abstract class Utils {
       .disableHtmlEscaping());
   }
 
+  /**
+   * Evaluates if placeholders API hooks are registered on the classpath environment.
+   *
+   * @return True if placeholders library classes resolve cleanly.
+   */
   public static boolean isPlaceholder() {
     try {
       Class.forName("eu.pb4.placeholders.api.Placeholders");
@@ -153,13 +158,6 @@ public abstract class Utils {
     };
   }
 
-  // IO Methods
-  @Deprecated(forRemoval = true)
-  public static final ExecutorService IO_EXECUTOR = Executors.newFixedThreadPool(2, new ThreadFactoryBuilder()
-    .setDaemon(true)
-    .setNameFormat("CobbleUtils IO - %d")
-    .build());
-
   @Deprecated(forRemoval = true)
   public static CompletableFuture<Boolean> writeFileAsync(
     String filePath,
@@ -168,49 +166,23 @@ public abstract class Utils {
   ) {
     if (filePath == null || filename == null || data == null) return CompletableFuture.completedFuture(false);
 
-    File file = Paths
-      .get(new File("").getAbsolutePath() + filePath, filename)
-      .toFile();
+    Path targetPath = Paths.get(new File("").getAbsolutePath() + filePath, filename);
 
-    if (IO_EXECUTOR.isShutdown() || IO_EXECUTOR.isTerminated()) {
-      return CompletableFuture.completedFuture(
-        writeFileSyncSafe(file, data)
-      );
-    }
-
-    try {
-      return UtilsAsync.supplyAsync(() -> writeFileSyncSafe(file, data), IO_EXECUTOR);
-    } catch (RejectedExecutionException e) {
-      // Fallback absoluto
-      return CompletableFuture.completedFuture(
-        writeFileSyncSafe(file, data)
-      );
-    }
-  }
-
-  @Deprecated(forRemoval = true)
-  private static boolean writeFileSyncSafe(File file, String data) {
-    try {
-      Path parent = file.toPath().getParent();
-      if (parent != null && !Files.exists(parent)) {
-        Files.createDirectories(parent);
-      }
-    } catch (IOException e) {
-      CobbleUtils.LOGGER_RAW.error("Error creating directories for " + file.getPath());
-      e.printStackTrace();
-      return false;
-    }
-
-    return writeFileSync(file, data); // ⬅ método legacy intacto
+    return UtilsFile.writeTextAsync(targetPath, data)
+      .thenApply(v -> true)
+      .exceptionally(ex -> {
+        CobbleUtils.LOGGER_RAW.error("Failed async file write operation via UtilsFile for path: " + targetPath, ex);
+        return false;
+      });
   }
 
   @Deprecated(forRemoval = true)
   public static boolean writeFileSync(File file, String data) {
-    try (FileWriter writer = new FileWriter(file, charset)) {
-      writer.write(data);
+    try {
+      UtilsFile.writeText(file.toPath(), data);
       return true;
     } catch (IOException e) {
-      e.printStackTrace();
+      CobbleUtils.LOGGER_RAW.error("Failed structural file write handshake for location: " + file.getPath(), e);
       return false;
     }
   }
@@ -221,81 +193,73 @@ public abstract class Utils {
       return CompletableFuture.completedFuture(false);
     }
 
-    // Optional: Add timeout handling
-    return UtilsAsync.supplyAsync(() -> {
-      Path path = Paths.get(new File("").getAbsolutePath() + filePath, filename);
-      File file = path.toFile();
+    Path targetPath = Paths.get(new File("").getAbsolutePath() + filePath, filename);
 
-      if (!file.exists()) return false;
-
-      try {
-        String content = Files.readString(path, charset);
+    return UtilsFile.readTextAsync(targetPath)
+      .thenApply(content -> {
+        if (content == null) return false;
         callback.accept(content);
         return true;
-      } catch (IOException e) {
+      })
+      .exceptionally(ex -> {
+        CobbleUtils.LOGGER_RAW.error("Failed async text extraction loop for location: " + targetPath, ex);
         return false;
-      }
-    }, IO_EXECUTOR);
+      });
   }
 
   @Deprecated(forRemoval = true)
   public static boolean readFileSync(File file, Consumer<String> callback) {
-    if (!file.exists() || !file.isFile()) {
-      return false;
-    }
     try {
-      // Always try UTF-8 first
-      List<String> lines = Files.readAllLines(file.toPath(), StandardCharsets.UTF_8);
-      String content = String.join("\n", lines);
+      String content = UtilsFile.readText(file.toPath());
+      if (content == null) return false;
       callback.accept(content);
       return true;
-    } catch (MalformedInputException mie) {
+    } catch (IOException e) {
+      // Fallback handling matching historic legacy ISO-8859 extraction rules on malformed data drops
       try {
         List<String> lines = Files.readAllLines(file.toPath(), StandardCharsets.ISO_8859_1);
         String content = String.join("\n", lines);
         callback.accept(content);
         return true;
       } catch (IOException ex) {
-        ex.printStackTrace();
+        CobbleUtils.LOGGER_RAW.error("Fallback secondary recovery mapping failed for layout path: " + file.getPath(), ex);
         return false;
       }
-    } catch (IOException e) {
-      e.printStackTrace();
-      return false;
     }
   }
 
   @Deprecated(forRemoval = true)
   public static String readFileSync(File file) throws IOException {
-    if (!file.exists() || !file.isFile())
-      throw new IllegalArgumentException("File does not exist or is not a file: " + file.getPath());
-    return Files.readString(file.toPath(), charset);
+    String content = UtilsFile.readText(file.toPath());
+    if (content == null) {
+      throw new IllegalArgumentException("File does not exist or is not readable: " + file.getPath());
+    }
+    return content;
   }
 
   @Deprecated(forRemoval = true)
   public static CompletableFuture<Boolean> writeFileAsync(File file, String content) {
     if (file == null || content == null) return CompletableFuture.completedFuture(false);
 
-    return UtilsAsync.supplyAsync(() -> {
-      try {
-        Files.writeString(file.toPath(), content, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
-        return true;
-      } catch (IOException e) {
-        CobbleUtils.LOGGER_RAW.error("Error writing to file: " + file.getPath());
+    return UtilsFile.writeTextAsync(file.toPath(), content)
+      .thenApply(v -> true)
+      .exceptionally(ex -> {
+        CobbleUtils.LOGGER_RAW.error("Async context block text deployment failed on path target: " + file.getPath(), ex);
         return false;
-      }
-    }, IO_EXECUTOR);
+      });
   }
 
   /**
-   * @deprecated Use {@link #broadcastMessage(Text)} instead.
+   * Broadcasts a text sequence string across localized display contexts or proxy redis networks.
+   *
+   * @param message Text sequence payload targeting dispatch.
    */
-  @Deprecated(forRemoval = true)
   public static void broadcastMessage(String message) {
     if (CobbleUtils.config.isRedisMessaging()) {
       RedisMessageHandler.sendBroadcast(message, "");
     } else {
       MinecraftServer server = CobbleUtils.server;
+      if (server == null) return;
       ArrayList<ServerPlayerEntity> players = new ArrayList<>(server.getPlayerManager().getPlayerList());
       for (ServerPlayerEntity pl : players) {
         pl.sendMessage(AdventureTranslator.toNative(message));
@@ -303,14 +267,18 @@ public abstract class Utils {
     }
   }
 
-  @Deprecated(forRemoval = true)
+  /**
+   * Broadcasts a fully structured Text component layout across network players.
+   *
+   * @param message Native Text object payload.
+   */
   public static void broadcastMessage(Text message) {
     if (CobbleUtils.config.isRedisMessaging()) {
-      // Convert Text to String and send via Redis
       String textAsString = message.getString();
       RedisMessageHandler.sendBroadcast(textAsString, "");
     } else {
       MinecraftServer server = CobbleUtils.server;
+      if (server == null) return;
       ArrayList<ServerPlayerEntity> players = new ArrayList<>(server.getPlayerManager().getPlayerList());
       for (ServerPlayerEntity pl : players) {
         pl.sendMessage(message);
@@ -318,13 +286,19 @@ public abstract class Utils {
     }
   }
 
-  @Deprecated(forRemoval = true)
+  /**
+   * Broadcasts a prefix annotated text layout sequence out across matching platforms.
+   *
+   * @param message Text string payload data.
+   * @param prefix  System tag label string mapped to prepending layouts.
+   */
   public static void broadcastMessage(String message, String prefix) {
     if (CobbleUtils.config.isRedisMessaging()) {
       RedisMessageHandler.sendBroadcast(message, prefix);
     } else {
       var text = AdventureTranslator.toNative(message, prefix);
       MinecraftServer server = CobbleUtils.server;
+      if (server == null) return;
       ArrayList<ServerPlayerEntity> players = new ArrayList<>(server.getPlayerManager().getPlayerList());
       for (ServerPlayerEntity pl : players) {
         pl.sendMessage(text);
@@ -391,14 +365,12 @@ public abstract class Utils {
     String item = itemModel.getItem();
     String nbt = itemModel.getNbt();
 
-    // Split item string to handle NBT if present
     String[] nbtSplit = item.split("#");
     if (nbtSplit.length > 1) {
       item = nbtSplit[0];
       nbt = nbtSplit[1];
     }
 
-    // Handle custom item format
     if (item.startsWith("item:")) {
       item = item.replace("item:", "");
       String[] split = item.split(":");
@@ -406,12 +378,8 @@ public abstract class Utils {
       amount = Integer.parseInt(split[0]);
     }
 
-    // Parse the item ID and create the ItemStack
     ItemStack itemStack = parseItemId(item, amount);
-
-    // Apply additional NBT and properties to the ItemStack
     itemStack = addThingsItemStack(itemStack, itemModel, nbt);
-
     return itemStack;
   }
 
@@ -483,7 +451,7 @@ public abstract class Utils {
       int index = sb.indexOf(placeholder);
       while (index != -1) {
         sb.replace(index, index + placeholder.length(), value);
-        index += value.length(); // Move to the end of the replaced value
+        index += value.length();
         index = sb.indexOf(placeholder, index);
       }
     }

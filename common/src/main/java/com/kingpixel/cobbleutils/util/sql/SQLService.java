@@ -6,6 +6,7 @@ import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -60,17 +61,36 @@ public class SQLService {
    * and ready to execute queries.
    *
    * @param config The database configuration with type, URL, database, user, and password.
+   *
    * @return A shared, initialized {@link SQLManager} instance.
    */
   public static SQLManager getOrCreateManager(DataBaseConfig config) {
+    Objects.requireNonNull(config, "DataBaseConfig cannot be null");
     String connectionKey = SQLManager.buildConnectionKey(config);
 
-    return MANAGERS.computeIfAbsent(connectionKey, k -> {
-      CobbleUtils.LOGGER_RAW.info("Creating new SQL connection pool for " + config.getType());
+    return MANAGERS.compute(connectionKey, (key, existing) -> {
+      if (existing != null && existing.isAlive()) {
+        return existing;
+      }
+
+      if (existing != null) {
+        CobbleUtils.LOGGER_RAW.warn("Replacing stale SQL connection pool for {}", config.getType());
+        closeQuietly(existing);
+      }
+
+      CobbleUtils.LOGGER_RAW.info("Creating new SQL connection pool for {}", config.getType());
       SQLManager manager = new SQLManager(config);
       manager.init();
       return manager;
     });
+  }
+
+  private static void closeQuietly(SQLManager manager) {
+    try {
+      manager.close();
+    } catch (Exception e) {
+      CobbleUtils.LOGGER_RAW.warn("Error while closing stale SQL manager", e);
+    }
   }
 
   /**
@@ -81,7 +101,16 @@ public class SQLService {
    */
   public static void shutdown() {
     CobbleUtils.LOGGER_RAW.info("Shutting down all SQL connection pools...");
+    if (MANAGERS.isEmpty()) {
+      CobbleUtils.LOGGER_RAW.info("No active SQL connection pools found.");
+      return;
+    }
     MANAGERS.values().forEach(SQLManager::close);
     MANAGERS.clear();
+    CobbleUtils.LOGGER_RAW.info("All SQL connection pools shut down successfully.");
+  }
+
+  public static int getActiveConnections() {
+    return MANAGERS.size();
   }
 }

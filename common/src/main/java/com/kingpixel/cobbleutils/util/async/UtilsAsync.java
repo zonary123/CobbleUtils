@@ -7,57 +7,33 @@ import lombok.NonNull;
 import java.util.concurrent.TimeUnit;
 
 /**
- * UtilsAsync is a centralized manager for per-mod AsyncContexts.
- * - Each mod can have its own AsyncContext (executor + scheduler)
- * - Provides methods to create, retrieve, and shutdown contexts globally
+ * Centralized manager for per-mod AsyncContexts.
  *
- * <h3>Recommended usage</h3>
- * Always retrieve the context through this class right before using it,
- * instead of storing {@link AsyncContext} in long-lived fields.
- * This guarantees health checks and automatic recreation when a context
- * was previously shutdown or became unhealthy.
- *
- * <pre>{@code
- * // Recommended: request context each time
- * UtilsAsync.getContext("my-mod").runAsync(() -> doWork());
- * UtilsAsync.createContext("my-mod", "MyMod-IO", 1, 2)
- *   .supply(() -> loadData());
- * }</pre>
- *
- * <h3>Avoid</h3>
- * Do not keep a cached reference like this:
- * <pre>{@code
- * // Avoid: could become stale after shutdown/reload
- * private static final AsyncContext CTX = UtilsAsync.getContext("my-mod");
- * }</pre>
+ * <p>Each mod can register and maintain its own isolated AsyncContext (containing its own executor
+ * pool and task scheduler). This utility provides global entry points to safely instantiate,
+ * fetch, and tear down contexts across lifecycle stages.</p>
  */
 public class UtilsAsync {
 
   private UtilsAsync() {
-    // Utility class
+    // Utility class instantiation guard
   }
 
+  /**
+   * Internal thread-safe cache mapping unique Mod IDs to their respective active execution contexts.
+   */
   private static final Cache<@NonNull String, AsyncContext> contexts = Caffeine.newBuilder()
     .build();
 
   /**
-   * Returns a healthy context for the given mod id.
-   * <p>
-   * If a context exists and is healthy, it is reused.
-   * If it exists but is unhealthy, it is shutdown and replaced.
-   * If it does not exist, a new one is created.
+   * Returns a guaranteed healthy context for the given mod identifier.
    *
-   * <h4>Example</h4>
-   * <pre>{@code
-   * UtilsAsync.createContext("cobbleutils-sql", "SQL-IO", 2, 4)
-   *   .runAsync(() -> manager.execute("UPDATE ..."));
-   * }</pre>
+   * @param modId      Unique context tracking identifier.
+   * @param threadName The foundational naming prefix mapped onto created threads.
+   * @param minThreads Minimum core worker threads allocated to the primary pool.
+   * @param maxThreads Maximum boundary limit of hilos allocated under heavy strain.
    *
-   * @param modId       Unique context identifier.
-   * @param threadName  Base name for created threads.
-   * @param minThreads  Minimum threads for the main executor.
-   * @param maxThreads  Maximum threads for the main executor.
-   * @return A healthy {@link AsyncContext} instance.
+   * @return A healthy, verified {@link AsyncContext} ready to process work.
    */
   public static AsyncContext createContext(
     String modId,
@@ -65,51 +41,61 @@ public class UtilsAsync {
     int minThreads,
     int maxThreads
   ) {
+    // Uses mapping compute atomically to safely resolve and eliminate multi-threaded race conditions.
     return contexts.asMap().compute(modId, (id, existing) -> {
       if (existing != null && existing.isHealthy()) {
         return existing;
       }
       if (existing != null) {
+        // Force-terminate dead or unhealthy contexts before reclaiming their mapping slot
         existing.shutdownNow();
       }
+      // Allocation default optimized for Minecraft mod dependencies (2500 queue buffer, 60s timeout)
       return new AsyncContext(threadName, minThreads, maxThreads, 2500, 60, TimeUnit.SECONDS);
     });
   }
 
-  // Overload simple (por compatibilidad)
   /**
-   * Convenience overload with a fixed single-thread executor.
+   * Convenience overload provisioning a healthy single-threaded fixed context.
    *
-   * @param modId Unique context identifier.
-   * @param threadName Base name for created threads.
-   * @return A healthy {@link AsyncContext} instance.
+   * @param modId      Unique context tracking identifier.
+   * @param threadName The foundational naming prefix mapped onto created threads.
+   *
+   * @return A healthy, single-threaded {@link AsyncContext} instance.
    */
   public static AsyncContext createContext(String modId, String threadName) {
     return createContext(modId, threadName, 1, 1);
   }
 
   /**
-   * Retrieves a healthy context for a mod using default thread name and sizes.
+   * Retrieves a healthy context for a mod using default naming schemes and standard core thread allocations.
    *
-   * <h4>Example</h4>
-   * <pre>{@code
-   * UtilsAsync.getContext("my-mod").runAsync(() -> {
-   *   // async logic here
-   * });
-   * }</pre>
+   * @param modId Unique tracking identifier for the mod.
    *
-   * @param modId Unique identifier for the mod
-   * @return A healthy {@link AsyncContext} instance.
+   * @return A verified healthy {@link AsyncContext} instance.
    */
   public static AsyncContext getContext(String modId) {
+    // Directly routes to base creation logic; safely handles fallback parameters out-of-box.
     return createContext(modId, modId + "-async");
   }
 
   /**
-   * Shuts down all AsyncContexts and clears the manager.
-   * Should be called on server shutdown.
+   * Triggers an orderly, graceful shutdown sequence across all registered AsyncContexts.
+   *
+   * <p>Highly recommended to be invoked during the standard Minecraft server stopping phase.
+   * This guarantees that ongoing tasks, data flushes, and database writes conclude safely
+   * without encountering corrupted file saving anomalies.</p>
    */
   public static void shutdownAll() {
+    contexts.asMap().values().forEach(AsyncContext::shutdown);
+    contexts.invalidateAll();
+    contexts.cleanUp();
+  }
+
+  /**
+   * Triggers an immediate, aggressive emergency shutdown sequence across all registered AsyncContexts.
+   */
+  public static void shutdownAllNow() {
     contexts.asMap().values().forEach(AsyncContext::shutdownNow);
     contexts.invalidateAll();
     contexts.cleanUp();

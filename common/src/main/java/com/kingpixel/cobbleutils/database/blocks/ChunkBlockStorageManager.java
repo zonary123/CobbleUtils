@@ -33,7 +33,6 @@ public class ChunkBlockStorageManager {
     .removalListener((String key, ChunkBlockData value, RemovalCause cause) -> {
       if (key == null || value == null || !value.isDirty()) return;
       try {
-        // Si el servidor está parando, guardar sincrónicamente para no perder datos
         if (CobbleUtils.server != null && (CobbleUtils.server.isStopping() || CobbleUtils.server.isStopped())) {
           saveChunkSync(key, value);
         } else {
@@ -45,7 +44,6 @@ public class ChunkBlockStorageManager {
     })
     .build();
 
-  // Usar String como clave para no retener referencias al objeto World
   private static final ConcurrentHashMap<String, String> WORLD_NAME_CACHE = new ConcurrentHashMap<>();
 
   public static void init(MinecraftServer server) {
@@ -86,19 +84,18 @@ public class ChunkBlockStorageManager {
     return getChunkData(world, chunk).contains(pos.asLong());
   }
 
-  // Usar get() atómico de Caffeine para evitar race conditions
   private static ChunkBlockData getChunkData(World world, Chunk chunk) {
     String key = getKey(world, chunk);
     return CHUNK_CACHE.get(key, k -> {
       ChunkBlockData initial = new ChunkBlockData();
-      CompletableFuture.runAsync(() -> {
+      UtilsFile.ASYNC.runAsync(() -> {
         try {
           ChunkBlockData loaded = loadChunkSync(world, chunk);
           initial.mergeFrom(loaded);
         } catch (Throwable t) {
           CobbleUtils.LOGGER_RAW.warn("Failed to async load chunk: " + k, t);
         }
-      }, UtilsFile.IO_EXECUTOR);
+      });
       return initial;
     });
   }
@@ -107,7 +104,6 @@ public class ChunkBlockStorageManager {
     return getSanitizedWorldName(world) + "_" + chunk.getPos().x + "_" + chunk.getPos().z;
   }
 
-  // Cachear por registry key string para no retener el objeto World
   private static String getSanitizedWorldName(World world) {
     String registryId = world.getRegistryKey().getValue().toString();
     return WORLD_NAME_CACHE.computeIfAbsent(registryId, id -> id.replaceAll("[^a-zA-Z0-9-_]", "_"));
@@ -130,10 +126,9 @@ public class ChunkBlockStorageManager {
   }
 
   public static CompletableFuture<Void> saveChunkAsync(String key, ChunkBlockData data) {
-    return CompletableFuture.runAsync(() -> saveChunkSync(key, data), UtilsFile.IO_EXECUTOR);
+    return UtilsFile.ASYNC.runAsync(() -> saveChunkSync(key, data));
   }
 
-  // Escritura atómica: escribir en archivo temporal y renombrar
   private static void saveChunkSync(String key, ChunkBlockData data) {
     if (!data.isDirty()) return;
     try {
@@ -154,7 +149,6 @@ public class ChunkBlockStorageManager {
         for (long b : blocks) out.writeLong(b);
       }
 
-      // Renombrar atómicamente para evitar corrupción
       Files.move(tempFile.toPath(), file.toPath(), StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
       data.clearDirty();
     } catch (Exception e) {
@@ -163,12 +157,15 @@ public class ChunkBlockStorageManager {
   }
 
   public static CompletableFuture<Void> shutdownAsync() {
-    return CompletableFuture.allOf(
+    CHUNK_CACHE.cleanUp();
+
+    CompletableFuture<Void> future = CompletableFuture.allOf(
       CHUNK_CACHE.asMap().entrySet().stream()
         .filter(e -> e.getValue().isDirty())
         .map(e -> saveChunkAsync(e.getKey(), e.getValue()))
         .toArray(CompletableFuture[]::new)
     );
+
+    return future.thenRun(CHUNK_CACHE::invalidateAll);
   }
 }
-
