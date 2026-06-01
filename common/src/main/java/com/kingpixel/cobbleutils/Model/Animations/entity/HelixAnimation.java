@@ -1,0 +1,142 @@
+package com.kingpixel.cobbleutils.Model.Animations.entity;
+
+import com.kingpixel.cobbleutils.CobbleUtils;
+import com.kingpixel.cobbleutils.Model.Animations.core.Animation;
+import com.kingpixel.cobbleutils.Model.Animations.core.AnimationUtils;
+import com.kingpixel.cobbleutils.Model.Animations.core.CustomArmorStandEntity;
+import net.minecraft.entity.decoration.DisplayEntity;
+import net.minecraft.item.ItemStack;
+import net.minecraft.particle.ParticleTypes;
+import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.server.world.ServerWorld;
+import net.minecraft.util.math.Vec3d;
+import net.minecraft.world.World;
+import org.joml.Quaternionf;
+import org.joml.Vector3f;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class HelixAnimation extends Animation {
+
+  @Override
+  public void start(ServerPlayerEntity player, Vec3d position, List<ItemStack> obtained,
+                    List<ItemStack> allRewards, Runnable onComplete) {
+    int totalRewards = obtained.size();
+    if (totalRewards == 0) {
+      if (onComplete != null) onComplete.run();
+      return;
+    }
+
+    Vec3d centerPosition = AnimationUtils.getPosition(player, position);
+
+    CobbleUtils.server.executeSync(() -> {
+      HelixController controller = new HelixController(
+        player.getServerWorld(), centerPosition.x, centerPosition.y, centerPosition.z,
+        obtained, player, onComplete
+      );
+      player.getServerWorld().spawnEntity(controller);
+    });
+  }
+
+  public static class HelixController extends CustomArmorStandEntity {
+    private final ServerPlayerEntity player;
+    private final List<ItemStack> rewards;
+    private final Runnable onDestroy;
+    private boolean completed = false;
+    private final Vec3d basePos;
+
+    private final List<DisplayEntity.ItemDisplayEntity> displays = new ArrayList<>();
+    private final List<Double> initialAngles = new ArrayList<>();
+
+    public HelixController(World world, double x, double y, double z,
+                           List<ItemStack> rewards, ServerPlayerEntity player, Runnable onDestroy) {
+      super(world, x, y, z);
+      this.player = player;
+      this.rewards = rewards;
+      this.onDestroy = onDestroy;
+      this.basePos = new Vec3d(x, y, z);
+
+      setNoGravity(true);
+      setInvisible(true);
+      setInvulnerable(true);
+
+      ServerWorld sw = (ServerWorld) world;
+      int size = rewards.size();
+      for (int i = 0; i < size; i++) {
+        ItemStack reward = rewards.get(i);
+        if (reward == null) continue;
+
+        double angle = Math.toRadians((360.0 / size) * i);
+        float yaw = player.getYaw() + 180f;
+
+        DisplayEntity.ItemDisplayEntity display = AnimationUtils.spawnItemDisplay(
+          sw, basePos, reward.copy(), new Vector3f(1.0f, 1.0f, 1.0f), yaw, 0
+        );
+
+        displays.add(display);
+        initialAngles.add(angle);
+      }
+    }
+
+    private void complete() {
+      if (!completed) {
+        completed = true;
+        for (DisplayEntity.ItemDisplayEntity display : displays) {
+          if (display != null) display.discard();
+        }
+        if (onDestroy != null) onDestroy.run();
+      }
+    }
+
+    @Override
+    public void tick() {
+      super.tick();
+
+      if (this.player == null || this.player.isRemoved() || !this.isAlive()) {
+        this.kill();
+        complete();
+        return;
+      }
+
+      int ticks = getTicks();
+      ServerWorld sw = (ServerWorld) this.getWorld();
+
+      if (ticks < 100) {
+        double radius = Math.max(0.5, 2.0 - (ticks * 0.015));
+
+        for (int i = 0; i < displays.size(); i++) {
+          DisplayEntity.ItemDisplayEntity display = displays.get(i);
+          if (display == null) continue;
+
+          double angle = initialAngles.get(i) + Math.toRadians(ticks * 8.0);
+          double offsetX = radius * Math.cos(angle);
+          double offsetY = basePos.y + (ticks * 0.04);
+          double offsetZ = radius * Math.sin(angle);
+          Vec3d targetPos = new Vec3d(basePos.x + offsetX, offsetY, basePos.z + offsetZ);
+
+          float yaw = AnimationUtils.getYawToFacePlayer(player, targetPos);
+          float spinPitch = ticks * 6.0f;
+          Quaternionf rotation = new Quaternionf().rotationYXZ((float) Math.toRadians(-yaw), (float) Math.toRadians(spinPitch), 0);
+
+          AnimationUtils.updateDisplayTransformation(
+            display, targetPos, rotation, new Vector3f(1.0f, 1.0f, 1.0f), 2
+          );
+
+          if (ticks % 2 == 0) {
+            sw.spawnParticles(
+              ParticleTypes.END_ROD,
+              targetPos.x, targetPos.y + 0.5, targetPos.z,
+              1, 0.0, 0.0, 0.0, 0.0
+            );
+          }
+        }
+      } else {
+        this.kill();
+        complete();
+      }
+
+      setTicks(ticks + 1);
+    }
+  }
+}

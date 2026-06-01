@@ -1,0 +1,42 @@
+package com.kingpixel.cobbleutils.Model.Animations.core;
+
+/**
+ *
+ * @author Carlos Varas Alonso - 24/05/2026 11:47
+ */
+public enum Animations {
+  NONE,
+  RANDOM,
+  CSGO,
+  CIRCLE,
+  ALLCIRCLE,
+  HELIX,
+  SHOWER,
+  GIFT,
+  DICE,
+  PYRAMID,
+  VORTEX,
+  SLOT,
+  SCRATCH,
+  SUPERNOVA,
+  CYCLONE,
+  FIREWORKS,
+  CONSTELLATION,
+  METEOR,
+  MAGIC_SPROUT,
+  WISHING_WELL,
+  BLACK_HOLE,
+  ORBITAL,
+  TOTEM_AURA,
+  PLINKO,
+  CARD_FLIP,
+  WHEEL_OF_FORTUNE,
+  SAFE_CRACKER,
+  LOOTBOX,
+  MINESWEEPER,
+  MYSTERY_CHEST,
+  CONVEYOR,
+  POWER_HAMMER,
+  ENTITY_WHEEL_OF_FORTUNE,
+  ENTITY_PLINKO
+}

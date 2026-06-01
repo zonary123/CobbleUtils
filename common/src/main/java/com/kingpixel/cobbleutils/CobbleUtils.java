@@ -254,14 +254,17 @@ public class CobbleUtils {
       }
     }));
 
-    PlayerEvent.PLAYER_QUIT.register((player) -> runAsync(() -> {
-      try {
-        DataBaseFactory.users().disconnected(player);
-        DataBaseFactory.users().removeIfNecessary(player.getUuid());
-      } catch (Exception e) {
-        LOGGER_RAW.error("Failed to process PLAYER_QUIT asynchronously for " + player.getName().getString(), e);
-      }
-    }));
+    PlayerEvent.PLAYER_QUIT.register((player) -> {
+      com.kingpixel.cobbleutils.Model.Animations.core.AnimationQueue.clearQueue(player.getUuid());
+      runAsync(() -> {
+        try {
+          DataBaseFactory.users().disconnected(player);
+          DataBaseFactory.users().removeIfNecessary(player.getUuid());
+        } catch (Exception e) {
+          LOGGER_RAW.error("Failed to process PLAYER_QUIT asynchronously for " + player.getName().getString(), e);
+        }
+      });
+    });
 
     CommandRegistrationEvent.EVENT.register((dispatcher, registry, selection) -> {
       CustomPokemonProperty.Companion.register(MinIvsPropertyType.INSTANCE);

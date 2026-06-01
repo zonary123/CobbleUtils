@@ -59,7 +59,7 @@ public class CommandTree {
       EconomyIdCommand.register(dispatcher, base);
       HipperMessageCommand.register(dispatcher, base);
       FormulaVariablesCommand.register(dispatcher, base);
-
+      AdvancedRewardCommand.register(dispatcher, base);
     }
     UserInfoCommand.register(dispatcher);
     ZonaryCommand.register(dispatcher);
