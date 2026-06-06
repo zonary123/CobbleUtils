@@ -34,7 +34,7 @@ public class HoldingItemCondition extends Condition {
     }
     if (offHand) {
       String id = Registries.ITEM.getId(player.getOffHandStack().getItem()).toString();
-      if (itemIds.contains(id)) return true;
+      return itemIds.contains(id);
     }
     return false;
   }
