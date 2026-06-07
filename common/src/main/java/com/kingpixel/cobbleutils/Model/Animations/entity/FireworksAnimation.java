@@ -4,7 +4,7 @@ import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.Model.Animations.core.Animation;
 import com.kingpixel.cobbleutils.Model.Animations.core.AnimationUtils;
 import com.kingpixel.cobbleutils.Model.Animations.core.CustomArmorStandEntity;
-import net.minecraft.entity.decoration.DisplayEntity;
+import com.kingpixel.cobbleutils.Model.Animations.core.CustomItemDisplayEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.particle.ParticleTypes;
@@ -44,7 +44,7 @@ public class FireworksAnimation extends Animation {
   }
 
   public static class EjectedReward {
-    public final DisplayEntity.ItemDisplayEntity display;
+    public final CustomItemDisplayEntity display;
     public double x;
     public double y;
     public double z;
@@ -56,7 +56,7 @@ public class FireworksAnimation extends Animation {
     public int ticks = 0;
     public final float itemYaw;
 
-    public EjectedReward(DisplayEntity.ItemDisplayEntity display, double x, double y, double z,
+    public EjectedReward(CustomItemDisplayEntity display, double x, double y, double z,
                          double velX, double velY, double velZ, double groundY, float itemYaw) {
       this.display = display;
       this.x = x;
@@ -78,7 +78,7 @@ public class FireworksAnimation extends Animation {
     private boolean completed = false;
     private boolean landed = false;
 
-    private DisplayEntity.ItemDisplayEntity rocketDisplay;
+    private CustomItemDisplayEntity rocketDisplay;
     private final List<EjectedReward> rewardEntities = new ArrayList<>();
 
     public RocketEntity(World world, double x, double y, double z, List<ItemStack> rewards, ServerPlayerEntity player, Runnable onDestroy) {
@@ -100,7 +100,7 @@ public class FireworksAnimation extends Animation {
       );
     }
 
-    private void complete() {
+    @Override public void complete() {
       if (!completed) {
         completed = true;
         if (rocketDisplay != null) {
@@ -130,11 +130,11 @@ public class FireworksAnimation extends Animation {
 
       if (ticks < 35) {
         double currentY = basePos.y + (ticks * 0.12);
-        
+
         // Spin the rocket as it ascends
         float spinYaw = player.getYaw() + 180f + ticks * 25.0f;
         Quaternionf rotation = new Quaternionf().rotationY((float) Math.toRadians(-spinYaw));
-        
+
         AnimationUtils.updateDisplayTransformation(
           rocketDisplay, new Vec3d(basePos.x, currentY + 0.5, basePos.z),
           rotation, new Vector3f(1.2f, 1.2f, 1.2f), 2
@@ -182,7 +182,7 @@ public class FireworksAnimation extends Animation {
           double velZ = Math.sin(angle) * speed;
 
           float itemYaw = player.getYaw() + 180f;
-          DisplayEntity.ItemDisplayEntity display = AnimationUtils.spawnItemDisplay(
+          CustomItemDisplayEntity display = AnimationUtils.spawnItemDisplay(
             sw, new Vec3d(basePos.x, burstY + 0.5, basePos.z), reward.copy(), new Vector3f(1.2f, 1.2f, 1.2f), itemYaw, 0
           );
 

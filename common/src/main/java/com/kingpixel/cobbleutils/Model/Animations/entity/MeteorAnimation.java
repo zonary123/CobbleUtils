@@ -4,7 +4,7 @@ import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.Model.Animations.core.Animation;
 import com.kingpixel.cobbleutils.Model.Animations.core.AnimationUtils;
 import com.kingpixel.cobbleutils.Model.Animations.core.CustomArmorStandEntity;
-import net.minecraft.entity.decoration.DisplayEntity;
+import com.kingpixel.cobbleutils.Model.Animations.core.CustomItemDisplayEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.particle.ParticleTypes;
@@ -43,7 +43,7 @@ public class MeteorAnimation extends Animation {
   }
 
   public static class MeteorProjectile {
-    public final DisplayEntity.ItemDisplayEntity display;
+    public final CustomItemDisplayEntity display;
     public final Vec3d startPos;
     public final Vec3d targetPos;
     public final int duration = 25;
@@ -52,7 +52,7 @@ public class MeteorAnimation extends Animation {
     public int ticks = 0;
     public final float yaw;
 
-    public MeteorProjectile(DisplayEntity.ItemDisplayEntity display, Vec3d startPos, Vec3d targetPos,
+    public MeteorProjectile(CustomItemDisplayEntity display, Vec3d startPos, Vec3d targetPos,
                             List<ItemStack> itemsToLaunch, double sizeScale, float yaw) {
       this.display = display;
       this.startPos = startPos;
@@ -64,7 +64,7 @@ public class MeteorAnimation extends Animation {
   }
 
   public static class EjectedReward {
-    public final DisplayEntity.ItemDisplayEntity display;
+    public final CustomItemDisplayEntity display;
     public double x;
     public double y;
     public double z;
@@ -76,7 +76,7 @@ public class MeteorAnimation extends Animation {
     public int ticks = 0;
     public final float itemYaw;
 
-    public EjectedReward(DisplayEntity.ItemDisplayEntity display, double x, double y, double z,
+    public EjectedReward(CustomItemDisplayEntity display, double x, double y, double z,
                          double velX, double velY, double velZ, double groundY, float itemYaw) {
       this.display = display;
       this.x = x;
@@ -110,7 +110,7 @@ public class MeteorAnimation extends Animation {
       setInvulnerable(true);
     }
 
-    private void complete() {
+    @Override public void complete() {
       if (!completed) {
         completed = true;
         for (MeteorProjectile met : activeMeteors) {
@@ -215,7 +215,7 @@ public class MeteorAnimation extends Animation {
             double velZ = Math.sin(angle) * speed;
 
             float itemYaw = player.getYaw() + 180f;
-            DisplayEntity.ItemDisplayEntity display = AnimationUtils.spawnItemDisplay(
+            CustomItemDisplayEntity display = AnimationUtils.spawnItemDisplay(
               sw, meteor.targetPos, reward.copy(), new Vector3f(1.2f, 1.2f, 1.2f), itemYaw, 0
             );
 
@@ -336,7 +336,7 @@ public class MeteorAnimation extends Animation {
       float itemYaw = player.getYaw() + 180f;
 
       // Spawn meteor as beautiful rolling magma block display entity
-      DisplayEntity.ItemDisplayEntity display = AnimationUtils.spawnItemDisplay(
+      CustomItemDisplayEntity display = AnimationUtils.spawnItemDisplay(
         sw, new Vec3d(sx, sy, sz), new ItemStack(Items.MAGMA_BLOCK), new Vector3f((float) scale, (float) scale, (float) scale), itemYaw, 0
       );
 

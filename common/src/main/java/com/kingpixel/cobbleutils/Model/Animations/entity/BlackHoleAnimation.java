@@ -1,8 +1,10 @@
 package com.kingpixel.cobbleutils.Model.Animations.entity;
 
 import com.kingpixel.cobbleutils.CobbleUtils;
-import com.kingpixel.cobbleutils.Model.Animations.core.*;
-import net.minecraft.entity.decoration.DisplayEntity;
+import com.kingpixel.cobbleutils.Model.Animations.core.Animation;
+import com.kingpixel.cobbleutils.Model.Animations.core.AnimationUtils;
+import com.kingpixel.cobbleutils.Model.Animations.core.CustomArmorStandEntity;
+import com.kingpixel.cobbleutils.Model.Animations.core.CustomItemDisplayEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -38,11 +40,11 @@ public class BlackHoleAnimation extends Animation {
   }
 
   public static class OrbitingReward {
-    public final DisplayEntity.ItemDisplayEntity display;
+    public final CustomItemDisplayEntity display;
     public final double startAngle;
     public final float itemYaw;
 
-    public OrbitingReward(DisplayEntity.ItemDisplayEntity display, double startAngle, float itemYaw) {
+    public OrbitingReward(CustomItemDisplayEntity display, double startAngle, float itemYaw) {
       this.display = display;
       this.startAngle = startAngle;
       this.itemYaw = itemYaw;
@@ -50,7 +52,7 @@ public class BlackHoleAnimation extends Animation {
   }
 
   public static class LandingReward {
-    public final DisplayEntity.ItemDisplayEntity display;
+    public final CustomItemDisplayEntity display;
     public double x;
     public double y;
     public double z;
@@ -62,8 +64,8 @@ public class BlackHoleAnimation extends Animation {
     public final float itemYaw;
     public int ticks = 0;
 
-    public LandingReward(DisplayEntity.ItemDisplayEntity display, double x, double y, double z,
-                          double velX, double velY, double velZ, double groundY, float itemYaw) {
+    public LandingReward(CustomItemDisplayEntity display, double x, double y, double z,
+                         double velX, double velY, double velZ, double groundY, float itemYaw) {
       this.display = display;
       this.x = x;
       this.y = y;
@@ -104,15 +106,15 @@ public class BlackHoleAnimation extends Animation {
         double angle = i * 2.0 * Math.PI / size;
         double rx = x + Math.cos(angle) * 2.5;
         double rz = z + Math.sin(angle) * 2.5;
-        
-        DisplayEntity.ItemDisplayEntity display = AnimationUtils.spawnItemDisplay(
+
+        CustomItemDisplayEntity display = AnimationUtils.spawnItemDisplay(
           sw, new Vec3d(rx, y, rz), rewards.get(i).copy(), new Vector3f(1.0f, 1.0f, 1.0f), itemYaw, 0
         );
         orbitingRewards.add(new OrbitingReward(display, angle, itemYaw));
       }
     }
 
-    private void complete() {
+    @Override public void complete() {
       if (!completed) {
         completed = true;
         for (OrbitingReward reward : orbitingRewards) {
@@ -239,7 +241,7 @@ public class BlackHoleAnimation extends Animation {
           double velZ = Math.sin(angle) * speed;
 
           float landingYaw = (float) Math.toDegrees(angle) + 180f;
-          DisplayEntity.ItemDisplayEntity display = AnimationUtils.spawnItemDisplay(
+          CustomItemDisplayEntity display = AnimationUtils.spawnItemDisplay(
             sw, new Vec3d(getX(), getY(), getZ()), reward.copy(), new Vector3f(1.0f, 1.0f, 1.0f), landingYaw, 0
           );
 

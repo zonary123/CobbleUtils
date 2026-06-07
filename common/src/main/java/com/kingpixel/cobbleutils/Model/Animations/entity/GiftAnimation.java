@@ -4,9 +4,9 @@ import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.Model.Animations.core.Animation;
 import com.kingpixel.cobbleutils.Model.Animations.core.AnimationUtils;
 import com.kingpixel.cobbleutils.Model.Animations.core.CustomArmorStandEntity;
+import com.kingpixel.cobbleutils.Model.Animations.core.CustomItemDisplayEntity;
 import net.minecraft.block.Blocks;
 import net.minecraft.entity.EntityType;
-import net.minecraft.entity.EquipmentSlot;
 import net.minecraft.entity.decoration.DisplayEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.particle.ParticleTypes;
@@ -15,7 +15,6 @@ import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.util.math.AffineTransformation;
-import net.minecraft.util.math.EulerAngle;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 import org.joml.Quaternionf;
@@ -47,7 +46,7 @@ public class GiftAnimation extends Animation {
   }
 
   public static class EjectedReward {
-    public final DisplayEntity.ItemDisplayEntity display;
+    public final CustomItemDisplayEntity display;
     public double x;
     public double y;
     public double z;
@@ -59,7 +58,7 @@ public class GiftAnimation extends Animation {
     public int ticks = 0;
     public final float itemYaw;
 
-    public EjectedReward(DisplayEntity.ItemDisplayEntity display, double x, double y, double z,
+    public EjectedReward(CustomItemDisplayEntity display, double x, double y, double z,
                          double velX, double velY, double velZ, double groundY, float itemYaw) {
       this.display = display;
       this.x = x;
@@ -135,7 +134,7 @@ public class GiftAnimation extends Animation {
       blockDisplay.setTransformation(new AffineTransformation(translationVector, rotationQuaternion, scaleVector, null));
     }
 
-    private void complete() {
+    @Override public void complete() {
       if (!completed) {
         completed = true;
         if (blockDisplay != null) blockDisplay.discard();
@@ -183,7 +182,7 @@ public class GiftAnimation extends Animation {
             double velZ = Math.sin(angle) * speed;
 
             float itemYaw = player.getYaw() + 180;
-            DisplayEntity.ItemDisplayEntity display = AnimationUtils.spawnItemDisplay(
+            CustomItemDisplayEntity display = AnimationUtils.spawnItemDisplay(
               sw, new Vec3d(staticChestPos.x, chestTopY, staticChestPos.z),
               currentReward.copy(), new Vector3f(1.2f, 1.2f, 1.2f), itemYaw, 0
             );

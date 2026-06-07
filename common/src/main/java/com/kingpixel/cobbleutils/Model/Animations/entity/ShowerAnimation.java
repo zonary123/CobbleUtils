@@ -4,7 +4,7 @@ import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.Model.Animations.core.Animation;
 import com.kingpixel.cobbleutils.Model.Animations.core.AnimationUtils;
 import com.kingpixel.cobbleutils.Model.Animations.core.CustomArmorStandEntity;
-import net.minecraft.entity.decoration.DisplayEntity;
+import com.kingpixel.cobbleutils.Model.Animations.core.CustomItemDisplayEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -41,7 +41,7 @@ public class ShowerAnimation extends Animation {
   }
 
   public static class EjectedReward {
-    public final DisplayEntity.ItemDisplayEntity display;
+    public final CustomItemDisplayEntity display;
     public double x;
     public double y;
     public double z;
@@ -50,7 +50,7 @@ public class ShowerAnimation extends Animation {
     public double velZ;
     public final float itemYaw;
 
-    public EjectedReward(DisplayEntity.ItemDisplayEntity display, double x, double y, double z,
+    public EjectedReward(CustomItemDisplayEntity display, double x, double y, double z,
                          double velX, double velY, double velZ, float itemYaw) {
       this.display = display;
       this.x = x;
@@ -97,7 +97,7 @@ public class ShowerAnimation extends Animation {
         double velZ = horizontalSpeed * Math.sin(angle);
 
         float itemYaw = player.getYaw() + 180f;
-        DisplayEntity.ItemDisplayEntity display = AnimationUtils.spawnItemDisplay(
+        CustomItemDisplayEntity display = AnimationUtils.spawnItemDisplay(
           sw, new Vec3d(x, y, z), reward.copy(), new Vector3f(1.0f, 1.0f, 1.0f), itemYaw, 0
         );
 
@@ -106,7 +106,7 @@ public class ShowerAnimation extends Animation {
       }
     }
 
-    private void complete() {
+    @Override public void complete() {
       if (!completed) {
         completed = true;
         for (EjectedReward ent : rewardEntities) {

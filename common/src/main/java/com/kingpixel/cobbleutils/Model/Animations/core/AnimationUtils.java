@@ -1,9 +1,9 @@
 package com.kingpixel.cobbleutils.Model.Animations.core;
 
+import net.minecraft.client.render.model.json.ModelTransformationMode;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.decoration.DisplayEntity;
 import net.minecraft.item.ItemStack;
-import net.minecraft.client.render.model.json.ModelTransformationMode;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.AffineTransformation;
@@ -41,19 +41,19 @@ public class AnimationUtils {
   /**
    * Spawns a non-glowing, gravity-free ItemDisplayEntity with FIXED transform mode.
    */
-  public static DisplayEntity.ItemDisplayEntity spawnItemDisplay(
-      ServerWorld world, Vec3d pos, ItemStack stack, Vector3f scale, float yaw, float pitch) {
+  public static CustomItemDisplayEntity spawnItemDisplay(
+    ServerWorld world, Vec3d pos, ItemStack stack, Vector3f scale, float yaw, float pitch) {
     return spawnItemDisplay(world, pos, stack, scale, yaw, pitch, ModelTransformationMode.FIXED, false);
   }
 
   /**
    * Spawns an ItemDisplayEntity with full control over transform mode and glowing properties.
    */
-  public static DisplayEntity.ItemDisplayEntity spawnItemDisplay(
-      ServerWorld world, Vec3d pos, ItemStack stack, Vector3f scale, float yaw, float pitch,
-      ModelTransformationMode context, boolean glowing) {
-    
-    DisplayEntity.ItemDisplayEntity itemDisplay = new DisplayEntity.ItemDisplayEntity(EntityType.ITEM_DISPLAY, world);
+  public static CustomItemDisplayEntity spawnItemDisplay(
+    ServerWorld world, Vec3d pos, ItemStack stack, Vector3f scale, float yaw, float pitch,
+    ModelTransformationMode context, boolean glowing) {
+
+    CustomItemDisplayEntity itemDisplay = new CustomItemDisplayEntity(EntityType.ITEM_DISPLAY, world);
     itemDisplay.setItemStack(stack);
     itemDisplay.setTransformationMode(context);
     itemDisplay.setInvulnerable(true);
@@ -63,7 +63,7 @@ public class AnimationUtils {
     Quaternionf rotation = new Quaternionf().rotationYXZ((float) Math.toRadians(-yaw), (float) Math.toRadians(pitch), 0);
     itemDisplay.setTransformation(new AffineTransformation(null, rotation, scale, null));
     itemDisplay.refreshPositionAndAngles(pos.x, pos.y, pos.z, 0f, 0f);
-    
+
     world.spawnEntity(itemDisplay);
     return itemDisplay;
   }
@@ -72,8 +72,8 @@ public class AnimationUtils {
    * Updates position, rotation, and scale of a display entity with client-side interpolation.
    */
   public static void updateDisplayTransformation(
-      DisplayEntity entity, Vec3d pos, Quaternionf rotation, Vector3f scale, int interpolationTicks) {
-    
+    DisplayEntity entity, Vec3d pos, Quaternionf rotation, Vector3f scale, int interpolationTicks) {
+
     entity.refreshPositionAndAngles(pos.x, pos.y, pos.z, 0f, 0f);
     entity.setStartInterpolation(0);
     entity.setInterpolationDuration(interpolationTicks);

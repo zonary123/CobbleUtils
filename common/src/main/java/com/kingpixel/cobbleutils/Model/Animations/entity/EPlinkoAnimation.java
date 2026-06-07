@@ -4,7 +4,7 @@ import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.Model.Animations.core.Animation;
 import com.kingpixel.cobbleutils.Model.Animations.core.AnimationUtils;
 import com.kingpixel.cobbleutils.Model.Animations.core.CustomArmorStandEntity;
-import net.minecraft.entity.decoration.DisplayEntity;
+import com.kingpixel.cobbleutils.Model.Animations.core.CustomItemDisplayEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -42,7 +42,7 @@ public class EPlinkoAnimation extends Animation {
   }
 
   public static class PlinkoChip {
-    public final DisplayEntity.ItemDisplayEntity display;
+    public final CustomItemDisplayEntity display;
     public Vec3d pos;
     public double velX = 0;
     public final double velY = -0.07;
@@ -52,7 +52,7 @@ public class EPlinkoAnimation extends Animation {
     public final ItemStack finalReward;
     public int chipTicks = 0;
 
-    public PlinkoChip(DisplayEntity.ItemDisplayEntity display, Vec3d pos, ItemStack finalReward) {
+    public PlinkoChip(CustomItemDisplayEntity display, Vec3d pos, ItemStack finalReward) {
       this.display = display;
       this.pos = pos;
       this.finalReward = finalReward;
@@ -99,7 +99,7 @@ public class EPlinkoAnimation extends Animation {
       player.playSoundToPlayer(SoundEvents.BLOCK_CHEST_OPEN, SoundCategory.BLOCKS, 1.0f, 1.0f);
     }
 
-    private void complete() {
+    @Override public void complete() {
       if (!completed) {
         completed = true;
         for (PlinkoChip chip : activeChips) {
@@ -142,7 +142,7 @@ public class EPlinkoAnimation extends Animation {
           Vec3d spawnPos = this.boardCenter.add(0, 2.0, 0);
 
           ItemStack initialRandomStack = allRewards.get(random.nextInt(allRewards.size()));
-          DisplayEntity.ItemDisplayEntity display = AnimationUtils.spawnItemDisplay(
+          CustomItemDisplayEntity display = AnimationUtils.spawnItemDisplay(
             sw, spawnPos, initialRandomStack.copy(), new Vector3f(1.0f, 1.0f, 1.0f), facingYaw, 0
           );
 

@@ -4,7 +4,7 @@ import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.Model.Animations.core.Animation;
 import com.kingpixel.cobbleutils.Model.Animations.core.AnimationUtils;
 import com.kingpixel.cobbleutils.Model.Animations.core.CustomArmorStandEntity;
-import net.minecraft.entity.decoration.DisplayEntity;
+import com.kingpixel.cobbleutils.Model.Animations.core.CustomItemDisplayEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.particle.ParticleTypes;
@@ -52,8 +52,8 @@ public class EWheelOfFortuneAnimation extends Animation {
     private final Runnable onDestroy;
     private boolean completed = false;
 
-    private DisplayEntity.ItemDisplayEntity pointerDisplay;
-    private final List<DisplayEntity.ItemDisplayEntity> wheelDisplays = new ArrayList<>();
+    private CustomItemDisplayEntity pointerDisplay;
+    private final List<CustomItemDisplayEntity> wheelDisplays = new ArrayList<>();
     private final List<Vec3d> wheelPositions = new ArrayList<>();
 
     private int totalRotationsSteps = 35;
@@ -103,7 +103,7 @@ public class EWheelOfFortuneAnimation extends Animation {
         wheelPositions.add(standPos);
 
         ItemStack item = allRewards.get(random.nextInt(allRewards.size()));
-        DisplayEntity.ItemDisplayEntity display = AnimationUtils.spawnItemDisplay(
+        CustomItemDisplayEntity display = AnimationUtils.spawnItemDisplay(
           sw, standPos, item.copy(), new Vector3f(1.0f, 1.0f, 1.0f), facingYaw, 0
         );
         wheelDisplays.add(display);
@@ -112,11 +112,11 @@ public class EWheelOfFortuneAnimation extends Animation {
       player.playSoundToPlayer(SoundEvents.BLOCK_CHEST_OPEN, SoundCategory.BLOCKS, 1.0f, 1.0f);
     }
 
-    private void complete() {
+    @Override public void complete() {
       if (!completed) {
         completed = true;
         if (pointerDisplay != null) pointerDisplay.discard();
-        for (DisplayEntity.ItemDisplayEntity display : wheelDisplays) {
+        for (CustomItemDisplayEntity display : wheelDisplays) {
           if (display != null) display.discard();
         }
         if (onDestroy != null) onDestroy.run();
@@ -147,7 +147,7 @@ public class EWheelOfFortuneAnimation extends Animation {
 
         // Update display nodes with item transitions
         for (int k = 0; k < WHEEL_SIZE; k++) {
-          DisplayEntity.ItemDisplayEntity display = wheelDisplays.get(k);
+          CustomItemDisplayEntity display = wheelDisplays.get(k);
           if (display == null) continue;
 
           ItemStack stack;
@@ -171,7 +171,7 @@ public class EWheelOfFortuneAnimation extends Animation {
         if (currentStepIndex == totalRotationsSteps) {
           pointerDisplay.setItemStack(new ItemStack(Items.LIME_STAINED_GLASS_PANE));
 
-          DisplayEntity.ItemDisplayEntity winnerDisplay = wheelDisplays.get(2);
+          CustomItemDisplayEntity winnerDisplay = wheelDisplays.get(2);
           if (winnerDisplay != null) {
             sw.spawnParticles(
               ParticleTypes.HAPPY_VILLAGER,

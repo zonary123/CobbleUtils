@@ -4,7 +4,7 @@ import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.Model.Animations.core.Animation;
 import com.kingpixel.cobbleutils.Model.Animations.core.AnimationUtils;
 import com.kingpixel.cobbleutils.Model.Animations.core.CustomArmorStandEntity;
-import net.minecraft.entity.decoration.DisplayEntity;
+import com.kingpixel.cobbleutils.Model.Animations.core.CustomItemDisplayEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -45,7 +45,7 @@ public class OrbitalAnimation extends Animation {
     private boolean completed = false;
     private final double radius = 1.5;
 
-    private final List<DisplayEntity.ItemDisplayEntity> displays = new ArrayList<>();
+    private final List<CustomItemDisplayEntity> displays = new ArrayList<>();
     private final List<Double> initialAngles = new ArrayList<>();
 
     public OrbitalController(World world, double x, double y, double z,
@@ -71,7 +71,7 @@ public class OrbitalAnimation extends Animation {
         Vec3d itemPos = new Vec3d(targetX, y, targetZ);
 
         float yaw = AnimationUtils.getYawToFacePlayer(player, itemPos);
-        DisplayEntity.ItemDisplayEntity display = AnimationUtils.spawnItemDisplay(
+        CustomItemDisplayEntity display = AnimationUtils.spawnItemDisplay(
           sw, itemPos, reward.copy(), new Vector3f(1.0f, 1.0f, 1.0f), yaw, 0
         );
 
@@ -80,10 +80,10 @@ public class OrbitalAnimation extends Animation {
       }
     }
 
-    private void complete() {
+    @Override public void complete() {
       if (!completed) {
         completed = true;
-        for (DisplayEntity.ItemDisplayEntity display : displays) {
+        for (CustomItemDisplayEntity display : displays) {
           if (display != null) display.discard();
         }
         if (onDestroy != null) onDestroy.run();
@@ -107,7 +107,7 @@ public class OrbitalAnimation extends Animation {
         double targetY = player.getY() + 0.5;
 
         for (int i = 0; i < displays.size(); i++) {
-          DisplayEntity.ItemDisplayEntity display = displays.get(i);
+          CustomItemDisplayEntity display = displays.get(i);
           if (display == null) continue;
 
           double angle = initialAngles.get(i) + Math.toRadians(ticks * 12.0);

@@ -4,8 +4,7 @@ import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.Model.Animations.core.Animation;
 import com.kingpixel.cobbleutils.Model.Animations.core.AnimationUtils;
 import com.kingpixel.cobbleutils.Model.Animations.core.CustomArmorStandEntity;
-import net.minecraft.entity.EntityType;
-import net.minecraft.entity.decoration.DisplayEntity;
+import com.kingpixel.cobbleutils.Model.Animations.core.CustomItemDisplayEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.particle.ParticleTypes;
@@ -45,7 +44,7 @@ public class TotemAuraAnimation extends Animation {
   }
 
   public static class EjectedReward {
-    public final DisplayEntity.ItemDisplayEntity display;
+    public final CustomItemDisplayEntity display;
     public double x;
     public double y;
     public double z;
@@ -57,7 +56,7 @@ public class TotemAuraAnimation extends Animation {
     public int ticks = 0;
     public final float itemYaw;
 
-    public EjectedReward(DisplayEntity.ItemDisplayEntity display, double x, double y, double z,
+    public EjectedReward(CustomItemDisplayEntity display, double x, double y, double z,
                          double velX, double velY, double velZ, double groundY, float itemYaw) {
       this.display = display;
       this.x = x;
@@ -79,7 +78,7 @@ public class TotemAuraAnimation extends Animation {
     private final double groundY;
     private boolean completed = false;
 
-    private DisplayEntity.ItemDisplayEntity totemDisplay;
+    private CustomItemDisplayEntity totemDisplay;
     private final List<EjectedReward> rewardEntities = new ArrayList<>();
 
     public TotemEntity(World world, double x, double y, double z, List<ItemStack> rewards, ServerPlayerEntity player, Runnable onDestroy, double groundY) {
@@ -102,7 +101,7 @@ public class TotemAuraAnimation extends Animation {
       );
     }
 
-    private void complete() {
+    @Override public void complete() {
       if (!completed) {
         completed = true;
         if (totemDisplay != null) {
@@ -174,7 +173,7 @@ public class TotemAuraAnimation extends Animation {
           double velZ = Math.sin(angle) * speed;
 
           float itemYaw = player.getYaw() + 180f;
-          DisplayEntity.ItemDisplayEntity display = AnimationUtils.spawnItemDisplay(
+          CustomItemDisplayEntity display = AnimationUtils.spawnItemDisplay(
             sw, new Vec3d(basePos.x, basePos.y + 0.8, basePos.z), reward.copy(), new Vector3f(1.2f, 1.2f, 1.2f), itemYaw, 0
           );
 

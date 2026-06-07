@@ -4,7 +4,7 @@ import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.Model.Animations.core.Animation;
 import com.kingpixel.cobbleutils.Model.Animations.core.AnimationUtils;
 import com.kingpixel.cobbleutils.Model.Animations.core.CustomArmorStandEntity;
-import net.minecraft.entity.decoration.DisplayEntity;
+import com.kingpixel.cobbleutils.Model.Animations.core.CustomItemDisplayEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.particle.ParticleTypes;
@@ -111,7 +111,7 @@ public class ConstellationAnimation extends Animation {
     private final Runnable onDestroy;
     private boolean completed = false;
 
-    private final List<DisplayEntity.ItemDisplayEntity> stars = new ArrayList<>();
+    private final List<CustomItemDisplayEntity> stars = new ArrayList<>();
     private final List<Vec3d> starPositions = new ArrayList<>();
 
     public ConstellationControllerEntity(World world, double x, double y, double z,
@@ -140,18 +140,18 @@ public class ConstellationAnimation extends Animation {
         starPositions.add(starPos);
 
         ItemStack stack = (j < obtained.size() && obtained.get(j) != null) ? obtained.get(j) : new ItemStack(Items.NETHER_STAR);
-        
-        DisplayEntity.ItemDisplayEntity star = AnimationUtils.spawnItemDisplay(
+
+        CustomItemDisplayEntity star = AnimationUtils.spawnItemDisplay(
           sw, starPos, stack.copy(), new Vector3f(1.0f, 1.0f, 1.0f), itemYaw, 0
         );
         stars.add(star);
       }
     }
 
-    private void complete() {
+    @Override public void complete() {
       if (!completed) {
         completed = true;
-        for (DisplayEntity.ItemDisplayEntity star : stars) {
+        for (CustomItemDisplayEntity star : stars) {
           if (star != null) {
             star.discard();
           }
@@ -205,7 +205,7 @@ public class ConstellationAnimation extends Animation {
         Quaternionf rotation = new Quaternionf().rotationYXZ((float) Math.toRadians(-itemYaw), 0, 0);
 
         for (int j = 0; j < stars.size(); j++) {
-          DisplayEntity.ItemDisplayEntity star = stars.get(j);
+          CustomItemDisplayEntity star = stars.get(j);
           if (star != null) {
             AnimationUtils.updateDisplayTransformation(
               star, starPositions.get(j), rotation, new Vector3f(twinkle, twinkle, twinkle), 2

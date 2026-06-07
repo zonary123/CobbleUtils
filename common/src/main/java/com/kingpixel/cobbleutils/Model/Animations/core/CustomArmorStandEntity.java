@@ -1,7 +1,7 @@
 package com.kingpixel.cobbleutils.Model.Animations.core;
 
-import lombok.Getter;
-import lombok.Setter;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.decoration.ArmorStandEntity;
 import net.minecraft.entity.player.PlayerEntity;
@@ -11,8 +11,7 @@ import net.minecraft.util.Hand;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 
-@Setter
-@Getter
+@EqualsAndHashCode(callSuper = true) @Data
 public class CustomArmorStandEntity extends ArmorStandEntity {
 
   // Campo necesario para que los controladores manejen el tiempo físico (ticks)
@@ -23,18 +22,10 @@ public class CustomArmorStandEntity extends ArmorStandEntity {
     super(entityType, world);
   }
 
-  // Constructor dinámico que usamos para spawnear la entidad en coordenadas específicas
+  // Constructor dinámico que usamos para spawnear la entidad en coordenadas
+  // específicas
   public CustomArmorStandEntity(World world, double x, double y, double z) {
     super(world, x, y, z);
-  }
-
-  // Métodos manuales en caso de que Lombok no te esté autogenerando los getters/setters correctamente
-  public int getTicks() {
-    return this.ticks;
-  }
-
-  public void setTicks(int ticks) {
-    this.ticks = ticks;
   }
 
   public void setSmall(boolean small) {
@@ -52,7 +43,8 @@ public class CustomArmorStandEntity extends ArmorStandEntity {
 
   @Override
   public ActionResult interactAt(PlayerEntity player, Vec3d hitPos, Hand hand) {
-    // Evita que los jugadores abran o interactúen con el Armor Stand de la animación
+    // Evita que los jugadores abran o interactúen con el Armor Stand de la
+    // animación
     return ActionResult.FAIL;
   }
 
@@ -64,7 +56,18 @@ public class CustomArmorStandEntity extends ArmorStandEntity {
 
   @Override
   public boolean shouldSave() {
-    // Evita que la entidad se guarde en los archivos de la región del mundo si el servidor se apaga
+    // Evita que la entidad se guarde en los archivos de la región del mundo si el
+    // servidor se apaga
     return false;
+  }
+
+  public void complete() {
+    // Overridden by subclasses to clean up displays
+  }
+
+  @Override
+  public void remove(RemovalReason reason) {
+    super.remove(reason);
+    complete();
   }
 }

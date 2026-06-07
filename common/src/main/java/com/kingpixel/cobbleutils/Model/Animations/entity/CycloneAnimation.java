@@ -4,7 +4,7 @@ import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.Model.Animations.core.Animation;
 import com.kingpixel.cobbleutils.Model.Animations.core.AnimationUtils;
 import com.kingpixel.cobbleutils.Model.Animations.core.CustomArmorStandEntity;
-import net.minecraft.entity.decoration.DisplayEntity;
+import com.kingpixel.cobbleutils.Model.Animations.core.CustomItemDisplayEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -47,7 +47,7 @@ public class CycloneAnimation extends Animation {
     private boolean completed = false;
     private final Vec3d basePos;
 
-    private final List<DisplayEntity.ItemDisplayEntity> displays = new ArrayList<>();
+    private final List<CustomItemDisplayEntity> displays = new ArrayList<>();
     private final List<Double> initialAngles = new ArrayList<>();
 
     public CycloneController(World world, double x, double y, double z,
@@ -71,7 +71,7 @@ public class CycloneAnimation extends Animation {
         double angle = Math.toRadians((360.0 / size) * i);
         float yaw = player.getYaw() + 180f;
 
-        DisplayEntity.ItemDisplayEntity display = AnimationUtils.spawnItemDisplay(
+        CustomItemDisplayEntity display = AnimationUtils.spawnItemDisplay(
           sw, basePos, reward.copy(), new Vector3f(1.0f, 1.0f, 1.0f), yaw, 0
         );
 
@@ -80,10 +80,10 @@ public class CycloneAnimation extends Animation {
       }
     }
 
-    private void complete() {
+    @Override public void complete() {
       if (!completed) {
         completed = true;
-        for (DisplayEntity.ItemDisplayEntity display : displays) {
+        for (CustomItemDisplayEntity display : displays) {
           if (display != null) display.discard();
         }
         if (onDestroy != null) onDestroy.run();
@@ -108,7 +108,7 @@ public class CycloneAnimation extends Animation {
         double radius = Math.max(0.2, 2.5 * (1.0 - progress));
 
         for (int i = 0; i < displays.size(); i++) {
-          DisplayEntity.ItemDisplayEntity display = displays.get(i);
+          CustomItemDisplayEntity display = displays.get(i);
           if (display == null) continue;
 
           double angle = initialAngles.get(i) + Math.toRadians(ticks * 18.0);
@@ -122,7 +122,7 @@ public class CycloneAnimation extends Animation {
           // Add a beautiful 3D spin on multiple axes
           float spinPitch = ticks * 6.0f;
           Quaternionf rotation = new Quaternionf().rotationYXZ((float) Math.toRadians(-yaw), (float) Math.toRadians(spinPitch), 0);
-          
+
           AnimationUtils.updateDisplayTransformation(
             display, targetPos, rotation, new Vector3f(1.0f, 1.0f, 1.0f), 2
           );

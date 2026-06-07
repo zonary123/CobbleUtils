@@ -4,6 +4,7 @@ import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.Model.Animations.core.Animation;
 import com.kingpixel.cobbleutils.Model.Animations.core.AnimationUtils;
 import com.kingpixel.cobbleutils.Model.Animations.core.CustomArmorStandEntity;
+import com.kingpixel.cobbleutils.Model.Animations.core.CustomItemDisplayEntity;
 import net.minecraft.block.Blocks;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.decoration.DisplayEntity;
@@ -74,13 +75,13 @@ public class MagicSproutAnimation extends Animation {
   }
 
   public static class FruitReward {
-    public final DisplayEntity.ItemDisplayEntity display;
+    public final CustomItemDisplayEntity display;
     public final Vec3d targetPos;
     public float scale = 0.0f;
     public int growTicks = 0;
     public final float itemYaw;
 
-    public FruitReward(DisplayEntity.ItemDisplayEntity display, Vec3d targetPos, float itemYaw) {
+    public FruitReward(CustomItemDisplayEntity display, Vec3d targetPos, float itemYaw) {
       this.display = display;
       this.targetPos = targetPos;
       this.itemYaw = itemYaw;
@@ -108,7 +109,7 @@ public class MagicSproutAnimation extends Animation {
     private boolean fruitsSpawned = false;
 
     private final TreeType chosenTree;
-    private DisplayEntity.ItemDisplayEntity saplingDisplay;
+    private CustomItemDisplayEntity saplingDisplay;
     private DisplayEntity.BlockDisplayEntity logDisplay;
     private final List<LeafNode> leaves = new ArrayList<>();
     private final List<FruitReward> fruitEntities = new ArrayList<>();
@@ -145,7 +146,7 @@ public class MagicSproutAnimation extends Animation {
       return blockDisp;
     }
 
-    private void complete() {
+    @Override public void complete() {
       if (!completed) {
         completed = true;
         if (saplingDisplay != null) saplingDisplay.discard();
@@ -179,7 +180,7 @@ public class MagicSproutAnimation extends Animation {
         // Growth phase 1: Sapling sprouts and scales up
         double growProgress = ticks / 30.0;
         float currentScale = (float) (0.1 + growProgress * 1.4);
-        
+
         Quaternionf rotation = new Quaternionf().rotationY((float) Math.toRadians(-facingYaw));
         AnimationUtils.updateDisplayTransformation(
           saplingDisplay, basePos, rotation, new Vector3f(currentScale, currentScale, currentScale), 2
@@ -264,13 +265,13 @@ public class MagicSproutAnimation extends Animation {
 
         for (LeafNode node : leaves) {
           float currentS = (float) (leafGrow * node.finalScale);
-          
+
           // Rotate target offset relative to trunk using JOML
           Vector3f rotatedOffset = rotation.transform(new Vector3f(node.localOffset));
-          
+
           // Rotate local pivot center using JOML
           Vector3f localCenter = rotation.transform(new Vector3f(currentS / 2f, 0f, currentS / 2f));
-          
+
           Vector3f translation = new Vector3f(
             rotatedOffset.x - localCenter.x,
             rotatedOffset.y,
@@ -305,7 +306,7 @@ public class MagicSproutAnimation extends Animation {
 
           int dirIndex = i % 4;
           double[] offset = leafOffsets[dirIndex];
-          
+
           // Rotate leaf offset using JOML transform to guarantee identical rotation direction
           Vector3f rotatedLeafOffset = rotation.transform(new Vector3f((float) offset[0], (float) offset[1], (float) offset[2]));
 
@@ -346,7 +347,7 @@ public class MagicSproutAnimation extends Animation {
           Vec3d targetPos = new Vec3d(fx, fy, fz);
 
           float itemYaw = player.getYaw() + 180f;
-          DisplayEntity.ItemDisplayEntity display = AnimationUtils.spawnItemDisplay(
+          CustomItemDisplayEntity display = AnimationUtils.spawnItemDisplay(
             sw, targetPos, reward.copy(), new Vector3f(0f, 0f, 0f), itemYaw, 0
           );
 
