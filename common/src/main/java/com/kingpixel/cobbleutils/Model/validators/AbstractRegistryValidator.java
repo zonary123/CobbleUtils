@@ -2,8 +2,10 @@ package com.kingpixel.cobbleutils.Model.validators;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
+import com.kingpixel.cobbleutils.CobbleUtils;
 import lombok.*;
 
+import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
@@ -33,7 +35,10 @@ public abstract class AbstractRegistryValidator<T> {
   /**
    * Common blacklist for IDs. Objects matching any entry here are considered invalid.
    */
-  protected Set<String> blacklist;
+  protected Set<String> blacklist = new HashSet<>(Set.of(
+    "regex:.*forbidden.*",
+    "regex:.*invalid.*"
+  ));
 
   /**
    * Transient cache to store validation results per object ID.
@@ -74,6 +79,7 @@ public abstract class AbstractRegistryValidator<T> {
    * Returns the ID of the given object.
    *
    * @param object the object to retrieve the ID from
+   *
    * @return the object's ID string
    */
   protected abstract String getId(@NonNull T object);
@@ -82,6 +88,7 @@ public abstract class AbstractRegistryValidator<T> {
    * Checks if the object belongs to any of the defined tags.
    *
    * @param object the object to check
+   *
    * @return true if the object is in any tag, false otherwise
    */
   protected abstract boolean isInTag(@NonNull T object);
@@ -92,6 +99,7 @@ public abstract class AbstractRegistryValidator<T> {
    * Uses cache to avoid repeated expensive validations.
    *
    * @param object the object to validate
+   *
    * @return true if the object is valid, false otherwise
    */
   public boolean isValid(@NonNull T object) {
@@ -111,12 +119,11 @@ public abstract class AbstractRegistryValidator<T> {
         result = ValidatorUtil.match(id, this.getIdSet());
       }
 
-      validationCache.put(id, result);
+      validationCache.put(id.intern(), result);
 
       return result;
-
     } catch (Exception e) {
-      e.printStackTrace();
+      CobbleUtils.LOGGER_RAW.error("Error validating object: " + object, e);
       return false;
     }
   }

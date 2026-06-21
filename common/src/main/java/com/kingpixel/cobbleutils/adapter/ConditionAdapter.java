@@ -55,6 +55,7 @@ public final class ConditionAdapter implements JsonDeserializer<Condition>, Json
     register(HasPokemonPartyCondition.TYPE, HasPokemonPartyCondition.class);
     register(HasPokemonPartyAmountCondition.TYPE, HasPokemonPartyAmountCondition.class);
     register(PokemonLevelCondition.TYPE, PokemonLevelCondition.class);
+    register(StatsCondition.TYPE, StatsCondition.class);
   }
 
   private ConditionAdapter() {
