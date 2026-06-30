@@ -194,7 +194,7 @@ public class ItemUtils {
     if (itemStack.get(DataComponentTypes.CUSTOM_NAME) != null) {
       return sanitizeCustomItemName(itemStack.getName().getString());
     }
-    return "<lang:" + itemStack.getItem().getTranslationKey() + ">";
+    return "<lang:'" + itemStack.getItem().getTranslationKey() + "'>";
   }
 
   /**

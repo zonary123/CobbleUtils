@@ -7,6 +7,7 @@ import com.kingpixel.cobbleutils.Model.PriorityEconomy;
 import com.kingpixel.cobbleutils.util.economys.v1.*;
 import lombok.Data;
 import lombok.Getter;
+import org.jetbrains.annotations.NotNull;
 
 import java.math.BigDecimal;
 import java.util.*;
@@ -118,15 +119,15 @@ public class EconomyApi {
    * @param playerUuid The player to add the money
    * @param money      The amount of money
    * @param currency   The currency to add
+   *
    * @return If the money was added
    */
   @Deprecated
-  public static boolean addMoney(UUID playerUuid, BigDecimal money, String currency,
-                                 String economyId) {
+  public static boolean addMoney(@NotNull UUID playerUuid, @NotNull BigDecimal money, @NotNull String currency, @NotNull String economyId) {
     return getEconomy(economyId).deposit(playerUuid, money, currency);
   }
 
-  public static boolean addMoney(UUID playerUuid, BigDecimal money, EconomyUse economy) {
+  public static boolean addMoney(@NotNull UUID playerUuid, @NotNull BigDecimal money, @NotNull EconomyUse economy) {
     return addMoney(playerUuid, money, economy.getCurrency(), economy.getEconomyId());
   }
 
@@ -136,15 +137,15 @@ public class EconomyApi {
    * @param playerUuid The player to remove the money
    * @param money      The amount of money
    * @param currency   The currency to remove
+   *
    * @return If the money was removed
    */
   @Deprecated(forRemoval = true)
   public static boolean removeMoney(UUID playerUuid, BigDecimal money, String currency, String economyId) {
-
     return getEconomy(economyId).withdraw(playerUuid, money, currency);
   }
 
-  public static boolean removeMoney(UUID playerUuid, BigDecimal money, EconomyUse economy) {
+  public static boolean removeMoney(@NotNull UUID playerUuid, @NotNull BigDecimal money, @NotNull EconomyUse economy) {
     return removeMoney(playerUuid, money, economy.getCurrency(), economy.getEconomyId());
   }
 
@@ -153,6 +154,7 @@ public class EconomyApi {
    *
    * @param playerUuid The player to get the money
    * @param currency   The currency to get
+   *
    * @return The amount of money
    */
   @Deprecated(forRemoval = true)
@@ -160,7 +162,7 @@ public class EconomyApi {
     return getEconomy(economyId).getBalance(playerUuid, currency);
   }
 
-  public static BigDecimal getBalance(UUID playerUuid, EconomyUse economy) {
+  public static BigDecimal getBalance(@NotNull UUID playerUuid, @NotNull EconomyUse economy) {
     return getBalance(playerUuid, economy.getCurrency(), economy.getEconomyId());
   }
 
@@ -176,7 +178,7 @@ public class EconomyApi {
     return getEconomy(economyId).setBalance(playerUuid, money, currency);
   }
 
-  public static boolean setBalance(UUID playerUuid, BigDecimal money, EconomyUse economy) {
+  public static boolean setBalance(@NotNull UUID playerUuid, @NotNull BigDecimal money, @NotNull EconomyUse economy) {
     return setBalance(playerUuid, money, economy.getCurrency(), economy.getEconomyId());
   }
 
@@ -216,6 +218,7 @@ public class EconomyApi {
    *
    * @param money    The amount of money
    * @param currency The currency to format
+   *
    * @return The formatted money
    */
   @Deprecated(forRemoval = false)
@@ -234,6 +237,7 @@ public class EconomyApi {
    * @param money      The amount of money
    * @param currency   The currency to check
    * @param economyId  The economys to check
+   *
    * @return If the player has enough money
    */
   @Deprecated(forRemoval = true)
@@ -250,6 +254,7 @@ public class EconomyApi {
    * Get the symbol of the currency
    *
    * @param currency The currency to get the symbol
+   *
    * @return The symbol of the currency
    */
   @Deprecated(forRemoval = true)

@@ -54,7 +54,7 @@ public class MinecraftUtils {
     if (CobbleUtils.config.isDebug()) {
       CobbleUtils.LOGGER_RAW.info("Biome ID: " + biomeId + " | Translation Key: " + biome.getKey().get().getValue().toTranslationKey());
     }
-    return CobbleUtils.language.getBiomes().getOrDefault(biomeId, "<lang:biome." + biome.getKey().get().getValue().toTranslationKey() + ">");
+    return CobbleUtils.language.getBiomes().getOrDefault(biomeId, "<lang:'biome." + biome.getKey().get().getValue().toTranslationKey() + "'>");
   }
 
   public static List<UUID> getOnlinePlayerUUIDs() {

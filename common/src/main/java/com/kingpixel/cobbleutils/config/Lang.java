@@ -153,29 +153,29 @@ public class Lang {
     messageReceiveMoney = "&aYou receive %amount%$!";
     messagePokeShout = "§e[PokeShout] &6%player% &ashouted &e%pokemon% %gender% &f(&b%form%&f) &f(&b%level%&f) &a!";
     lorepokemon = List.of(
-      "<#83dcde><lang:cobblemon.ui.lv> &f%level%",
-      "<#14b2dd><lang:cobblemon.ui.info.type>: &f%types%",
+      "<#83dcde><lang:'cobblemon.ui.lv'> &f%level%",
+      "<#14b2dd><lang:'cobblemon.ui.info.type'>: &f%types%",
       "<#ecca18>Form: &f%form%",
       "<#4969dc>Gender: %gender%",
-      "<#D0A5DE><lang:cobblemon.ui.stats.friendship>: &f%friendship%",
+      "<#D0A5DE><lang:'cobblemon.ui.stats.friendship'>: &f%friendship%",
       "<#de896f>Tradeable: &f%tradeable%",
       "<#b0eb59>Breedable: &f%breedable%",
-      "<#9be8c2><lang:cobblemon.ui.info.nature>: &f%nature% &f(&a↑%up%&f/&c↓%down%&f)",
-      "<#6fa7de><lang:cobblemon.ui.info.ability>: &f%ability% %ha%",
-      "<#83a7de><lang:cobblemon.ui.stats.ivs>: &e%ivs%&7/&e31",
-      " <#ee8339><lang:cobblemon.ui.stats.hp>: &f%ivshp% (%htivshp%) <#e84b48><lang:cobblemon.ui.stats.atk>: " +
+      "<#9be8c2><lang:'cobblemon.ui.info.nature'>: &f%nature% &f(&a↑%up%&f/&c↓%down%&f)",
+      "<#6fa7de><lang:'cobblemon.ui.info.ability'>: &f%ability% %ha%",
+      "<#83a7de><lang:'cobblemon.ui.stats.ivs'>: &e%ivs%&7/&e31",
+      " <#ee8339><lang:'cobblemon.ui.stats.hp'>: &f%ivshp% (%htivshp%) <#e84b48><lang:'cobblemon.ui.stats.atk'>: " +
         "&f%ivsatk% (%htivsatk%) " +
-        "<#5d79e1><lang:cobblemon.ui.stats.def>: &f%ivsdef% (%htivsdef%)",
-      " <#40b5cd><lang:cobblemon.ui.stats.sp_atk>: &f%ivsspa% (%htivsspa%) <#f59bc2><lang:cobblemon.ui.stats.sp_def>: " +
-        "&f%ivsspdef% (%htivsspdef%) <#69cd65><lang:cobblemon.ui.stats.speed>: &f%ivsspeed% (%htivsspeed%)",
-      "<#de8397><lang:cobblemon.ui.stats.evs>: &e%evs%&7/&e510",
-      " <#ee8339><lang:cobblemon.ui.stats.hp>: &f%evshp% <#e84b48><lang:cobblemon.ui.stats.atk>: &f%evsatk% <#5d79e1><lang:cobblemon.ui.stats.def>: &f%evsdef%",
-      " <#40b5cd><lang:cobblemon.ui.stats.sp_atk>: &f%evsspa% <#f59bc2><lang:cobblemon.ui.stats.sp_def>: &f%evsspdef% <#69cd65><lang:cobblemon.ui.stats.speed>: &f%evsspeed%",
+        "<#5d79e1><lang:'cobblemon.ui.stats.def'>: &f%ivsdef% (%htivsdef%)",
+      " <#40b5cd><lang:'cobblemon.ui.stats.sp_atk'>: &f%ivsspa% (%htivsspa%) <#f59bc2><lang:'cobblemon.ui.stats.sp_def'>: " +
+        "&f%ivsspdef% (%htivsspdef%) <#69cd65><lang:'cobblemon.ui.stats.speed'>: &f%ivsspeed% (%htivsspeed%)",
+      "<#de8397><lang:'cobblemon.ui.stats.evs'>: &e%evs%&7/&e510",
+      " <#ee8339><lang:'cobblemon.ui.stats.hp'>: &f%evshp% <#e84b48><lang:'cobblemon.ui.stats.atk'>: &f%evsatk% <#5d79e1><lang:'cobblemon.ui.stats.def'>: &f%evsdef%",
+      " <#40b5cd><lang:'cobblemon.ui.stats.sp_atk'>: &f%evsspa% <#f59bc2><lang:'cobblemon.ui.stats.sp_def'>: &f%evsspdef% <#69cd65><lang:'cobblemon.ui.stats.speed'>: &f%evsspeed%",
       "<#e35146>Ball: &f%ball%",
       "<#ecca18>Size: &f%size%",
-      "<#ecca18><lang:cobblemon.held_item>: &f%item%",
-      "<#98eb59><lang:cobblemon.ui.moves>: &f%move1% &f- %move2% &f- %move3% &f- %move4%",
-      //"<#b0eb59><lang:cobblemon.ui.info.original_trainer>: &f%owner%",
+      "<#ecca18><lang:'cobblemon.held_item'>: &f%item%",
+      "<#98eb59><lang:'cobblemon.ui.moves'>: &f%move1% &f- %move2% &f- %move3% &f- %move4%",
+      //"<#b0eb59><lang:'cobblemon.ui.info.original_trainer'>: &f%owner%",
       "<#b0eb59>Country: &f%country%"
       //"<#b0eb59>EggGroups: &f%egggroups%",
       //"<#b0eb59>ShowdownId: &f%showdownid%"
@@ -223,24 +223,24 @@ public class Lang {
     gender = Map.of("M", "&b♂", "F", "&d♀", "N", "&7⚲");
     forms = Map.of("hisui", "&cHisuian");
     types = new HashMap<>();
-    types.put("normal", "<gradient:#939393:#C3C3C3><lang:cobblemon.type.normal></gradient>");
-    types.put("steel", "<gradient:#706F6F:#6F6F6F><lang:cobblemon.type.steel></gradient>");
-    types.put("poison", "<gradient:#B363CD:#D0A5DE><lang:cobblemon.type.poison></gradient>");
-    types.put("electric", "<gradient:#E9E13B:#EAE8BA><lang:cobblemon.type.electric></gradient>");
-    types.put("ice", "<gradient:#87CEEB:#00FFFF><lang:cobblemon.type.ice></gradient>");
-    types.put("fighting", "<gradient:#D77361:#F1C0B7><lang:cobblemon.type.fighting></gradient>");
-    types.put("dragon", "<gradient:#8B72CF:#B9A8E7><lang:cobblemon.type.dragon></gradient>");
-    types.put("water", "<gradient:#5498C5:#9BC6E3><lang:cobblemon.type.water></gradient>");
-    types.put("rock", "<gradient:#D0953C:#E5BD80><lang:cobblemon.type.rock></gradient>");
-    types.put("ghost", "<gradient:#4B0082:#9370DB><lang:cobblemon.type.ghost></gradient>");
-    types.put("bug", "<gradient:#A5CB60:#CBE0A5><lang:cobblemon.type.bug></gradient>");
-    types.put("grass", "<gradient:#A5CB60:#CBE0A5><lang:cobblemon.type.grass></gradient>");
-    types.put("flying", "<gradient:#C4E9ED:#E3F5F7><lang:cobblemon.type.flying></gradient>");
-    types.put("dark", "<gradient:#000000:#303030><lang:cobblemon.type.dark></gradient>");
-    types.put("fire", "<gradient:#E24D4D:#F69F9F><lang:cobblemon.type.fire></gradient>");
-    types.put("ground", "<gradient:#B8860B:#D2B48C><lang:cobblemon.type.ground></gradient>");
-    types.put("psychic", "<gradient:#D74DE2:#DE77E7><lang:cobblemon.type.psychic></gradient>");
-    types.put("fairy", "<gradient:#9C38A5:#C06EC7><lang:cobblemon.type.fairy></gradient>");
+    types.put("normal", "<gradient:#939393:#C3C3C3><lang:'cobblemon.type.normal'></gradient>");
+    types.put("steel", "<gradient:#706F6F:#6F6F6F><lang:'cobblemon.type.steel'></gradient>");
+    types.put("poison", "<gradient:#B363CD:#D0A5DE><lang:'cobblemon.type.poison'></gradient>");
+    types.put("electric", "<gradient:#E9E13B:#EAE8BA><lang:'cobblemon.type.electric'></gradient>");
+    types.put("ice", "<gradient:#87CEEB:#00FFFF><lang:'cobblemon.type.ice'></gradient>");
+    types.put("fighting", "<gradient:#D77361:#F1C0B7><lang:'cobblemon.type.fighting'></gradient>");
+    types.put("dragon", "<gradient:#8B72CF:#B9A8E7><lang:'cobblemon.type.dragon'></gradient>");
+    types.put("water", "<gradient:#5498C5:#9BC6E3><lang:'cobblemon.type.water'></gradient>");
+    types.put("rock", "<gradient:#D0953C:#E5BD80><lang:'cobblemon.type.rock'></gradient>");
+    types.put("ghost", "<gradient:#4B0082:#9370DB><lang:'cobblemon.type.ghost'></gradient>");
+    types.put("bug", "<gradient:#A5CB60:#CBE0A5><lang:'cobblemon.type.bug'></gradient>");
+    types.put("grass", "<gradient:#A5CB60:#CBE0A5><lang:'cobblemon.type.grass'></gradient>");
+    types.put("flying", "<gradient:#C4E9ED:#E3F5F7><lang:'cobblemon.type.flying'></gradient>");
+    types.put("dark", "<gradient:#000000:#303030><lang:'cobblemon.type.dark'></gradient>");
+    types.put("fire", "<gradient:#E24D4D:#F69F9F><lang:'cobblemon.type.fire'></gradient>");
+    types.put("ground", "<gradient:#B8860B:#D2B48C><lang:'cobblemon.type.ground'></gradient>");
+    types.put("psychic", "<gradient:#D74DE2:#DE77E7><lang:'cobblemon.type.psychic'></gradient>");
+    types.put("fairy", "<gradient:#9C38A5:#C06EC7><lang:'cobblemon.type.fairy'></gradient>");
     movecolor = new HashMap<>();
     movecolor.put("normal", "<gradient:#939393:#C3C3C3>");
     movecolor.put("steel", "<gradient:#706F6F:#6F6F6F>");
