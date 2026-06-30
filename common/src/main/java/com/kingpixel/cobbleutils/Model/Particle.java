@@ -1,5 +1,7 @@
 package com.kingpixel.cobbleutils.Model;
 
+import com.cobblemon.mod.common.CobblemonNetwork;
+import com.cobblemon.mod.common.net.messages.client.effect.SpawnSnowstormEntityParticlePacket;
 import com.cobblemon.mod.common.net.messages.client.effect.SpawnSnowstormParticlePacket;
 import com.kingpixel.cobbleutils.CobbleUtils;
 import lombok.Getter;
@@ -11,15 +13,14 @@ import net.minecraft.particle.ParticleEffect;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.registry.Registries;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.Box;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.ArrayList;
 import java.util.List;
 
-/**
- * @author Carlos Varas Alonso - 06/11/2024 22:41
- */
 @Getter
 @Setter
 @ToString
@@ -43,7 +44,6 @@ public class Particle {
   }
 
   public Particle(boolean isNeedNearPlayers) {
-    // Legacy constructor kept for backwards compatibility.
     this("minecraft:flame", 1);
   }
 
@@ -89,32 +89,33 @@ public class Particle {
     }
   }
 
-  /**
-   * Sends a Cobblemon Snowstorm (Bedrock-format) particle to the player at the entity's position.
-   * Used when the particle namespace is "cobblemon".
-   *
-   * <p>Example particle IDs:
-   * <ul>
-   *   <li>{@code cobblemon:evo_sparkle}</li>
-   *   <li>{@code cobblemon:generic/shiny_ring}</li>
-   *   <li>{@code cobblemon:generic/ailments/burn_actor}</li>
-   * </ul>
-   */
   private void sendCobblemonParticle(@NotNull ServerPlayerEntity player, @NotNull Entity entity) {
-    Identifier identifier = Identifier.tryParse(getParticle());
+    String cleanName = getParticle().trim();
+    Identifier identifier = Identifier.tryParse(cleanName);
     if (identifier == null) return;
+
     Entity target = entity.getVehicle() != null ? entity.getVehicle() : entity;
-    new SpawnSnowstormParticlePacket(identifier, target.getPos()).sendToPlayer(player);
+
+    if (cleanName.contains("shiny") || cleanName.contains("status") || cleanName.contains("ailments") || cleanName.contains("aura")) {
+      List<String> locators = new ArrayList<>();
+      locators.add("root");
+      CobblemonNetwork.INSTANCE.sendPacket(player,
+        new SpawnSnowstormEntityParticlePacket(identifier, target.getId(), locators, null, null)
+      );
+    } else {
+      CobblemonNetwork.INSTANCE.sendPacket(player, new SpawnSnowstormParticlePacket(identifier, target.getPos()));
+    }
   }
 
-  /**
-   * Returns true if the configured particle ID belongs to the "cobblemon" namespace,
-   * meaning it should be rendered via Cobblemon's Snowstorm particle system
-   * instead of the vanilla {@link ParticleS2CPacket}.
-   */
   private boolean isCobblemonParticle() {
     if (isParticleBlank()) return false;
-    Identifier id = Identifier.tryParse(getParticle());
+    String name = getParticle().trim();
+
+    if (name.startsWith("cobblemon:") || (!name.contains(":") && name.contains("/"))) {
+      return true;
+    }
+
+    Identifier id = Identifier.tryParse(name);
     return id != null && "cobblemon".equals(id.getNamespace());
   }
 
@@ -122,7 +123,7 @@ public class Particle {
     try {
       if (isParticleBlank()) return ParticleTypes.LAVA;
 
-      Identifier identifier = Identifier.tryParse(getParticle());
+      Identifier identifier = Identifier.tryParse(getParticle().trim());
       if (identifier == null) return ParticleTypes.LAVA;
 
       if (Registries.PARTICLE_TYPE.get(identifier) instanceof ParticleEffect particleType) {
@@ -140,10 +141,15 @@ public class Particle {
   public void sendParticlesNearPlayers(@NotNull Entity entity) {
     try {
       if (isParticleBlank()) return;
-      List<ServerPlayerEntity> players = entity.getWorld().getEntitiesByClass(ServerPlayerEntity.class,
-        Box.from(entity.getPos()).expand(radius == null ? 32 : radius), p -> true);
-      if (players != null && !players.isEmpty()) {
-        players.forEach(player -> sendParticles(player, entity));
+      double currentRadius = radius == null ? 32.0 : radius;
+
+      if (entity.getWorld() instanceof ServerWorld serverWorld) {
+        List<ServerPlayerEntity> players = serverWorld.getEntitiesByClass(ServerPlayerEntity.class,
+          Box.from(entity.getPos()).expand(currentRadius), p -> true);
+
+        if (players != null && !players.isEmpty()) {
+          players.forEach(player -> sendParticles(player, entity));
+        }
       }
     } catch (NoSuchMethodError | RuntimeException e) {
       CobbleUtils.LOGGER_RAW.warn("Failed to send particles near entity: {}", e.getMessage());
@@ -154,22 +160,17 @@ public class Particle {
     return getParticle() == null || getParticle().isBlank();
   }
 
-  // Privates
   private @NotNull ParticleS2CPacket getParticleS2CPacket(@NotNull Entity entity,
                                                           @NotNull ParticleEffect particleType) {
-
     int offsetX = this.getOffsetX() == null ? 0 : this.getOffsetX();
     int offsetY = this.getOffsetY() == null ? 0 : this.getOffsetY();
     int offsetZ = this.getOffsetZ() == null ? 0 : this.getOffsetZ();
     int speed = this.getSpeed() == null ? 0 : this.getSpeed();
-    Entity finalEntity = entity;
-    if (entity.getVehicle() != null) {
-      finalEntity = entity.getVehicle();
-    }
+
+    Entity finalEntity = entity.getVehicle() != null ? entity.getVehicle() : entity;
 
     return new ParticleS2CPacket(particleType, true,
-      finalEntity.getX(),
-      finalEntity.getY(), finalEntity.getZ(), offsetX, offsetY, offsetZ, speed, this.getNumberParticles());
-
+      finalEntity.getX(), finalEntity.getY(), finalEntity.getZ(),
+      offsetX, offsetY, offsetZ, speed, this.getNumberParticles());
   }
 }
