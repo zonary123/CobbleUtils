@@ -4,8 +4,6 @@ import com.kingpixel.cobbleutils.events.models.*;
 import dev.architectury.event.events.common.PlayerEvent;
 import net.minecraft.server.network.ServerPlayerEntity;
 
-import java.util.Set;
-
 /**
  * @author Carlos Varas Alonso - 26/08/2025 14:42
  */
@@ -37,33 +35,15 @@ public class CobbleUtilsEvents {
 
   // CRAFTING EVENT
   public static final EventChannel<EventItemStack> CRAFTING_EVENT = new EventChannel<>();
-  private static final Set<String> CRAFTING_BLACKLIST = Set.of(
-      " minecraft:diamond_block",
-      "minecraft:emerald_block",
-      "minecraft:gold_block",
-      "minecraft:iron_block",
-      "minecraft:netherite_block",
-      "minecraft:redstone_block",
-      "minecraft:lapis_block",
-      "minecraft:coal_block",
-      "minecraft:bone_block",
-      "minecraft:slime_block",
-      "minecraft:dried_kelp_block",
-      "minecraft:hay_block",
-      "minecraft:quartz_block",
-      "minecraft:copper_block",
-      "minecraft:raw_copper_block",
-      "minecraft:raw_iron_block",
-      "minecraft:raw_gold_block");
 
   public static void register() {
     PlayerEvent.CRAFT_ITEM.register((player, itemStack, inventory) -> {
       if (CRAFTING_EVENT.isEmpty())
         return;
       CRAFTING_EVENT.emit(EventItemStack.builder()
-          .itemStack(itemStack)
-          .player((ServerPlayerEntity) player)
-          .build());
+        .itemStack(itemStack)
+        .player((ServerPlayerEntity) player)
+        .build());
     });
   }
 }

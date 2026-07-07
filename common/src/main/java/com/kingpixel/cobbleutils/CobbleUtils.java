@@ -13,6 +13,7 @@ import com.kingpixel.cobbleutils.database.DataBaseFactory;
 import com.kingpixel.cobbleutils.database.blocks.ChunkBlockStorageManager;
 import com.kingpixel.cobbleutils.database.users.DataBaseUsers;
 import com.kingpixel.cobbleutils.database.users.UserModel;
+import com.kingpixel.cobbleutils.events.CobbleUtilsEvents;
 import com.kingpixel.cobbleutils.events.ItemRightClickEvents;
 import com.kingpixel.cobbleutils.tasks.RegistryTasks;
 import com.kingpixel.cobbleutils.util.CobbleUtilsBridgeGTS;
@@ -274,6 +275,7 @@ public class CobbleUtils {
     });
 
     InteractionEvent.RIGHT_CLICK_ITEM.register(ItemRightClickEvents::register);
+    CobbleUtilsEvents.register();
   }
 
   /**
