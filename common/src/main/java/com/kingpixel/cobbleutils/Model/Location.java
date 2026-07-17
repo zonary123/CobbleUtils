@@ -97,6 +97,13 @@ public class Location {
     json.addProperty("server", server);
     json.addProperty("reason", "cross-server-teleport");
 
+    try {
+      if (CobbleUtils.redisManager != null) {
+        CobbleUtils.redisManager.saveState("teleport:" + player.getUuid().toString(), json, 15);
+      }
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
     CobbleUtils.redisManager.publish(RedisTeleportHandler.CHANNEL, json);
   }
 

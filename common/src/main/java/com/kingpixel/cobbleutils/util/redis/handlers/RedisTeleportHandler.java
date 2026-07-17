@@ -8,6 +8,11 @@ import com.kingpixel.cobbleutils.Model.Location;
 
 import java.time.Duration;
 import java.util.UUID;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import net.minecraft.server.world.ServerWorld;
+import java.util.List;
+import java.util.ArrayList;
 
 public class RedisTeleportHandler implements RedisHandler {
 
@@ -28,6 +33,25 @@ public class RedisTeleportHandler implements RedisHandler {
   public void handle(JsonObject json) {
 
     try {
+      if (json == null) return;
+
+      if (json.has("type")) {
+        String type = json.get("type").getAsString();
+        if ("request_worlds".equals(type)) {
+          publishWorlds();
+          return;
+        } else if ("worlds_info".equals(type)) {
+          if (!json.has("server") || !json.has("worlds")) return;
+          String senderServer = json.get("server").getAsString();
+          JsonArray worldsArray = json.getAsJsonArray("worlds");
+          List<String> worldsList = new ArrayList<>();
+          for (JsonElement el : worldsArray) {
+            worldsList.add(el.getAsString());
+          }
+          CobbleUtils.getServerWorlds().put(senderServer, worldsList);
+          return;
+        }
+      }
 
       if (!isValid(json)) return;
 
@@ -83,5 +107,37 @@ public class RedisTeleportHandler implements RedisHandler {
       loc.has("z") &&
       loc.has("yaw") &&
       loc.has("pitch");
+  }
+
+  public static void publishWorlds() {
+    if (CobbleUtils.redisManager == null || CobbleUtils.getServerName() == null) return;
+    try {
+      JsonObject json = new JsonObject();
+      json.addProperty("type", "worlds_info");
+      json.addProperty("server", CobbleUtils.getServerName());
+
+      JsonArray worldsArray = new JsonArray();
+      if (CobbleUtils.server != null) {
+        for (ServerWorld world : CobbleUtils.server.getWorlds()) {
+          worldsArray.add(world.getRegistryKey().getValue().toString());
+        }
+      }
+      json.add("worlds", worldsArray);
+
+      CobbleUtils.redisManager.publish(CHANNEL, json);
+    } catch (Exception e) {
+      CobbleUtils.LOGGER_RAW.error("Failed to publish worlds: " + e.getMessage());
+    }
+  }
+
+  public static void requestWorlds() {
+    if (CobbleUtils.redisManager == null) return;
+    try {
+      JsonObject json = new JsonObject();
+      json.addProperty("type", "request_worlds");
+      CobbleUtils.redisManager.publish(CHANNEL, json);
+    } catch (Exception e) {
+      CobbleUtils.LOGGER_RAW.error("Failed to request worlds: " + e.getMessage());
+    }
   }
 }

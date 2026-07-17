@@ -48,6 +48,19 @@ import java.nio.file.Path;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
+import com.google.gson.JsonObject;
+import com.pokeskies.fabricpluginmessaging.PluginMessageEvent;
+import com.pokeskies.fabricpluginmessaging.PluginMessagePacket;
+import com.kingpixel.cobbleutils.Model.Location;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
+import com.google.common.io.ByteArrayDataOutput;
+import com.google.common.io.ByteArrayDataInput;
+import com.google.common.io.ByteStreams;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.Arrays;
 
 /**
  * Main initializer and lifecycle management hub for the CobbleUtils platform.
@@ -68,7 +81,12 @@ public class CobbleUtils {
 
   @Setter
   @Getter
-  private static @Nullable String serverName = null;
+  private static @Nullable String serverName = "default";
+  @Setter
+  @Getter
+  private static List<String> proxyServers = new ArrayList<>();
+  @Getter
+  private static final Map<String, List<String>> serverWorlds = new ConcurrentHashMap<>();
   public static CommandRegistryAccess commandRegistryAccess;
   public static MinecraftServer server;
   public static Config config = new Config();
@@ -191,6 +209,29 @@ public class CobbleUtils {
       LOGGER_RAW.error("Error while trying to initialize RedisManager: " + e.getMessage());
     }
 
+    try {
+      PluginMessageEvent.EVENT.register((packet, context) -> {
+        try {
+          ByteArrayDataInput input = ByteStreams.newDataInput(packet.getData());
+          String subChannel = input.readUTF();
+          if ("GetServer".equals(subChannel)) {
+            String name = input.readUTF();
+            setServerName(name);
+            LOGGER_RAW.info("Server name automatically fetched from Proxy: " + name);
+          } else if ("GetServers".equals(subChannel)) {
+            String rawServers = input.readUTF();
+            List<String> list = Arrays.stream(rawServers.split(",\\s*")).toList();
+            setProxyServers(list);
+            LOGGER_RAW.info("Proxy servers automatically fetched: " + list);
+          }
+        } catch (Exception e) {
+          LOGGER_RAW.error("Failed to parse incoming plugin message: " + e.getMessage());
+        }
+      });
+    } catch (Throwable e) {
+      LOGGER_RAW.warn("PluginMessageEvent not registered: " + e.getMessage());
+    }
+
     LifecycleEvent.SERVER_STARTING.register(server -> {
       CobbleUtils.server = server;
       ChunkBlockStorageManager.init(server);
@@ -200,6 +241,14 @@ public class CobbleUtils {
       spawnRates.init();
       load();
       CobbleUtilsSuggests.SUGGESTS_PLAYER_OFFLINE_AND_ONLINE.refreshIfNeeded();
+      if (config.isRedisMessaging()) {
+        try {
+          RedisTeleportHandler.publishWorlds();
+          RedisTeleportHandler.requestWorlds();
+        } catch (Throwable t) {
+          LOGGER_RAW.error("Failed to publish/request worlds over Redis: " + t.getMessage());
+        }
+      }
     });
 
     LifecycleEvent.SERVER_STOPPING.register(server1 -> {
@@ -240,20 +289,70 @@ public class CobbleUtils {
       CobbleUtils.LOGGER_RAW.info("CobbleUtils backup and database services closed successfully.");
     });
 
-    PlayerEvent.PLAYER_JOIN.register((player) -> runAsync(() -> {
-      try {
-        UserModel user = DataBaseFactory.users().findUserByUUID(player.getUuid());
-        if (user == null) {
-          user = new UserModel(player);
+    PlayerEvent.PLAYER_JOIN.register((player) -> {
+      if (serverName == null || "default".equalsIgnoreCase(serverName) || "ExampleServer".equalsIgnoreCase(serverName)) {
+        try {
+          ByteArrayDataOutput output = ByteStreams.newDataOutput();
+          output.writeUTF("GetServer");
+          ServerPlayNetworking.send(player,
+            new PluginMessagePacket(output.toByteArray()));
+        } catch (Throwable e) {
+          LOGGER_RAW.error("Failed to request server name from proxy for player " + player.getName().getString(), e);
         }
-        user.connect(player);
-        user.fix();
-        DataBaseFactory.users().save(user);
-        DataBaseUsers.USERS.put(player.getUuid(), user);
-      } catch (Exception e) {
-        LOGGER_RAW.error("Failed to process PLAYER_JOIN asynchronously for " + player.getName().getString(), e);
       }
-    }));
+
+      if (proxyServers.isEmpty()) {
+        try {
+          ByteArrayDataOutput output = ByteStreams.newDataOutput();
+          output.writeUTF("GetServers");
+          ServerPlayNetworking.send(player,
+            new PluginMessagePacket(output.toByteArray()));
+        } catch (Throwable e) {
+          LOGGER_RAW.error("Failed to request servers from proxy for player " + player.getName().getString(), e);
+        }
+      }
+
+      runAsync(() -> {
+        try {
+          UserModel user = DataBaseFactory.users().findUserByUUID(player.getUuid());
+          if (user == null) {
+            user = new UserModel(player);
+          }
+          user.connect(player);
+          user.fix();
+          DataBaseFactory.users().save(user);
+          DataBaseUsers.USERS.put(player.getUuid(), user);
+
+          // Handle cross-server teleportation
+          Location location = RedisTeleportHandler.LOCATION_CACHE.getIfPresent(player.getUuid());
+          if (location != null) {
+            RedisTeleportHandler.LOCATION_CACHE.invalidate(player.getUuid());
+            location.teleportToNoCrossServer(player);
+          } else if (config.isRedisMessaging() && redisManager != null) {
+            try {
+              JsonObject state = redisManager.getState("teleport:" + player.getUuid().toString());
+              if (state != null) {
+                redisManager.deleteState("teleport:" + player.getUuid().toString());
+                JsonObject loc = state.getAsJsonObject("location");
+                Location locModel = new Location();
+                locModel.setWorld(loc.get("world").getAsString());
+                locModel.setX(loc.get("x").getAsDouble());
+                locModel.setY(loc.get("y").getAsDouble());
+                locModel.setZ(loc.get("z").getAsDouble());
+                locModel.setYaw(loc.get("yaw").getAsFloat());
+                locModel.setPitch(loc.get("pitch").getAsFloat());
+                locModel.setServer(state.get("server").getAsString());
+                locModel.teleportToNoCrossServer(player);
+              }
+            } catch (Exception e) {
+              LOGGER_RAW.error("Failed to check Redis teleport state for " + player.getName().getString(), e);
+            }
+          }
+        } catch (Exception e) {
+          LOGGER_RAW.error("Failed to process PLAYER_JOIN asynchronously for " + player.getName().getString(), e);
+        }
+      });
+    });
 
     PlayerEvent.PLAYER_QUIT.register((player) -> {
       com.kingpixel.cobbleutils.Model.Animations.core.AnimationQueue.clearQueue(player.getUuid());

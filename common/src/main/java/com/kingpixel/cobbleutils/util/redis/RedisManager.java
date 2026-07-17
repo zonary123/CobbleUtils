@@ -240,6 +240,28 @@ public class RedisManager {
   }
 
   /**
+   * Persists a JSON state in Redis under the key {@code state:<key>} with an expiration time.
+   *
+   * @param key     The state identifier.
+   * @param json    The JSON payload to store.
+   * @param seconds Expiration time in seconds.
+   */
+  public void saveState(String key, JsonObject json, int seconds) {
+    if (!connected.get()) return;
+    execute(jedis -> jedis.setex("state:" + key, seconds, json.toString()));
+  }
+
+  /**
+   * Deletes a previously saved JSON state from Redis.
+   *
+   * @param key The state identifier.
+   */
+  public void deleteState(String key) {
+    if (!connected.get()) return;
+    execute(jedis -> jedis.del("state:" + key));
+  }
+
+  /**
    * Retrieves a previously saved JSON state from Redis.
    *
    * @param key The state identifier.
