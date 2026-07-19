@@ -21,6 +21,7 @@ import java.util.Map;
 @Data
 @ToString
 public class Config {
+  private String server = "default";
   private boolean debug;
   private boolean adminServer = true;
   private boolean useDefault;
@@ -49,6 +50,7 @@ public class Config {
 
 
   public Config() {
+    server = "default";
     debug = false;
     useDefault = false;
     prefix = "§7[§6CobbleUtils§7] ";

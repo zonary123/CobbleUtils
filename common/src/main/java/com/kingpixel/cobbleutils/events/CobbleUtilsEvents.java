@@ -1,7 +1,6 @@
 package com.kingpixel.cobbleutils.events;
 
 import com.kingpixel.cobbleutils.events.models.*;
-import dev.architectury.event.events.common.PlayerEvent;
 import net.minecraft.server.network.ServerPlayerEntity;
 
 /**
@@ -35,15 +34,10 @@ public class CobbleUtilsEvents {
 
   // CRAFTING EVENT
   public static final EventChannel<EventItemStack> CRAFTING_EVENT = new EventChannel<>();
+  // SMELTING EVENT
+  public static final EventChannel<EventItemStack> SMELTING_EVENT = new EventChannel<>();
 
   public static void register() {
-    PlayerEvent.CRAFT_ITEM.register((player, itemStack, inventory) -> {
-      if (CRAFTING_EVENT.isEmpty())
-        return;
-      CRAFTING_EVENT.emit(EventItemStack.builder()
-        .itemStack(itemStack)
-        .player((ServerPlayerEntity) player)
-        .build());
-    });
+    // Registered via mixins to support correct quantities and shift-clicking
   }
 }

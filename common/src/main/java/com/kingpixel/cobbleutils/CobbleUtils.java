@@ -1,6 +1,11 @@
 package com.kingpixel.cobbleutils;
 
 import com.cobblemon.mod.common.api.properties.CustomPokemonProperty;
+import com.google.common.io.ByteArrayDataInput;
+import com.google.common.io.ByteArrayDataOutput;
+import com.google.common.io.ByteStreams;
+import com.google.gson.JsonObject;
+import com.kingpixel.cobbleutils.Model.Location;
 import com.kingpixel.cobbleutils.Model.properties.LegendaryPropertyType;
 import com.kingpixel.cobbleutils.Model.properties.MinIvsPropertyType;
 import com.kingpixel.cobbleutils.command.CommandTree;
@@ -28,6 +33,8 @@ import com.kingpixel.cobbleutils.util.redis.handlers.RedisMessageHandler;
 import com.kingpixel.cobbleutils.util.redis.handlers.RedisTeleportHandler;
 import com.kingpixel.cobbleutils.util.redis.handlers.RedisUserCacheHandler;
 import com.kingpixel.cobbleutils.util.sql.SQLService;
+import com.pokeskies.fabricpluginmessaging.PluginMessageEvent;
+import com.pokeskies.fabricpluginmessaging.PluginMessagePacket;
 import dev.architectury.event.events.common.CommandRegistrationEvent;
 import dev.architectury.event.events.common.InteractionEvent;
 import dev.architectury.event.events.common.LifecycleEvent;
@@ -36,6 +43,7 @@ import dev.architectury.injectables.targets.ArchitecturyTarget;
 import dev.architectury.platform.Platform;
 import lombok.Getter;
 import lombok.Setter;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.loader.api.ModContainer;
 import net.fabricmc.loader.api.metadata.Person;
@@ -45,22 +53,14 @@ import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
-import com.google.gson.JsonObject;
-import com.pokeskies.fabricpluginmessaging.PluginMessageEvent;
-import com.pokeskies.fabricpluginmessaging.PluginMessagePacket;
-import com.kingpixel.cobbleutils.Model.Location;
-import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
-import com.google.common.io.ByteArrayDataOutput;
-import com.google.common.io.ByteArrayDataInput;
-import com.google.common.io.ByteStreams;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.Arrays;
 
 /**
  * Main initializer and lifecycle management hub for the CobbleUtils platform.
@@ -140,6 +140,9 @@ public class CobbleUtils {
 
   private static void files() {
     config.init();
+    if (config.getServer() != null && !config.getServer().isEmpty()) {
+      setServerName(config.getServer());
+    }
     language.init();
     rewardsConfig.init();
     advancedRewardsConfig.init();
@@ -216,8 +219,13 @@ public class CobbleUtils {
           String subChannel = input.readUTF();
           if ("GetServer".equals(subChannel)) {
             String name = input.readUTF();
-            setServerName(name);
-            LOGGER_RAW.info("Server name automatically fetched from Proxy: " + name);
+            if (name != null && !name.equalsIgnoreCase(getServerName())) {
+              setServerName(name);
+              if (config != null) {
+                config.setServer(name);
+              }
+              LOGGER_RAW.info("Server name automatically updated from Proxy: " + name);
+            }
           } else if ("GetServers".equals(subChannel)) {
             String rawServers = input.readUTF();
             List<String> list = Arrays.stream(rawServers.split(",\\s*")).toList();
