@@ -128,13 +128,16 @@ public class RedisManager {
    *
    * @param handler The handler to register. Must provide a unique identifier.
    */
-  public void registerHandler(RedisHandler handler) {
+  public synchronized void registerHandler(RedisHandler handler) {
     String fullChannel = redisConfig.getChannel() + ":" + handler.getIdentifier();
     handlers.put(fullChannel, handler);
 
     JedisPubSub sub = this.subscriber;
     if (sub != null && sub.isSubscribed()) {
-      CompletableFuture.runAsync(() -> sub.subscribe(fullChannel));
+      try {
+        sub.unsubscribe();
+      } catch (Exception ignored) {
+      }
     } else {
       startSubscriber();
     }
@@ -164,8 +167,12 @@ public class RedisManager {
     };
 
     subscriberThread = new Thread(() -> {
-      while (!Thread.currentThread().isInterrupted() && !jedisPool.isClosed()) {
-        try (Jedis jedis = jedisPool.getResource()) {
+      while (!Thread.currentThread().isInterrupted() && (jedisPool == null || !jedisPool.isClosed())) {
+        String password = redisConfig.getPassword();
+        try (Jedis jedis = new Jedis(redisConfig.getHost(), redisConfig.getPort(), TIMEOUT)) {
+          if (password != null && !password.isEmpty()) {
+            jedis.auth(password);
+          }
           String[] channels = handlers.keySet().toArray(new String[0]);
           if (channels.length > 0) {
             jedis.subscribe(subscriber, channels);
