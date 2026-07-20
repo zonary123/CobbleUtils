@@ -6,7 +6,9 @@ import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.screen.slot.CraftingResultSlot;
 import net.minecraft.server.network.ServerPlayerEntity;
+import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
@@ -16,15 +18,22 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  */
 @Mixin(CraftingResultSlot.class)
 public abstract class CraftingMixin {
-  @Inject(method = "onTakeItem", at = @At("HEAD"))
-  private void cobbleutilsOnTakeItem(PlayerEntity player, ItemStack stack, CallbackInfo ci) {
+  @Shadow @Final private PlayerEntity player;
+  @Shadow private int amount;
+
+  @Inject(method = "onCrafted(Lnet/minecraft/item/ItemStack;)V", at = @At("HEAD"))
+  private void cobbleutilsOnCrafted(ItemStack stack, CallbackInfo ci) {
     if (CobbleUtilsEvents.CRAFTING_EVENT.isEmpty()) return;
-    if (player == null || stack.isEmpty()) return;
-    if (!(player instanceof ServerPlayerEntity serverPlayer)) return;
+    if (this.amount <= 0 || stack.isEmpty()) return;
+    if (!(this.player instanceof ServerPlayerEntity serverPlayer)) return;
+
+    ItemStack resultStack = stack.copy();
+    resultStack.setCount(this.amount);
 
     CobbleUtilsEvents.CRAFTING_EVENT.emit(EventItemStack.builder()
-      .itemStack(stack.copy())
+      .itemStack(resultStack)
       .player(serverPlayer)
       .build());
   }
 }
+
