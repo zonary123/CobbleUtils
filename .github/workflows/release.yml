@@ -45,7 +45,9 @@ jobs:
       - run: chmod +x ./gradlew
 
       - name: Build with Gradle
-        run: ./gradlew clean build
+        run: |
+          sed -i 's/^org.gradle.java.home=/#&/' gradle.properties
+          ./gradlew clean build
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
@@ -54,7 +56,8 @@ jobs:
           name: "Release ${{ env.MOD_NAME }} v${{ env.MOD_VERSION }}"
           files: |
             actual_versions/*.jar
-            build/libs/*.jar
+            fabric/build/libs/*.jar
+            neoforge/build/libs/*.jar
           draft: false
           prerelease: false
         env:
