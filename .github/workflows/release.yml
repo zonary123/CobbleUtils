@@ -6,10 +6,11 @@ on:
       - '*'
 
 env:
+  DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+  MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
+  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   JAVA_VERSION: 21
   JAVA_DISTRIBUTION: temurin
-  DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
-  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 jobs:
   full-release:
@@ -44,21 +45,72 @@ jobs:
 
       - run: chmod +x ./gradlew
 
-      - name: Build with Gradle
+      - name: Build mod
         run: |
           sed -i 's/^org.gradle.java.home=/#&/' gradle.properties
-          ./gradlew clean build
+          ./gradlew build --no-daemon
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ github.ref_name }}
-          name: "Release ${{ env.MOD_NAME }} v${{ env.MOD_VERSION }}"
-          files: |
-            actual_versions/*.jar
-            fabric/build/libs/*.jar
-            neoforge/build/libs/*.jar
-          draft: false
-          prerelease: false
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Recoger todos los jars construidos sin duplicar los de common
+          JARS=""
+          for f in fabric/build/libs/*.jar neoforge/build/libs/*.jar actual_versions/*.jar; do
+            if [ -f "$f" ] && [[ ! "$f" == *"sources"* ]] && [[ ! "$f" == *"dev-shadow"* ]] && [[ ! "$f" == *"dev"* ]]; then
+              JARS="$JARS $f"
+            fi
+          done
+          echo "Jars a subir: $JARS"
+          gh release create "$TAG" $JARS \
+            --title "Release $TAG" \
+            --notes "Automated release for version $TAG"
+
+      - name: Send Discord Notification with Embed and File
+        run: |
+          # Buscar el jar principal de Fabric
+          FILE=$(ls fabric/build/libs/*.jar | grep -v "sources" | grep -v "dev" | head -n1)
+          
+          # Extraer changelog
+          BASE=$(echo "$TAG" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
+          CHANGELOG_CONTENT=$(tr -d '\r' < CHANGELOG.md | awk -v ver="$BASE" '
+            $0 ~ "## \\[" ver "\\]" {flag=1; next}
+            /^## \[/ && flag {flag=0}
+            flag {print}
+          ')
+          
+          # Generar JSON embed correctamente escapado
+          JSON_PAYLOAD=$(jq -nc --arg tag "$TAG" --arg changelog "$CHANGELOG_CONTENT" \
+            '{content: "@everyone 🎉 New Release!", embeds:[{title:("Release "+$tag), description:$changelog, color:3066993}]}')
+          
+          echo "Embed JSON:"
+          echo "$JSON_PAYLOAD"
+          
+          # 1️⃣ Enviar primero el embed
+          curl -s -X POST "$DISCORD_WEBHOOK_URL" \
+            -H "Content-Type: application/json" \
+            -d "$JSON_PAYLOAD"
+          
+          # 2️⃣ Enviar después el archivo como segundo mensaje
+          if [ -f "$FILE" ]; then
+            curl -s -X POST "$DISCORD_WEBHOOK_URL" \
+              -F "file=@${FILE}"
+          fi
+
+      - name: Publish to Modrinth
+        run: |
+          FILE=$(ls fabric/build/libs/*.jar | grep -v "sources" | grep -v "dev" | head -n1)
+
+          if [ ! -f "$FILE" ]; then
+            echo "No se encontró ningún Jar para subir a Modrinth."
+            exit 0
+          fi
+
+          # Verificar si la versión ya existe
+          EXISTS=$(curl -s "https://api.modrinth.com/v2/project/$MOD_NAME/version" | \
+            jq -r ".[] | select(.version_number==\"$MOD_VERSION\") | .version_number" 2>/dev/null || true)
+
+          if [ -n "$EXISTS" ]; then
+            echo "La versión $MOD_VERSION ya existe en Modrinth, omitiendo publicación."
+            exit 0
+          fi
+
+          ./gradlew modrinth -PuploadFile="$FILE" -PmodrinthVersion="$MOD_VERSION"
