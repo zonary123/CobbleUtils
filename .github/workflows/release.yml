@@ -53,12 +53,7 @@ jobs:
       - name: Create GitHub Release
         run: |
           # Recoger todos los jars construidos sin duplicar los de common
-          JARS=""
-          for f in fabric/build/libs/*.jar neoforge/build/libs/*.jar actual_versions/*.jar; do
-            if [ -f "$f" ] && [[ ! "$f" == *"sources"* ]] && [[ ! "$f" == *"dev-shadow"* ]] && [[ ! "$f" == *"dev"* ]]; then
-              JARS="$JARS $f"
-            fi
-          done
+          JARS=$(ls fabric/build/libs/*.jar neoforge/build/libs/*.jar actual_versions/*.jar 2>/dev/null | grep -v "sources" | grep -v "dev-shadow" | grep -v "\-dev" || true)
           echo "Jars a subir: $JARS"
           gh release create "$TAG" $JARS \
             --title "Release $TAG" \
@@ -67,7 +62,7 @@ jobs:
       - name: Send Discord Notification with Embed and File
         run: |
           # Buscar el jar principal de Fabric
-          FILE=$(ls fabric/build/libs/*.jar | grep -v "sources" | grep -v "dev" | head -n1)
+          FILE=$(ls fabric/build/libs/*.jar 2>/dev/null | grep -v "sources" | grep -v "dev" | head -n1 || true)
           
           # Extraer changelog
           BASE=$(echo "$TAG" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
@@ -90,16 +85,16 @@ jobs:
             -d "$JSON_PAYLOAD"
           
           # 2️⃣ Enviar después el archivo como segundo mensaje
-          if [ -f "$FILE" ]; then
+          if [ -n "$FILE" ] && [ -f "$FILE" ]; then
             curl -s -X POST "$DISCORD_WEBHOOK_URL" \
               -F "file=@${FILE}"
           fi
 
       - name: Publish to Modrinth
         run: |
-          FILE=$(ls fabric/build/libs/*.jar | grep -v "sources" | grep -v "dev" | head -n1)
+          FILE=$(ls fabric/build/libs/*.jar 2>/dev/null | grep -v "sources" | grep -v "dev" | head -n1 || true)
 
-          if [ ! -f "$FILE" ]; then
+          if [ -z "$FILE" ] || [ ! -f "$FILE" ]; then
             echo "No se encontró ningún Jar para subir a Modrinth."
             exit 0
           fi
