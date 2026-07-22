@@ -45,6 +45,7 @@ public class AdvancedItemChance {
   private boolean showMenu;
   private String title;
   private boolean giveAll;
+  private boolean cumulativeLootTable;
   private final Map<String, Integer> amountRewardsPermission;
   private Sound newSound;
   private Particle particle;
@@ -56,13 +57,14 @@ public class AdvancedItemChance {
     this.showMenu = true;
     this.title = "";
     this.giveAll = false;
+    this.cumulativeLootTable = true;
     this.amountRewardsPermission = new HashMap<>();
     this.amountRewardsPermission.put("", 1);
     this.amountRewardsPermission.put("group.vip", 1);
     this.newSound = new Sound();
     this.particle = new Particle();
     this.animation = Animations.NONE;
-    this.lootTable = new HashMap<>();
+    this.lootTable = new LinkedHashMap<>();
     lootTable.put("", ItemChance.defaultItemChances());
     List<ItemChance> itemChances = new ArrayList<>();
     itemChances.add(new ItemChance());
@@ -461,6 +463,9 @@ public class AdvancedItemChance {
     for (Map.Entry<String, List<ItemChance>> entry : lootTable.entrySet()) {
       if (entry.getValue() != null && PermissionApi.hasPermission(player, entry.getKey(), 2)) {
         result.addAll(entry.getValue());
+        if (!cumulativeLootTable) {
+          break;
+        }
       }
     }
 
