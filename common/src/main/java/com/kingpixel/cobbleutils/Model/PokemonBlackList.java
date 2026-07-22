@@ -53,6 +53,13 @@ public class PokemonBlackList {
    */
   private Set<String> properties;
 
+  private transient List<PokemonProperties> parsedPropertiesList;
+
+  public void setProperties(Set<String> properties) {
+    this.properties = properties;
+    this.parsedPropertiesList = null;
+  }
+
   /**
    * Set of blocked Pokémon identifiers (e.g., "pikachu", "egg", or the global wildcard "*").
    */
@@ -158,12 +165,12 @@ public class PokemonBlackList {
     List<String> pokemonsBanneds = List.of("egg", "pokestop");
     this.pokemons.addAll(pokemonsBanneds);
 
-    this.pokemons = this.pokemons.stream().map(String::toLowerCase).map(String::trim).collect(Collectors.toSet());
-    this.forms = this.forms.stream().map(String::toLowerCase).map(String::trim).collect(Collectors.toSet());
-    this.aspects = this.aspects.stream().map(String::toLowerCase).map(String::trim).collect(Collectors.toSet());
-    this.labels = this.labels.stream().map(String::toLowerCase).map(String::trim).collect(Collectors.toSet());
-    this.types = this.types.stream().map(String::toLowerCase).map(String::trim).collect(Collectors.toSet());
-    this.rarities = this.rarities.stream().map(String::toLowerCase).map(String::trim).collect(Collectors.toSet());
+    this.pokemons = cleanSet(this.pokemons);
+    this.forms = cleanSet(this.forms);
+    this.aspects = cleanSet(this.aspects);
+    this.labels = cleanSet(this.labels);
+    this.types = cleanSet(this.types);
+    this.rarities = cleanSet(this.rarities);
   }
 
   /**
@@ -181,6 +188,7 @@ public class PokemonBlackList {
     this.persistentDataMap.clear();
     this.eggGroups.clear();
     this.resultsCache.clear();
+    this.parsedPropertiesList = null;
   }
 
   /**
@@ -208,17 +216,20 @@ public class PokemonBlackList {
   public boolean isBlacklisted(Pokemon pokemon) {
     if (pokemon == null) return false;
 
-    // 1. Quick check for the global wildcard block
     if (this.pokemons.contains("*")) return true;
 
-    // 2. Advanced Cobblemon property checks (Not cacheable due to dynamism)
-    if (!this.properties.isEmpty()) {
-      for (String property : this.properties) {
-        if (PokemonProperties.Companion.parse(property).matches(pokemon)) return true;
+    if (this.properties != null && !this.properties.isEmpty()) {
+      if (this.parsedPropertiesList == null || this.parsedPropertiesList.size() != this.properties.size()) {
+        this.parsedPropertiesList = new ArrayList<>();
+        for (String property : this.properties) {
+          this.parsedPropertiesList.add(PokemonProperties.Companion.parse(property));
+        }
+      }
+      for (PokemonProperties parsedProperty : this.parsedPropertiesList) {
+        if (parsedProperty.matches(pokemon)) return true;
       }
     }
 
-    // 3. Dynamic and forced aspect checks (Not cacheable due to volatility)
     if (!this.aspects.isEmpty()) {
       for (String aspect : pokemon.getAspects()) {
         if (this.aspects.contains(aspect)) return true;
@@ -228,7 +239,6 @@ public class PokemonBlackList {
       }
     }
 
-    // 4. Persistent NBT data check
     if (!this.persistentDataMap.isEmpty()) {
       NbtCompound persistentData = pokemon.getPersistentData();
       for (String key : persistentData.getKeys()) {
@@ -238,17 +248,14 @@ public class PokemonBlackList {
         NbtElement element = persistentData.get(key);
         Object convertedNbt = NbtUtils.convertNbtValue(element);
 
-        // Note: If using GSON/JSON, remember that integers might deserialize into Doubles (e.g., 1 to 1.0)
         if (list.contains("*") || list.contains(convertedNbt)) return true;
       }
     }
 
-    // 5. Cache check for properties based on species/static form
     String showdownId = pokemon.showdownId();
     Boolean cached = this.resultsCache.get(showdownId);
     if (cached != null) return cached;
 
-    // 6. Restriction based on implementation status in the mod
     if (this.onlyImplemented && !pokemon.getSpecies().getImplemented()) {
       return cacheResult(showdownId, true);
     }
@@ -256,7 +263,6 @@ public class PokemonBlackList {
     var form = pokemon.getForm();
     String formShowdownId = form.showdownId();
 
-    // 7. Global restriction to prevent evolutions (Allows only first evolutionary forms)
     if (!this.allowEvolutions) {
       Pokemon firstEvolution = PokemonUtils.getFirstEvolution(pokemon);
       if (!firstEvolution.getForm().showdownId().equals(showdownId)) {
@@ -264,7 +270,6 @@ public class PokemonBlackList {
       }
     }
 
-    // 8. Filtering by Egg Groups
     if (!this.eggGroups.isEmpty()) {
       for (EggGroup eggGroup : form.getEggGroups()) {
         if (this.eggGroups.contains(eggGroup)) {
@@ -273,12 +278,10 @@ public class PokemonBlackList {
       }
     }
 
-    // 9. Filtering by direct match of species ID or form ID
     if (this.pokemons.contains(formShowdownId) || this.pokemons.contains(showdownId)) {
       return cacheResult(showdownId, true);
     }
 
-    // 10. Filtering by Labels
     if (!this.labels.isEmpty()) {
       for (String label : form.getLabels()) {
         if (this.labels.contains(label)) {
@@ -287,12 +290,10 @@ public class PokemonBlackList {
       }
     }
 
-    // 11. Filtering by unique internal form name
     if (!this.forms.isEmpty() && this.forms.contains(form.formOnlyShowdownId())) {
       return cacheResult(showdownId, true);
     }
 
-    // 12. Filtering by elemental types associated with the form
     if (!this.types.isEmpty()) {
       for (ElementalType type : form.getTypes()) {
         String typeName = type.getName().toLowerCase();
@@ -302,7 +303,6 @@ public class PokemonBlackList {
       }
     }
 
-    // 13. Filtering by specified rarity levels
     if (!this.rarities.isEmpty()) {
       String rarity = PokemonUtils.getRarityS(pokemon);
       if (rarity != null && this.rarities.contains(rarity.toLowerCase().trim())) {
@@ -310,7 +310,6 @@ public class PokemonBlackList {
       }
     }
 
-    // If it successfully passes all filters, the Pokémon is allowed
     return cacheResult(showdownId, false);
   }
 
@@ -325,5 +324,13 @@ public class PokemonBlackList {
   public boolean cacheResult(String showdownId, boolean result) {
     this.resultsCache.putIfAbsent(showdownId, result);
     return result;
+  }
+
+  private Set<String> cleanSet(Set<String> set) {
+    if (set == null || set.isEmpty()) return set;
+    return set.stream()
+        .filter(s -> s != null)
+        .map(s -> s.toLowerCase().trim())
+        .collect(Collectors.toSet());
   }
 }

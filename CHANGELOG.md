@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.2.3] - 2026-07-22
+
+### Optimizations
+
+- Optimized Pokémon blacklist property matching to reduce server load.
+
 ## [1.2.2] - 2026-07-22
 
 ### Added
