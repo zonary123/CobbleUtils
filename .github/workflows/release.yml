@@ -53,7 +53,7 @@ jobs:
       - name: Create GitHub Release
         run: |
           # Recoger todos los jars construidos sin duplicar los de common
-          JARS=$(ls fabric/build/libs/*.jar neoforge/build/libs/*.jar actual_versions/*.jar 2>/dev/null | grep -v "sources" | grep -v "dev-shadow" | grep -v "\-dev" || true)
+          JARS=$(ls fabric/build/libs/*.jar neoforge/build/libs/*.jar actual_versions/*.jar 2>/dev/null | grep -v "sources" | grep -v "dev-shadow" | grep -v "\-dev\.jar" || true)
           echo "Jars a subir: $JARS"
           gh release create "$TAG" $JARS \
             --title "Release $TAG" \
@@ -62,7 +62,7 @@ jobs:
       - name: Send Discord Notification with Embed and File
         run: |
           # Buscar el jar principal de Fabric
-          FILE=$(ls fabric/build/libs/*.jar 2>/dev/null | grep -v "sources" | grep -v "dev" | head -n1 || true)
+          FILE=$(ls fabric/build/libs/*.jar 2>/dev/null | grep -v "sources" | grep -v "dev-shadow" | grep -v "\-dev\.jar" | head -n1 || true)
           
           # Extraer changelog
           BASE=$(echo "$TAG" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
@@ -92,7 +92,7 @@ jobs:
 
       - name: Publish to Modrinth
         run: |
-          FILE=$(ls fabric/build/libs/*.jar 2>/dev/null | grep -v "sources" | grep -v "dev" | head -n1 || true)
+          FILE=$(ls fabric/build/libs/*.jar 2>/dev/null | grep -v "sources" | grep -v "dev-shadow" | grep -v "\-dev\.jar" | head -n1 || true)
 
           if [ -z "$FILE" ] || [ ! -f "$FILE" ]; then
             echo "No se encontró ningún Jar para subir a Modrinth."
