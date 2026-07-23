@@ -149,7 +149,12 @@ task apiJar(type: Jar) {
     archiveBaseName = "${rootProject.archives_base_name}-${rootProject.minecraft_version}"
     archiveClassifier = 'api'
     version = "${rootProject.version}"
-    from project(':common').sourceSets.main.output
+    from(project(':common').sourceSets.main.output) {
+        include 'com/kingpixel/cobbleutils/api/**'
+        include 'com/kingpixel/cobbleutils/Model/**'
+        include 'com/kingpixel/cobbleutils/util/**'
+        include 'com/kingpixel/cobbleutils/adapter/**'
+    }
 
     doLast {
         def targetDir = file("${rootProject.projectDir}/actual_versions")
