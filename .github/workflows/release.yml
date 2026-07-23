@@ -48,7 +48,7 @@ jobs:
       - name: Build mod
         run: |
           sed -i 's/^org.gradle.java.home=/#&/' gradle.properties
-          ./gradlew build --no-daemon
+          ./gradlew build apiJar --no-daemon
 
       - name: Create GitHub Release
         run: |
