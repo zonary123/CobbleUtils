@@ -6,14 +6,10 @@
 
 ### Added
 
-- Added `apiJar` Gradle task to build and package a lightweight API JAR containing only the API, Model, Util, and Adapter classes. This packages:
-  - `ConditionApi` (`register`, `check`, `getDefaultConditions`, `getRegisteredTypes`) to easily manage, verify, and retrieve custom conditions.
-  - `PermissionApi` to check LuckPerms permissions and commands.
-  - `RewardsApi` to query loot tables and items.
-  - `EconomyApi` to handle economy integration.
-  - `BlocksAPI` to interact with custom block features.
-  - `PartyAPI` and `GuildAPI` for group/guild management integrations.
-- Added external placeholder registration API in `PokemonUtils` (`registerPlaceholder` and `unregisterPlaceholder`) to allow external mods to add dynamic placeholders to Pokémon lore and text.
+- Added `apiJar` task to build a lightweight API jar (includes only api, models, utils, and adapter packages).
+- Added `ConditionApi` (`register`, `check`, `getDefaultConditions`, `getRegisteredTypes`) to handle custom conditions.
+- Included existing APIs in the lightweight jar: `PermissionApi`, `RewardsApi`, `EconomyApi`, `BlocksAPI`, `PartyAPI`, and `GuildAPI`.
+- Added external placeholder registration in `PokemonUtils` (`registerPlaceholder`, `unregisterPlaceholder`) for external mods.
 
 ## [1.2.3] - 2026-07-22
 
