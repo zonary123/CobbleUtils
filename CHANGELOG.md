@@ -1,5 +1,14 @@
 # Changelog
 
+## [Unreleased]
+
+## [1.2.4] - 2026-07-23
+
+### Added
+
+- Added `apiJar` Gradle task to build and package the API JAR (`CobbleUtils-1.21.1-v1.2.4-api.jar`) containing the `common` module classes.
+- Added external placeholder registration API in `PokemonUtils` (`registerPlaceholder` and `unregisterPlaceholder`) to allow external mods to add dynamic placeholders to Pokémon lore and text.
+
 ## [1.2.3] - 2026-07-22
 
 ### Optimizations

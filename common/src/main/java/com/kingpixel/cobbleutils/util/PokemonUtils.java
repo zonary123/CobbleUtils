@@ -220,8 +220,35 @@ public class PokemonUtils {
     return pokemon.getIvs().getOrDefault(stat);
   }
 
+  private static final Map<String, Function<Pokemon, String>> EXTERNAL_PLACEHOLDERS = new java.util.concurrent.ConcurrentHashMap<>();
+
+  /**
+   * Register a custom placeholder function from external mods.
+   *
+   * @param placeholder The placeholder name (e.g. "%my_placeholder%" or "my_placeholder")
+   * @param function    Function that receives a Pokemon and returns a String value
+   */
+  public static void registerPlaceholder(String placeholder, Function<Pokemon, String> function) {
+    if (placeholder == null || function == null) return;
+    String key = placeholder.startsWith("%") ? placeholder : "%" + placeholder;
+    if (!key.endsWith("%")) key = key + "%";
+    EXTERNAL_PLACEHOLDERS.put(key.toLowerCase(), function);
+  }
+
+  /**
+   * Unregister a custom placeholder.
+   *
+   * @param placeholder The placeholder name
+   */
+  public static void unregisterPlaceholder(String placeholder) {
+    if (placeholder == null) return;
+    String key = placeholder.startsWith("%") ? placeholder : "%" + placeholder;
+    if (!key.endsWith("%")) key = key + "%";
+    EXTERNAL_PLACEHOLDERS.remove(key.toLowerCase());
+  }
+
   public static Map<String, String> buildPlaceholders(Pokemon pokemon, String indexStr) {
-    Map<String, String> result = HashMap.newHashMap(PLACEHOLDER_FUNCTIONS.size());
+    Map<String, String> result = HashMap.newHashMap(PLACEHOLDER_FUNCTIONS.size() + EXTERNAL_PLACEHOLDERS.size());
     String index = (indexStr == null) ? EMPTY : indexStr;
 
     for (Map.Entry<String, Function<Pokemon, String>> entry : PLACEHOLDER_FUNCTIONS.entrySet()) {
@@ -232,6 +259,16 @@ public class PokemonUtils {
       }
       result.put(key, value);
     }
+
+    for (Map.Entry<String, Function<Pokemon, String>> entry : EXTERNAL_PLACEHOLDERS.entrySet()) {
+      String key = entry.getKey();
+      String value = safe(pokemon, entry.getValue());
+      if (!index.isEmpty()) {
+        key = key.substring(0, key.length() - 1) + index + "%";
+      }
+      result.put(key, value);
+    }
+
     return result;
   }
 

@@ -143,3 +143,23 @@ allprojects {
     }
     build.finalizedBy(cleanAndCopyJarToActualVersions)
 }
+
+task apiJar(type: Jar) {
+    dependsOn project(':common').tasks.named('classes')
+    archiveBaseName = "${rootProject.archives_base_name}-${rootProject.minecraft_version}"
+    archiveClassifier = 'api'
+    version = "${rootProject.version}"
+    from project(':common').sourceSets.main.output
+
+    doLast {
+        def targetDir = file("${rootProject.projectDir}/actual_versions")
+        if (targetDir.exists() && archiveFile.get().asFile.exists()) {
+            copy {
+                from archiveFile.get().asFile
+                into targetDir
+            }
+            println("Copied API Jar to actual_versions -> ${archiveFile.get().asFile.name}")
+        }
+    }
+}
+
