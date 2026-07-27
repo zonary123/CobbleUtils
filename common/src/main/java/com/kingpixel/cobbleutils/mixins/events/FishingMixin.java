@@ -11,7 +11,10 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
+import java.util.Objects;
 
 /**
  * @author Carlos Varas Alonso - 06/08/2025 21:39
@@ -22,10 +25,13 @@ public abstract class FishingMixin {
   private void trigger(ServerPlayerEntity player, ItemStack rod, FishingBobberEntity bobber,
                        Collection<ItemStack> fishingLoots, CallbackInfo ci) {
     if (CobbleUtilsEvents.FISHING_EVENT.isEmpty()) return;
-
+    if (fishingLoots.isEmpty()) return;
+    List<ItemStack> loots = new ArrayList<>(fishingLoots);
+    loots.removeIf(Objects::isNull);
+    if (loots.isEmpty()) return;
     CobbleUtilsEvents.FISHING_EVENT.emit(EventItemStack.builder()
       .player(player)
-      .itemStacks(fishingLoots.stream().toList())
+      .itemStacks(loots)
       .build());
   }
 }
