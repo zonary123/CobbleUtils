@@ -2,6 +2,13 @@
 
 ## [Unreleased]
 
+## [1.2.5] - 2026-08-13
+
+### Fixed
+
+- Fixed `ClassCastException` and item drop cancellation in `SweetBerriesMixin`.
+- Added exception isolation to `EventChannel.emit` so failing event listeners cannot break game logic or other listeners.
+
 ## [1.2.4] - 2026-07-23
 
 ### Added

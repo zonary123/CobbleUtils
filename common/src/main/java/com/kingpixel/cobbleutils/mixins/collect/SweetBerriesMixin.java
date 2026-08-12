@@ -33,15 +33,20 @@ public abstract class SweetBerriesMixin {
     Operation<Void> original,
     @Local(argsOnly = true) PlayerEntity player
   ) {
-    if (CobbleUtilsEvents.COLLECT_EVENT.isEmpty()) return;
-    CobbleUtilsEvents.COLLECT_EVENT.emit(
-      EventCollect.builder()
-        .world(world)
-        .pos(pos)
-        .itemStack(stack)
-        .player((ServerPlayerEntity) player)
-        .build()
-    );
+    try {
+      if (!world.isClient() && player instanceof ServerPlayerEntity serverPlayer && !CobbleUtilsEvents.COLLECT_EVENT.isEmpty()) {
+        CobbleUtilsEvents.COLLECT_EVENT.emit(
+          EventCollect.builder()
+            .world(world)
+            .pos(pos)
+            .itemStack(stack)
+            .player(serverPlayer)
+            .build()
+        );
+      }
+    } catch (Throwable e) {
+      e.printStackTrace();
+    }
     original.call(world, pos, stack);
   }
 }
