@@ -73,9 +73,9 @@ public abstract class TravelMixin {
 
   @Inject(method = "tick", at = @At("HEAD"))
   private void cobbleutils$onTick(CallbackInfo ci) {
-    if (CobbleUtilsEvents.TRAVEL_EVENT.isEmpty()) return;
-
     try {
+      if (CobbleUtilsEvents.TRAVEL_EVENT.isEmpty()) return;
+
       ServerPlayerEntity player = (ServerPlayerEntity) (Object) this;
       UUID uuid = player.getUuid();
 
@@ -106,9 +106,8 @@ public abstract class TravelMixin {
         .distance(lastPos.distanceTo(currentPos))
         .player(player)
         .build());
-    } catch (Exception e) {
-      CobbleUtils.LOGGER_RAW.error("Error in TravelMixin tick");
-      e.printStackTrace();
+    } catch (Throwable e) {
+      CobbleUtils.LOGGER_RAW.error("Error in TravelMixin#cobbleutils$onTick", e);
     }
   }
 }

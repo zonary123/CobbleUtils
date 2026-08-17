@@ -1,5 +1,6 @@
 package com.kingpixel.cobbleutils.mixins.events;
 
+import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.events.CobbleUtilsEvents;
 import com.kingpixel.cobbleutils.events.models.EventEntity;
 import net.minecraft.entity.passive.TameableEntity;
@@ -22,17 +23,21 @@ public abstract class TamedMixin {
     at = @At("HEAD")
   )
   private void cobbleutils$onTame(PlayerEntity playerEntity, CallbackInfo ci) {
-    if (CobbleUtilsEvents.TAMING_EVENT.isEmpty()) return;
-    if (playerEntity == null || playerEntity.getWorld().isClient) return;
+    try {
+      if (CobbleUtilsEvents.TAMING_EVENT.isEmpty()) return;
+      if (playerEntity == null || playerEntity.getWorld().isClient) return;
 
-    TameableEntity entity = (TameableEntity) (Object) this;
+      TameableEntity entity = (TameableEntity) (Object) this;
 
-    if (!(playerEntity instanceof ServerPlayerEntity player)) return;
+      if (!(playerEntity instanceof ServerPlayerEntity player)) return;
 
-    CobbleUtilsEvents.TAMING_EVENT.emit(EventEntity.builder()
-      .entity(entity)
-      .player(player)
-      .build());
+      CobbleUtilsEvents.TAMING_EVENT.emit(EventEntity.builder()
+        .entity(entity)
+        .player(player)
+        .build());
+    } catch (Throwable e) {
+      CobbleUtils.LOGGER_RAW.error("Error in TamedMixin#cobbleutils$onTame", e);
+    }
   }
 }
 

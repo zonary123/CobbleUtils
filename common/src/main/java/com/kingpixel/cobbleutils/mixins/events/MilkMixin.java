@@ -2,6 +2,7 @@ package com.kingpixel.cobbleutils.mixins.events;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
+import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.events.CobbleUtilsEvents;
 import net.minecraft.entity.passive.CowEntity;
 import net.minecraft.entity.player.PlayerEntity;
@@ -64,13 +65,17 @@ public abstract class MilkMixin {
   private void cobbleutils$onMilk(
     PlayerEntity playerEntity, Hand hand, CallbackInfoReturnable<ActionResult> cir
   ) {
-    if (CobbleUtilsEvents.MILKING_EVENT.isEmpty()) return;
-    if (!(playerEntity instanceof ServerPlayerEntity player)) return;
+    try {
+      if (CobbleUtilsEvents.MILKING_EVENT.isEmpty()) return;
+      if (!(playerEntity instanceof ServerPlayerEntity player)) return;
 
-    UUID cowId = ((CowEntity) (Object) this).getUuid();
-    if (cobbleUtils$COOLDOWN.getIfPresent(cowId) != null) return;
-    cobbleUtils$COOLDOWN.put(cowId, Boolean.TRUE);
+      UUID cowId = ((CowEntity) (Object) this).getUuid();
+      if (cobbleUtils$COOLDOWN.getIfPresent(cowId) != null) return;
+      cobbleUtils$COOLDOWN.put(cowId, Boolean.TRUE);
 
-    CobbleUtilsEvents.MILKING_EVENT.emit(player);
+      CobbleUtilsEvents.MILKING_EVENT.emit(player);
+    } catch (Throwable e) {
+      CobbleUtils.LOGGER_RAW.error("Error in MilkMixin#cobbleutils$onMilk", e);
+    }
   }
 }

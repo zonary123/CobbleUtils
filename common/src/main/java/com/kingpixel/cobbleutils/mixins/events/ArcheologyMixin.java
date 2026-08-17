@@ -1,5 +1,6 @@
 package com.kingpixel.cobbleutils.mixins.events;
 
+import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.events.CobbleUtilsEvents;
 import com.kingpixel.cobbleutils.events.models.EventItemStack;
 import net.minecraft.block.entity.BrushableBlockEntity;
@@ -10,7 +11,6 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-
 
 @Mixin(BrushableBlockEntity.class)
 public abstract class ArcheologyMixin {
@@ -24,19 +24,23 @@ public abstract class ArcheologyMixin {
     )
   )
   private void afterGenerateItem(PlayerEntity playerEntity, CallbackInfo ci) {
-    if (CobbleUtilsEvents.ARCHEOLOGY_EVENT.isEmpty()) return;
-    if (playerEntity == null || playerEntity.getWorld() == null) return;
+    try {
+      if (CobbleUtilsEvents.ARCHEOLOGY_EVENT.isEmpty()) return;
+      if (playerEntity == null || playerEntity.getWorld() == null) return;
 
-    if (!(playerEntity instanceof ServerPlayerEntity player)) return;
+      if (!(playerEntity instanceof ServerPlayerEntity player)) return;
 
-    BrushableBlockEntity self = (BrushableBlockEntity) (Object) this;
-    ItemStack stackCopy = self.getItem().copy();
+      BrushableBlockEntity self = (BrushableBlockEntity) (Object) this;
+      ItemStack stackCopy = self.getItem().copy();
 
-    if (stackCopy.isEmpty()) return;
+      if (stackCopy.isEmpty()) return;
 
-    CobbleUtilsEvents.ARCHEOLOGY_EVENT.emit(EventItemStack.builder()
-      .player(player)
-      .itemStack(stackCopy)
-      .build());
+      CobbleUtilsEvents.ARCHEOLOGY_EVENT.emit(EventItemStack.builder()
+        .player(player)
+        .itemStack(stackCopy)
+        .build());
+    } catch (Throwable e) {
+      CobbleUtils.LOGGER_RAW.error("Error in ArcheologyMixin#afterGenerateItem", e);
+    }
   }
 }

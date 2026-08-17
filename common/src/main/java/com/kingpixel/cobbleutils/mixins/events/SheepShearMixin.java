@@ -1,5 +1,6 @@
 package com.kingpixel.cobbleutils.mixins.events;
 
+import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.events.CobbleUtilsEvents;
 import com.kingpixel.cobbleutils.events.models.EventItemStack;
 import net.minecraft.entity.passive.SheepEntity;
@@ -41,8 +42,12 @@ public abstract class SheepShearMixin {
     Hand hand,
     CallbackInfoReturnable<ActionResult> cir
   ) {
-    if (player instanceof ServerPlayerEntity sp) {
-      this.cobbleutils$lastShearer = sp;
+    try {
+      if (player instanceof ServerPlayerEntity sp) {
+        this.cobbleutils$lastShearer = sp;
+      }
+    } catch (Throwable e) {
+      CobbleUtils.LOGGER_RAW.error("Error in SheepShearMixin#cobblejobs$capturePlayer", e);
     }
   }
 
@@ -55,13 +60,17 @@ public abstract class SheepShearMixin {
     )
   )
   private void cobbleUtils$onSheared(SoundCategory shearedSoundCategory, CallbackInfo ci) {
-    if (CobbleUtilsEvents.SHEEP_SHEAR_EVENT.isEmpty()) return;
-    if (this.cobbleutils$lastShearer != null) {
-      CobbleUtilsEvents.SHEEP_SHEAR_EVENT.emit(EventItemStack.builder()
-        .player(cobbleutils$lastShearer)
-        .itemStack(new ItemStack(DROPS.get(this.getColor())))
-        .build());
-      this.cobbleutils$lastShearer = null;
+    try {
+      if (CobbleUtilsEvents.SHEEP_SHEAR_EVENT.isEmpty()) return;
+      if (this.cobbleutils$lastShearer != null) {
+        CobbleUtilsEvents.SHEEP_SHEAR_EVENT.emit(EventItemStack.builder()
+          .player(cobbleutils$lastShearer)
+          .itemStack(new ItemStack(DROPS.get(this.getColor())))
+          .build());
+        this.cobbleutils$lastShearer = null;
+      }
+    } catch (Throwable e) {
+      CobbleUtils.LOGGER_RAW.error("Error in SheepShearMixin#cobbleUtils$onSheared", e);
     }
   }
 

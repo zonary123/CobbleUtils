@@ -1,5 +1,6 @@
 package com.kingpixel.cobbleutils.mixins.events;
 
+import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.events.CobbleUtilsEvents;
 import com.kingpixel.cobbleutils.events.models.EventItemStack;
 import net.minecraft.entity.player.PlayerEntity;
@@ -19,10 +20,16 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public abstract class SmithingTableMixin {
   @Inject(method = "onTakeOutput", at = @At("HEAD"))
   private void onSmithingCraft(PlayerEntity player, ItemStack stack, CallbackInfo ci) {
-    if (CobbleUtilsEvents.SMITHING_TABLE_EVENT.isEmpty()) return;
-    CobbleUtilsEvents.SMITHING_TABLE_EVENT.emit(EventItemStack.builder()
-      .player((ServerPlayerEntity) player)
-      .itemStack(stack)
-      .build());
+    try {
+      if (CobbleUtilsEvents.SMITHING_TABLE_EVENT.isEmpty()) return;
+      if (!(player instanceof ServerPlayerEntity serverPlayer)) return;
+
+      CobbleUtilsEvents.SMITHING_TABLE_EVENT.emit(EventItemStack.builder()
+        .player(serverPlayer)
+        .itemStack(stack)
+        .build());
+    } catch (Throwable e) {
+      CobbleUtils.LOGGER_RAW.error("Error in SmithingTableMixin#onSmithingCraft", e);
+    }
   }
 }

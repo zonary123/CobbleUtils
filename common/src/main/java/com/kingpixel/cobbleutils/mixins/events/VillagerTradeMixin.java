@@ -1,5 +1,6 @@
 package com.kingpixel.cobbleutils.mixins.events;
 
+import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.events.CobbleUtilsEvents;
 import com.kingpixel.cobbleutils.events.models.EventItemStack;
 import net.minecraft.advancement.criterion.VillagerTradeCriterion;
@@ -19,11 +20,15 @@ public abstract class VillagerTradeMixin {
 
   @Inject(method = "trigger", at = @At("HEAD"))
   private void CobbleQuests$onKilledOther(ServerPlayerEntity player, MerchantEntity merchant, ItemStack itemStack, CallbackInfo ci) {
-    if (CobbleUtilsEvents.TRADE_EVENT.isEmpty()) return;
+    try {
+      if (CobbleUtilsEvents.TRADE_EVENT.isEmpty()) return;
 
-    CobbleUtilsEvents.TRADE_EVENT.emit(EventItemStack.builder()
-      .player(player)
-      .itemStack(itemStack)
-      .build());
+      CobbleUtilsEvents.TRADE_EVENT.emit(EventItemStack.builder()
+        .player(player)
+        .itemStack(itemStack)
+        .build());
+    } catch (Throwable e) {
+      CobbleUtils.LOGGER_RAW.error("Error in VillagerTradeMixin#CobbleQuests$onKilledOther", e);
+    }
   }
 }

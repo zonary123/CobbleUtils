@@ -1,5 +1,6 @@
 package com.kingpixel.cobbleutils.mixins.events;
 
+import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.events.CobbleUtilsEvents;
 import com.kingpixel.cobbleutils.events.models.EventEntity;
 import net.minecraft.advancement.criterion.BredAnimalsCriterion;
@@ -19,13 +20,17 @@ public abstract class BredMixin {
   @Inject(method = "trigger", at = @At("HEAD"))
   private void Bred(ServerPlayerEntity player, AnimalEntity parent, AnimalEntity partner, PassiveEntity child,
                     CallbackInfo ci) {
-    if (CobbleUtilsEvents.BRED_EVENT.isEmpty()) return;
-    if (parent == null || partner == null || child == null) return;
-    if (player == null) return;
+    try {
+      if (CobbleUtilsEvents.BRED_EVENT.isEmpty()) return;
+      if (parent == null || partner == null || child == null) return;
+      if (player == null) return;
 
-    CobbleUtilsEvents.BRED_EVENT.emit(EventEntity.builder()
-      .player(player)
-      .entity(child)
-      .build());
+      CobbleUtilsEvents.BRED_EVENT.emit(EventEntity.builder()
+        .player(player)
+        .entity(child)
+        .build());
+    } catch (Throwable e) {
+      CobbleUtils.LOGGER_RAW.error("Error in BredMixin#Bred", e);
+    }
   }
 }

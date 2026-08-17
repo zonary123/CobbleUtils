@@ -1,5 +1,6 @@
 package com.kingpixel.cobbleutils.mixins.collect;
 
+import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.events.CobbleUtilsEvents;
 import com.kingpixel.cobbleutils.events.models.EventCollect;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
@@ -45,7 +46,7 @@ public abstract class SweetBerriesMixin {
         );
       }
     } catch (Throwable e) {
-      e.printStackTrace();
+      CobbleUtils.LOGGER_RAW.error("Error in SweetBerriesMixin#cobbleutils$onSweetBerryDrop", e);
     }
     original.call(world, pos, stack);
   }

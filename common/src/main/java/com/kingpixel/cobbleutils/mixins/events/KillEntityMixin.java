@@ -1,5 +1,6 @@
 package com.kingpixel.cobbleutils.mixins.events;
 
+import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.events.CobbleUtilsEvents;
 import com.kingpixel.cobbleutils.events.models.EventEntity;
 import net.minecraft.entity.LivingEntity;
@@ -19,13 +20,17 @@ public abstract class KillEntityMixin {
 
   @Inject(method = "onKilledOther", at = @At("HEAD"))
   private void cobbleutils$onKilledOther(ServerWorld world, LivingEntity other, CallbackInfoReturnable<Boolean> cir) {
-    if (CobbleUtilsEvents.ENTITY_KILLED_EVENT.isEmpty()) return;
-    PlayerEntity playerEntity = (PlayerEntity) (Object) this;
-    if (!(playerEntity instanceof ServerPlayerEntity player)) return;
+    try {
+      if (CobbleUtilsEvents.ENTITY_KILLED_EVENT.isEmpty()) return;
+      PlayerEntity playerEntity = (PlayerEntity) (Object) this;
+      if (!(playerEntity instanceof ServerPlayerEntity player)) return;
 
-    CobbleUtilsEvents.ENTITY_KILLED_EVENT.emit(EventEntity.builder()
-      .entity(other)
-      .player(player)
-      .build());
+      CobbleUtilsEvents.ENTITY_KILLED_EVENT.emit(EventEntity.builder()
+        .entity(other)
+        .player(player)
+        .build());
+    } catch (Throwable e) {
+      CobbleUtils.LOGGER_RAW.error("Error in KillEntityMixin#cobbleutils$onKilledOther", e);
+    }
   }
 }

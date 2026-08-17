@@ -1,5 +1,6 @@
 package com.kingpixel.cobbleutils.mixins.events;
 
+import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.events.CobbleUtilsEvents;
 import com.kingpixel.cobbleutils.events.models.EventBlock;
 import net.minecraft.block.BlockState;
@@ -32,19 +33,23 @@ public abstract class StripLogMixin {
     ItemUsageContext context,
     CallbackInfoReturnable<ActionResult> cir
   ) {
-    if (CobbleUtilsEvents.STRIPPED_LOG_EVENT.isEmpty()) return;
-    if (context.getWorld().isClient()) return;
+    try {
+      if (CobbleUtilsEvents.STRIPPED_LOG_EVENT.isEmpty()) return;
+      if (context.getWorld().isClient()) return;
 
-    PlayerEntity player = context.getPlayer();
-    if (player == null) return;
+      PlayerEntity player = context.getPlayer();
+      if (!(player instanceof ServerPlayerEntity serverPlayer)) return;
 
-    BlockState oldState = context.getWorld().getBlockState(context.getBlockPos());
+      BlockState oldState = context.getWorld().getBlockState(context.getBlockPos());
 
-    if (!oldState.isIn(BlockTags.LOGS)) return;
+      if (!oldState.isIn(BlockTags.LOGS)) return;
 
-    CobbleUtilsEvents.STRIPPED_LOG_EVENT.emit(EventBlock.builder()
-      .player((ServerPlayerEntity) player)
-      .block(oldState.getBlock())
-      .build());
+      CobbleUtilsEvents.STRIPPED_LOG_EVENT.emit(EventBlock.builder()
+        .player(serverPlayer)
+        .block(oldState.getBlock())
+        .build());
+    } catch (Throwable e) {
+      CobbleUtils.LOGGER_RAW.error("Error in StripLogMixin#cobbleutils$onStripLog", e);
+    }
   }
 }

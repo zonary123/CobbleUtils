@@ -1,5 +1,6 @@
 package com.kingpixel.cobbleutils.mixins.collect;
 
+import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.events.CobbleUtilsEvents;
 import com.kingpixel.cobbleutils.events.models.EventCollect;
 import net.minecraft.block.BlockState;
@@ -26,17 +27,21 @@ public abstract class CaveVinesMixin {
   )
   private static void cobbleUtils$onUse(BlockState state, World world, BlockPos pos, PlayerEntity playerEntity,
                                         BlockHitResult hit, CallbackInfoReturnable<ActionResult> cir) {
-    if (CobbleUtilsEvents.COLLECT_EVENT.isEmpty()) return;
-    if (!(playerEntity instanceof ServerPlayerEntity player)) return;
+    try {
+      if (CobbleUtilsEvents.COLLECT_EVENT.isEmpty()) return;
+      if (!(playerEntity instanceof ServerPlayerEntity player)) return;
 
-    var result = cir.getReturnValue();
-    if (result.isAccepted()) {
-      CobbleUtilsEvents.COLLECT_EVENT.emit(EventCollect.builder()
-        .world(world)
-        .player(player)
-        .playerPlaced(false)
-        .itemStack(new ItemStack(Items.GLOW_BERRIES, 1))
-        .build());
+      var result = cir.getReturnValue();
+      if (result.isAccepted()) {
+        CobbleUtilsEvents.COLLECT_EVENT.emit(EventCollect.builder()
+          .world(world)
+          .player(player)
+          .playerPlaced(false)
+          .itemStack(new ItemStack(Items.GLOW_BERRIES, 1))
+          .build());
+      }
+    } catch (Throwable e) {
+      CobbleUtils.LOGGER_RAW.error("Error in CaveVinesMixin#cobbleUtils$onUse", e);
     }
   }
 }

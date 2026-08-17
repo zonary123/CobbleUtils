@@ -2,6 +2,13 @@
 
 ## [Unreleased]
 
+## [1.2.6] - 2026-08-17
+
+### Fixed
+
+- Standardized robust `try-catch` exception handling catching `Throwable` across all Mixin injection handlers to prevent unhandled mixin errors from crashing the server tick loop.
+- Replaced raw `e.printStackTrace()` calls across all mixins and `EventChannel` with structured `CobbleUtils.LOGGER_RAW.error(...)` logs tagged with class and method names for clear bug reporting.
+
 ## [1.2.5] - 2026-08-13
 
 ### Fixed

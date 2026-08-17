@@ -1,5 +1,6 @@
 package com.kingpixel.cobbleutils.mixins.collect;
 
+import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.events.CobbleUtilsEvents;
 import com.kingpixel.cobbleutils.events.models.EventCollect;
 import net.minecraft.block.BeehiveBlock;
@@ -43,8 +44,8 @@ public abstract class BeehiveBlockMixin {
     BlockHitResult hit,
     CallbackInfoReturnable<ItemActionResult> cir
   ) {
-    if (CobbleUtilsEvents.COLLECT_EVENT.isEmpty()) return;
     try {
+      if (CobbleUtilsEvents.COLLECT_EVENT.isEmpty()) return;
       if (world.isClient()) return;
       if (!(player instanceof ServerPlayerEntity serverPlayer)) return;
 
@@ -72,8 +73,8 @@ public abstract class BeehiveBlockMixin {
           .itemStack(finalItemStack)
           .build()
       );
-    } catch (Exception e) {
-      e.printStackTrace();
+    } catch (Throwable e) {
+      CobbleUtils.LOGGER_RAW.error("Error in BeehiveBlockMixin#cobbleutils$onBeehiveCollect", e);
     }
   }
 

@@ -1,5 +1,6 @@
 package com.kingpixel.cobbleutils.mixins.brewing;
 
+import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.events.CobbleUtilsEvents;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.BrewingStandBlock;
@@ -19,22 +20,25 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(BrewingStandBlock.class)
-
 public abstract class BrewingBlockMixin {
   @Inject(method = "onUse", at = @At("HEAD"))
   private void cobbleQuests$onUse(BlockState state, World world, BlockPos pos, PlayerEntity player, BlockHitResult hit, CallbackInfoReturnable<ActionResult> cir) {
-    if (CobbleUtilsEvents.BREWING_EVENT.isEmpty()) return;
-    if (cir.getReturnValue() != null && cir.getReturnValue().equals(ActionResult.FAIL)) return;
-    BlockEntity blockEntity = world.getBlockEntity(pos);
-    if (blockEntity == null) return;
-    NbtCompound nbtCompound = new NbtCompound();
-    nbtCompound.putUuid("lastPlayer", player.getUuid());
-    ComponentMap base = blockEntity.getComponents();
-    ComponentMap overrides = ComponentMap.builder()
-      .add(DataComponentTypes.CUSTOM_DATA, NbtComponent.of(nbtCompound))
-      .build();
+    try {
+      if (CobbleUtilsEvents.BREWING_EVENT.isEmpty()) return;
+      if (cir.getReturnValue() != null && cir.getReturnValue().equals(ActionResult.FAIL)) return;
+      BlockEntity blockEntity = world.getBlockEntity(pos);
+      if (blockEntity == null) return;
+      NbtCompound nbtCompound = new NbtCompound();
+      nbtCompound.putUuid("lastPlayer", player.getUuid());
+      ComponentMap base = blockEntity.getComponents();
+      ComponentMap overrides = ComponentMap.builder()
+        .add(DataComponentTypes.CUSTOM_DATA, NbtComponent.of(nbtCompound))
+        .build();
 
-    blockEntity.setComponents(ComponentMap.of(base, overrides));
-    blockEntity.markDirty();
+      blockEntity.setComponents(ComponentMap.of(base, overrides));
+      blockEntity.markDirty();
+    } catch (Throwable e) {
+      CobbleUtils.LOGGER_RAW.error("Error in BrewingBlockMixin#cobbleQuests$onUse", e);
+    }
   }
 }

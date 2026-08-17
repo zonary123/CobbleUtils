@@ -2,6 +2,7 @@ package com.kingpixel.cobbleutils.mixins.events;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
+import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.events.CobbleUtilsEvents;
 import com.kingpixel.cobbleutils.events.models.EventEntity;
 import net.minecraft.entity.Entity;
@@ -30,10 +31,10 @@ public abstract class InteractEntityMixin {
 
   @Inject(method = "interact", at = @At("HEAD"))
   private void cobbleutils$interact(Entity entity, Hand hand, CallbackInfoReturnable<ActionResult> cir) {
-    if (CobbleUtilsEvents.INTERACT_ENTITY_EVENT.isEmpty()) return;
     try {
+      if (CobbleUtilsEvents.INTERACT_ENTITY_EVENT.isEmpty()) return;
       PlayerEntity playerEntity = (PlayerEntity) (Object) this;
-      ServerPlayerEntity player = (ServerPlayerEntity) playerEntity;
+      if (!(playerEntity instanceof ServerPlayerEntity player)) return;
       long now = System.currentTimeMillis();
       long last = cobbleQuests$cooldown.get(player.getUuid(), k -> 0L);
 
@@ -45,8 +46,8 @@ public abstract class InteractEntityMixin {
         .player(player)
         .entity(entity)
         .build());
-    } catch (Exception e) {
-      e.printStackTrace();
+    } catch (Throwable e) {
+      CobbleUtils.LOGGER_RAW.error("Error in InteractEntityMixin#cobbleutils$interact", e);
     }
   }
 }

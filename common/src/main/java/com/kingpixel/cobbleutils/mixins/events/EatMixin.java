@@ -1,5 +1,6 @@
 package com.kingpixel.cobbleutils.mixins.events;
 
+import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.events.CobbleUtilsEvents;
 import com.kingpixel.cobbleutils.events.models.EventItemStack;
 import net.minecraft.component.type.FoodComponent;
@@ -20,15 +21,19 @@ public abstract class EatMixin {
 
   @Inject(method = "eatFood", at = @At("HEAD"))
   private void eatFood(World world, ItemStack stack, FoodComponent foodComponent, CallbackInfoReturnable<ItemStack> cir) {
-    if (CobbleUtilsEvents.EATING_EVENT.isEmpty()) return;
-    LivingEntity livingEntity = (LivingEntity) (Object) this;
-    if (!(livingEntity instanceof ServerPlayerEntity)) return;
-    ServerPlayerEntity player = (ServerPlayerEntity) (Object) this;
-    ItemStack finalStack = stack.copy();
+    try {
+      if (CobbleUtilsEvents.EATING_EVENT.isEmpty()) return;
+      LivingEntity livingEntity = (LivingEntity) (Object) this;
+      if (!(livingEntity instanceof ServerPlayerEntity)) return;
+      ServerPlayerEntity player = (ServerPlayerEntity) (Object) this;
+      ItemStack finalStack = stack.copy();
 
-    CobbleUtilsEvents.EATING_EVENT.emit(EventItemStack.builder()
-      .player(player)
-      .itemStack(finalStack)
-      .build());
+      CobbleUtilsEvents.EATING_EVENT.emit(EventItemStack.builder()
+        .player(player)
+        .itemStack(finalStack)
+        .build());
+    } catch (Throwable e) {
+      CobbleUtils.LOGGER_RAW.error("Error in EatMixin#eatFood", e);
+    }
   }
 }

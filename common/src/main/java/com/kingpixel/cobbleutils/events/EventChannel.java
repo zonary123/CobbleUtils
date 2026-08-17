@@ -1,5 +1,7 @@
 package com.kingpixel.cobbleutils.events;
 
+import com.kingpixel.cobbleutils.CobbleUtils;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -20,7 +22,7 @@ public class EventChannel<T> {
       try {
         l.onEvent(data);
       } catch (Throwable e) {
-        e.printStackTrace();
+        CobbleUtils.LOGGER_RAW.error("Error executing event listener in EventChannel", e);
       }
     }
   }

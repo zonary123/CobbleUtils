@@ -1,5 +1,6 @@
 package com.kingpixel.cobbleutils.mixins;
 
+import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.api.BlocksAPI;
 import com.kingpixel.cobbleutils.database.blocks.ChunkBlockStorageManager;
 import com.kingpixel.cobbleutils.events.CobbleUtilsEvents;
@@ -35,14 +36,12 @@ public abstract class BlockMixin {
     ItemStack stack,
     CallbackInfo ci
   ) {
-
-    if (world.isClient) return;
-    if (!(placer instanceof ServerPlayerEntity player)) return;
-
-    if (CobbleUtilsEvents.BLOCK_PLACED_EVENT.isEmpty()
-      && CobbleUtilsEvents.BLOCK_BREAK_EVENT.isEmpty()) return;
-
     try {
+      if (world.isClient) return;
+      if (!(placer instanceof ServerPlayerEntity player)) return;
+
+      if (CobbleUtilsEvents.BLOCK_PLACED_EVENT.isEmpty()
+        && CobbleUtilsEvents.BLOCK_BREAK_EVENT.isEmpty()) return;
 
       WorldChunk chunk = world.getWorldChunk(pos);
 
@@ -54,9 +53,8 @@ public abstract class BlockMixin {
       CobbleUtilsEvents.BLOCK_PLACED_EVENT.emit(
         new EventBlockPlaced(world, pos, state, player, alreadyPlaced)
       );
-
-    } catch (Exception e) {
-      e.printStackTrace();
+    } catch (Throwable e) {
+      CobbleUtils.LOGGER_RAW.error("Error in BlockMixin#cobbleutils$onPlaced", e);
     }
   }
 
@@ -70,54 +68,51 @@ public abstract class BlockMixin {
     PlayerEntity entity,
     CallbackInfoReturnable<BlockState> cir
   ) {
-
-    if (world.isClient) return;
-    if (!(entity instanceof ServerPlayerEntity player)) return;
-
-    boolean hasBreak = !CobbleUtilsEvents.BLOCK_BREAK_EVENT.isEmpty();
-    boolean hasCollect = !CobbleUtilsEvents.COLLECT_EVENT.isEmpty();
-
-    if (!hasBreak && !hasCollect) return;
-
-    WorldChunk chunk = world.getWorldChunk(pos);
-
     try {
+      if (world.isClient) return;
+      if (!(entity instanceof ServerPlayerEntity player)) return;
 
-      boolean isPlaced = BlocksAPI.isBlockPlaceByPlayer(world, pos);
+      boolean hasBreak = !CobbleUtilsEvents.BLOCK_BREAK_EVENT.isEmpty();
+      boolean hasCollect = !CobbleUtilsEvents.COLLECT_EVENT.isEmpty();
 
-      if (hasBreak) {
-        CobbleUtilsEvents.BLOCK_BREAK_EVENT.emit(
-          new EventBlockBreak(world, pos, state, player, isPlaced)
+      if (!hasBreak && !hasCollect) return;
+
+      WorldChunk chunk = world.getWorldChunk(pos);
+
+      try {
+        boolean isPlaced = BlocksAPI.isBlockPlaceByPlayer(world, pos);
+
+        if (hasBreak) {
+          CobbleUtilsEvents.BLOCK_BREAK_EVENT.emit(
+            new EventBlockBreak(world, pos, state, player, isPlaced)
+          );
+        }
+
+        if (hasCollect) {
+          EventCollect collectEvent = EventCollect.builder()
+            .player(player)
+            .playerPlaced(isPlaced)
+            .world(world)
+            .state(state)
+            .pos(pos)
+            .build();
+
+          int amount = collectEvent.getAmount();
+
+          if (amount > 0) {
+            CobbleUtilsEvents.COLLECT_EVENT.emit(collectEvent);
+          }
+        }
+      } finally {
+        ChunkBlockStorageManager.removePlaced(
+          world,
+          chunk,
+          pos,
+          state
         );
       }
-
-      if (hasCollect) {
-
-        EventCollect collectEvent = EventCollect.builder()
-          .player(player)
-          .playerPlaced(isPlaced)
-          .world(world)
-          .state(state)
-          .pos(pos)
-          .build();
-
-        int amount = collectEvent.getAmount();
-
-        if (amount > 0) {
-          CobbleUtilsEvents.COLLECT_EVENT.emit(collectEvent);
-        }
-      }
-
-    } catch (Exception e) {
-      e.printStackTrace();
-    } finally {
-
-      ChunkBlockStorageManager.removePlaced(
-        world,
-        chunk,
-        pos,
-        state
-      );
+    } catch (Throwable e) {
+      CobbleUtils.LOGGER_RAW.error("Error in BlockMixin#cobbleutils$onBreak", e);
     }
   }
 }

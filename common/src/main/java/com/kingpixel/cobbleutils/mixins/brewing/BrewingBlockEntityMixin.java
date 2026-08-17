@@ -22,48 +22,52 @@ import java.util.UUID;
 public abstract class BrewingBlockEntityMixin {
   @Inject(method = "craft", at = @At("HEAD"))
   private static void cobbleUtils$craft(World world, BlockPos pos, DefaultedList<ItemStack> slots, CallbackInfo ci) {
-    if (CobbleUtilsEvents.BREWING_EVENT.isEmpty()) return;
-    BlockEntity blockEntity = world.getBlockEntity(pos);
-    if (blockEntity == null) {
-      if (CobbleUtils.config.isDebug()) {
-        CobbleUtils.LOGGER_RAW.info(CobbleUtils.MOD_ID,
-          "No block entity found in brewing stand at position: " + pos.toString());
+    try {
+      if (CobbleUtilsEvents.BREWING_EVENT.isEmpty()) return;
+      BlockEntity blockEntity = world.getBlockEntity(pos);
+      if (blockEntity == null) {
+        if (CobbleUtils.config.isDebug()) {
+          CobbleUtils.LOGGER_RAW.info(CobbleUtils.MOD_ID,
+            "No block entity found in brewing stand at position: " + pos.toString());
+        }
+        return;
       }
-      return;
-    }
-    var componentMap = blockEntity.getComponents();
-    var customData = componentMap.get(DataComponentTypes.CUSTOM_DATA);
-    if (customData == null) {
-      if (CobbleUtils.config.isDebug()) {
-        CobbleUtils.LOGGER_RAW.info(CobbleUtils.MOD_ID,
-          "No customData component found in brewing stand at position: " + pos.toString());
+      var componentMap = blockEntity.getComponents();
+      var customData = componentMap.get(DataComponentTypes.CUSTOM_DATA);
+      if (customData == null) {
+        if (CobbleUtils.config.isDebug()) {
+          CobbleUtils.LOGGER_RAW.info(CobbleUtils.MOD_ID,
+            "No customData component found in brewing stand at position: " + pos.toString());
+        }
+        return;
       }
-      return;
-    }
-    var nbt = customData.getNbt();
-    if (nbt == null || !nbt.contains("lastPlayer")) {
-      if (CobbleUtils.config.isDebug()) {
-        CobbleUtils.LOGGER_RAW.info(CobbleUtils.MOD_ID,
-          "No lastPlayer data found in brewing stand at position: " + pos.toString());
+      var nbt = customData.getNbt();
+      if (nbt == null || !nbt.contains("lastPlayer")) {
+        if (CobbleUtils.config.isDebug()) {
+          CobbleUtils.LOGGER_RAW.info(CobbleUtils.MOD_ID,
+            "No lastPlayer data found in brewing stand at position: " + pos.toString());
+        }
+        return;
       }
-      return;
-    }
-    UUID playerUUID = nbt.getUuid("lastPlayer");
-    if (playerUUID == null) {
-      if (CobbleUtils.config.isDebug()) {
-        CobbleUtils.LOGGER_RAW.info(CobbleUtils.MOD_ID,
-          "Invalid lastPlayer UUID in brewing stand at position: " + pos.toString());
+      UUID playerUUID = nbt.getUuid("lastPlayer");
+      if (playerUUID == null) {
+        if (CobbleUtils.config.isDebug()) {
+          CobbleUtils.LOGGER_RAW.info(CobbleUtils.MOD_ID,
+            "Invalid lastPlayer UUID in brewing stand at position: " + pos.toString());
+        }
+        return;
       }
-      return;
-    }
-    ServerPlayerEntity player = CobbleUtils.server.getPlayerManager().getPlayer(playerUUID);
-    if (player == null) {
-      if (CobbleUtils.config.isDebug()) {
-        CobbleUtils.LOGGER_RAW.info(CobbleUtils.MOD_ID,
-          "No player found with UUID: " + playerUUID);
+      ServerPlayerEntity player = CobbleUtils.server.getPlayerManager().getPlayer(playerUUID);
+      if (player == null) {
+        if (CobbleUtils.config.isDebug()) {
+          CobbleUtils.LOGGER_RAW.info(CobbleUtils.MOD_ID,
+            "No player found with UUID: " + playerUUID);
+        }
+        return;
       }
-      return;
+      CobbleUtilsEvents.BREWING_EVENT.emit(new EventBrewing(player, world, pos, slots));
+    } catch (Throwable e) {
+      CobbleUtils.LOGGER_RAW.error("Error in BrewingBlockEntityMixin#cobbleUtils$craft", e);
     }
-    CobbleUtilsEvents.BREWING_EVENT.emit(new EventBrewing(player, world, pos, slots));
   }
 }
