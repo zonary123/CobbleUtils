@@ -65,7 +65,7 @@ public final class PlaceholdersUtils {
         providers.add(provider);
       }
     } catch (Throwable e) {
-      CobbleUtils.LOGGER_RAW.error("Failed to register custom placeholder provider: " + provider.getId(), e);
+        LOGGER.error("Failed to register custom placeholder provider: " + provider.getId(), e);
     }
   }
 
@@ -101,7 +101,7 @@ public final class PlaceholdersUtils {
           provider.register(namespace, key, handler, isAudience, isRelational);
         }
       } catch (Throwable e) {
-        CobbleUtils.LOGGER_RAW.error("Error registering placeholder on provider " + provider.getId(), e);
+        LOGGER.error("Error registering placeholder on provider " + provider.getId(), e);
       }
     }
   }
@@ -170,7 +170,7 @@ public final class PlaceholdersUtils {
           provider.unregister(namespace, key);
         }
       } catch (Throwable e) {
-        CobbleUtils.LOGGER_RAW.error("Error unregistering placeholder on provider " + provider.getId(), e);
+        LOGGER.error("Error unregistering placeholder on provider " + provider.getId(), e);
       }
     }
   }
@@ -186,7 +186,7 @@ public final class PlaceholdersUtils {
           provider.unregisterNamespace(namespace);
         }
       } catch (Throwable e) {
-        CobbleUtils.LOGGER_RAW.error("Error unregistering namespace on provider " + provider.getId(), e);
+        LOGGER.error("Error unregistering namespace on provider " + provider.getId(), e);
       }
     }
   }
@@ -205,7 +205,7 @@ public final class PlaceholdersUtils {
       String replaced = internalProvider.replace(message, ctx);
       return replaced;
     } catch (Throwable e) {
-      CobbleUtils.LOGGER_RAW.error("Error parsing string placeholders", e);
+      LOGGER.error("Error parsing string placeholders", e);
       return message;
     }
   }
@@ -220,7 +220,7 @@ public final class PlaceholdersUtils {
         return Placeholders.parseText(text, PlaceholderContext.of(player));
       }
     } catch (Throwable e) {
-      CobbleUtils.LOGGER_RAW.error("Error parsing text with PB4 PlaceholderAPI", e);
+      LOGGER.error("Error parsing text with PB4 PlaceholderAPI", e);
     }
     return text;
   }
@@ -238,7 +238,7 @@ public final class PlaceholdersUtils {
         return AdventureTranslator.miniMessage.deserialize(miniMessageText, resolver);
       }
     } catch (Throwable e) {
-      CobbleUtils.LOGGER_RAW.error("Error parsing MiniMessage with MiniPlaceholders", e);
+      LOGGER.error("Error parsing MiniMessage with MiniPlaceholders", e);
     }
     return AdventureTranslator.miniMessage.deserialize(miniMessageText);
   }
@@ -256,7 +256,7 @@ public final class PlaceholdersUtils {
         return AdventureTranslator.miniMessage.deserialize(miniMessageText, resolver);
       }
     } catch (Throwable e) {
-      CobbleUtils.LOGGER_RAW.error("Error parsing MiniMessage with MiniPlaceholders", e);
+      LOGGER.error("Error parsing MiniMessage with MiniPlaceholders", e);
     }
     return AdventureTranslator.miniMessage.deserialize(miniMessageText);
   }

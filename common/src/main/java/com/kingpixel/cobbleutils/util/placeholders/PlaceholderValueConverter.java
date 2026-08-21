@@ -5,6 +5,7 @@ import eu.pb4.placeholders.api.PlaceholderResult;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.tag.Tag;
 import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
+import net.minecraft.registry.DynamicRegistryManager;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
 import org.jetbrains.annotations.Nullable;
@@ -53,7 +54,7 @@ public final class PlaceholderValueConverter {
       }
       if (value instanceof Text t) {
         try {
-          String json = Text.Serialization.toJsonString(t, net.minecraft.registry.DynamicRegistryManager.EMPTY);
+          String json = Text.Serialization.toJsonString(t, DynamicRegistryManager.EMPTY);
           return GsonComponentSerializer.gson().deserialize(json);
         } catch (Throwable fallback) {
           return Component.text(t.getString());
