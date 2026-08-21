@@ -3,6 +3,7 @@ package com.kingpixel.cobbleutils.util;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.kingpixel.cobbleutils.CobbleUtils;
+import com.kingpixel.cobbleutils.util.placeholders.PlaceholdersUtils;
 import eu.pb4.placeholders.api.PlaceholderContext;
 import eu.pb4.placeholders.api.Placeholders;
 import net.kyori.adventure.text.Component;
@@ -79,8 +80,9 @@ public class AdventureTranslator {
       });
     }
 
-    // Parse placeholders for specific player
-    return toNative(miniMessage.deserialize(replaceNative(replaced)), player);
+    // Parse placeholders for specific player with MiniPlaceholders support
+    Component component = PlaceholdersUtils.parseMiniMessage(replaceNative(replaced), player);
+    return toNative(component, player);
   }
 
   // ===========================
@@ -123,8 +125,11 @@ public class AdventureTranslator {
       text = Text.literal(gsonSerializer.serialize(component));
     }
 
-    if (player != null && text != null && Utils.isPlaceholder()) {
-      return Placeholders.parseText(text, PlaceholderContext.of(player));
+    if (player != null && text != null && PlaceholdersUtils.isPB4Available()) {
+      try {
+        return Placeholders.parseText(text, PlaceholderContext.of(player));
+      } catch (Throwable ignored) {
+      }
     }
 
     return text;

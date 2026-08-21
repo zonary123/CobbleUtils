@@ -33,6 +33,7 @@ out
 forge*changelog.txt
 /showdown/
 /logs/
+**/logs/
 .vscode/launch.json
 .vscode
 

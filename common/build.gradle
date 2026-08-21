@@ -17,8 +17,9 @@ dependencies {
     modImplementation("ca.landonjw.gooeylibs:fabric-api-repack:${property("gooeylibs_version")}")
 
 
-    // PlaceholderAPI
-    modImplementation("eu.pb4:placeholder-api:${property("placeholder_api_version_fabricandforge")}")
+    // PlaceholderAPI & MiniPlaceholders
+    modImplementation(files("libs/placeholder-api-2.4.2+1.21.jar"))
+    modImplementation(files("libs/MiniPlaceholders-Fabric-2.3.0-SNAPSHOT (1).jar"))
 
     // Database
     implementation("org.mongodb:mongodb-driver-sync:${property("mongodb_version")}")
@@ -33,7 +34,7 @@ dependencies {
     modImplementation("me.lucko:fabric-permissions-api:0.3.1")
     // Economy
     // Economy Impactor
-    api(fileTree(dir: "libs", include: ["*.jar"], exclude: ["*sdm-economy*", "*ftb-ranks*", "FabricPluginMessaging-fabric-*"]))
+    api(fileTree(dir: "libs", include: ["*.jar"], exclude: ["*sdm-economy*", "*ftb-ranks*", "FabricPluginMessaging-fabric-*", "*placeholder*", "*MiniPlaceholders*"]))
     implementation("net.impactdev.impactor.api:economy:${property("impactor_version")}")
     modImplementation(files("libs/sdmeconomy-fabric-1.21.1-2.0.0.jar"))
     modImplementation(files("libs/ftb-ranks-fabric-2101.1.3.jar"))

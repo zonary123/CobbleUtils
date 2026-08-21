@@ -2,6 +2,15 @@
 
 ## [Unreleased]
 
+## [1.2.7] - 2026-08-21
+
+### Added
+
+- **Unified Placeholders Engine**: Added universal placeholder API (`PlaceholderApi`, `PlaceholdersUtils`, `CobblePlaceholderContext`, `PlaceholderValueConverter`) with equitable, bidirectional support for **MiniPlaceholders** (Adventure / MiniMessage) and **PlaceholderAPI** (PB4 / Minecraft Text), along with an internal in-memory fallback replacement engine.
+- **Mutual Context Object**: Added `CobblePlaceholderContext` encapsulating players, audiences, relational targets, objects (`Pokemon`, `ItemStack`, etc.), servers, and typed argument helpers (`getArgInt`, `getArgBool`, `targetAs`).
+- **Defensive Error Handling**: Fully protected all placeholder evaluations and class lookups with isolated `try-catch` blocks and dedicated logging to guarantee that runtime or third-party placeholder errors never crash the server.
+- **Unit Test Coverage**: Added comprehensive JUnit test suites for placeholder context, safe object casting, cross-engine parsing, and unregistration.
+
 ## [1.2.6] - 2026-08-17
 
 ### Fixed
