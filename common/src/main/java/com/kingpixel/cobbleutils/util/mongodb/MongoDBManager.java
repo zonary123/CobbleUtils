@@ -108,8 +108,15 @@ public class MongoDBManager {
             pool.maxSize(50);
             pool.minSize(0);
             pool.maxWaitTime(5, TimeUnit.SECONDS);
+            pool.maxConnectionIdleTime(60, TimeUnit.SECONDS);
+            pool.maxConnectionLifeTime(30, TimeUnit.MINUTES);
+          })
+          .applyToSocketSettings(socket -> {
+            socket.connectTimeout(10, TimeUnit.SECONDS);
+            socket.readTimeout(30, TimeUnit.SECONDS);
           })
           .applyToClusterSettings(cluster -> cluster.serverSelectionTimeout(5, TimeUnit.SECONDS))
+          .retryWrites(true)
           .build();
 
         newClient = MongoClients.create(settings);

@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- **MongoDB Connection Pool & Idle Socket Handling**: Configured explicit `maxConnectionIdleTime` (60s), `maxConnectionLifeTime` (30m), socket timeouts (10s connect / 30s read), and automatic `retryWrites` in `MongoDBManager` to eliminate `MongoSocketReadException: Prematurely reached end of stream` errors caused by intermediate firewalls, NAT, or server-side idle connection drops.
+
 ## [1.2.8] - 2026-08-24
 
 ### Improved
