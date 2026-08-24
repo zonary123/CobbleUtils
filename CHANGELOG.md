@@ -2,6 +2,17 @@
 
 ## [Unreleased]
 
+## [1.2.8] - 2026-08-24
+
+### Improved
+
+- **CobbleDollars Economy Integration**: Improved stability, reliability, and precision when handling player balances, deposits, and withdrawals with CobbleDollars.
+
+### Fixed
+
+- **Economy Startup Logs**: Fixed unnecessary error warnings appearing in the server console when optional economy mods are not installed.
+- **Transaction Safety**: Added extra safety checks to prevent unexpected errors when transferring money or checking balances if players are offline.
+
 ## [1.2.7] - 2026-08-21
 
 ### Added

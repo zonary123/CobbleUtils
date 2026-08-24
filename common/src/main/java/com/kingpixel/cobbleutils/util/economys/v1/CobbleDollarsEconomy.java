@@ -24,9 +24,8 @@ public class CobbleDollarsEconomy extends EconomyAbstract {
   @Override
   public boolean isPresent() {
     try {
-      CobbleDollars.INSTANCE.getImplementation();
-      return true;
-    } catch (Throwable ignored) {
+      return CobbleDollars.INSTANCE != null && CobbleDollars.INSTANCE.getImplementation() != null;
+    } catch (NoClassDefFoundError | Exception ignored) {
       return false;
     }
   }
@@ -40,21 +39,20 @@ public class CobbleDollarsEconomy extends EconomyAbstract {
   }
 
   private BigInteger toBigInteger(BigDecimal money) {
-    if (money == null) return BigInteger.ZERO;
-    if (money.compareTo(BigDecimal.ZERO) <= 0) return BigInteger.ZERO;
+    if (money == null || money.compareTo(BigDecimal.ZERO) < 0) return null;
     return money.toBigInteger();
   }
 
   @Override
   public boolean deposit(UUID playerUuid, BigDecimal money, String currency) {
+    BigInteger amount = toBigInteger(money);
+    if (amount == null) return false;
 
     CobbleDollarsPlayer player = getCobblePlayer(playerUuid);
     if (player == null) return false;
 
-    BigInteger amount = toBigInteger(money);
-    if (amount.equals(BigInteger.ZERO)) return false;
-
     BigInteger balance = player.cobbleDollars$getCobbleDollars();
+    if (balance == null) balance = BigInteger.ZERO;
     player.cobbleDollars$setCobbleDollars(balance.add(amount));
 
     return true;
@@ -62,14 +60,14 @@ public class CobbleDollarsEconomy extends EconomyAbstract {
 
   @Override
   public boolean withdraw(UUID playerUuid, BigDecimal money, String currency) {
+    BigInteger amount = toBigInteger(money);
+    if (amount == null) return false;
 
     CobbleDollarsPlayer player = getCobblePlayer(playerUuid);
     if (player == null) return false;
 
-    BigInteger amount = toBigInteger(money);
-    if (amount.equals(BigInteger.ZERO)) return false;
-
     BigInteger balance = player.cobbleDollars$getCobbleDollars();
+    if (balance == null) balance = BigInteger.ZERO;
 
     if (balance.compareTo(amount) < 0) {
       return false;
@@ -81,20 +79,22 @@ public class CobbleDollarsEconomy extends EconomyAbstract {
 
   @Override
   public BigDecimal getBalance(UUID playerUuid, String currency) {
-
     CobbleDollarsPlayer player = getCobblePlayer(playerUuid);
     if (player == null) return BigDecimal.ZERO;
 
-    return new BigDecimal(player.cobbleDollars$getCobbleDollars());
+    BigInteger balance = player.cobbleDollars$getCobbleDollars();
+    if (balance == null) return BigDecimal.ZERO;
+
+    return new BigDecimal(balance);
   }
 
   @Override
   public boolean setBalance(UUID playerUuid, BigDecimal money, String currency) {
+    BigInteger amount = toBigInteger(money);
+    if (amount == null) return false;
 
     CobbleDollarsPlayer player = getCobblePlayer(playerUuid);
     if (player == null) return false;
-
-    BigInteger amount = toBigInteger(money);
 
     player.cobbleDollars$setCobbleDollars(amount);
     return true;
@@ -102,11 +102,12 @@ public class CobbleDollarsEconomy extends EconomyAbstract {
 
   @Override
   public String format(BigDecimal money, String currency) {
+    if (money == null) money = BigDecimal.ZERO;
     return CobbleUtils.config.getFormat(money);
   }
 
   @Override
   public int getDecimals(String currency) {
-    return CobbleUtils.config.getDecimals();
+    return 0;
   }
 }

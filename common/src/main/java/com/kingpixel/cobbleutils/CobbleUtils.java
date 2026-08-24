@@ -445,6 +445,10 @@ public class CobbleUtils {
    * @return Core mod config base directory Path.
    */
   public static Path getPathMod() {
-    return Platform.getConfigFolder().resolve(MOD_ID);
+    try {
+      return Platform.getConfigFolder().resolve(MOD_ID);
+    } catch (Throwable ignored) {
+      return Path.of("config", MOD_ID);
+    }
   }
 }

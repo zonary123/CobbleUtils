@@ -138,6 +138,12 @@ public abstract class Economy {
 
 
   public CompletableFuture<ServerPlayerEntity> getPlayer(UUID playerId) {
-    return CobbleUtils.server.submit(() -> CobbleUtils.server.getPlayerManager().getPlayer(playerId));
+    if (CobbleUtils.server == null) {
+      return CompletableFuture.completedFuture(null);
+    }
+    return CobbleUtils.server.submit(() -> {
+      var playerManager = CobbleUtils.server.getPlayerManager();
+      return playerManager != null ? playerManager.getPlayer(playerId) : null;
+    });
   }
 }

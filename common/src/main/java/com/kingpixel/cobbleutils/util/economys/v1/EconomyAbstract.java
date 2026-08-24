@@ -103,6 +103,7 @@ public abstract class EconomyAbstract {
 
 
   public ServerPlayerEntity getPlayer(UUID uuid) {
+    if (CobbleUtils.server == null || CobbleUtils.server.getPlayerManager() == null) return null;
     return CobbleUtils.server.getPlayerManager().getPlayer(uuid);
   }
 

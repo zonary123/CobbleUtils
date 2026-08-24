@@ -17,6 +17,7 @@ import java.util.concurrent.CompletableFuture;
 public class CobbleDollarsEconomy extends Economy {
 
   public static final String IDENTIFY = "COBBLE_DOLLARS";
+  private static final String PLAYER_NOT_FOUND = "Player not found or offline";
 
   @Override
   public String getIdentify() {
@@ -26,59 +27,75 @@ public class CobbleDollarsEconomy extends Economy {
   @Override
   public boolean isPresent() {
     try {
-      CobbleDollars.INSTANCE.getImplementation();
-      return true;
-    } catch (NoClassDefFoundError | Exception e) {
-      CobbleUtils.LOGGER_RAW.error("CobbleDollars not present");
+      return CobbleDollars.INSTANCE != null && CobbleDollars.INSTANCE.getImplementation() != null;
+    } catch (NoClassDefFoundError | Exception ignored) {
       return false;
     }
-  }
-
-  private CompletableFuture<EconomyResponse> runAsyncEconomyOp(CompletableFuture<EconomyResponse> future) {
-    return CobbleUtils.ASYNC.supply(() ->
-      future.exceptionally(ex -> {
-        CobbleUtils.LOGGER_RAW.error("Economy operation failed");
-        ex.printStackTrace();
-        return EconomyResponse.failure("Error: " + ex.getMessage());
-      }).join()
-    );
   }
 
   @Override
   public CompletableFuture<EconomyResponse> getBalance(UUID playerUuid, String currency) {
     return getCobblePlayer(playerUuid)
       .thenApply(cdPlayer -> {
-        if (cdPlayer == null) return EconomyResponse.failure("Player not found");
-        BigDecimal balance = new BigDecimal(cdPlayer.cobbleDollars$getCobbleDollars());
+        if (cdPlayer == null) return EconomyResponse.failure(PLAYER_NOT_FOUND);
+        BigInteger rawBalance = cdPlayer.cobbleDollars$getCobbleDollars();
+        BigDecimal balance = rawBalance != null ? new BigDecimal(rawBalance) : BigDecimal.ZERO;
         return EconomyResponse.success(balance, balance);
       });
   }
 
   @Override
   public CompletableFuture<EconomyResponse> deposit(UUID playerUuid, String currency, BigDecimal amount, String reason) {
-    if (amount.signum() < 0)
-      return CompletableFuture.completedFuture(EconomyResponse.failure("Cannot deposit negative amount"));
+    if (amount == null || amount.signum() < 0) {
+      return CompletableFuture.completedFuture(EconomyResponse.failure("Cannot deposit negative or null amount"));
+    }
 
     return getCobblePlayer(playerUuid)
       .thenApply(cdPlayer -> {
-        if (cdPlayer == null) return EconomyResponse.failure("Player not found");
-        cdPlayer.cobbleDollars$setCobbleDollars(cdPlayer.cobbleDollars$getCobbleDollars().add(amount.toBigInteger()));
-        return EconomyResponse.success(amount, new BigDecimal(cdPlayer.cobbleDollars$getCobbleDollars()));
+        if (cdPlayer == null) return EconomyResponse.failure(PLAYER_NOT_FOUND);
+        BigInteger current = cdPlayer.cobbleDollars$getCobbleDollars();
+        if (current == null) current = BigInteger.ZERO;
+
+        BigInteger addAmount = amount.toBigInteger();
+        BigInteger newBalance = current.add(addAmount);
+        cdPlayer.cobbleDollars$setCobbleDollars(newBalance);
+        return EconomyResponse.success(amount, new BigDecimal(newBalance));
       });
   }
 
   @Override
   public CompletableFuture<EconomyResponse> withdraw(UUID playerUuid, String currency, BigDecimal amount, String reason) {
-    if (amount.signum() < 0)
-      return CompletableFuture.completedFuture(EconomyResponse.failure("Cannot withdraw negative amount"));
+    if (amount == null || amount.signum() < 0) {
+      return CompletableFuture.completedFuture(EconomyResponse.failure("Cannot withdraw negative or null amount"));
+    }
 
     return getCobblePlayer(playerUuid)
       .thenApply(cdPlayer -> {
-        if (cdPlayer == null) return EconomyResponse.failure("Player not found");
-        BigDecimal before = new BigDecimal(cdPlayer.cobbleDollars$getCobbleDollars());
-        if (before.compareTo(amount) < 0) return EconomyResponse.failure("Insufficient funds");
-        cdPlayer.cobbleDollars$setCobbleDollars(cdPlayer.cobbleDollars$getCobbleDollars().subtract(amount.toBigInteger()));
-        return EconomyResponse.success(amount, new BigDecimal(cdPlayer.cobbleDollars$getCobbleDollars()));
+        if (cdPlayer == null) return EconomyResponse.failure(PLAYER_NOT_FOUND);
+        BigInteger current = cdPlayer.cobbleDollars$getCobbleDollars();
+        if (current == null) current = BigInteger.ZERO;
+
+        BigInteger subAmount = amount.toBigInteger();
+        if (current.compareTo(subAmount) < 0) return EconomyResponse.failure("Insufficient funds");
+
+        BigInteger newBalance = current.subtract(subAmount);
+        cdPlayer.cobbleDollars$setCobbleDollars(newBalance);
+        return EconomyResponse.success(amount, new BigDecimal(newBalance));
+      });
+  }
+
+  @Override
+  public CompletableFuture<EconomyResponse> setBalance(UUID playerUuid, String currency, BigDecimal amount, String reason) {
+    if (amount == null || amount.signum() < 0) {
+      return CompletableFuture.completedFuture(EconomyResponse.failure("Cannot set negative or null balance"));
+    }
+
+    return getCobblePlayer(playerUuid)
+      .thenApply(cdPlayer -> {
+        if (cdPlayer == null) return EconomyResponse.failure(PLAYER_NOT_FOUND);
+        BigInteger newBalance = amount.toBigInteger();
+        cdPlayer.cobbleDollars$setCobbleDollars(newBalance);
+        return EconomyResponse.success(amount, new BigDecimal(newBalance));
       });
   }
 
@@ -90,7 +107,7 @@ public class CobbleDollarsEconomy extends Economy {
 
   @Override
   public int getDecimals(String currency) {
-    return CobbleUtils.config.getDecimals();
+    return 0;
   }
 
   // =========================================================
