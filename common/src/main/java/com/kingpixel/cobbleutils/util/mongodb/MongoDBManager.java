@@ -10,6 +10,9 @@ import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
+import com.mongodb.connection.ClusterSettings;
+import com.mongodb.connection.ConnectionPoolSettings;
+import com.mongodb.connection.SocketSettings;
 import lombok.Getter;
 import org.bson.BsonDocument;
 import org.bson.Document;
@@ -104,18 +107,9 @@ public class MongoDBManager {
             CodecRegistries.fromProviders(MongoCodecProvider.INSTANCE),
             MongoClientSettings.getDefaultCodecRegistry()
           ))
-          .applyToConnectionPoolSettings(pool -> {
-            pool.maxSize(50);
-            pool.minSize(0);
-            pool.maxWaitTime(5, TimeUnit.SECONDS);
-            pool.maxConnectionIdleTime(60, TimeUnit.SECONDS);
-            pool.maxConnectionLifeTime(30, TimeUnit.MINUTES);
-          })
-          .applyToSocketSettings(socket -> {
-            socket.connectTimeout(10, TimeUnit.SECONDS);
-            socket.readTimeout(30, TimeUnit.SECONDS);
-          })
-          .applyToClusterSettings(cluster -> cluster.serverSelectionTimeout(5, TimeUnit.SECONDS))
+          .applyToConnectionPoolSettings(MongoDBManager::applyPoolSettingsSafely)
+          .applyToSocketSettings(MongoDBManager::applySocketSettingsSafely)
+          .applyToClusterSettings(MongoDBManager::applyClusterSettingsSafely)
           .retryWrites(true)
           .build();
 
@@ -349,6 +343,38 @@ public class MongoDBManager {
     if (implementation != null && !implementation.isBlank()) return implementation;
     String specification = pkg.getSpecificationVersion();
     return (specification == null || specification.isBlank()) ? "unknown" : specification;
+  }
+
+  private static void applySocketSettingsSafely(SocketSettings.Builder socket) {
+    try {
+      socket
+        .connectTimeout(10, TimeUnit.SECONDS)
+        .readTimeout(30, TimeUnit.SECONDS);
+    } catch (Throwable t) {
+      CobbleUtils.LOGGER_RAW.debug("[MongoDB] Could not apply socket settings", t);
+    }
+  }
+
+  private static void applyPoolSettingsSafely(ConnectionPoolSettings.Builder pool) {
+    try {
+      pool
+        .maxSize(50)
+        .minSize(0)
+        .maxWaitTime(5, TimeUnit.SECONDS)
+        .maxConnectionIdleTime(60, TimeUnit.SECONDS)
+        .maxConnectionLifeTime(30, TimeUnit.MINUTES);
+    } catch (Throwable t) {
+      CobbleUtils.LOGGER_RAW.debug("[MongoDB] Could not apply connection pool settings", t);
+    }
+  }
+
+  private static void applyClusterSettingsSafely(ClusterSettings.Builder cluster) {
+    try {
+      cluster
+        .serverSelectionTimeout(5, TimeUnit.SECONDS);
+    } catch (Throwable t) {
+      CobbleUtils.LOGGER_RAW.debug("[MongoDB] Could not apply cluster settings", t);
+    }
   }
 
   private MongoDatabase requireDefaultDatabase() {

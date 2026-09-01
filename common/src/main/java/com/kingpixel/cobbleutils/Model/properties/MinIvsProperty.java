@@ -12,33 +12,35 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-/**
- * @author Carlos Varas Alonso - 04/08/2024 19:40
- */
 public class MinIvsProperty implements CustomPokemonProperty {
-  private static final List<Stats> stats = new ArrayList<>(Arrays.stream(Stats.values()).filter(stats1 -> stats1 != Stats.EVASION && stats1 != Stats.ACCURACY).toList());
+  private static final List<Stats> STATS = new ArrayList<>(
+      Arrays.stream(Stats.values())
+          .filter(s -> s != Stats.EVASION && s != Stats.ACCURACY)
+          .toList());
   private final String value;
 
   public MinIvsProperty(String value) {
     this.value = value;
   }
 
-  @Override public @NotNull String asString() {
+  @Override
+  public @NotNull String asString() {
     return "min_ivs";
   }
 
-  @Override public void apply(@NotNull Pokemon pokemon) {
+  @Override
+  public void apply(@NotNull Pokemon pokemon) {
     applyMinIvs(pokemon);
   }
 
-
-  @Override public boolean matches(@NotNull Pokemon pokemon) {
+  @Override
+  public boolean matches(@NotNull Pokemon pokemon) {
     return true;
   }
 
-
   private void applyMinIvs(Pokemon pokemon) {
-    if (this.value == null || this.value.isEmpty()) return;
+    if (this.value == null || this.value.isEmpty())
+      return;
 
     try {
       String[] parts = this.value.split("_");
@@ -49,16 +51,18 @@ public class MinIvsProperty implements CustomPokemonProperty {
         CobbleUtils.LOGGER_RAW.info("Min -> " + min + " Amount of stats -> " + amountOfStats);
       }
 
-      List<Stats> statsCopy = new ArrayList<>(stats);
+      List<Stats> statsCopy = new ArrayList<>(STATS);
       for (int i = 0; i < amountOfStats; i++) {
         var stat = statsCopy.get(Utils.getRandom().nextInt(statsCopy.size()));
-        if (stat == null) continue;
+        if (stat == null)
+          continue;
 
         statsCopy.remove(stat);
         int iv = Utils.getRandom().nextInt(min, 32);
 
         if (CobbleUtils.config.isDebug()) {
-          CobbleUtils.LOGGER_RAW.info("Setting IVs for " + pokemon.getSpecies().getName() + " to " + iv + " in " + stat.getShowdownId());
+          CobbleUtils.LOGGER_RAW
+              .info("Setting IVs for " + pokemon.getSpecies().getName() + " to " + iv + " in " + stat.getShowdownId());
         }
 
         pokemon.getIvs().set(stat, iv);
@@ -67,19 +71,21 @@ public class MinIvsProperty implements CustomPokemonProperty {
         pokemon.getIvs().set(stats1, Utils.getRandom().nextInt(0, 32));
       }
     } catch (NumberFormatException e) {
-      CobbleUtils.LOGGER_RAW.error("Invalid value format for MinIvsProperty: " + this.value);
-      e.printStackTrace();
+      CobbleUtils.LOGGER_RAW.error("Invalid value format for MinIvsProperty: " + this.value, e);
     } catch (Exception e) {
-      CobbleUtils.LOGGER_RAW.error("Unexpected error in applyMinIvs");
-      e.printStackTrace();
+      CobbleUtils.LOGGER_RAW.error("Unexpected error in applyMinIvs", e);
     }
   }
 
-  @Override public void apply(@NotNull PokemonEntity pokemonEntity) {
-
+  @Override
+  public void apply(@NotNull PokemonEntity pokemonEntity) {
+    if (pokemonEntity.getPokemon() != null) {
+      apply(pokemonEntity.getPokemon());
+    }
   }
 
-  @Override public boolean matches(@NotNull PokemonEntity pokemonEntity) {
-    return false;
+  @Override
+  public boolean matches(@NotNull PokemonEntity pokemonEntity) {
+    return pokemonEntity.getPokemon() != null && matches(pokemonEntity.getPokemon());
   }
 }

@@ -9,19 +9,15 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
-/**
- * @author Carlos Varas Alonso - 04/08/2024 19:40
- */
 public class LegendaryPropertyType implements CustomPokemonPropertyType<LegendaryProperty> {
+  public static final LegendaryPropertyType INSTANCE = new LegendaryPropertyType();
 
-  public static final LegendaryPropertyType INSTANCE = new
-    LegendaryPropertyType();
-
+  public LegendaryPropertyType() {
+  }
 
   @NotNull @Override public Iterable<String> getKeys() {
     return Collections.singleton("legendary");
   }
-
 
   @Nullable @Override public LegendaryProperty fromString(@Nullable String s) {
     if (s == null) return new LegendaryProperty("no");

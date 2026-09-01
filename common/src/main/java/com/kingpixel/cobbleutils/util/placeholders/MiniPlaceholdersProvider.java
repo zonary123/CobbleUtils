@@ -89,12 +89,7 @@ public class MiniPlaceholdersProvider implements PlaceholderProvider {
       String ns = namespace.toLowerCase();
       namespaceDefinitions.remove(ns);
       Expansion existing = activeExpansions.remove(ns);
-      if (existing != null) {
-        try {
-          existing.unregister();
-        } catch (Throwable ignored) {
-        }
-      }
+      safeUnregister(existing);
     } catch (Throwable e) {
       LOGGER.error("Failed to unregister MiniPlaceholders namespace <" + namespace + ">", e);
     }
@@ -103,22 +98,22 @@ public class MiniPlaceholdersProvider implements PlaceholderProvider {
   private synchronized void rebuildNamespaceExpansion(String namespace) {
     try {
       Expansion existing = activeExpansions.get(namespace);
-      if (existing != null) {
-        try {
-          existing.unregister();
-        } catch (Throwable ignored) {
-        }
-      }
-
+      safeUnregister(existing);
       Map<String, PlaceholderDefinition> definitions = namespaceDefinitions.get(namespace);
       if (definitions == null || definitions.isEmpty()) {
         activeExpansions.remove(namespace);
         return;
       }
 
-      Expansion.Builder builder = Expansion.builder(namespace)
-        .author("CobbleUtils")
-        .version("1.0.0");
+      Expansion.Builder builder = Expansion.builder(namespace);
+      try {
+        builder.author("CobbleUtils");
+      } catch (Throwable ignored) {
+      }
+      try {
+        builder.version("1.0.0");
+      } catch (Throwable ignored) {
+      }
 
       for (Map.Entry<String, PlaceholderDefinition> entry : definitions.entrySet()) {
         String key = entry.getKey();
@@ -170,6 +165,14 @@ public class MiniPlaceholdersProvider implements PlaceholderProvider {
       activeExpansions.put(namespace, newExpansion);
     } catch (Throwable e) {
       LOGGER.error("Failed to build MiniPlaceholders expansion for namespace [" + namespace + "]", e);
+    }
+  }
+
+  private static void safeUnregister(Expansion expansion) {
+    if (expansion == null) return;
+    try {
+      expansion.unregister();
+    } catch (Throwable ignored) {
     }
   }
 }

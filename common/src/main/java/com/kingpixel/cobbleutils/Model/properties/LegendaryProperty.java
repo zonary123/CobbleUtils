@@ -6,66 +6,72 @@ import com.cobblemon.mod.common.api.properties.CustomPokemonProperty;
 import com.cobblemon.mod.common.entity.pokemon.PokemonEntity;
 import com.cobblemon.mod.common.pokemon.Pokemon;
 import com.cobblemon.mod.common.pokemon.Species;
+import com.kingpixel.cobbleutils.util.Utils;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * @author Carlos Varas Alonso - 04/08/2024 19:40
- */
 public class LegendaryProperty implements CustomPokemonProperty {
+  private static final List<Species> LEGENDARIES = new ArrayList<>();
+
   private final String value;
 
   public LegendaryProperty(String value) {
     this.value = value;
   }
 
-  @Override public @NotNull String asString() {
+  @Override
+  public @NotNull String asString() {
     return "legendary";
   }
 
-  @Override public void apply(@NotNull Pokemon pokemon) {
-    applyLegendary(pokemon);
-  }
-
-
-  @Override public boolean matches(@NotNull Pokemon pokemon) {
-    return true;
-  }
-
-  private final List<Species> legendaries = new ArrayList<>();
-
-  private void applyLegendary(Pokemon pokemon) {
-    int level = pokemon.getLevel();
+  @Override
+  public void apply(@NotNull Pokemon pokemon) {
     if (isLegendary()) {
       Species legendary = getRandomLegendary();
-      pokemon.setSpecies(legendary);
+      if (legendary != null) {
+        pokemon.setSpecies(legendary);
+      }
     }
   }
 
-  private Species getRandomLegendary() {
-    if (legendaries.isEmpty()) {
-      var s = PokemonSpecies.getSpecies();
-      for (Species species : s) {
-        if (!species.getImplemented()) continue;
+  @Override
+  public boolean matches(@NotNull Pokemon pokemon) {
+    if (isLegendary()) {
+      return pokemon.getSpecies().getLabels().contains(CobblemonPokemonLabels.LEGENDARY);
+    }
+    return !pokemon.getSpecies().getLabels().contains(CobblemonPokemonLabels.LEGENDARY);
+  }
+
+  private static synchronized Species getRandomLegendary() {
+    if (LEGENDARIES.isEmpty()) {
+      for (Species species : PokemonSpecies.getSpecies()) {
+        if (!species.getImplemented())
+          continue;
         if (species.getLabels().contains(CobblemonPokemonLabels.LEGENDARY)) {
-          legendaries.add(species);
+          LEGENDARIES.add(species);
         }
       }
     }
-    return legendaries.get((int) (Math.random() * legendaries.size()));
+    if (LEGENDARIES.isEmpty())
+      return null;
+    return LEGENDARIES.get(Utils.getRandom().nextInt(LEGENDARIES.size()));
   }
 
   private boolean isLegendary() {
-    return value.equalsIgnoreCase("yes");
+    return "yes".equalsIgnoreCase(this.value) || "true".equalsIgnoreCase(this.value);
   }
 
-  @Override public void apply(@NotNull PokemonEntity pokemonEntity) {
-
+  @Override
+  public void apply(@NotNull PokemonEntity pokemonEntity) {
+    if (pokemonEntity.getPokemon() != null) {
+      apply(pokemonEntity.getPokemon());
+    }
   }
 
-  @Override public boolean matches(@NotNull PokemonEntity pokemonEntity) {
-    return false;
+  @Override
+  public boolean matches(@NotNull PokemonEntity pokemonEntity) {
+    return pokemonEntity.getPokemon() != null && matches(pokemonEntity.getPokemon());
   }
 }

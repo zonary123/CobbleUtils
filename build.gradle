@@ -1,23 +1,19 @@
 plugins {
     id "architectury-plugin" version "3.4-SNAPSHOT"
     id "dev.architectury.loom" version "1.9-SNAPSHOT" apply false
-    id 'com.palantir.git-version' version '3.0.0'
     id 'maven-publish'
 }
 
-def git = versionDetails()
-def tag = git.lastTag.substring(0)
-def cleanTag = tag.replaceAll("-dev.*", "")
 if (System.getenv("GITHUB_ACTIONS") == "true") {
     if (System.getenv("GITHUB_WORKFLOW") == "Build, Discord & Modrinth Release") {
-        version = cleanTag
+        version = rootProject.mod_version
     } else if (System.getenv("PULL_REQUEST")) {
-        version = "${cleanTag}-pr.${System.getenv("PULL_REQUEST")}.${System.getenv("GITHUB_RUN_NUMBER")}"
+        version = "${rootProject.mod_version}-pr.${System.getenv("PULL_REQUEST")}.${System.getenv("GITHUB_RUN_NUMBER")}"
     } else {
-        version = "${cleanTag}-${System.getenv("GITHUB_RUN_NUMBER")}"
+        version = "${rootProject.mod_version}-${System.getenv("GITHUB_RUN_NUMBER")}"
     }
 } else {
-    version = cleanTag
+    version = rootProject.mod_version
 }
 
 architectury {

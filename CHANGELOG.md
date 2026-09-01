@@ -1,46 +1,71 @@
 # Changelog
 
-## [Unreleased]
-
 ## [1.2.9] - 2026-08-24
+
+### Added
+
+- **New Custom Pokémon Properties**:
+    - `ivs`: Configure Pokémon IVs quickly using comma-separated values (e.g. `ivs=31,31,31,31,31,31` in standard HP,
+      Attack, Defence, Sp. Atk, Sp. Def, Speed order) or keyword shortcuts like `perfect`, `zero`, or `random`.
+    - `evs`: Set or reset effort values (EVs) directly in commands, gachas, and rewards (e.g. `evs=0,252,0,0,4,252`,
+      `evs=reset`, or `evs=max`).
+    - `random`: Generate random Pokémon filtered by category (e.g. `random=legendary`, `random=starter`,
+      `random=mythical`, `random=ultrabeast`, `random=paradox`, `random=baby`, `random=fossil`) or by generation (
+      `random=gen1` to `random=gen9`).
 
 ### Fixed
 
-- **MongoDB Connection Pool & Idle Socket Handling**: Configured explicit `maxConnectionIdleTime` (60s), `maxConnectionLifeTime` (30m), socket timeouts (10s connect / 30s read), and automatic `retryWrites` in `MongoDBManager` to eliminate `MongoSocketReadException: Prematurely reached end of stream` errors caused by intermediate firewalls, NAT, or server-side idle connection drops.
+- **MiniMessage & MiniPlaceholders Expansion Registration**: Fixed `NoSuchMethodError` when registering MiniPlaceholders expansions on runtime environments with differing API builds by safely isolating metadata setup (`author` and `version`).
+- **MongoDB Connection Pool & Idle Socket Handling**: Configured explicit `maxConnectionIdleTime` (60s),
+  `maxConnectionLifeTime` (30m), socket timeouts (10s connect / 30s read), and automatic `retryWrites` in
+  `MongoDBManager` to eliminate `MongoSocketReadException: Prematurely reached end of stream` errors caused by
+  intermediate firewalls, NAT, or server-side idle connection drops.
 
 ## [1.2.8] - 2026-08-24
 
 ### Improved
 
-- **CobbleDollars Economy Integration**: Improved stability, reliability, and precision when handling player balances, deposits, and withdrawals with CobbleDollars.
+- **CobbleDollars Economy Integration**: Improved stability, reliability, and precision when handling player balances,
+  deposits, and withdrawals with CobbleDollars.
 
 ### Fixed
 
-- **Economy Startup Logs**: Fixed unnecessary error warnings appearing in the server console when optional economy mods are not installed.
-- **Transaction Safety**: Added extra safety checks to prevent unexpected errors when transferring money or checking balances if players are offline.
+- **Economy Startup Logs**: Fixed unnecessary error warnings appearing in the server console when optional economy mods
+  are not installed.
+- **Transaction Safety**: Added extra safety checks to prevent unexpected errors when transferring money or checking
+  balances if players are offline.
 
 ## [1.2.7] - 2026-08-21
 
 ### Added
 
-- **Unified Placeholders Engine**: Added universal placeholder API (`PlaceholderApi`, `PlaceholdersUtils`, `CobblePlaceholderContext`, `PlaceholderValueConverter`) with equitable, bidirectional support for **MiniPlaceholders** (Adventure / MiniMessage) and **PlaceholderAPI** (PB4 / Minecraft Text), along with an internal in-memory fallback replacement engine.
-- **Mutual Context Object**: Added `CobblePlaceholderContext` encapsulating players, audiences, relational targets, objects (`Pokemon`, `ItemStack`, etc.), servers, and typed argument helpers (`getArgInt`, `getArgBool`, `targetAs`).
-- **Defensive Error Handling**: Fully protected all placeholder evaluations and class lookups with isolated `try-catch` blocks and dedicated logging to guarantee that runtime or third-party placeholder errors never crash the server.
-- **Unit Test Coverage**: Added comprehensive JUnit test suites for placeholder context, safe object casting, cross-engine parsing, and unregistration.
+- **Unified Placeholders Engine**: Added universal placeholder API (`PlaceholderApi`, `PlaceholdersUtils`,
+  `CobblePlaceholderContext`, `PlaceholderValueConverter`) with equitable, bidirectional support for **MiniPlaceholders
+  ** (Adventure / MiniMessage) and **PlaceholderAPI** (PB4 / Minecraft Text), along with an internal in-memory fallback
+  replacement engine.
+- **Mutual Context Object**: Added `CobblePlaceholderContext` encapsulating players, audiences, relational targets,
+  objects (`Pokemon`, `ItemStack`, etc.), servers, and typed argument helpers (`getArgInt`, `getArgBool`, `targetAs`).
+- **Defensive Error Handling**: Fully protected all placeholder evaluations and class lookups with isolated `try-catch`
+  blocks and dedicated logging to guarantee that runtime or third-party placeholder errors never crash the server.
+- **Unit Test Coverage**: Added comprehensive JUnit test suites for placeholder context, safe object casting,
+  cross-engine parsing, and unregistration.
 
 ## [1.2.6] - 2026-08-17
 
 ### Fixed
 
-- Standardized robust `try-catch` exception handling catching `Throwable` across all Mixin injection handlers to prevent unhandled mixin errors from crashing the server tick loop.
-- Replaced raw `e.printStackTrace()` calls across all mixins and `EventChannel` with structured `CobbleUtils.LOGGER_RAW.error(...)` logs tagged with class and method names for clear bug reporting.
+- Standardized robust `try-catch` exception handling catching `Throwable` across all Mixin injection handlers to prevent
+  unhandled mixin errors from crashing the server tick loop.
+- Replaced raw `e.printStackTrace()` calls across all mixins and `EventChannel` with structured
+  `CobbleUtils.LOGGER_RAW.error(...)` logs tagged with class and method names for clear bug reporting.
 
 ## [1.2.5] - 2026-08-13
 
 ### Fixed
 
 - Fixed `ClassCastException` and item drop cancellation in `SweetBerriesMixin`.
-- Added exception isolation to `EventChannel.emit` so failing event listeners cannot break game logic or other listeners.
+- Added exception isolation to `EventChannel.emit` so failing event listeners cannot break game logic or other
+  listeners.
 
 ## [1.2.4] - 2026-07-23
 
@@ -48,8 +73,10 @@
 
 - Added `apiJar` task to build a lightweight API jar (includes only api, models, utils, and adapter packages).
 - Added `ConditionApi` (`register`, `check`, `getDefaultConditions`, `getRegisteredTypes`) to handle custom conditions.
-- Included existing APIs in the lightweight jar: `PermissionApi`, `RewardsApi`, `EconomyApi`, `BlocksAPI`, `PartyAPI`, and `GuildAPI`.
-- Added external placeholder registration in `PokemonUtils` (`registerPlaceholder`, `unregisterPlaceholder`) for external mods.
+- Included existing APIs in the lightweight jar: `PermissionApi`, `RewardsApi`, `EconomyApi`, `BlocksAPI`, `PartyAPI`,
+  and `GuildAPI`.
+- Added external placeholder registration in `PokemonUtils` (`registerPlaceholder`, `unregisterPlaceholder`) for
+  external mods.
 
 ## [1.2.3] - 2026-07-22
 
@@ -61,6 +88,8 @@
 
 ### Added
 
-- Added `cumulativeLootTable` boolean option to `AdvancedItemChance` (defaults to `true`). When set to `false`, the loot table evaluation stops at the first permission match (top-to-bottom priority), rather than merging all lists.
-- Implemented cross-server teleportation command (`TeleportCommand`) and Redis-based location/teleportation synchronizer (`RedisTeleportHandler`).
+- Added `cumulativeLootTable` boolean option to `AdvancedItemChance` (defaults to `true`). When set to `false`, the loot
+  table evaluation stops at the first permission match (top-to-bottom priority), rather than merging all lists.
+- Implemented cross-server teleportation command (`TeleportCommand`) and Redis-based location/teleportation
+  synchronizer (`RedisTeleportHandler`).
 - Added automatic world synchronization across server instances using Redis messaging.

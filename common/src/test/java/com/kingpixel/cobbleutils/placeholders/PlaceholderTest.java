@@ -10,17 +10,17 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-public class PlaceholderTest {
+class PlaceholderTest {
 
   @BeforeEach
-  public void setUp() {
+  void setUp() {
     PlaceholdersUtils.unregisterNamespace("test");
     PlaceholdersUtils.unregisterNamespace("cobbleutils");
   }
 
   @Test
   @DisplayName("Test CobblePlaceholderContext Argument Parsing")
-  public void testContextArgs() {
+  void testContextArgs() {
     CobblePlaceholderContext ctx = CobblePlaceholderContext.global("param1_123_true");
 
     Assertions.assertEquals("param1_123_true", ctx.getArgument());
@@ -34,7 +34,7 @@ public class PlaceholderTest {
 
   @Test
   @DisplayName("Test CobblePlaceholderContext Target Object Casting")
-  public void testContextTarget() {
+  void testContextTarget() {
     String dummyTarget = "Pikachu";
     CobblePlaceholderContext ctx = CobblePlaceholderContext.of(null, dummyTarget, "info");
 
@@ -46,7 +46,7 @@ public class PlaceholderTest {
 
   @Test
   @DisplayName("Test Unified Registration and Internal Resolution")
-  public void testRegistrationAndResolution() {
+  void testRegistrationAndResolution() {
     PlaceholderApi.register("test", "server_name", ctx -> "MyAwesomeServer");
     PlaceholderApi.register("test", "count", ctx -> 42);
     PlaceholderApi.register("test", "colored", ctx -> Component.text("ColoredText"));
@@ -61,7 +61,7 @@ public class PlaceholderTest {
 
   @Test
   @DisplayName("Test Exception Safety in Placeholder Callbacks")
-  public void testExceptionSafety() {
+  void testExceptionSafety() {
     PlaceholderApi.register("test", "buggy", ctx -> {
       throw new RuntimeException("Simulated crash");
     });
@@ -74,7 +74,7 @@ public class PlaceholderTest {
 
   @Test
   @DisplayName("Test Placeholder Unregistration")
-  public void testUnregistration() {
+  void testUnregistration() {
     PlaceholderApi.register("test", "temp", ctx -> "Temporary");
     Assertions.assertEquals("Temporary", PlaceholderApi.parseString("%test:temp%", null));
 
@@ -83,8 +83,34 @@ public class PlaceholderTest {
   }
 
   @Test
+  @DisplayName("Test Context Builder and Derivation")
+  void testContextBuilderAndDerivation() {
+    CobblePlaceholderContext ctx = CobblePlaceholderContext.builder()
+      .argument("initial_value")
+      .build();
+
+    Assertions.assertEquals("initial_value", ctx.getArgument());
+    Assertions.assertEquals(2, ctx.numArgs());
+    Assertions.assertEquals("initial", ctx.getArg(0, ""));
+
+    CobblePlaceholderContext derived = ctx.withArgument("updated_100_true");
+    Assertions.assertEquals("updated_100_true", derived.getArgument());
+    Assertions.assertEquals(3, derived.numArgs());
+    Assertions.assertEquals("updated", derived.getArg(0, ""));
+    Assertions.assertEquals(100, derived.getArgInt(1, 0));
+    Assertions.assertTrue(derived.getArgBool(2, false));
+  }
+
+  @Test
+  @DisplayName("Test Audience Resolution Safety")
+  void testResolvePlayerFromAudienceNullSafety() {
+    Assertions.assertNull(CobblePlaceholderContext.resolvePlayerFromAudience(null));
+    Assertions.assertNull(CobblePlaceholderContext.resolvePlayerFromAudience(net.kyori.adventure.audience.Audience.empty()));
+  }
+
+  @Test
   @DisplayName("Test Value Converter Safety")
-  public void testValueConverter() {
+  void testValueConverter() {
     Assertions.assertNull(PlaceholderValueConverter.toStringValue(null));
     Assertions.assertEquals("123", PlaceholderValueConverter.toStringValue(123));
     Assertions.assertEquals("Hello", PlaceholderValueConverter.toStringValue("Hello"));

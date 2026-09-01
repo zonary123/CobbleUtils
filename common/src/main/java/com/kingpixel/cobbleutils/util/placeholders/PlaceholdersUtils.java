@@ -1,6 +1,5 @@
 package com.kingpixel.cobbleutils.util.placeholders;
 
-import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.util.AdventureTranslator;
 import eu.pb4.placeholders.api.PlaceholderContext;
 import eu.pb4.placeholders.api.Placeholders;
@@ -202,8 +201,7 @@ public final class PlaceholdersUtils {
     if (message == null || message.isEmpty()) return "";
     try {
       CobblePlaceholderContext ctx = CobblePlaceholderContext.of(player);
-      String replaced = internalProvider.replace(message, ctx);
-      return replaced;
+      return internalProvider.replace(message, ctx);
     } catch (Throwable e) {
       LOGGER.error("Error parsing string placeholders", e);
       return message;
@@ -232,8 +230,9 @@ public final class PlaceholdersUtils {
     if (miniMessageText == null || miniMessageText.isEmpty()) return Component.empty();
     try {
       if (isMiniPlaceholdersAvailable()) {
-        TagResolver resolver = player != null
-          ? MiniPlaceholders.getAudienceGlobalPlaceholders((Audience) player)
+        Audience audience = player instanceof Audience aud ? aud : null;
+        TagResolver resolver = audience != null
+          ? MiniPlaceholders.getAudienceGlobalPlaceholders(audience)
           : MiniPlaceholders.getGlobalPlaceholders();
         return AdventureTranslator.miniMessage.deserialize(miniMessageText, resolver);
       }

@@ -54,18 +54,13 @@ public class PB4PlaceholderProvider implements PlaceholderProvider {
       Placeholders.register(identifier, (PlaceholderContext ctx, String argument) -> {
         try {
           ServerPlayerEntity player = ctx.hasPlayer() ? ctx.player() : null;
-          CobblePlaceholderContext cobbleContext = new CobblePlaceholderContext(
-            player,
-            null,
-            null,
-            null,
-            ctx.server(),
-            ctx.world(),
-            ctx.view(),
-            argument,
-            null,
-            null
-          );
+          CobblePlaceholderContext cobbleContext = CobblePlaceholderContext.builder()
+            .player(player)
+            .server(ctx.server())
+            .world(ctx.world())
+            .target(ctx.view())
+            .argument(argument)
+            .build();
           Object value = handler.handle(cobbleContext);
           return PlaceholderValueConverter.toPB4Result(value, player);
         } catch (Throwable e) {

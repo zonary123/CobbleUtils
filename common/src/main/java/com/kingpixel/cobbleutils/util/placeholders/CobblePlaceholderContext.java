@@ -1,9 +1,11 @@
 package com.kingpixel.cobbleutils.util.placeholders;
 
 import com.kingpixel.cobbleutils.CobbleUtils;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.ToString;
 import net.kyori.adventure.audience.Audience;
+import net.kyori.adventure.audience.ForwardingAudience;
 import net.kyori.adventure.identity.Identity;
 import net.kyori.adventure.text.minimessage.Context;
 import net.kyori.adventure.text.minimessage.tag.resolver.ArgumentQueue;
@@ -13,7 +15,11 @@ import net.minecraft.server.world.ServerWorld;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+import java.util.regex.Pattern;
 
 /**
  * Unified mutual context for placeholder evaluations across PlaceholderAPI, MiniPlaceholders,
@@ -21,6 +27,7 @@ import java.util.*;
  */
 @Getter
 @ToString
+@Builder(toBuilder = true)
 public class CobblePlaceholderContext {
   private final @Nullable ServerPlayerEntity player;
   private final @Nullable Audience audience;
@@ -34,7 +41,7 @@ public class CobblePlaceholderContext {
   private final @Nullable ArgumentQueue argumentQueue;
   private final @Nullable Context miniMessageContext;
 
-  public CobblePlaceholderContext(
+  CobblePlaceholderContext(
     @Nullable ServerPlayerEntity player,
     @Nullable Audience audience,
     @Nullable ServerPlayerEntity targetPlayer,
@@ -43,6 +50,7 @@ public class CobblePlaceholderContext {
     @Nullable ServerWorld world,
     @Nullable Object target,
     @Nullable String argument,
+    @Nullable String[] args,
     @Nullable ArgumentQueue argumentQueue,
     @Nullable Context miniMessageContext
   ) {
@@ -54,10 +62,23 @@ public class CobblePlaceholderContext {
     this.world = world != null ? world : (player != null ? player.getServerWorld() : null);
     this.target = target;
     this.argument = argument;
-    this.args = parseArgs(argument);
+    this.args = args != null ? args : parseArgs(argument);
     this.argumentQueue = argumentQueue;
     this.miniMessageContext = miniMessageContext;
   }
+
+  /**
+   * Creates a derived copy of this context with a new argument string.
+   */
+  public CobblePlaceholderContext withArgument(@Nullable String newArgument) {
+    return toBuilder()
+      .argument(newArgument)
+      .args(parseArgs(newArgument))
+      .build();
+  }
+
+  private static final Pattern SPLIT_PATTERN = Pattern.compile("[_\\s]+");
+  private static final String[] EMPTY_ARGS = new String[0];
 
   private static @Nullable MinecraftServer getSafeServer() {
     try {
@@ -69,9 +90,9 @@ public class CobblePlaceholderContext {
 
   private static String[] parseArgs(@Nullable String argument) {
     if (argument == null || argument.trim().isEmpty()) {
-      return new String[0];
+      return EMPTY_ARGS;
     }
-    return argument.split("[_\\s]+");
+    return SPLIT_PATTERN.split(argument);
   }
 
   // ==========================================
@@ -79,15 +100,15 @@ public class CobblePlaceholderContext {
   // ==========================================
 
   public static CobblePlaceholderContext of(@Nullable ServerPlayerEntity player) {
-    return new CobblePlaceholderContext(player, null, null, null, null, null, null, null, null, null);
+    return builder().player(player).build();
   }
 
   public static CobblePlaceholderContext of(@Nullable ServerPlayerEntity player, @Nullable String argument) {
-    return new CobblePlaceholderContext(player, null, null, null, null, null, null, argument, null, null);
+    return builder().player(player).argument(argument).build();
   }
 
   public static CobblePlaceholderContext of(@Nullable ServerPlayerEntity player, @Nullable Object target, @Nullable String argument) {
-    return new CobblePlaceholderContext(player, null, null, null, null, null, target, argument, null, null);
+    return builder().player(player).target(target).argument(argument).build();
   }
 
   public static CobblePlaceholderContext ofRelational(
@@ -95,11 +116,11 @@ public class CobblePlaceholderContext {
     @Nullable ServerPlayerEntity targetPlayer,
     @Nullable String argument
   ) {
-    return new CobblePlaceholderContext(player, null, targetPlayer, null, null, null, null, argument, null, null);
+    return builder().player(player).targetPlayer(targetPlayer).argument(argument).build();
   }
 
   public static CobblePlaceholderContext global(@Nullable String argument) {
-    return new CobblePlaceholderContext(null, null, null, null, null, null, null, argument, null, null);
+    return builder().argument(argument).build();
   }
 
   public static CobblePlaceholderContext ofMiniPlaceholders(
@@ -109,7 +130,13 @@ public class CobblePlaceholderContext {
   ) {
     ServerPlayerEntity resolvedPlayer = resolvePlayerFromAudience(audience);
     String extractedArg = extractArgFromQueue(queue);
-    return new CobblePlaceholderContext(resolvedPlayer, audience, null, null, null, null, null, extractedArg, queue, ctx);
+    return builder()
+      .player(resolvedPlayer)
+      .audience(audience)
+      .argument(extractedArg)
+      .argumentQueue(queue)
+      .miniMessageContext(ctx)
+      .build();
   }
 
   public static CobblePlaceholderContext ofMiniPlaceholdersRelational(
@@ -121,7 +148,15 @@ public class CobblePlaceholderContext {
     ServerPlayerEntity player1 = resolvePlayerFromAudience(audience);
     ServerPlayerEntity player2 = resolvePlayerFromAudience(otherAudience);
     String extractedArg = extractArgFromQueue(queue);
-    return new CobblePlaceholderContext(player1, audience, player2, otherAudience, null, null, null, extractedArg, queue, ctx);
+    return builder()
+      .player(player1)
+      .audience(audience)
+      .targetPlayer(player2)
+      .targetAudience(otherAudience)
+      .argument(extractedArg)
+      .argumentQueue(queue)
+      .miniMessageContext(ctx)
+      .build();
   }
 
   private static @Nullable String extractArgFromQueue(@Nullable ArgumentQueue queue) {
@@ -137,25 +172,58 @@ public class CobblePlaceholderContext {
     }
   }
 
-  private static @Nullable ServerPlayerEntity resolvePlayerFromAudience(@Nullable Audience audience) {
+  /**
+   * Safely resolves a Minecraft ServerPlayerEntity from an Adventure Audience,
+   * fully supporting direct instances, identity inspection, and proxy/forwarding wrappers.
+   */
+  public static @Nullable ServerPlayerEntity resolvePlayerFromAudience(@Nullable Audience audience) {
     if (audience == null) return null;
     try {
-      if (audience instanceof ServerPlayerEntity p) {
-        return p;
-      }
-      MinecraftServer s = getSafeServer();
-      if (s != null && s.getPlayerManager() != null) {
-        Optional<UUID> uuidOpt = audience.get(Identity.UUID);
-        if (uuidOpt.isPresent()) {
-          ServerPlayerEntity p = s.getPlayerManager().getPlayer(uuidOpt.get());
-          if (p != null) return p;
-        }
-        Optional<String> nameOpt = audience.get(Identity.NAME);
-        if (nameOpt.isPresent()) {
-          return s.getPlayerManager().getPlayer(nameOpt.get());
-        }
-      }
+      ServerPlayerEntity direct = resolveDirectPlayer(audience);
+      if (direct != null) return direct;
+
+      ServerPlayerEntity forwarded = resolveForwardingPlayer(audience);
+      if (forwarded != null) return forwarded;
+
+      return resolvePlayerFromIdentity(audience);
     } catch (Throwable ignored) {
+      return null;
+    }
+  }
+
+  private static @Nullable ServerPlayerEntity resolveDirectPlayer(@NotNull Audience audience) {
+    if (audience instanceof ServerPlayerEntity p) {
+      return p;
+    }
+    return null;
+  }
+
+  private static @Nullable ServerPlayerEntity resolveForwardingPlayer(@NotNull Audience audience) {
+    if (audience instanceof ForwardingAudience.Single single) {
+      return resolvePlayerFromAudience(single.audience());
+    }
+    if (audience instanceof ForwardingAudience forwarding) {
+      for (Audience child : forwarding.audiences()) {
+        ServerPlayerEntity unwrapped = resolvePlayerFromAudience(child);
+        if (unwrapped != null) return unwrapped;
+      }
+    }
+    return null;
+  }
+
+  private static @Nullable ServerPlayerEntity resolvePlayerFromIdentity(@NotNull Audience audience) {
+    MinecraftServer server = getSafeServer();
+    if (server == null || server.getPlayerManager() == null) {
+      return null;
+    }
+    Optional<UUID> uuidOpt = audience.get(Identity.UUID);
+    if (uuidOpt.isPresent()) {
+      ServerPlayerEntity p = server.getPlayerManager().getPlayer(uuidOpt.get());
+      if (p != null) return p;
+    }
+    Optional<String> nameOpt = audience.get(Identity.NAME);
+    if (nameOpt.isPresent()) {
+      return server.getPlayerManager().getPlayer(nameOpt.get());
     }
     return null;
   }

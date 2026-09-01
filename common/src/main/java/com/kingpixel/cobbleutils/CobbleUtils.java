@@ -5,9 +5,13 @@ import com.google.common.io.ByteArrayDataInput;
 import com.google.common.io.ByteArrayDataOutput;
 import com.google.common.io.ByteStreams;
 import com.google.gson.JsonObject;
+import com.kingpixel.cobbleutils.Model.Animations.core.AnimationQueue;
 import com.kingpixel.cobbleutils.Model.Location;
+import com.kingpixel.cobbleutils.Model.properties.EvsPropertyType;
+import com.kingpixel.cobbleutils.Model.properties.IvsPropertyType;
 import com.kingpixel.cobbleutils.Model.properties.LegendaryPropertyType;
 import com.kingpixel.cobbleutils.Model.properties.MinIvsPropertyType;
+import com.kingpixel.cobbleutils.Model.properties.RandomSpeciesPropertyType;
 import com.kingpixel.cobbleutils.command.CommandTree;
 import com.kingpixel.cobbleutils.command.suggests.CobbleUtilsSuggests;
 import com.kingpixel.cobbleutils.config.AdvancedRewardsConfig;
@@ -62,13 +66,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
-/**
- * Main initializer and lifecycle management hub for the CobbleUtils platform.
- *
- * <p>Coordinates database mapping handshakes, redis subscription telemetry hooks,
- * asynchronous thread execution queues, and clean resource shutdowns during the
- * server lifecycle transition phases.</p>
- */
 public class CobbleUtils {
   public static final String MOD_ID = "cobbleutils";
   public static final String MOD_NAME = "CobbleUtils";
@@ -94,16 +91,10 @@ public class CobbleUtils {
   public static AdvancedRewardsConfig advancedRewardsConfig = new AdvancedRewardsConfig();
   public static SpawnRates spawnRates = new SpawnRates();
 
-  /**
-   * The central, optimized multi-threaded context managing asynchronous operations for CobbleUtils.
-   */
   public static final AsyncContext ASYNC = UtilsAsync.createContext(MOD_ID, MOD_NAME, 1, 4);
   public static Lang language = new Lang();
   public static RedisManager redisManager;
 
-  /**
-   * Primary bootstrapper invoked by the mod loader framework entrypoint.
-   */
   public static void init() {
     try {
       Class.forName("org.bson.conversions.Bson");
@@ -119,9 +110,6 @@ public class CobbleUtils {
     events();
   }
 
-  /**
-   * Triggers file deployments, dependency validations, and external API hooks.
-   */
   public static void load() {
     files();
     sign();
@@ -150,7 +138,7 @@ public class CobbleUtils {
   }
 
   private static void sign() {
-    info(MOD_ID, "1.1.4", "CobbleUtils");
+    info(MOD_ID, "1.3.0", "CobbleUtils");
     LOGGER_RAW.info(
       "§e| §6Supported economies: Impactor, BlanketEconomy, CobbleDollars, SDMEconomy, PebbleEconomy and Vault");
     LOGGER_RAW.info("§e+-------------------------------+");
@@ -160,13 +148,6 @@ public class CobbleUtils {
     info(identifier, null, github);
   }
 
-  /**
-   * Prints structural diagnostics and support index data out onto the active server console stream.
-   *
-   * @param identifier Target mod bundle tracking ID.
-   * @param version    Fallback version token string.
-   * @param github     The root path token matching the upstream GitHub project branch destination.
-   */
   public static void info(String identifier, String version, String github) {
     String finalVersion = version;
     String finalName = identifier;
@@ -196,9 +177,6 @@ public class CobbleUtils {
     LOGGER_RAW.info("§e+-------------------------------+");
   }
 
-  /**
-   * Binds logical handlers onto the global application processing network pipelines.
-   */
   private static void events() {
     files();
     try {
@@ -261,7 +239,6 @@ public class CobbleUtils {
 
     LifecycleEvent.SERVER_STOPPING.register(server1 -> {
       try {
-        // Safe staging: serializes active blocks data into memory buffers before the worlds start to unload.
         ChunkBlockStorageManager.shutdownAsync();
       } catch (Exception e) {
         LOGGER_RAW.error("Error staging ChunkBlockStorageManager data: ", e);
@@ -273,7 +250,7 @@ public class CobbleUtils {
 
       try {
         LOGGER_RAW.info("Flushing and closing shared multi-mod thread pools (UtilsAsync)...");
-        com.kingpixel.cobbleutils.util.async.UtilsAsync.shutdownAll();
+        UtilsAsync.shutdownAll();
       } catch (Exception e) {
         LOGGER_RAW.error("Error shutting down global UtilsAsync: ", e);
       }
@@ -294,7 +271,7 @@ public class CobbleUtils {
       } catch (Exception ignored) {
       }
 
-      CobbleUtils.LOGGER_RAW.info("CobbleUtils backup and database services closed successfully.");
+      LOGGER_RAW.info("CobbleUtils backup and database services closed successfully.");
     });
 
     PlayerEvent.PLAYER_JOIN.register((player) -> {
@@ -302,8 +279,7 @@ public class CobbleUtils {
         try {
           ByteArrayDataOutput output = ByteStreams.newDataOutput();
           output.writeUTF("GetServer");
-          ServerPlayNetworking.send(player,
-            new PluginMessagePacket(output.toByteArray()));
+          ServerPlayNetworking.send(player, new PluginMessagePacket(output.toByteArray()));
         } catch (Throwable e) {
           LOGGER_RAW.error("Failed to request server name from proxy for player " + player.getName().getString(), e);
         }
@@ -313,8 +289,7 @@ public class CobbleUtils {
         try {
           ByteArrayDataOutput output = ByteStreams.newDataOutput();
           output.writeUTF("GetServers");
-          ServerPlayNetworking.send(player,
-            new PluginMessagePacket(output.toByteArray()));
+          ServerPlayNetworking.send(player, new PluginMessagePacket(output.toByteArray()));
         } catch (Throwable e) {
           LOGGER_RAW.error("Failed to request servers from proxy for player " + player.getName().getString(), e);
         }
@@ -331,7 +306,6 @@ public class CobbleUtils {
           DataBaseFactory.users().save(user);
           DataBaseUsers.USERS.put(player.getUuid(), user);
 
-          // Handle cross-server teleportation
           Location location = RedisTeleportHandler.LOCATION_CACHE.getIfPresent(player.getUuid());
           if (location != null) {
             RedisTeleportHandler.LOCATION_CACHE.invalidate(player.getUuid());
@@ -363,7 +337,7 @@ public class CobbleUtils {
     });
 
     PlayerEvent.PLAYER_QUIT.register((player) -> {
-      com.kingpixel.cobbleutils.Model.Animations.core.AnimationQueue.clearQueue(player.getUuid());
+      AnimationQueue.clearQueue(player.getUuid());
       runAsync(() -> {
         try {
           DataBaseFactory.users().disconnected(player);
@@ -377,6 +351,9 @@ public class CobbleUtils {
     CommandRegistrationEvent.EVENT.register((dispatcher, registry, selection) -> {
       CustomPokemonProperty.Companion.register(MinIvsPropertyType.INSTANCE);
       CustomPokemonProperty.Companion.register(LegendaryPropertyType.INSTANCE);
+      CustomPokemonProperty.Companion.register(IvsPropertyType.INSTANCE);
+      CustomPokemonProperty.Companion.register(EvsPropertyType.INSTANCE);
+      CustomPokemonProperty.Companion.register(RandomSpeciesPropertyType.INSTANCE);
       CommandTree.register(dispatcher, registry);
       commandRegistryAccess = registry;
     });
@@ -385,11 +362,6 @@ public class CobbleUtils {
     CobbleUtilsEvents.register();
   }
 
-  /**
-   * Shuts down an ExecutorService instance cleanly, allowing a brief grace period before forcing termination.
-   *
-   * @param executor Target structural ThreadPool executor demanding final decommissioning.
-   */
   public static void shutdownAndAwait(ExecutorService executor) {
     if (executor == null || executor.isShutdown()) {
       return;
@@ -407,43 +379,18 @@ public class CobbleUtils {
     }
   }
 
-  /**
-   * Dispatches a task to execute natively on the default background worker pool thread context.
-   *
-   * @param runnable Abstract functional interface housing executable instructions.
-   *
-   * @return A CompletableFuture object tracking completion properties of the task.
-   */
   public static CompletableFuture<Void> runAsync(Runnable runnable) {
     return ASYNC.runAsync(runnable);
   }
 
-  /**
-   * Dispatches a task onto the context worker pool pipeline (Maintains backward framework signature compatibility).
-   *
-   * @param runnable Abstract functional interface housing executable instructions.
-   * @param executor Context parameters mapped to alternate pool frameworks.
-   *
-   * @return A CompletableFuture tracking task evaluation.
-   */
   public static CompletableFuture<Void> runAsync(Runnable runnable, ExecutorService executor) {
     return ASYNC.runAsync(runnable);
   }
 
-  /**
-   * Returns the canonical configuration path matching the primary gaming instance environment.
-   *
-   * @return System configuration directory Path.
-   */
   public static Path getPath() {
     return Platform.getConfigFolder();
   }
 
-  /**
-   * Returns the sub-allocated structural file config storage space dedicated exclusively to this mod ID namespace.
-   *
-   * @return Core mod config base directory Path.
-   */
   public static Path getPathMod() {
     try {
       return Platform.getConfigFolder().resolve(MOD_ID);

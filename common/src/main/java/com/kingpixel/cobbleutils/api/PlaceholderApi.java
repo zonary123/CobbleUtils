@@ -1,6 +1,10 @@
 package com.kingpixel.cobbleutils.api;
 
-import com.kingpixel.cobbleutils.util.placeholders.*;
+import com.kingpixel.cobbleutils.util.placeholders.PlaceholdersUtils;
+import com.kingpixel.cobbleutils.util.placeholders.RelationalPlaceholderHandler;
+import com.kingpixel.cobbleutils.util.placeholders.SimpleGlobalPlaceholder;
+import com.kingpixel.cobbleutils.util.placeholders.SimplePlayerPlaceholder;
+import com.kingpixel.cobbleutils.util.placeholders.UnifiedPlaceholderHandler;
 import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.text.Component;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -15,6 +19,9 @@ import java.util.function.BiFunction;
  * PlaceholderAPI (eu.pb4), MiniPlaceholders, and CobbleUtils internal engines.
  */
 public class PlaceholderApi {
+
+  private PlaceholderApi() {
+  }
 
   /**
    * Registers a unified placeholder with full mutual context.

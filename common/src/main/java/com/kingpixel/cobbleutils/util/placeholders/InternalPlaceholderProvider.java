@@ -2,6 +2,8 @@ package com.kingpixel.cobbleutils.util.placeholders;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -42,8 +44,8 @@ public class InternalPlaceholderProvider implements PlaceholderProvider {
     try {
       String id = (namespace + ":" + key).toLowerCase();
       registry.put(id, handler);
-    } catch (Throwable e) {
-      LOGGER.error("Failed to register internal placeholder [" + namespace + ":" + key + "]", e);
+    } catch (Exception e) {
+      LOGGER.error("Failed to register internal placeholder [{}:{}]", namespace, key, e);
     }
   }
 
@@ -53,8 +55,8 @@ public class InternalPlaceholderProvider implements PlaceholderProvider {
     try {
       String id = (namespace + ":" + key).toLowerCase();
       registry.remove(id);
-    } catch (Throwable e) {
-      LOGGER.error("Failed to unregister internal placeholder [" + namespace + ":" + key + "]", e);
+    } catch (Exception e) {
+      LOGGER.error("Failed to unregister internal placeholder [{}:{}]", namespace, key, e);
     }
   }
 
@@ -64,102 +66,62 @@ public class InternalPlaceholderProvider implements PlaceholderProvider {
     try {
       String prefix = namespace.toLowerCase() + ":";
       registry.keySet().removeIf(k -> k.startsWith(prefix));
-    } catch (Throwable e) {
-      LOGGER.error("Failed to unregister internal namespace [" + namespace + "]", e);
+    } catch (Exception e) {
+      LOGGER.error("Failed to unregister internal namespace [{}]", namespace, e);
     }
   }
 
   /**
    * Evaluates and replaces all registered placeholders in the given message string.
    */
-  public String replace(String message, CobblePlaceholderContext baseContext) {
+  public String replace(@Nullable String message, @Nullable CobblePlaceholderContext baseContext) {
     if (message == null || message.isEmpty() || registry.isEmpty()) {
       return message;
     }
 
+    CobblePlaceholderContext safeContext = baseContext != null ? baseContext : CobblePlaceholderContext.global(null);
     String result = message;
     try {
-      // 1. Replace %namespace:key% or %namespace_key_arg%
       if (result.contains("%")) {
-        Matcher matcher = PATTERN_PERCENT.matcher(result);
-        StringBuilder sb = new StringBuilder(result.length());
-        while (matcher.find()) {
-          String ns = matcher.group(1).toLowerCase();
-          String key = matcher.group(2).toLowerCase();
-          String arg = matcher.group(3);
-
-          String id = ns + ":" + key;
-          UnifiedPlaceholderHandler handler = registry.get(id);
-          if (handler != null) {
-            try {
-              CobblePlaceholderContext ctx = new CobblePlaceholderContext(
-                baseContext.getPlayer(),
-                baseContext.getAudience(),
-                baseContext.getTargetPlayer(),
-                baseContext.getTargetAudience(),
-                baseContext.getServer(),
-                baseContext.getWorld(),
-                baseContext.getTarget(),
-                arg,
-                null,
-                null
-              );
-              Object val = handler.handle(ctx);
-              String strVal = PlaceholderValueConverter.toStringValue(val);
-              matcher.appendReplacement(sb, Matcher.quoteReplacement(strVal != null ? strVal : matcher.group(0)));
-            } catch (Throwable e) {
-              LOGGER.error("Error evaluating internal placeholder " + id, e);
-              matcher.appendReplacement(sb, Matcher.quoteReplacement(matcher.group(0)));
-            }
-          } else {
-            matcher.appendReplacement(sb, Matcher.quoteReplacement(matcher.group(0)));
-          }
-        }
-        matcher.appendTail(sb);
-        result = sb.toString();
+        result = replacePattern(result, PATTERN_PERCENT, safeContext);
       }
-
-      // 2. Replace <namespace:key:arg> if present
       if (result.contains("<") && result.contains(">")) {
-        Matcher matcher = PATTERN_BRACKET.matcher(result);
-        StringBuilder sb = new StringBuilder(result.length());
-        while (matcher.find()) {
-          String ns = matcher.group(1).toLowerCase();
-          String key = matcher.group(2).toLowerCase();
-          String arg = matcher.group(3);
-
-          String id = ns + ":" + key;
-          UnifiedPlaceholderHandler handler = registry.get(id);
-          if (handler != null) {
-            try {
-              CobblePlaceholderContext ctx = new CobblePlaceholderContext(
-                baseContext.getPlayer(),
-                baseContext.getAudience(),
-                baseContext.getTargetPlayer(),
-                baseContext.getTargetAudience(),
-                baseContext.getServer(),
-                baseContext.getWorld(),
-                baseContext.getTarget(),
-                arg,
-                null,
-                null
-              );
-              Object val = handler.handle(ctx);
-              String strVal = PlaceholderValueConverter.toStringValue(val);
-              matcher.appendReplacement(sb, Matcher.quoteReplacement(strVal != null ? strVal : matcher.group(0)));
-            } catch (Throwable e) {
-              matcher.appendReplacement(sb, Matcher.quoteReplacement(matcher.group(0)));
-            }
-          } else {
-            matcher.appendReplacement(sb, Matcher.quoteReplacement(matcher.group(0)));
-          }
-        }
-        matcher.appendTail(sb);
-        result = sb.toString();
+        result = replacePattern(result, PATTERN_BRACKET, safeContext);
       }
-    } catch (Throwable e) {
+    } catch (Exception e) {
       LOGGER.error("Error during internal placeholder replacement", e);
     }
     return result;
+  }
+
+  private String replacePattern(@NotNull String input, @NotNull Pattern pattern, @NotNull CobblePlaceholderContext baseContext) {
+    Matcher matcher = pattern.matcher(input);
+    if (!matcher.find()) {
+      return input;
+    }
+    StringBuilder sb = new StringBuilder(input.length());
+    do {
+      String ns = matcher.group(1).toLowerCase();
+      String key = matcher.group(2).toLowerCase();
+      String arg = matcher.group(3);
+
+      String id = ns + ":" + key;
+      UnifiedPlaceholderHandler handler = registry.get(id);
+      if (handler != null) {
+        try {
+          CobblePlaceholderContext ctx = baseContext.withArgument(arg);
+          Object val = handler.handle(ctx);
+          String strVal = PlaceholderValueConverter.toStringValue(val);
+          matcher.appendReplacement(sb, Matcher.quoteReplacement(strVal != null ? strVal : matcher.group(0)));
+        } catch (Exception e) {
+          LOGGER.error("Error evaluating internal placeholder [{}]", id, e);
+          matcher.appendReplacement(sb, Matcher.quoteReplacement(matcher.group(0)));
+        }
+      } else {
+        matcher.appendReplacement(sb, Matcher.quoteReplacement(matcher.group(0)));
+      }
+    } while (matcher.find());
+    matcher.appendTail(sb);
+    return sb.toString();
   }
 }
