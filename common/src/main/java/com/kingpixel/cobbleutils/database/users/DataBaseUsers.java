@@ -42,6 +42,10 @@ public abstract class DataBaseUsers implements UserRepository {
 
   public abstract void disconnect();
 
+  public boolean isConnected() {
+    return true;
+  }
+
   /**
    * Unique instance ID for this server process. Used to identify the origin
    * of Redis messages so a server ignores its own broadcasts.

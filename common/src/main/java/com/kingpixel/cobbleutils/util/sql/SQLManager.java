@@ -135,6 +135,9 @@ public class SQLManager {
       // Verify connectivity and apply DB-specific setup
       try (Connection conn = dataSource.getConnection()) {
         connected = conn.isValid(3);
+        if (!connected) {
+          throw new SQLException("Database connection isValid check failed (timeout 3s).");
+        }
 
         // Enable WAL mode for SQLite (better concurrent read performance)
         if (config.getType() == DataBaseType.SQLITE) {

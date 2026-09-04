@@ -222,10 +222,7 @@ public class CobblePlaceholderContext {
       if (p != null) return p;
     }
     Optional<String> nameOpt = audience.get(Identity.NAME);
-    if (nameOpt.isPresent()) {
-      return server.getPlayerManager().getPlayer(nameOpt.get());
-    }
-    return null;
+    return nameOpt.map(s -> server.getPlayerManager().getPlayer(s)).orElse(null);
   }
 
   // ==========================================

@@ -2,12 +2,16 @@ package com.kingpixel.cobbleutils.database;
 
 import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.Model.DataBaseConfig;
+import com.kingpixel.cobbleutils.Model.DataBaseType;
 import com.kingpixel.cobbleutils.database.repository.UserRepository;
 import com.kingpixel.cobbleutils.database.users.DataBaseUsers;
 import com.kingpixel.cobbleutils.database.users.DataBaseUsersJson;
 import com.kingpixel.cobbleutils.database.users.DataBaseUsersMongoDB;
 import com.kingpixel.cobbleutils.database.users.DataBaseUsersSQL;
+import com.kingpixel.cobbleutils.exceptions.DatabaseConnectionException;
 import lombok.Data;
+
+import java.util.Arrays;
 
 /**
  * @author Carlos Varas Alonso - 23/08/2025 7:35
@@ -21,6 +25,7 @@ public class DataBaseFactory {
    * @deprecated Use {@link #users()} for API access. Direct field access is kept
    *             for backward compatibility with internal code.
    */
+  @Deprecated
   public static UserRepository dataBaseUsers;
 
   /**
@@ -38,14 +43,27 @@ public class DataBaseFactory {
   public static void initDataBaseUsers(DataBaseConfig config) {
     if (dataBaseUsers instanceof DataBaseUsers db) db.disconnect();
 
+    if (config == null || config.getType() == null) {
+      throw new DatabaseConnectionException("Database config or type is null");
+    }
+
     DataBaseUsers impl = switch (config.getType()) {
+      case JSON -> new DataBaseUsersJson();
       case MONGODB -> new DataBaseUsersMongoDB();
       case MYSQL, SQLITE, MARIADB, H2 -> new DataBaseUsersSQL();
-      default -> new DataBaseUsersJson();
+      default ->
+        throw new DatabaseConnectionException("Unknown database type " + Arrays.toString(DataBaseType.values()));
     };
 
     impl.connect(config);
+    if (!impl.isConnected()) {
+      throw new DatabaseConnectionException(config.getType().name());
+    }
     dataBaseUsers = impl;
     CobbleUtils.LOGGER_RAW.info("Database initialized: " + config.getType());
+  }
+
+  public static boolean isConnected() {
+    return dataBaseUsers instanceof DataBaseUsers db && db.isConnected();
   }
 }

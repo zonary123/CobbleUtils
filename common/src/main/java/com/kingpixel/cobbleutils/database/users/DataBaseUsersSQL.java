@@ -4,6 +4,7 @@ import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.Model.DataBaseConfig;
 import com.kingpixel.cobbleutils.Model.DataBaseType;
 import com.kingpixel.cobbleutils.database.users.models.Storage;
+import com.kingpixel.cobbleutils.exceptions.DatabaseConnectionException;
 import com.kingpixel.cobbleutils.util.UtilsFile;
 import com.kingpixel.cobbleutils.util.sql.SQLManager;
 import com.kingpixel.cobbleutils.util.sql.SQLService;
@@ -52,9 +53,19 @@ public class DataBaseUsersSQL extends DataBaseUsers {
    */
   @Override
   public void connect(DataBaseConfig config) {
-    this.type = config.getType();
-    this.sqlManager = SQLService.getOrCreateManager(config);
-    createTables();
+    try {
+      this.type = config.getType();
+      this.sqlManager = SQLService.getOrCreateManager(config);
+      if (this.sqlManager == null || !this.sqlManager.isConnected()) {
+        throw new DatabaseConnectionException(config.getType().name());
+      }
+      createTables();
+    } catch (Exception e) {
+      if (e instanceof DatabaseConnectionException dce) {
+        throw dce;
+      }
+      throw new DatabaseConnectionException(config.getType().name(), e);
+    }
   }
 
   /**
@@ -62,6 +73,12 @@ public class DataBaseUsersSQL extends DataBaseUsers {
    */
   @Override
   public void disconnect() {
+    this.sqlManager = null;
+  }
+
+  @Override
+  public boolean isConnected() {
+    return sqlManager != null && sqlManager.isConnected();
   }
 
   /**

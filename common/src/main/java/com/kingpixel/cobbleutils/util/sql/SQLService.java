@@ -81,6 +81,10 @@ public class SQLService {
       CobbleUtils.LOGGER_RAW.info("Creating new SQL connection pool for {}", config.getType());
       SQLManager manager = new SQLManager(config);
       manager.init();
+      if (!manager.isConnected()) {
+        closeQuietly(manager);
+        throw new SQLManager.SQLManagerException("SQL manager created but connectivity check failed for " + config.getType(), null);
+      }
       return manager;
     });
   }

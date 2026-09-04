@@ -39,6 +39,8 @@ public class CommandTree {
       LiteralArgumentBuilder<ServerCommandSource> base = CommandManager.literal(literal).requires(source ->
         LuckPermsUtil.checkPermission(source, 2, List.of("cobbleutils.admin")));
 
+      PokemonInfoCommand.register(dispatcher, base);
+
       TeleportCommand.register(dispatcher, base);
 
       ModRewardsCommand.register(dispatcher, base);

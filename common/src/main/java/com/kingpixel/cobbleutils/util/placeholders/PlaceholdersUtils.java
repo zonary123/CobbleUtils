@@ -20,7 +20,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.BiFunction;
 
 /**
- * Central orchestrator and utility manager for unified placeholder registrations.
+ * Central orchestrator and utility manager for unified placeholder
+ * registrations.
  */
 public final class PlaceholdersUtils {
   private static final Logger LOGGER = LogManager.getLogger("CobbleUtils-Placeholders");
@@ -58,13 +59,12 @@ public final class PlaceholdersUtils {
    * Registers a custom placeholder provider.
    */
   public static void registerProvider(@NotNull PlaceholderProvider provider) {
-    if (provider == null) return;
     try {
       if (!providers.contains(provider)) {
         providers.add(provider);
       }
     } catch (Throwable e) {
-        LOGGER.error("Failed to register custom placeholder provider: " + provider.getId(), e);
+      LOGGER.error("Failed to register custom placeholder provider: " + provider.getId(), e);
     }
   }
 
@@ -78,8 +78,7 @@ public final class PlaceholdersUtils {
   public static void register(
     @NotNull String namespace,
     @NotNull String key,
-    @NotNull UnifiedPlaceholderHandler handler
-  ) {
+    @NotNull UnifiedPlaceholderHandler handler) {
     register(namespace, key, handler, true, false);
   }
 
@@ -91,9 +90,7 @@ public final class PlaceholdersUtils {
     @NotNull String key,
     @NotNull UnifiedPlaceholderHandler handler,
     boolean isAudience,
-    boolean isRelational
-  ) {
-    if (namespace == null || key == null || handler == null) return;
+    boolean isRelational) {
     for (PlaceholderProvider provider : providers) {
       try {
         if (provider.isAvailable()) {
@@ -111,9 +108,7 @@ public final class PlaceholdersUtils {
   public static void registerPlayer(
     @NotNull String namespace,
     @NotNull String key,
-    @NotNull SimplePlayerPlaceholder handler
-  ) {
-    if (namespace == null || key == null || handler == null) return;
+    @NotNull SimplePlayerPlaceholder handler) {
     register(namespace, key, ctx -> handler.handle(ctx.getPlayer(), ctx.getArgument()), true, false);
   }
 
@@ -123,9 +118,7 @@ public final class PlaceholdersUtils {
   public static void registerGlobal(
     @NotNull String namespace,
     @NotNull String key,
-    @NotNull SimpleGlobalPlaceholder handler
-  ) {
-    if (namespace == null || key == null || handler == null) return;
+    @NotNull SimpleGlobalPlaceholder handler) {
     register(namespace, key, ctx -> handler.handle(ctx.getArgument()), false, false);
   }
 
@@ -135,25 +128,24 @@ public final class PlaceholdersUtils {
   public static void registerRelational(
     @NotNull String namespace,
     @NotNull String key,
-    @NotNull RelationalPlaceholderHandler handler
-  ) {
-    if (namespace == null || key == null || handler == null) return;
-    register(namespace, key, ctx -> handler.handle(ctx.getPlayer(), ctx.getTargetPlayer(), ctx.getArgument()), true, true);
+    @NotNull RelationalPlaceholderHandler handler) {
+    register(namespace, key, ctx -> handler.handle(ctx.getPlayer(), ctx.getTargetPlayer(), ctx.getArgument()), true,
+      true);
   }
 
   /**
-   * Convenience method to register a placeholder expecting a specific target object.
+   * Convenience method to register a placeholder expecting a specific target
+   * object.
    */
   public static <T> void registerObject(
     @NotNull String namespace,
     @NotNull String key,
     @NotNull Class<T> targetClass,
-    @NotNull BiFunction<T, String, Object> handler
-  ) {
-    if (namespace == null || key == null || targetClass == null || handler == null) return;
+    @NotNull BiFunction<T, String, Object> handler) {
     register(namespace, key, ctx -> {
       T target = ctx.targetAs(targetClass).orElse(null);
-      if (target == null) return null;
+      if (target == null)
+        return null;
       return handler.apply(target, ctx.getArgument());
     }, true, false);
   }
@@ -162,7 +154,6 @@ public final class PlaceholdersUtils {
    * Unregisters a specific placeholder from all providers.
    */
   public static void unregister(@NotNull String namespace, @NotNull String key) {
-    if (namespace == null || key == null) return;
     for (PlaceholderProvider provider : providers) {
       try {
         if (provider.isAvailable()) {
@@ -178,7 +169,6 @@ public final class PlaceholdersUtils {
    * Unregisters all placeholders in a namespace from all providers.
    */
   public static void unregisterNamespace(@NotNull String namespace) {
-    if (namespace == null) return;
     for (PlaceholderProvider provider : providers) {
       try {
         if (provider.isAvailable()) {
@@ -195,10 +185,12 @@ public final class PlaceholdersUtils {
   // ==========================================
 
   /**
-   * Evaluates placeholders within a String message using available engines (Internal, PB4, MiniPlaceholders).
+   * Evaluates placeholders within a String message using available engines
+   * (Internal, PB4, MiniPlaceholders).
    */
   public static String parseString(@Nullable String message, @Nullable ServerPlayerEntity player) {
-    if (message == null || message.isEmpty()) return "";
+    if (message == null || message.isEmpty())
+      return "";
     try {
       CobblePlaceholderContext ctx = CobblePlaceholderContext.of(player);
       return internalProvider.replace(message, ctx);
@@ -212,7 +204,6 @@ public final class PlaceholdersUtils {
    * Evaluates placeholders within a native Minecraft Text object.
    */
   public static Text parseText(@NotNull Text text, @Nullable ServerPlayerEntity player) {
-    if (text == null) return Text.empty();
     try {
       if (player != null && isPB4Available()) {
         return Placeholders.parseText(text, PlaceholderContext.of(player));
@@ -224,10 +215,12 @@ public final class PlaceholdersUtils {
   }
 
   /**
-   * Deserializes a MiniMessage string with MiniPlaceholders tag resolvers enabled for a ServerPlayerEntity.
+   * Deserializes a MiniMessage string with MiniPlaceholders tag resolvers enabled
+   * for a ServerPlayerEntity.
    */
   public static Component parseMiniMessage(@NotNull String miniMessageText, @Nullable ServerPlayerEntity player) {
-    if (miniMessageText == null || miniMessageText.isEmpty()) return Component.empty();
+    if (miniMessageText.isEmpty())
+      return Component.empty();
     try {
       if (isMiniPlaceholdersAvailable()) {
         Audience audience = player instanceof Audience aud ? aud : null;
@@ -243,10 +236,12 @@ public final class PlaceholdersUtils {
   }
 
   /**
-   * Deserializes a MiniMessage string with MiniPlaceholders tag resolvers enabled for an Audience.
+   * Deserializes a MiniMessage string with MiniPlaceholders tag resolvers enabled
+   * for an Audience.
    */
   public static Component parseMiniMessage(@NotNull String miniMessageText, @Nullable Audience audience) {
-    if (miniMessageText == null || miniMessageText.isEmpty()) return Component.empty();
+    if (miniMessageText.isEmpty())
+      return Component.empty();
     try {
       if (isMiniPlaceholdersAvailable()) {
         TagResolver resolver = audience != null

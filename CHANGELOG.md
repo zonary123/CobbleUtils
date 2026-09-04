@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.3.0] - 2026-09-04
+
+### Added
+
+- **Strict Database Startup Guard**: The server will now safely abort startup by throwing an explicit exception if it cannot establish a connection to the configured database (MongoDB, MySQL, SQLite, MariaDB, H2). This protects player data from desync or corruption when the database is offline or unreachable.
+- **Admin Pokémon Info Command**: Added the `/cobbleutils pokemoninfo <slot>` command for admins to easily inspect Showdown ID, aspects, and persistent data of a party Pokémon.
+
+### Improved
+
+- **Database Connection Health Checks**: Added immediate connectivity validation on server startup with clear error feedback if credentials or database hosts are invalid.
+
 ## [1.2.9] - 2026-08-24
 
 ### Added

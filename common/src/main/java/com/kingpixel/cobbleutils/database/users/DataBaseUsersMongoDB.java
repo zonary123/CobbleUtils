@@ -4,6 +4,7 @@ import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.Model.DataBaseConfig;
 import com.kingpixel.cobbleutils.Model.ItemChance;
 import com.kingpixel.cobbleutils.database.users.models.Storage;
+import com.kingpixel.cobbleutils.exceptions.DatabaseConnectionException;
 import com.kingpixel.cobbleutils.util.UtilsFile;
 import com.kingpixel.cobbleutils.util.mongodb.MongoDBManager;
 import com.kingpixel.cobbleutils.util.mongodb.MongoDBService;
@@ -27,6 +28,7 @@ import java.util.UUID;
  * @author Carlos Varas Alonso - 27/08/2025 15:11
  */
 public class DataBaseUsersMongoDB extends DataBaseUsers {
+  private MongoDBManager mongoDBManager;
   private MongoCollection<Document> collectionUser;
 
   /**
@@ -36,8 +38,18 @@ public class DataBaseUsersMongoDB extends DataBaseUsers {
    */
   @Override
   public void connect(DataBaseConfig config) {
-    MongoDBManager mongoDBManager = MongoDBService.getOrCreateManager(config);
-    collectionUser = mongoDBManager.getCollection(config.getDatabase(), "users");
+    try {
+      this.mongoDBManager = MongoDBService.getOrCreateManager(config);
+      if (this.mongoDBManager == null || !this.mongoDBManager.isConnected()) {
+        throw new DatabaseConnectionException(config.getType().name());
+      }
+      collectionUser = mongoDBManager.getCollection(config.getDatabase(), "users");
+    } catch (Exception e) {
+      if (e instanceof DatabaseConnectionException dce) {
+        throw dce;
+      }
+      throw new DatabaseConnectionException(config.getType().name(), e);
+    }
   }
 
   /**
@@ -45,6 +57,13 @@ public class DataBaseUsersMongoDB extends DataBaseUsers {
    */
   @Override
   public void disconnect() {
+    this.mongoDBManager = null;
+    this.collectionUser = null;
+  }
+
+  @Override
+  public boolean isConnected() {
+    return mongoDBManager != null && mongoDBManager.isConnected();
   }
 
   /**

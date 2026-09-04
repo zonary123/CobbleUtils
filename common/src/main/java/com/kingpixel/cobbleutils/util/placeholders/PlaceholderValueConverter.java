@@ -25,21 +25,15 @@ public final class PlaceholderValueConverter {
   public static @Nullable Text toNativeText(@Nullable Object value, @Nullable ServerPlayerEntity player) {
     if (value == null) return null;
     try {
-      if (value instanceof Text t) {
-        return t;
-      }
-      if (value instanceof Component c) {
-        return AdventureTranslator.toNative(c, player);
-      }
-      if (value instanceof String s) {
-        return AdventureTranslator.toNative(s, null, player);
-      }
-      if (value instanceof PlaceholderResult pr) {
-        return pr.isValid() ? pr.text() : null;
-      }
-      return AdventureTranslator.toNative(String.valueOf(value), null, player);
+      return switch (value) {
+        case Text t -> t;
+        case Component c -> AdventureTranslator.toNative(c, player);
+        case String s -> AdventureTranslator.toNative(s, null, player);
+        case PlaceholderResult pr -> pr.isValid() ? pr.text() : null;
+        default -> AdventureTranslator.toNative(String.valueOf(value), null, player);
+      };
     } catch (Throwable e) {
-      return Text.literal(String.valueOf(value));
+      return AdventureTranslator.toNative(String.valueOf(value));
     }
   }
 
@@ -117,33 +111,21 @@ public final class PlaceholderValueConverter {
   /**
    * Safely converts an arbitrary object into a PB4 PlaceholderResult.
    */
-  public static PlaceholderResult toPB4Result(@Nullable Object value, @Nullable ServerPlayerEntity player) {
-    if (value == null) {
-      return PlaceholderResult.invalid();
+  public static PlaceholderResult toPB4Result(Object value, ServerPlayerEntity player) {
+    switch (value) {
+      case null -> {
+        return PlaceholderResult.invalid();
+      }
+      case Text text -> {
+        return PlaceholderResult.value(text);
+      }
+      case PlaceholderResult result -> {
+        return result;
+      }
+      default -> {
+      }
     }
-    try {
-      if (value instanceof PlaceholderResult pr) {
-        return pr;
-      }
-      if (value instanceof Text t) {
-        return PlaceholderResult.value(t);
-      }
-      if (value instanceof Component c) {
-        Text nativeText = AdventureTranslator.toNative(c, player);
-        return nativeText != null ? PlaceholderResult.value(nativeText) : PlaceholderResult.invalid();
-      }
-      if (value instanceof String s) {
-        Text nativeText = AdventureTranslator.toNative(s, null, player);
-        return nativeText != null ? PlaceholderResult.value(nativeText) : PlaceholderResult.value(s);
-      }
-      if (value instanceof Number || value instanceof Boolean) {
-        return PlaceholderResult.value(String.valueOf(value));
-      }
-      Text text = toNativeText(value, player);
-      return text != null ? PlaceholderResult.value(text) : PlaceholderResult.value(String.valueOf(value));
-    } catch (Throwable e) {
-      return PlaceholderResult.value(String.valueOf(value));
-    }
+    return PlaceholderResult.value(AdventureTranslator.toNative(String.valueOf(value), ""));
   }
 
   /**
@@ -152,10 +134,12 @@ public final class PlaceholderValueConverter {
   public static @Nullable String toStringValue(@Nullable Object value) {
     if (value == null) return null;
     try {
-      if (value instanceof String s) return s;
-      if (value instanceof Text t) return t.getString();
-      if (value instanceof Component c) return AdventureTranslator.miniMessage.serialize(c);
-      return String.valueOf(value);
+      return switch (value) {
+        case String s -> s;
+        case Text t -> t.getString();
+        case Component c -> AdventureTranslator.miniMessage.serialize(c);
+        default -> String.valueOf(value);
+      };
     } catch (Throwable e) {
       return String.valueOf(value);
     }
