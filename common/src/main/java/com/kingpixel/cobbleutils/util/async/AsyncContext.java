@@ -16,7 +16,7 @@ import java.util.function.Supplier;
  * to absorb unexpected traffic bursts, immediate self-cleaning scheduled tasks to prevent
  * memory leaks, and a multi-threaded scheduler shielded from pool exhaustion.</p>
  */
-public class AsyncContext {
+public class AsyncContext implements java.util.concurrent.Executor {
 
   private final ThreadPoolExecutor executor;
   private final ScheduledThreadPoolExecutor scheduler;
@@ -29,6 +29,20 @@ public class AsyncContext {
   private final long defaultTimeout;
   private final TimeUnit defaultTimeoutUnit;
   private final String threadNamePrefix;
+
+  public ExecutorService getExecutor() {
+    return executor;
+  }
+
+  public ScheduledExecutorService getScheduler() {
+    return scheduler;
+  }
+
+  @Override
+  public void execute(Runnable command) {
+    if (command == null) return;
+    runAsync(command);
+  }
 
   /* ========================================= */
   /* =============== CONSTRUCTOR ============= */
