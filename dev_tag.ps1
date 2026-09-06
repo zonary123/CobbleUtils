@@ -1,30 +1,28 @@
-# Leer versión de gradle.properties
-if (Test-Path "gradle.properties") {
-    $versionLine = Get-Content "gradle.properties" | Select-String "^mod_version="
-    if ($versionLine) {
-        $version = $versionLine.Line.Split("=")[1].Trim()
-    } else {
-        Write-Error "No se encontró mod_version en gradle.properties"
-        exit 1
-    }
-} else {
-    Write-Error "No se encontró gradle.properties"
+$gradleFile = "gradle.properties"
+if (-Not (Test-Path $gradleFile)) {
+    Write-Error "No se encontro gradle.properties"
     exit 1
 }
 
-# Obtener hash corto de git
-$gitHash = (git rev-parse --short HEAD).Trim()
+$matchingLines = @(Get-Content $gradleFile | Where-Object { $_ -match '^(mod_)?version=' })
+if ($matchingLines.Count -eq 0) {
+    Write-Error "No se encontro version en gradle.properties"
+    exit 1
+}
 
-# Limpiar versión por si tiene caracteres inválidos
-$safeVersion = $version -replace '[^a-zA-Z0-9._-]', ''
+$versionLine = $matchingLines[0]
+$version = ($versionLine -split '=')[1].Trim()
 
-# Crear tag de prueba con versión + hash
+try {
+    $gitHash = git rev-parse --short HEAD
+} catch {
+    Write-Error "No se pudo obtener el hash de git."
+    exit 1
+}
+
+$safeVersion = -join ($version.ToCharArray() | Where-Object { $_ -match '[a-zA-Z0-9._-]' })
 $tag = "v${safeVersion}-dev-${gitHash}"
 
-# Crear tag localmente
-git tag -a "$tag" -m "Dev build $tag"
-
-# Push del tag
-git push origin "$tag"
-
-Write-Host "Tag creado y subido: $tag" -ForegroundColor Green
+git tag -a $tag -m "Dev build $tag"
+git push origin $tag
+Write-Host "Tag creado y subido: $tag"

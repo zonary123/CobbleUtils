@@ -2,7 +2,6 @@ package com.kingpixel.cobbleutils.util;
 
 import com.cobblemon.mod.common.api.spawning.BestSpawner;
 import com.cobblemon.mod.common.api.spawning.CobblemonSpawnPools;
-import com.cobblemon.mod.common.api.spawning.SpawnBucket;
 import com.cobblemon.mod.common.api.spawning.detail.SpawnDetail;
 import com.cobblemon.mod.common.api.spawning.multiplier.WeightMultiplier;
 import com.cobblemon.mod.common.pokemon.Pokemon;
@@ -12,6 +11,7 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -48,82 +48,101 @@ public class SpawnRates {
 
   public void init() {
     ArrayList<SpawnDetail> spawnDetails = new ArrayList<>(CobblemonSpawnPools.WORLD_SPAWN_POOL.getDetails());
-    // Checks for highest value for each key and adds the key with the highest
-    // weight.
+    Map<String, Float> worldBuckets = BestSpawner.INSTANCE.getConfig().getWorldBuckets();
 
-
-    // Holds all of the buckets as a key, with another hashmap that will hold the
-    // Pokemon
-    // and their weights for that bucket as the value.
-    HashMap<SpawnBucket, HashMap<String, Float>> buckets = new HashMap<>();
+    HashMap<String, HashMap<String, Float>> buckets = new HashMap<>();
     Set<String> pokemon = new HashSet<>();
 
-    // Gets all buckets and adds them to the HashMap.
-    for (SpawnBucket bucket : BestSpawner.INSTANCE.getConfig().getBuckets()) {
-      buckets.put(bucket, new HashMap<>());
+    if (worldBuckets != null) {
+      for (String bucket : worldBuckets.keySet()) {
+        buckets.put(bucket, new HashMap<>());
+      }
     }
 
-    // For each SpawnDetail
+    populateBuckets(spawnDetails, buckets, pokemon);
+    HashMap<String, Float> totalWeights = calculateTotalWeights(buckets);
+    calculatePokemonRarities(pokemon, buckets, totalWeights, worldBuckets);
+  }
+
+  private void populateBuckets(
+    ArrayList<SpawnDetail> spawnDetails,
+    HashMap<String, HashMap<String, Float>> buckets,
+    Set<String> pokemon
+  ) {
     for (SpawnDetail detail : spawnDetails) {
+      String bucket = detail.getBucket();
+      if (bucket == null || !buckets.containsKey(bucket)) continue;
 
-      // Finds the highest weight multiplier.
-      float weightMultiplier = 0;
-      for (WeightMultiplier multiplier : detail.getWeightMultipliers()) {
-        if (multiplier.getMultiplier() > weightMultiplier) {
-          weightMultiplier = multiplier.getMultiplier();
-        }
+      float highestWeight = calculateHighestWeight(detail);
+      HashMap<String, Float> bucketMap = buckets.get(bucket);
+      String pokeName = detail.getName().getString();
+
+      if (!bucketMap.containsKey(pokeName) || highestWeight > bucketMap.get(pokeName)) {
+        bucketMap.put(pokeName, highestWeight);
       }
-
-      // Makes sure there was a weight multiplier. Chooses highest weight.
-      float highestWeight = Math.max(detail.getWeight() * weightMultiplier, detail.getWeight());
-
-      // If the bucket of the detail doesn't contain the Pokemon, or the detail value
-      // is higher than
-      // the currently saved value, add the details combined weight.
-      if (!buckets.get(detail.getBucket()).containsKey(detail.getName().getString()) ||
-        highestWeight > buckets.get(detail.getBucket()).get(detail.getName().getString())) {
-
-        // Adds the weight to the bucket.
-        buckets.get(detail.getBucket()).put(detail.getName().getString(), highestWeight);
-
-      }
-
-      // Stores the Pokemon name so we can compare the different weights after
-      pokemon.add(detail.getName().getString());
+      pokemon.add(pokeName);
     }
+  }
 
-    // Calculates the total weight of all buckets.
-    HashMap<SpawnBucket, Float> totalWeights = new HashMap<>();
-    for (SpawnBucket bucket : buckets.keySet()) {
+  private float calculateHighestWeight(SpawnDetail detail) {
+    float weightMultiplier = 0;
+    for (WeightMultiplier multiplier : detail.getWeightMultipliers()) {
+      if (multiplier.getMultiplier() > weightMultiplier) {
+        weightMultiplier = multiplier.getMultiplier();
+      }
+    }
+    return Math.max(detail.getWeight() * weightMultiplier, detail.getWeight());
+  }
 
-      // Finds the total weight of all Pokemon in the bucket.
+  private HashMap<String, Float> calculateTotalWeights(HashMap<String, HashMap<String, Float>> buckets) {
+    HashMap<String, Float> totalWeights = new HashMap<>();
+    for (Map.Entry<String, HashMap<String, Float>> entry : buckets.entrySet()) {
       float bucketTotalWeight = 0;
-      for (float weight : new ArrayList<>(buckets.get(bucket).values())) {
+      for (float weight : entry.getValue().values()) {
         bucketTotalWeight += weight;
       }
-      totalWeights.put(bucket, bucketTotalWeight);
+      totalWeights.put(entry.getKey(), bucketTotalWeight);
     }
+    return totalWeights;
+  }
 
+  private void calculatePokemonRarities(
+    Set<String> pokemon,
+    HashMap<String, HashMap<String, Float>> buckets,
+    HashMap<String, Float> totalWeights,
+    Map<String, Float> worldBuckets
+  ) {
     for (String poke : pokemon) {
-      // Iterate over each bucket and find the highest weight of them all.
-      BigDecimal highestWeight = new BigDecimal(0);
-
-      // Checks each bucket, calculates the weight and compares it to the current one.
-      for (SpawnBucket bucket : buckets.keySet()) {
-
-        // Calculates the weight and compares to previous ones to find the highest.
-        if (buckets.get(bucket).containsKey(poke)) {
-          BigDecimal rarityInBucket = BigDecimal.valueOf(buckets.get(bucket).get(poke) / totalWeights.get(bucket));
-
-          BigDecimal totalWeight = rarityInBucket.multiply(BigDecimal.valueOf(bucket.getWeight()));
-
-          if (totalWeight.compareTo(highestWeight) > 0) {
-            highestWeight = totalWeight;
-          }
-        }
-      }
+      BigDecimal highestWeight = calculateHighestWeightForPokemon(poke, buckets, totalWeights, worldBuckets);
       rarity.put(poke.toLowerCase(), highestWeight.multiply(BigDecimal.valueOf(100)).floatValue());
     }
+  }
+
+  private BigDecimal calculateHighestWeightForPokemon(
+    String poke,
+    HashMap<String, HashMap<String, Float>> buckets,
+    HashMap<String, Float> totalWeights,
+    Map<String, Float> worldBuckets
+  ) {
+    BigDecimal highestWeight = BigDecimal.ZERO;
+    for (Map.Entry<String, HashMap<String, Float>> entry : buckets.entrySet()) {
+      String bucket = entry.getKey();
+      HashMap<String, Float> bucketMap = entry.getValue();
+
+      if (bucketMap.containsKey(poke)) {
+        float totalWeightInBucket = totalWeights.getOrDefault(bucket, 0f);
+        if (totalWeightInBucket <= 0) continue;
+
+        BigDecimal rarityInBucket = BigDecimal.valueOf(bucketMap.get(poke) / totalWeightInBucket);
+        float bucketWeight = worldBuckets != null ? worldBuckets.getOrDefault(bucket, 0f) : 0f;
+        BigDecimal totalWeight = rarityInBucket.multiply(BigDecimal.valueOf(bucketWeight));
+
+        if (totalWeight.compareTo(highestWeight) > 0) {
+          highestWeight = totalWeight;
+        }
+      }
+    }
+    return highestWeight;
   }
 
   /**

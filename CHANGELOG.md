@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.3.1] - 2026-09-06
+
+### Changed
+
+- **Cobblemon 1.8.0 Compatibility**: Updated compatibility and dependencies to support Cobblemon 1.8.0 (Minecraft 1.21.1).
+- **SpawnRates Calculation**: Adapted `SpawnRates` calculation to Cobblemon 1.8.0 spawn system changes (`worldBuckets` configuration map).
+- **Single Mod Update Requirement**: Only **CobbleUtils** needs to be updated on servers/clients to ensure full Cobblemon 1.8.0 compatibility across all dependent ecosystem mods. If any other mod experiences issues after updating CobbleUtils, please report it.
+
 ## [1.3.0] - 2026-09-04
 
 ### Added
@@ -104,3 +112,4 @@
 - Implemented cross-server teleportation command (`TeleportCommand`) and Redis-based location/teleportation
   synchronizer (`RedisTeleportHandler`).
 - Added automatic world synchronization across server instances using Redis messaging.
+
