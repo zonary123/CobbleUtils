@@ -2,6 +2,7 @@ package com.kingpixel.cobbleutils.Model.validators;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
+import com.kingpixel.cobbleutils.CobbleUtils;
 
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -50,7 +51,7 @@ public class ValidatorUtil {
         if (pattern == null) continue;
         if (pattern.matcher(value).matches()) return true;
       } catch (Exception e) {
-        System.err.println("Invalid regex pattern: " + regex + " -> " + e.getMessage());
+        CobbleUtils.LOGGER_RAW.error("Invalid regex pattern: {} -> {}", regex, e.getMessage(), e);
       }
     }
     return false;

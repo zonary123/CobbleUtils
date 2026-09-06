@@ -2,6 +2,10 @@
 
 ## [1.3.1] - 2026-09-06
 
+### Added
+
+- **TM Craft Event & Validator**: Added `CobbleUtilsEvents.TM_CRAFT_EVENT`, `EventTMCraft`, and `TMCraftValidator` for filtering and validating TM crafting events, moves, and TM items across dependent mods (such as UltraJobs, UltraQuests).
+
 ### Changed
 
 - **Cobblemon 1.8.0 Compatibility**: Updated compatibility and dependencies to support Cobblemon 1.8.0 (Minecraft 1.21.1).

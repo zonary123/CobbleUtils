@@ -3,6 +3,7 @@ package com.kingpixel.cobbleutils.Model;
 import club.minnced.discord.webhook.WebhookClient;
 import com.cobblemon.mod.common.entity.pokemon.PokemonEntity;
 import com.cobblemon.mod.common.pokemon.Pokemon;
+import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.Model.discord.WebHookStruct;
 import com.kingpixel.cobbleutils.util.async.AsyncContext;
 import com.kingpixel.cobbleutils.util.async.UtilsAsync;
@@ -116,7 +117,7 @@ public class WebHookData {
     HTTP_ASYNC.runAsync(task)
       .orTimeout(5, TimeUnit.SECONDS)
       .exceptionally(e -> {
-        System.err.println("[CobbleUtils-Webhooks] Failed to deliver webhook payload context '" + id + "': " + e.getMessage());
+        CobbleUtils.LOGGER_RAW.error("[CobbleUtils-Webhooks] Failed to deliver webhook payload context '{}'", id, e);
         return null;
       });
   }

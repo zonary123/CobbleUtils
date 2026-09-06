@@ -36,6 +36,8 @@ public class CobbleUtilsEvents {
   public static final EventChannel<EventItemStack> CRAFTING_EVENT = new EventChannel<>();
   // SMELTING EVENT
   public static final EventChannel<EventItemStack> SMELTING_EVENT = new EventChannel<>();
+  // TM CRAFT EVENT
+  public static final EventChannel<EventTMCraft> TM_CRAFT_EVENT = new EventChannel<>();
 
   public static void register() {
     // Registered via mixins to support correct quantities and shift-clicking

@@ -44,12 +44,12 @@ public abstract class AbstractRegistryValidator<T> {
    * Transient cache to store validation results per object ID.
    * Safe for serialization, initialized lazily after deserialization.
    */
-  private transient Cache<String, Boolean> validationCache;
+  protected transient Cache<String, Boolean> validationCache;
 
   /**
    * Lazy initialization of the cache.
    */
-  private Cache<String, Boolean> getValidationCache() {
+  protected Cache<String, Boolean> getValidationCache() {
     if (validationCache == null) {
       validationCache = Caffeine.newBuilder()
         .maximumSize(5000)

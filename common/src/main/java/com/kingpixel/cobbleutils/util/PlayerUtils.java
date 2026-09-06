@@ -366,8 +366,7 @@ public class PlayerUtils {
       try {
         disparador.execute(parse);
       } catch (CommandSyntaxException e) {
-        System.err.println("Error to execute command: " + finalCommand);
-        e.printStackTrace();
+        CobbleUtils.LOGGER_RAW.error("Error executing command: {}", finalCommand, e);
       }
     });
     return true;
