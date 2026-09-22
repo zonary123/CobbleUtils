@@ -19,6 +19,7 @@ import org.bson.Document;
 import org.bson.codecs.configuration.CodecRegistries;
 
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -156,6 +157,21 @@ public class MongoDBManager {
   }
 
   /**
+   * Initializes the manager safely without throwing runtime exceptions.
+   *
+   * @return {@code true} if initialized and connected successfully, {@code false} otherwise.
+   */
+  public boolean initSafely() {
+    try {
+      init();
+      return this.connected;
+    } catch (Exception e) {
+      CobbleUtils.LOGGER_RAW.warn("[MongoDB] Safe initialization failed for {}: {}", sanitizeForLog(config.getUrl()), e.getMessage());
+      return false;
+    }
+  }
+
+  /**
    * Returns a {@link MongoDatabase} for the given name using the shared client.
    *
    * @param databaseName The database name.
@@ -167,6 +183,24 @@ public class MongoDBManager {
     if (client == null)
       throw new IllegalStateException("MongoDBManager not initialized. Call init() first.");
     return client.getDatabase(databaseName);
+  }
+
+  /**
+   * Returns a {@link MongoDatabase} safely wrapped in an {@link Optional}.
+   *
+   * @param databaseName The database name.
+   * @return Optional containing the database, or empty if not initialized/connected.
+   */
+  public Optional<MongoDatabase> getDatabaseSafe(String databaseName) {
+    MongoClient client = this.mongoClient.get();
+    if (client == null) {
+      return Optional.empty();
+    }
+    try {
+      return Optional.ofNullable(client.getDatabase(databaseName));
+    } catch (Exception e) {
+      return Optional.empty();
+    }
   }
 
   /**
@@ -184,6 +218,24 @@ public class MongoDBManager {
   }
 
   /**
+   * Returns a {@link MongoCollection} from the default database safely wrapped in an {@link Optional}.
+   *
+   * @param collectionName The collection name.
+   * @return Optional containing the collection, or empty if not initialized/connected.
+   */
+  public Optional<MongoCollection<Document>> getCollectionSafe(String collectionName) {
+    MongoDatabase db = this.defaultDatabase.get();
+    if (db == null) {
+      return Optional.empty();
+    }
+    try {
+      return Optional.ofNullable(db.getCollection(collectionName));
+    } catch (Exception e) {
+      return Optional.empty();
+    }
+  }
+
+  /**
    * Returns a {@link MongoCollection} from a specific database.
    *
    * @param databaseName   The database name.
@@ -192,6 +244,23 @@ public class MongoDBManager {
    */
   public MongoCollection<Document> getCollection(String databaseName, String collectionName) {
     return getDatabase(databaseName).getCollection(collectionName);
+  }
+
+  /**
+   * Returns a {@link MongoCollection} from a specific database safely wrapped in an {@link Optional}.
+   *
+   * @param databaseName   The database name.
+   * @param collectionName The collection name.
+   * @return Optional containing the collection, or empty if not initialized/connected.
+   */
+  public Optional<MongoCollection<Document>> getCollectionSafe(String databaseName, String collectionName) {
+    return getDatabaseSafe(databaseName).map(db -> {
+      try {
+        return db.getCollection(collectionName);
+      } catch (Exception e) {
+        return null;
+      }
+    });
   }
 
   /**

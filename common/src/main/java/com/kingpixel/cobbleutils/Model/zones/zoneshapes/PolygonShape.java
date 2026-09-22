@@ -1,6 +1,8 @@
 package com.kingpixel.cobbleutils.Model.zones.zoneshapes;
 
 import com.kingpixel.cobbleutils.Model.zones.Point2D;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
@@ -9,6 +11,8 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
+@EqualsAndHashCode(callSuper = true)
+@Data
 public class PolygonShape extends ZoneShape {
 
   public static final String TYPE = "POLYGON";

@@ -14,6 +14,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
@@ -228,12 +229,59 @@ public class MongoDBService {
   }
 
   /**
+   * Safely retrieves or creates a shared MongoDBManager instance without throwing runtime exceptions.
+   *
+   * @param config Connection parameters.
+   * @return An Optional containing the MongoDBManager if connection succeeded, or Optional.empty() if it failed.
+   */
+  public static Optional<MongoDBManager> getOrCreateManagerSafe(DataBaseConfig config) {
+    if (config == null) return Optional.empty();
+    try {
+      return Optional.ofNullable(getOrCreateManager(config));
+    } catch (Exception e) {
+      return Optional.empty();
+    }
+  }
+
+  /**
+   * Checks whether MongoDB is reachable and available for the given configuration.
+   *
+   * @param config Connection parameters.
+   * @return {@code true} if connection is alive and healthy, {@code false} otherwise.
+   */
+  public static boolean isAvailable(DataBaseConfig config) {
+    if (config == null) return false;
+    try {
+      Fingerprint fingerprint = buildFingerprint(config);
+      MongoDBManager existing = MANAGERS.get(fingerprint.cacheKey());
+      if (existing != null && existing.isAlive()) {
+        return true;
+      }
+      return getOrCreateManagerSafe(config).map(MongoDBManager::isAlive).orElse(false);
+    } catch (Exception e) {
+      return false;
+    }
+  }
+
+  /**
    * Returns a collection from the shared manager for this config.
    * Prefer this helper in downstream mods to keep Mongo access centralized in CobbleUtils.
    */
   public static MongoCollection<Document> getCollection(DataBaseConfig config, String collectionName) {
     Objects.requireNonNull(collectionName, "collectionName cannot be null");
     return getOrCreateManager(config).getCollection(collectionName);
+  }
+
+  /**
+   * Returns a collection from the shared manager safely wrapped in an Optional.
+   *
+   * @param config         The database configuration.
+   * @param collectionName The collection name.
+   * @return Optional containing the MongoCollection, or empty if connection failed.
+   */
+  public static Optional<MongoCollection<Document>> getCollectionSafe(DataBaseConfig config, String collectionName) {
+    if (config == null || collectionName == null) return Optional.empty();
+    return getOrCreateManagerSafe(config).flatMap(mgr -> mgr.getCollectionSafe(collectionName));
   }
 
   /**
@@ -245,7 +293,11 @@ public class MongoDBService {
     Function<MongoCollection<Document>, T> action
   ) {
     Objects.requireNonNull(action, "action cannot be null");
-    return getOrCreateManager(config).withCollectionAsync(collectionName, action);
+    try {
+      return getOrCreateManager(config).withCollectionAsync(collectionName, action);
+    } catch (Exception e) {
+      return CompletableFuture.failedFuture(e);
+    }
   }
 
   /**
@@ -257,6 +309,10 @@ public class MongoDBService {
     Consumer<MongoCollection<Document>> action
   ) {
     Objects.requireNonNull(action, "action cannot be null");
-    return getOrCreateManager(config).withCollectionAsync(collectionName, action);
+    try {
+      return getOrCreateManager(config).withCollectionAsync(collectionName, action);
+    } catch (Exception e) {
+      return CompletableFuture.failedFuture(e);
+    }
   }
 }

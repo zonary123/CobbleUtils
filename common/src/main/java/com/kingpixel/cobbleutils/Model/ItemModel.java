@@ -53,6 +53,7 @@ public class ItemModel {
   private long CustomModelData = 0;
   private String nbt;
   private Object tooltip;
+  private Sound sound;
 
 
   public ItemModel() {
@@ -152,6 +153,8 @@ public class ItemModel {
     this.lore = itemMoney.getLore();
     CustomModelData = itemMoney.getCustomModelData();
     this.nbt = itemMoney.getNbt();
+    this.tooltip = itemMoney.getTooltip();
+    this.sound = itemMoney.getSound();
   }
 
   /**
@@ -288,7 +291,12 @@ public class ItemModel {
       }
     }
 
-    if (action != null) builder.onClick(action);
+    if (action != null || sound != null) {
+      builder.onClick(buttonAction -> {
+        if (sound != null) sound.start(buttonAction.getPlayer());
+        if (action != null) action.accept(buttonAction);
+      });
+    }
     return builder
       .build();
   }

@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.3.2] - 2026-09-22
+
+### Added
+
+- **Zone Shape Getters & Data Integration**:
+  - Added full Lombok `@Data` and `@EqualsAndHashCode` annotations across all zone shape models (`PolygonShape`, `CuboidShape`, etc.), cleanly exposing public getters and setters for points, bounds (`min`, `max`), and vertical limits (`minY`, `maxY`) without needing reflection.
+- **Button Click Sound Integration**:
+  - `ItemModel` can now trigger configured sound effects automatically upon clicking menu buttons.
+- **Resilient MongoDB Operations**:
+  - Added safe MongoDB access methods (`initSafely`, `getDatabaseSafe`, `getCollectionSafe`, `isAvailable`) that handle offline or disconnected database states gracefully without crashing the server.
+
 ## [1.3.1] - 2026-09-06
 
 ### Added
