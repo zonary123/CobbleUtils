@@ -42,6 +42,14 @@ public class CuboidShape extends ZoneShape {
     );
   }
 
+  public BlockPos getMin() {
+    return min;
+  }
+
+  public BlockPos getMax() {
+    return max;
+  }
+
   @Override
   public void fix() {
     if (min == null || max == null) return;

@@ -25,6 +25,7 @@ import com.kingpixel.cobbleutils.database.users.UserModel;
 import com.kingpixel.cobbleutils.events.CobbleUtilsEvents;
 import com.kingpixel.cobbleutils.events.ItemRightClickEvents;
 import com.kingpixel.cobbleutils.tasks.RegistryTasks;
+import com.kingpixel.cobbleutils.util.ChatPrompt;
 import com.kingpixel.cobbleutils.util.CobbleUtilsBridgeGTS;
 import com.kingpixel.cobbleutils.util.SpawnRates;
 import com.kingpixel.cobbleutils.util.UtilsLogger;
@@ -179,6 +180,7 @@ public class CobbleUtils {
 
   private static void events() {
     files();
+    ChatPrompt.init();
     try {
       if (config.isRedisMessaging()) {
         redisManager = config.getRedis().getManager();
@@ -337,6 +339,7 @@ public class CobbleUtils {
     });
 
     PlayerEvent.PLAYER_QUIT.register((player) -> {
+      ChatPrompt.cancel(player.getUuid());
       AnimationQueue.clearQueue(player.getUuid());
       runAsync(() -> {
         try {

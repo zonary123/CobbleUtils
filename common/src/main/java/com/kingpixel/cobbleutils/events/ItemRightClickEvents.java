@@ -3,7 +3,6 @@ package com.kingpixel.cobbleutils.events;
 import ca.landonjw.gooeylibs2.api.UIManager;
 import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.ui.PartyPcMenu;
-import com.kingpixel.cobbleutils.util.PlayerUtils;
 import dev.architectury.event.CompoundEventResult;
 import net.minecraft.component.DataComponentTypes;
 import net.minecraft.component.type.NbtComponent;
@@ -18,15 +17,23 @@ import net.minecraft.util.Hand;
  */
 public class ItemRightClickEvents {
   public static CompoundEventResult register(PlayerEntity player, Hand hand) {
-    if (player.isInPose(EntityPose.CROUCHING))
+    if (player.getWorld().isClient() || !(player instanceof ServerPlayerEntity serverPlayer)) {
       return CompoundEventResult.pass();
-    ItemStack itemStack = player.getStackInHand(hand);
+    }
+
+    if (serverPlayer.isInPose(EntityPose.CROUCHING)) {
+      return CompoundEventResult.pass();
+    }
+
+    ItemStack itemStack = serverPlayer.getStackInHand(hand);
     if (itemStack.isEmpty()) return CompoundEventResult.pass();
+
     NbtComponent tag = itemStack.get(DataComponentTypes.CUSTOM_DATA);
     if (tag == null) return CompoundEventResult.pass();
+
     if (tag.contains("shinytoken")) {
       if (!CobbleUtils.config.isActiveshinytoken()) return CompoundEventResult.pass();
-      open(PlayerUtils.castPlayer(player), itemStack);
+      open(serverPlayer, itemStack);
       return CompoundEventResult.pass();
     }
 
