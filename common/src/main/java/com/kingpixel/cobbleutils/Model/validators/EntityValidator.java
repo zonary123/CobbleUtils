@@ -41,7 +41,31 @@ public class EntityValidator extends AbstractRegistryValidator<Entity> {
 
   @Override
   protected String getId(@NonNull Entity entity) {
+    if (entity instanceof com.cobblemon.mod.common.entity.pokemon.PokemonEntity pokemonEntity) {
+      if (pokemonEntity.getPokemon() != null) {
+        return "cobblemon:" + pokemonEntity.getPokemon().getSpecies().getName().toLowerCase();
+      }
+    }
     return entity.getSavedEntityId();
+  }
+
+  @Override
+  public boolean isValid(@NonNull Entity entity) {
+    if (super.isValid(entity)) return true;
+    String id = getId(entity);
+    if (id != null && id.contains(":")) {
+      String path = id.substring(id.indexOf(':') + 1);
+      if (ValidatorUtil.match(path, this.getIdSet()) && !ValidatorUtil.match(path, this.getBlacklist())) {
+        return true;
+      }
+    }
+    if (entity instanceof com.cobblemon.mod.common.entity.pokemon.PokemonEntity) {
+      String genericId = entity.getSavedEntityId();
+      if (genericId != null && ValidatorUtil.match(genericId, this.getIdSet()) && !ValidatorUtil.match(genericId, this.getBlacklist())) {
+        return true;
+      }
+    }
+    return false;
   }
 
   @Override

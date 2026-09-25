@@ -29,6 +29,7 @@ public class CobbleUtilsEvents {
   public static final EventChannel<EventTravel> TRAVEL_EVENT = new EventChannel<>();
   public static final EventChannel<EventEntity> INTERACT_ENTITY_EVENT = new EventChannel<>();
   public static final EventChannel<EventEnchant> ENCHANT_EVENT = new EventChannel<>();
+  public static final EventChannel<EventShearEntity> SHEAR_ENTITY_EVENT = new EventChannel<>();
   public static final EventChannel<EventItemStack> SHEEP_SHEAR_EVENT = new EventChannel<>();
   public static final EventChannel<EventItemStack> SMITHING_TABLE_EVENT = new EventChannel<>();
 

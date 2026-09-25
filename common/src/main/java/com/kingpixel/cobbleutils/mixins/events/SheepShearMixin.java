@@ -21,6 +21,9 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
+import com.kingpixel.cobbleutils.events.models.EventShearEntity;
+
+import java.util.List;
 import java.util.Map;
 
 @Mixin(SheepEntity.class)
@@ -28,6 +31,8 @@ public abstract class SheepShearMixin {
 
   @Unique
   private ServerPlayerEntity cobbleutils$lastShearer;
+  @Unique
+  private ItemStack cobbleutils$lastTool;
 
   @Shadow
   @Final
@@ -45,6 +50,7 @@ public abstract class SheepShearMixin {
     try {
       if (player instanceof ServerPlayerEntity sp) {
         this.cobbleutils$lastShearer = sp;
+        this.cobbleutils$lastTool = player.getStackInHand(hand).copy();
       }
     } catch (Throwable e) {
       CobbleUtils.LOGGER_RAW.error("Error in SheepShearMixin#cobblejobs$capturePlayer", e);
@@ -61,13 +67,31 @@ public abstract class SheepShearMixin {
   )
   private void cobbleUtils$onSheared(SoundCategory shearedSoundCategory, CallbackInfo ci) {
     try {
-      if (CobbleUtilsEvents.SHEEP_SHEAR_EVENT.isEmpty()) return;
+      if (CobbleUtilsEvents.SHEAR_ENTITY_EVENT.isEmpty() && CobbleUtilsEvents.SHEEP_SHEAR_EVENT.isEmpty()) return;
       if (this.cobbleutils$lastShearer != null) {
-        CobbleUtilsEvents.SHEEP_SHEAR_EVENT.emit(EventItemStack.builder()
-          .player(cobbleutils$lastShearer)
-          .itemStack(new ItemStack(DROPS.get(this.getColor())))
-          .build());
+        ItemStack dropped = new ItemStack(DROPS.get(this.getColor()));
+        List<ItemStack> drops = List.of(dropped);
+        SheepEntity sheep = (SheepEntity) (Object) this;
+
+        if (!CobbleUtilsEvents.SHEAR_ENTITY_EVENT.isEmpty()) {
+          CobbleUtilsEvents.SHEAR_ENTITY_EVENT.emit(EventShearEntity.builder()
+            .player(this.cobbleutils$lastShearer)
+            .entity(sheep)
+            .tool(this.cobbleutils$lastTool != null ? this.cobbleutils$lastTool : ItemStack.EMPTY)
+            .drops(drops)
+            .build());
+        }
+
+        if (!CobbleUtilsEvents.SHEEP_SHEAR_EVENT.isEmpty()) {
+          CobbleUtilsEvents.SHEEP_SHEAR_EVENT.emit(EventItemStack.builder()
+            .player(this.cobbleutils$lastShearer)
+            .itemStack(dropped)
+            .itemStacks(drops)
+            .build());
+        }
+
         this.cobbleutils$lastShearer = null;
+        this.cobbleutils$lastTool = null;
       }
     } catch (Throwable e) {
       CobbleUtils.LOGGER_RAW.error("Error in SheepShearMixin#cobbleUtils$onSheared", e);

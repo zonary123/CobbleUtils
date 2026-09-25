@@ -14,9 +14,12 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(CookingPotResultSlot.class)
 public abstract class CampfirePotMixin {
+  public static final ThreadLocal<Boolean> IN_QUICK_MOVE = ThreadLocal.withInitial(() -> Boolean.FALSE);
+
   @Inject(method = "onTakeItem", at = @At("RETURN"))
   private void cobbleutils$onTakeItem(PlayerEntity playerEntity, ItemStack itemStack, CallbackInfo ci) {
     try {
+      if (Boolean.TRUE.equals(IN_QUICK_MOVE.get())) return;
       if (CobbleUtilsEvents.CAMPFIRE_POT_EVENT.isEmpty()) return;
       if (playerEntity == null || itemStack.isEmpty()) return;
 
