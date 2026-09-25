@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.3.3] - 2026-09-25
+
+### Added
+
+- **Generic Entity Shearing Event**:
+  - Full support for shearing Cobblemon Pokémon (such as Wooloo, Dubwool, Slowpoke tail, etc.) alongside vanilla sheep.
+  - New shearing validation system allowing other mods (UltraQuests, UltraJobs) to filter by entity type, shears tool, and dropped items.
+
+### Fixed
+
+- **Campfire Pot Shift-Click Detection**:
+  - Fixed an issue where taking cooked items out of the Campfire Pot using Shift + Click (quick move) failed to trigger quest progress and events.
+
 ## [1.3.2] - 2026-09-22
 
 ### Added
