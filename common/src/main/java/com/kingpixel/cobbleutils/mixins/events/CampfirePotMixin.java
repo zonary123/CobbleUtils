@@ -2,6 +2,7 @@ package com.kingpixel.cobbleutils.mixins.events;
 
 import com.cobblemon.mod.common.block.campfirepot.CookingPotResultSlot;
 import com.kingpixel.cobbleutils.CobbleUtils;
+import com.kingpixel.cobbleutils.events.CampfirePotTracker;
 import com.kingpixel.cobbleutils.events.CobbleUtilsEvents;
 import com.kingpixel.cobbleutils.events.models.EventItemStack;
 import net.minecraft.entity.player.PlayerEntity;
@@ -14,14 +15,13 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(CookingPotResultSlot.class)
 public abstract class CampfirePotMixin {
-  public static final ThreadLocal<Boolean> IN_QUICK_MOVE = ThreadLocal.withInitial(() -> Boolean.FALSE);
 
   @Inject(method = "onTakeItem", at = @At("RETURN"))
   private void cobbleutils$onTakeItem(PlayerEntity playerEntity, ItemStack itemStack, CallbackInfo ci) {
     try {
-      if (Boolean.TRUE.equals(IN_QUICK_MOVE.get())) return;
+      if (Boolean.TRUE.equals(CampfirePotTracker.IN_QUICK_MOVE.get())) return;
       if (CobbleUtilsEvents.CAMPFIRE_POT_EVENT.isEmpty()) return;
-      if (playerEntity == null || itemStack.isEmpty()) return;
+      if (playerEntity == null || itemStack == null || itemStack.isEmpty()) return;
 
       if (!(playerEntity instanceof ServerPlayerEntity player)) return;
 
