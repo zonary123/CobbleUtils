@@ -46,6 +46,7 @@ allprojects {
     group = rootProject.maven_group
 
     repositories {
+        maven { url uri("${rootDir}/gradle/plugins") }
         mavenCentral()
         gradlePluginPortal()
         maven { url "https://jitpack.io" }
