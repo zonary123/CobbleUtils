@@ -1,5 +1,6 @@
 package com.kingpixel.cobbleutils.Model.Animations.core;
 
+import net.minecraft.block.BlockState;
 import net.minecraft.client.render.model.json.ModelTransformationMode;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.decoration.DisplayEntity;
@@ -66,6 +67,22 @@ public class AnimationUtils {
 
     world.spawnEntity(itemDisplay);
     return itemDisplay;
+  }
+
+  /**
+   * Spawns a CustomBlockDisplayEntity with invulnerable and no-gravity flags.
+   */
+  public static CustomBlockDisplayEntity spawnBlockDisplay(
+    ServerWorld world, Vec3d pos, BlockState blockState) {
+
+    CustomBlockDisplayEntity blockDisplay = new CustomBlockDisplayEntity(EntityType.BLOCK_DISPLAY, world);
+    blockDisplay.setBlockState(blockState);
+    blockDisplay.setInvulnerable(true);
+    blockDisplay.setNoGravity(true);
+    blockDisplay.refreshPositionAndAngles(pos.x, pos.y, pos.z, 0f, 0f);
+
+    world.spawnEntity(blockDisplay);
+    return blockDisplay;
   }
 
   /**

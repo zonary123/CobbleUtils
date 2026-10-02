@@ -688,14 +688,29 @@ public class PokemonUtils {
    * @return The rarity of the pokemon
    */
   public static String getRarityS(Pokemon pokemon) {
+    if (pokemon == null) return "unknown";
     String cached = cacheRarityStrings.get(pokemon.showdownId());
     if (cached != null) return cached;
+
+    if (pokemon.isLegendary()
+        || (pokemon.getSpecies() != null && pokemon.getSpecies().getLabels() != null && (
+            pokemon.getSpecies().getLabels().contains("legendary")
+            || pokemon.getSpecies().getLabels().contains("mythical")
+            || pokemon.getSpecies().getLabels().contains("ultra_beast")
+        ))) {
+      cacheRarityStrings.put(pokemon.showdownId(), "legendary");
+      return "legendary";
+    }
+
     double rarity = getRarity(pokemon);
-    if (rarity == -1) return CobbleUtils.language.getUnknown();
+    if (rarity == -1) {
+      cacheRarityStrings.put(pokemon.showdownId(), "unknown");
+      return "unknown";
+    }
 
     Map<String, Double> rarityMap = CobbleUtils.config.getRarity();
 
-    String rarityResult = "Unknown";
+    String rarityResult = "unknown";
     double closestValue = Double.MAX_VALUE;
 
     for (Map.Entry<String, Double> entry : rarityMap.entrySet()) {
@@ -706,7 +721,7 @@ public class PokemonUtils {
       }
     }
 
-    if ("Unknown".equals(rarityResult)) {
+    if ("unknown".equalsIgnoreCase(rarityResult)) {
       double maxValue = Double.MIN_VALUE;
       for (Map.Entry<String, Double> entry : rarityMap.entrySet()) {
         double value = entry.getValue();
@@ -716,8 +731,10 @@ public class PokemonUtils {
         }
       }
     }
-    cacheRarityStrings.put(pokemon.showdownId(), rarityResult);
-    return rarityResult;
+
+    String cleanRarity = rarityResult != null ? rarityResult.replaceAll("[&§][0-9a-fk-orA-FK-OR]", "").trim().toLowerCase() : "unknown";
+    cacheRarityStrings.put(pokemon.showdownId(), cleanRarity);
+    return cleanRarity;
   }
 
 

@@ -7,7 +7,7 @@ import com.kingpixel.cobbleutils.Model.Animations.core.CustomArmorStandEntity;
 import com.kingpixel.cobbleutils.Model.Animations.core.CustomItemDisplayEntity;
 import net.minecraft.block.Blocks;
 import net.minecraft.entity.EntityType;
-import net.minecraft.entity.decoration.DisplayEntity;
+import com.kingpixel.cobbleutils.Model.Animations.core.CustomBlockDisplayEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.particle.ParticleTypes;
@@ -89,11 +89,11 @@ public class MagicSproutAnimation extends Animation {
   }
 
   public static class LeafNode {
-    public final DisplayEntity.BlockDisplayEntity display;
+    public final CustomBlockDisplayEntity display;
     public final float finalScale;
     public final Vector3f localOffset;
 
-    public LeafNode(DisplayEntity.BlockDisplayEntity display, float finalScale, Vector3f localOffset) {
+    public LeafNode(CustomBlockDisplayEntity display, float finalScale, Vector3f localOffset) {
       this.display = display;
       this.finalScale = finalScale;
       this.localOffset = localOffset;
@@ -110,7 +110,7 @@ public class MagicSproutAnimation extends Animation {
 
     private final TreeType chosenTree;
     private CustomItemDisplayEntity saplingDisplay;
-    private DisplayEntity.BlockDisplayEntity logDisplay;
+    private CustomBlockDisplayEntity logDisplay;
     private final List<LeafNode> leaves = new ArrayList<>();
     private final List<FruitReward> fruitEntities = new ArrayList<>();
     private float facingYaw;
@@ -138,8 +138,8 @@ public class MagicSproutAnimation extends Animation {
       );
     }
 
-    private DisplayEntity.BlockDisplayEntity spawnLeafBlock(ServerWorld sw) {
-      DisplayEntity.BlockDisplayEntity blockDisp = new DisplayEntity.BlockDisplayEntity(EntityType.BLOCK_DISPLAY, sw);
+    private CustomBlockDisplayEntity spawnLeafBlock(ServerWorld sw) {
+      CustomBlockDisplayEntity blockDisp = new CustomBlockDisplayEntity(EntityType.BLOCK_DISPLAY, sw);
       blockDisp.setBlockState(chosenTree.leaves);
       blockDisp.refreshPositionAndAngles(basePos.x, basePos.y, basePos.z, 0f, 0f);
       sw.spawnEntity(blockDisp);
@@ -203,7 +203,7 @@ public class MagicSproutAnimation extends Animation {
           saplingDisplay = null;
         }
 
-        logDisplay = new DisplayEntity.BlockDisplayEntity(EntityType.BLOCK_DISPLAY, sw);
+        logDisplay = new CustomBlockDisplayEntity(EntityType.BLOCK_DISPLAY, sw);
         logDisplay.setBlockState(chosenTree.log);
         logDisplay.refreshPositionAndAngles(basePos.x, basePos.y, basePos.z, 0f, 0f);
 

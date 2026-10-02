@@ -6,6 +6,7 @@ import net.minecraft.entity.EntityType;
 import net.minecraft.entity.decoration.ArmorStandEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NbtCompound;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.Hand;
 import net.minecraft.util.math.Vec3d;
@@ -58,6 +59,16 @@ public class CustomArmorStandEntity extends ArmorStandEntity {
   public boolean shouldSave() {
     // Evita que la entidad se guarde en los archivos de la región del mundo si el
     // servidor se apaga
+    return false;
+  }
+
+  @Override
+  public boolean saveNbt(NbtCompound nbt) {
+    return false;
+  }
+
+  @Override
+  public boolean saveSelfNbt(NbtCompound nbt) {
     return false;
   }
 

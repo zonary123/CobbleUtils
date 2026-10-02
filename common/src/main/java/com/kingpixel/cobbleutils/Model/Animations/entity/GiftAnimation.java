@@ -7,7 +7,7 @@ import com.kingpixel.cobbleutils.Model.Animations.core.CustomArmorStandEntity;
 import com.kingpixel.cobbleutils.Model.Animations.core.CustomItemDisplayEntity;
 import net.minecraft.block.Blocks;
 import net.minecraft.entity.EntityType;
-import net.minecraft.entity.decoration.DisplayEntity;
+import com.kingpixel.cobbleutils.Model.Animations.core.CustomBlockDisplayEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -79,7 +79,7 @@ public class GiftAnimation extends Animation {
     private final Runnable onDestroy;
     private boolean completed = false;
 
-    private DisplayEntity.BlockDisplayEntity blockDisplay;
+    private CustomBlockDisplayEntity blockDisplay;
     private final List<EjectedReward> activeRewards = new ArrayList<>();
     private int currentRewardIndex = 0;
     private final int spawnIntervalTicks = 8;
@@ -111,7 +111,7 @@ public class GiftAnimation extends Animation {
       this.refreshPositionAndAngles(staticChestPos.x, staticChestPos.y, staticChestPos.z, chestFacingYaw, 0);
 
       ServerWorld sw = (ServerWorld) world;
-      this.blockDisplay = new DisplayEntity.BlockDisplayEntity(EntityType.BLOCK_DISPLAY, sw);
+      this.blockDisplay = new CustomBlockDisplayEntity(EntityType.BLOCK_DISPLAY, sw);
       this.blockDisplay.setBlockState(Blocks.CHEST.getDefaultState());
 
       this.blockDisplay.refreshPositionAndAngles(staticChestPos.x, staticChestPos.y, staticChestPos.z, chestFacingYaw, 0f);

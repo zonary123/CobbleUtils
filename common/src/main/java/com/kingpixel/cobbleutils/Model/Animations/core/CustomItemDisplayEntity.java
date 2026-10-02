@@ -4,6 +4,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.decoration.DisplayEntity;
+import net.minecraft.nbt.NbtCompound;
 import net.minecraft.world.World;
 
 /**
@@ -17,6 +18,14 @@ public class CustomItemDisplayEntity extends DisplayEntity.ItemDisplayEntity {
   }
 
   @Override public boolean shouldSave() {
+    return false;
+  }
+
+  @Override public boolean saveNbt(NbtCompound nbt) {
+    return false;
+  }
+
+  @Override public boolean saveSelfNbt(NbtCompound nbt) {
     return false;
   }
 }
