@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.4] - 2026-10-02
+
+### Fixed
+
+- **Reward Animation Entity Persistence**:
+  - Prevented animation entities (`CustomBlockDisplayEntity`, `CustomItemDisplayEntity`, `CustomArmorStandEntity`) used in reward animations (e.g., gift boxes, magic sprouts) from saving into world chunk files, ensuring no orphaned or lingering entities remain if the server shuts down or crashes unexpectedly.
+
 ## [1.3.3] - 2026-09-25
 
 ### Added
@@ -52,13 +59,13 @@
 ### Added
 
 - **New Custom Pokémon Properties**:
-    - `ivs`: Configure Pokémon IVs quickly using comma-separated values (e.g. `ivs=31,31,31,31,31,31` in standard HP,
-      Attack, Defence, Sp. Atk, Sp. Def, Speed order) or keyword shortcuts like `perfect`, `zero`, or `random`.
-    - `evs`: Set or reset effort values (EVs) directly in commands, gachas, and rewards (e.g. `evs=0,252,0,0,4,252`,
-      `evs=reset`, or `evs=max`).
-    - `random`: Generate random Pokémon filtered by category (e.g. `random=legendary`, `random=starter`,
-      `random=mythical`, `random=ultrabeast`, `random=paradox`, `random=baby`, `random=fossil`) or by generation (
-      `random=gen1` to `random=gen9`).
+  - `ivs`: Configure Pokémon IVs quickly using comma-separated values (e.g. `ivs=31,31,31,31,31,31` in standard HP,
+    Attack, Defence, Sp. Atk, Sp. Def, Speed order) or keyword shortcuts like `perfect`, `zero`, or `random`.
+  - `evs`: Set or reset effort values (EVs) directly in commands, gachas, and rewards (e.g. `evs=0,252,0,0,4,252`,
+    `evs=reset`, or `evs=max`).
+  - `random`: Generate random Pokémon filtered by category (e.g. `random=legendary`, `random=starter`,
+    `random=mythical`, `random=ultrabeast`, `random=paradox`, `random=baby`, `random=fossil`) or by generation (
+    `random=gen1` to `random=gen9`).
 
 ### Fixed
 
@@ -140,4 +147,3 @@
 - Implemented cross-server teleportation command (`TeleportCommand`) and Redis-based location/teleportation
   synchronizer (`RedisTeleportHandler`).
 - Added automatic world synchronization across server instances using Redis messaging.
-
