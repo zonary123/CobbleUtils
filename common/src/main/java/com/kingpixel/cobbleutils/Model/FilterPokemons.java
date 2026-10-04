@@ -1,31 +1,30 @@
 package com.kingpixel.cobbleutils.Model;
 
-import ca.landonjw.gooeylibs2.api.UIManager;
 import ca.landonjw.gooeylibs2.api.button.ButtonAction;
-import ca.landonjw.gooeylibs2.api.button.GooeyButton;
-import ca.landonjw.gooeylibs2.api.page.GooeyPage;
-import ca.landonjw.gooeylibs2.api.template.types.ChestTemplate;
 import com.cobblemon.mod.common.api.pokemon.PokemonProperties;
 import com.cobblemon.mod.common.api.pokemon.PokemonPropertyExtractor;
 import com.cobblemon.mod.common.api.pokemon.PokemonSpecies;
 import com.cobblemon.mod.common.api.pokemon.egg.EggGroup;
 import com.cobblemon.mod.common.api.types.ElementalType;
-import com.cobblemon.mod.common.item.PokemonItem;
 import com.cobblemon.mod.common.pokemon.FormData;
 import com.cobblemon.mod.common.pokemon.Pokemon;
 import com.cobblemon.mod.common.pokemon.Species;
-import com.kingpixel.cobbleutils.CobbleUtils;
-import com.kingpixel.cobbleutils.util.*;
+import com.kingpixel.cobbleutils.ui.editor.FilterPokemonsVisualMenu;
+import com.kingpixel.cobbleutils.util.Utils;
 import lombok.Data;
 import lombok.Getter;
-import net.minecraft.component.DataComponentTypes;
-import net.minecraft.component.type.LoreComponent;
-import net.minecraft.item.Items;
+import lombok.Setter;
 import net.minecraft.registry.DynamicRegistryManager;
 import net.minecraft.server.network.ServerPlayerEntity;
-import org.joml.Vector4f;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.function.Consumer;
 
 /**
@@ -41,8 +40,6 @@ import java.util.function.Consumer;
 public class FilterPokemons {
   // Cache <ModId, <Id, List<Pokemon>>>
   private static final Map<String, Map<String, List<Pokemon>>> CACHE = new HashMap<>();
-  private static final Vector4f tintBlack = new Vector4f(0.25f, 0.25f, 0.25f, 1.0f);
-  private static final Vector4f tintWhite = new Vector4f(1.0f, 1.0f, 1.0f, 1.0f);
 
 
   // BlackList
@@ -72,7 +69,8 @@ public class FilterPokemons {
   }
 
   @Getter
-  private static class AdvancedPokemonChance {
+  @Setter
+  public static class AdvancedPokemonChance {
     private List<String> pokemons;
     private float chance;
 
@@ -375,169 +373,24 @@ public class FilterPokemons {
   }
 
   /**
-   * Opens the filter pokemons
+   * Opens the filter pokemons visual menu.
    *
-   * @param player the player
+   * @deprecated Use {@link FilterPokemonsVisualMenu#open(ServerPlayerEntity, FilterPokemons, String, String, Consumer)}
+   * or {@link com.kingpixel.cobbleutils.ui.editor.FilterPokemonsEditorMenu#open(ServerPlayerEntity, FilterPokemons, String, String, Consumer, Runnable)}
    */
+  @Deprecated
   public void open(ServerPlayerEntity player, String modId, String id, Consumer<ButtonAction> pokemonAction) {
-    open(player, modId, id, pokemonAction, 0, true);
+    FilterPokemonsVisualMenu.open(player, this, modId, id, pokemonAction);
   }
 
+  /**
+   * Opens the filter pokemons visual menu.
+   *
+   * @deprecated Use {@link FilterPokemonsVisualMenu#open(ServerPlayerEntity, FilterPokemons, String, String, Consumer, int, boolean, Runnable)}
+   */
+  @Deprecated
   public void open(ServerPlayerEntity player, String modId, String id, Consumer<ButtonAction> pokemonAction, int pos,
                    boolean showBanneds) {
-    CobbleUtils.runAsync(() -> {
-      final int ROWS = 6;
-      final int RECTANGLE_SIZE = new Rectangle(ROWS).getTotalSlots();
-
-      ChestTemplate template = ChestTemplate.builder(ROWS).build();
-      List<GooeyButton> buttons = new ArrayList<>();
-
-      List<String> lore = new ArrayList<>(CobbleUtils.language.getLorepokemon());
-      lore.add("&fLeft Click Blacklist pokemon");
-      lore.add("&fRight Click Blacklist labels");
-      lore.add("&fShift + Left Click Blacklist forms");
-      lore.add("&fShift + Right Click Blacklist aspects");
-
-      //List<Pokemon> pokemons = getCachePokemons(modId, id);
-      List<Pokemon> pokemons;
-      if (showBanneds) {
-        pokemons = getAllPokemons();
-      } else {
-        pokemons = getAllowedPokemons();
-      }
-      int totalPokemons = pokemons.size();
-      int totalPages = (int) Math.ceil((double) totalPokemons / RECTANGLE_SIZE);
-      int currentPage = (int) Math.ceil((double) (pos + 1) / RECTANGLE_SIZE);
-
-      // Validar índices para evitar excepciones
-      int startIndex = Math.min(pos, totalPokemons);
-      int endIndex = Math.min(pos + RECTANGLE_SIZE, totalPokemons);
-      if (startIndex > endIndex) {
-        CobbleUtils.LOGGER_RAW.error("Invalid indices for pagination: startIndex > endIndex");
-        return;
-      }
-      pokemons = pokemons.subList(startIndex, endIndex);
-
-      // Crear botones para los Pokémon
-      for (Pokemon pokemon : pokemons) {
-        buttons.add(createPokemonButton(player, modId, id, pokemonAction, pokemon, lore, pos, showBanneds));
-      }
-
-      // Aplicar botones al template
-      new Rectangle(ROWS).apply(template, buttons);
-
-      // Botón "Anterior"
-      if (pos > 0) {
-        template.set(45, UIUtils.getPreviousButton(buttonAction -> open(player, modId, id, pokemonAction,
-          Math.max(pos - RECTANGLE_SIZE, 0), showBanneds)));
-      }
-
-      // Botón "Cerrar"
-      template.set(49, UIUtils.getCloseButton(buttonAction -> UIManager.closeUI(buttonAction.getPlayer())));
-
-      template.set(51, GooeyButton
-        .builder()
-        .display(Items.PAPER.getDefaultStack())
-        .with(DataComponentTypes.CUSTOM_NAME, AdventureTranslator.toNative("Show Banned: " + (showBanneds ?
-          CobbleUtils.language.getYes() : CobbleUtils.language.getNo())))
-        .onClick(action -> {
-          open(player, modId, id, pokemonAction, pos, !showBanneds);
-        })
-        .build()
-      );
-
-      // Botón "Siguiente"
-      if (totalPokemons > endIndex) {
-        template.set(53, UIUtils.getNextButton(buttonAction -> open(player, modId, id, pokemonAction, Math.min(pos + RECTANGLE_SIZE, totalPokemons), showBanneds)));
-      }
-
-      // Crear y abrir la página
-      var page = GooeyPage.builder()
-        .template(template)
-        .title(AdventureTranslator.toNative("Filter Pokemons " + currentPage + " of " + totalPages))
-        .build();
-
-      CobbleUtils.server.execute(() -> UIManager.openUIForcefully(player, page));
-    });
+    FilterPokemonsVisualMenu.open(player, this, modId, id, pokemonAction, pos, showBanneds, null);
   }
-
-  // Método auxiliar para crear botones de Pokémon
-  private GooeyButton createPokemonButton(ServerPlayerEntity player, String modId,
-                                          String id, Consumer<ButtonAction> pokemonAction, Pokemon pokemon,
-                                          List<String> lore, int pos, boolean showBanneds) {
-
-    boolean isAllowed = isAllowed(pokemon);
-    return GooeyButton.builder()
-      .display(PokemonItem.from(pokemon, 1, isAllowed ? tintWhite : tintBlack))
-      .with(DataComponentTypes.CUSTOM_NAME,
-        AdventureTranslator.toNative(pokemon.showdownId() + (isAllowed ? "" : " &c[BLACKLISTED]")))
-      .with(DataComponentTypes.LORE, new LoreComponent(AdventureTranslator.toNativeL(PokemonUtils.replace(lore, pokemon))))
-      .onClick(action -> handlePokemonClick(player, modId, id, pokemonAction, pokemon, action, pos, showBanneds))
-      .build();
-  }
-
-  private void handlePokemonClick(ServerPlayerEntity player, String modId,
-                                  String id, Consumer<ButtonAction> pokemonAction,
-                                  Pokemon pokemon, ButtonAction action, int pos, boolean showBanneds) {
-    boolean update = false;
-    List<String> modified = new ArrayList<>();
-    switch (action.getClickType()) {
-      case LEFT_CLICK -> {
-        String showdownId = pokemon.getForm().showdownId();
-        if (blackList.getPokemons().contains(showdownId)) {
-          blackList.getPokemons().remove(showdownId);
-          modified.add("&cRemoved Blacklist showdownId: " + showdownId);
-        } else {
-          blackList.getPokemons().add(showdownId);
-          modified.add("&aAdded Blacklist showdownId: " + showdownId);
-        }
-        update = true;
-      }
-      case RIGHT_CLICK -> {
-        for (String label : pokemon.getForm().getLabels()) {
-          if (blackList.getLabels().contains(label)) {
-            blackList.getLabels().remove(label);
-            modified.add("&cRemoved Blacklist labels: " + label);
-          } else {
-            blackList.getLabels().add(label);
-            modified.add("&aAdded Blacklist labels: " + label);
-          }
-        }
-        update = true;
-      }
-      case SHIFT_LEFT_CLICK -> {
-        String formOnlyShowdownId = pokemon.getForm().formOnlyShowdownId();
-        if (!formOnlyShowdownId.equals("normal")) {
-          if (blackList.getForms().contains(formOnlyShowdownId)) {
-            blackList.getForms().remove(formOnlyShowdownId);
-            modified.add("&cRemoved Blacklist form: " + formOnlyShowdownId);
-          } else {
-            blackList.getForms().add(formOnlyShowdownId);
-            modified.add("&aAdded Blacklist form: " + formOnlyShowdownId);
-          }
-          update = true;
-        }
-      }
-      case SHIFT_RIGHT_CLICK -> {
-        var aspects = new ArrayList<>(pokemon.getAspects());
-        aspects.removeAll(List.of("male", "female", "shiny", "genderless"));
-        for (String aspect : aspects) {
-          if (blackList.getAspects().contains(aspect)) {
-            blackList.getAspects().remove(aspect);
-            modified.add("&cRemoved Blacklist Aspect: " + aspect);
-          } else {
-            blackList.getAspects().add(aspect);
-            modified.add("&aAdded  Blacklist Aspect: " + aspect);
-          }
-        }
-        update = true;
-      }
-    }
-    if (update) {
-      PlayerUtils.sendMessage(player, "%prefix% " + String.join(", ", modified), modId, TypeMessage.CHAT);
-      pokemonAction.accept(action);
-      open(player, modId, id, pokemonAction, pos, showBanneds);
-    }
-  }
-
 }
