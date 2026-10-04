@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.3.5] - 2026-10-04
+
+### Added
+
+- **Reusable In-Game Editor Menus**:
+  - Added visual in-game editor menus for Pokémon filters, blacklists, weighted spawn/reward chances, formula calculators, and schedules.
+  - Allows server administrators and developers across dependent mods (such as UltraQuests, UltraHunt, etc.) to easily configure and test Pokémon restrictions, rotation timers, and probability distributions directly through intuitive menus without needing to manually edit complex config files.
+
 ## [1.3.4] - 2026-10-02
 
 ### Fixed
