@@ -1,17 +1,28 @@
 package com.kingpixel.cobbleutils.Model;
 
+import com.google.gson.annotations.SerializedName;
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
  * @author Carlos Varas Alonso - 16/03/2025 3:20
  */
 @Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class EconomyUse {
-  private String EconomyId;
-  private String currency;
+  @SerializedName(value = "EconomyId", alternate = {"economyId", "economy"})
+  private String EconomyId = "IMPACTOR";
 
-  public EconomyUse(String EconomyId, String currency) {
-    this.EconomyId = EconomyId;
-    this.currency = currency;
+  @SerializedName(value = "currency", alternate = {"Currency"})
+  private String currency = "";
+
+  public String getEconomyId() {
+    return EconomyId != null && !EconomyId.isBlank() ? EconomyId : "IMPACTOR";
+  }
+
+  public String getCurrency() {
+    return currency != null ? currency : "";
   }
 }

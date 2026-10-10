@@ -69,13 +69,23 @@ public class EconomyApi {
     }
 
     if (snapshot.size() == 1) {
-      return snapshot.getFirst();
+      EconomyAbstract single = snapshot.getFirst();
+      if (economyId != null && !economyId.isBlank() && !single.getIdentify().equalsIgnoreCase(economyId)) {
+        CobbleUtils.LOGGER_RAW.warn("Requested economy '{}' but only '{}' is available.", economyId, single.getIdentify());
+      }
+      return single;
     }
 
-    for (EconomyAbstract economy : snapshot) {
-      if (economy.getIdentify().equalsIgnoreCase(economyId)) {
-        return economy;
+    if (economyId != null && !economyId.isBlank()) {
+      for (EconomyAbstract economy : snapshot) {
+        if (economy.getIdentify().equalsIgnoreCase(economyId)) {
+          return economy;
+        }
       }
+      CobbleUtils.LOGGER_RAW.warn(
+        "Economy '{}' requested but not found among registered economies: {}. Falling back to highest priority economy.",
+        economyId, snapshot.stream().map(EconomyAbstract::getIdentify).toList()
+      );
     }
 
     EconomyAbstract economy = getHighestPriorityEconomy(snapshot);

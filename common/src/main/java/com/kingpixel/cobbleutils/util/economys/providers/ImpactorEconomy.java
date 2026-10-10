@@ -1,6 +1,10 @@
 package com.kingpixel.cobbleutils.util.economys.providers;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -26,7 +30,7 @@ public class ImpactorEconomy extends Economy {
   public static final String IDENTIFY = "IMPACTOR";
   public static EconomyService service;
 
-  private final Map<String, Currency> currencies = new java.util.HashMap<>();
+  private final Map<String, Currency> currencies = new HashMap<>();
 
   private static final Cache<String, String> formatCache =
     Caffeine.newBuilder()
@@ -128,26 +132,75 @@ public class ImpactorEconomy extends Economy {
   // =========================================================
 
   private CompletableFuture<Account> getAccountAsync(UUID uuid, String currency) {
-    return service.hasAccount(uuid).thenCompose(hasAccount -> {
-      if (Boolean.FALSE.equals(hasAccount)) return service.account(uuid);
-      return service.account(getCurrency(currency), uuid);
-    });
+    try {
+      Currency curr = getCurrency(currency);
+      return service.account(curr, uuid);
+    } catch (Throwable t) {
+      return CompletableFuture.failedFuture(t);
+    }
   }
 
   private Currency getCurrency(String currency) {
+    if (currency == null || currency.isBlank()) {
+      return service.currencies().primary();
+    }
+
     Currency cached = currencies.get(currency);
     if (cached != null) return cached;
 
-    if (!currency.contains(":")) currency = "impactor:" + currency;
-    var optional = service.currencies().currency(Key.key(currency));
+    String cleanCurrency = currency.trim().toLowerCase(Locale.ROOT);
+    cached = currencies.get(cleanCurrency);
+    if (cached != null) return cached;
 
-    if (optional.isPresent()) {
-      Currency result = optional.get();
-      currencies.put(currency, result);
-      return result;
+    // 1. Direct key resolution
+    try {
+      Key directKey = cleanCurrency.contains(":") ? Key.key(cleanCurrency) : Key.key("impactor", cleanCurrency);
+      var optional = service.currencies().currency(directKey);
+      if (optional.isPresent()) {
+        Currency result = optional.get();
+        currencies.put(currency, result);
+        currencies.put(cleanCurrency, result);
+        return result;
+      }
+    } catch (Throwable ignored) {
+      // Fallback to registry search below
     }
 
-    return service.currencies().primary();
+    // 2. Search through all registered currencies
+    try {
+      for (Currency reg : service.currencies().registered()) {
+        Key regKey = reg.key();
+        if (regKey.asString().equalsIgnoreCase(cleanCurrency)
+          || regKey.value().equalsIgnoreCase(cleanCurrency)
+          || regKey.asString().equalsIgnoreCase(currency.trim())
+          || regKey.value().equalsIgnoreCase(currency.trim())) {
+          currencies.put(currency, reg);
+          currencies.put(cleanCurrency, reg);
+          return reg;
+        }
+      }
+    } catch (Throwable t) {
+      CobbleUtils.LOGGER_RAW.error("Failed to query registered currencies from Impactor: {}", t.getMessage());
+    }
+
+    // 3. Currency specified but not found
+    List<String> registeredKeys = new ArrayList<>();
+    try {
+      for (Currency reg : service.currencies().registered()) {
+        registeredKeys.add(reg.key().asString());
+      }
+    } catch (Throwable ignored) {
+      // Ignored
+    }
+
+    CobbleUtils.LOGGER_RAW.error(
+      "Impactor currency '{}' was not found! Registered currencies: {}. Cannot process operation with invalid currency.",
+      currency, registeredKeys
+    );
+
+    throw new IllegalArgumentException(
+      "Impactor currency '" + currency + "' not found! Registered currencies: " + registeredKeys
+    );
   }
 
 }

@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.3.6] - 2026-10-10
+
+### Fixed
+
+- **Impactor Currency Resolution & Fallback Protection**:
+  - Fixed an issue where custom or secondary currencies (such as crystals) could fail to resolve properly and silently fall back to the primary currency (dollars).
+  - Improved currency key lookups to handle case variations, namespaces (`impactor:currency`), and registry identifiers reliably.
+  - Added strict validation so transactions will safely halt with clear console error details if a configured currency does not exist, preventing unintended deductions from players' primary balances.
+- **Economy Configuration Compatibility**:
+  - Enhanced `EconomyUse` model deserialization so both lowercase (`economyId`) and capitalized (`EconomyId`) configuration fields are correctly loaded without resetting or falling back to default economies.
+
 ## [1.3.5] - 2026-10-04
 
 ### Added

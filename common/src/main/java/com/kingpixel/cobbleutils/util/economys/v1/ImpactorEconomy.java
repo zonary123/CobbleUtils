@@ -13,7 +13,10 @@ import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -210,25 +213,67 @@ public class ImpactorEconomy extends EconomyAbstract {
    * @return The Currency object corresponding to the specified currency.
    */
   private Currency getCurrency(String currency) {
+    if (currency == null || currency.isBlank()) {
+      return service.currencies().primary();
+    }
+
     Currency result = currencies.get(currency);
     if (result != null) return result;
 
-    // If the currency string does not include a namespace, prepend "impactor:".
-    if (!currency.contains(":")) currency = "impactor:" + currency;
+    String cleanCurrency = currency.trim().toLowerCase(Locale.ROOT);
+    result = currencies.get(cleanCurrency);
+    if (result != null) return result;
 
-    var c = service.currencies().currency(Key.key(currency));
-    if (c.isPresent()) {
-      result = c.get();
-      currencies.put(currency, result);
-      return result;
+    // 1. Try direct Key lookup if valid
+    try {
+      Key directKey = cleanCurrency.contains(":") ? Key.key(cleanCurrency) : Key.key("impactor", cleanCurrency);
+      var opt = service.currencies().currency(directKey);
+      if (opt.isPresent()) {
+        result = opt.get();
+        currencies.put(currency, result);
+        currencies.put(cleanCurrency, result);
+        return result;
+      }
+    } catch (Throwable ignored) {
+      // Key format might be unusual, fallback to searching registered currencies below
     }
 
-    if (CobbleUtils.config.isDebug())
-      CobbleUtils.LOGGER_RAW.error("Currency not found: " + currency + " using primary currency");
+    // 2. Search through all registered currencies in Impactor
+    try {
+      for (Currency reg : service.currencies().registered()) {
+        Key regKey = reg.key();
+        if (regKey.asString().equalsIgnoreCase(cleanCurrency)
+          || regKey.value().equalsIgnoreCase(cleanCurrency)
+          || regKey.asString().equalsIgnoreCase(currency.trim())
+          || regKey.value().equalsIgnoreCase(currency.trim())) {
+          result = reg;
+          currencies.put(currency, result);
+          currencies.put(cleanCurrency, result);
+          return result;
+        }
+      }
+    } catch (Throwable t) {
+      CobbleUtils.LOGGER_RAW.error("Failed to query registered currencies from Impactor: {}", t.getMessage());
+    }
 
-    // Fallback to the primary currency if the specified one is not found.
-    result = service.currencies().primary();
-    return result;
+    // 3. Currency was specified but not found: DO NOT silently use primary currency!
+    List<String> registeredKeys = new ArrayList<>();
+    try {
+      for (Currency reg : service.currencies().registered()) {
+        registeredKeys.add(reg.key().asString());
+      }
+    } catch (Throwable ignored) {
+      // Ignored
+    }
+
+    CobbleUtils.LOGGER_RAW.error(
+      "Impactor currency '{}' was not found! Registered currencies: {}. Cannot process operation with invalid currency.",
+      currency, registeredKeys
+    );
+
+    throw new IllegalArgumentException(
+      "Impactor currency '" + currency + "' not found! Registered currencies: " + registeredKeys
+    );
   }
 
   /**
