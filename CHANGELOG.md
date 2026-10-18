@@ -1,5 +1,32 @@
 # Changelog
 
+## [1.3.8] - 2026-10-18
+
+### Added
+
+- **Automatic In-Mod Wiki & Resource Extraction**:
+  - Added built-in tools for mods to easily export documentation (`WIKI.md`) and bundled resources directly from their `.jar` files into the server configuration folder. Server administrators and players can now access up-to-date guides locally without needing external links.
+- **Support for Namespaced Economy Currencies**:
+  - Added full support for custom economy currencies with namespaces (e.g., `money:'mania:dollars':20` or `money:mania:dollars:20`). You can now safely wrap currencies in quotes so that complex modded currencies (like Impactor currencies) work seamlessly in reward pools.
+- **Enhanced Economy Management**:
+  - Added automatic detection and registration of active and supported server economies, making reward payouts cleaner and more reliable across all economy plugins.
+
+### Changed
+
+- **Evolution Rarity Calculation & Spawn Rates**:
+  - Improved how Pokémon rarity percentages and spawn chances are calculated. Evolved forms now properly consider their base evolutionary family when calculating appearance rates, ensuring fairer and more consistent calculations across different worlds.
+- **Flexible Reward Configuration**:
+  - Reward configurations now support both `"item"` and `"reward"` keys in `.json` files interchangeably, making configuration files more intuitive and forgiving.
+- **Dependency Updates**:
+  - Updated Cobblemon compatibility to version `1.8.2`.
+
+### Fixed
+
+- **Blacklist Filter Fallback**:
+  - Pokémon with unclassified or unknown rarity now properly fall back to common rarity during blacklist checks, preventing them from unintentionally bypassing spawn and reward restrictions.
+- **Clear Console Warnings for Invalid Rewards**:
+  - If a reward has a typo or unknown currency in the configuration, the server console will now display a clean visual guide highlighting the exact mistake, along with copy-pasteable examples of how to write each type of reward correctly instead of crashing with a confusing error.
+
 ## [1.3.7] - 2026-10-12
 
 ### Changed

@@ -2,11 +2,13 @@ package com.kingpixel.cobbleutils.api;
 
 import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.Model.EconomyUse;
+import com.kingpixel.cobbleutils.Model.ParsedMoney;
 import com.kingpixel.cobbleutils.Model.Priority;
 import com.kingpixel.cobbleutils.Model.PriorityEconomy;
 import com.kingpixel.cobbleutils.util.economys.v1.*;
 import lombok.Data;
 import lombok.Getter;
+import net.minecraft.server.network.ServerPlayerEntity;
 import org.jetbrains.annotations.NotNull;
 
 import java.math.BigDecimal;
@@ -20,6 +22,22 @@ import java.util.concurrent.ConcurrentHashMap;
 public class EconomyApi {
   @Getter
   private static final Set<EconomyAbstract> economys = ConcurrentHashMap.newKeySet();
+  @Getter
+  private static final Set<String> registeredEconomies = ConcurrentHashMap.newKeySet();
+  @Getter
+  private static final Set<String> knownEconomyIds = ConcurrentHashMap.newKeySet();
+
+  static {
+    knownEconomyIds.addAll(Set.of(
+      "IMPACTOR",
+      "VAULT",
+      "COBBLE_DOLLARS",
+      "PEBBLE_ECONOMY",
+      "BECONOMY",
+      "SDM_ECONOMY",
+      "ULTRA_ECONOMY"
+    ));
+  }
 
   /**
    * Initialize and refresh available economy types.
@@ -51,6 +69,13 @@ public class EconomyApi {
 
     economys.clear();
     economys.addAll(candidates);
+    registeredEconomies.clear();
+    for (EconomyAbstract eco : candidates) {
+      if (eco != null && eco.getIdentify() != null) {
+        registeredEconomies.add(eco.getIdentify().toUpperCase());
+        knownEconomyIds.add(eco.getIdentify().toUpperCase());
+      }
+    }
   }
 
 
@@ -121,6 +146,39 @@ public class EconomyApi {
    */
   public static void addEconomy(EconomyAbstract economy) {
     economys.add(economy);
+    if (economy != null && economy.getIdentify() != null) {
+      registerEconomyId(economy.getIdentify());
+      registeredEconomies.add(economy.getIdentify().toUpperCase());
+    }
+  }
+
+  /**
+   * Registers a known economy identifier.
+   *
+   * @param id The economy ID to register (case-insensitive).
+   */
+  public static void registerEconomyId(String id) {
+    if (id != null && !id.isBlank()) {
+      knownEconomyIds.add(id.toUpperCase());
+    }
+  }
+
+  /**
+   * Checks whether the given identifier matches an active registered economy or a known supported economy.
+   *
+   * @param id The economy identifier (e.g. "IMPACTOR", "VAULT").
+   * @return true if the identifier is recognized as an economy.
+   */
+  public static boolean isEconomy(String id) {
+    if (id == null || id.isBlank()) return false;
+    String upper = id.toUpperCase();
+    if (registeredEconomies.contains(upper) || knownEconomyIds.contains(upper)) {
+      return true;
+    }
+    if (economys.isEmpty()) {
+      setEconomyType();
+    }
+    return registeredEconomies.contains(upper) || knownEconomyIds.contains(upper);
   }
 
   /**
@@ -141,6 +199,21 @@ public class EconomyApi {
     return addMoney(playerUuid, money, economy.getCurrency(), economy.getEconomyId());
   }
 
+  public static boolean addMoney(@NotNull UUID playerUuid, @NotNull ParsedMoney parsedMoney) {
+    return addMoney(playerUuid, parsedMoney.getAmount(), parsedMoney.getCurrency(), parsedMoney.getEconomyId());
+  }
+
+  public static boolean addMoney(@NotNull ServerPlayerEntity player, @NotNull ParsedMoney parsedMoney) {
+    return addMoney(player.getUuid(), parsedMoney);
+  }
+
+  public static boolean addMoney(@NotNull ParsedMoney parsedMoney) {
+    if (parsedMoney.getPlayerUuid() == null) {
+      throw new IllegalArgumentException("ParsedMoney does not contain a player UUID");
+    }
+    return addMoney(parsedMoney.getPlayerUuid(), parsedMoney);
+  }
+
   /**
    * Remove money from the player
    *
@@ -159,6 +232,21 @@ public class EconomyApi {
     return removeMoney(playerUuid, money, economy.getCurrency(), economy.getEconomyId());
   }
 
+  public static boolean removeMoney(@NotNull UUID playerUuid, @NotNull ParsedMoney parsedMoney) {
+    return removeMoney(playerUuid, parsedMoney.getAmount(), parsedMoney.getCurrency(), parsedMoney.getEconomyId());
+  }
+
+  public static boolean removeMoney(@NotNull ServerPlayerEntity player, @NotNull ParsedMoney parsedMoney) {
+    return removeMoney(player.getUuid(), parsedMoney);
+  }
+
+  public static boolean removeMoney(@NotNull ParsedMoney parsedMoney) {
+    if (parsedMoney.getPlayerUuid() == null) {
+      throw new IllegalArgumentException("ParsedMoney does not contain a player UUID");
+    }
+    return removeMoney(parsedMoney.getPlayerUuid(), parsedMoney);
+  }
+
   /**
    * Get the money of the player
    *
@@ -174,6 +262,21 @@ public class EconomyApi {
 
   public static BigDecimal getBalance(@NotNull UUID playerUuid, @NotNull EconomyUse economy) {
     return getBalance(playerUuid, economy.getCurrency(), economy.getEconomyId());
+  }
+
+  public static BigDecimal getBalance(@NotNull UUID playerUuid, @NotNull ParsedMoney parsedMoney) {
+    return getBalance(playerUuid, parsedMoney.getCurrency(), parsedMoney.getEconomyId());
+  }
+
+  public static BigDecimal getBalance(@NotNull ServerPlayerEntity player, @NotNull ParsedMoney parsedMoney) {
+    return getBalance(player.getUuid(), parsedMoney);
+  }
+
+  public static BigDecimal getBalance(@NotNull ParsedMoney parsedMoney) {
+    if (parsedMoney.getPlayerUuid() == null) {
+      throw new IllegalArgumentException("ParsedMoney does not contain a player UUID");
+    }
+    return getBalance(parsedMoney.getPlayerUuid(), parsedMoney);
   }
 
   /**
@@ -240,6 +343,14 @@ public class EconomyApi {
     return formatMoney(money, economy.getCurrency(), economy.getEconomyId());
   }
 
+  public static String formatMoney(@NotNull ParsedMoney parsedMoney) {
+    return formatMoney(parsedMoney.getAmount(), parsedMoney.getCurrency(), parsedMoney.getEconomyId());
+  }
+
+  public static String formatMoney(@NotNull BigDecimal amount, @NotNull ParsedMoney parsedMoney) {
+    return formatMoney(amount, parsedMoney.getCurrency(), parsedMoney.getEconomyId());
+  }
+
   /**
    * Check if the player has enough money and remove it
    *
@@ -258,6 +369,21 @@ public class EconomyApi {
 
   public static boolean hasEnoughMoney(UUID playerUuid, BigDecimal money, EconomyUse economy, boolean removeMoney) {
     return hasEnoughMoney(playerUuid, money, economy.getCurrency(), removeMoney, economy.getEconomyId());
+  }
+
+  public static boolean hasEnoughMoney(@NotNull UUID playerUuid, @NotNull ParsedMoney parsedMoney, boolean removeMoney) {
+    return hasEnoughMoney(playerUuid, parsedMoney.getAmount(), parsedMoney.getCurrency(), removeMoney, parsedMoney.getEconomyId());
+  }
+
+  public static boolean hasEnoughMoney(@NotNull ServerPlayerEntity player, @NotNull ParsedMoney parsedMoney, boolean removeMoney) {
+    return hasEnoughMoney(player.getUuid(), parsedMoney, removeMoney);
+  }
+
+  public static boolean hasEnoughMoney(@NotNull ParsedMoney parsedMoney, boolean removeMoney) {
+    if (parsedMoney.getPlayerUuid() == null) {
+      throw new IllegalArgumentException("ParsedMoney does not contain a player UUID");
+    }
+    return hasEnoughMoney(parsedMoney.getPlayerUuid(), parsedMoney, removeMoney);
   }
 
   /**

@@ -386,7 +386,7 @@ public class PokemonUtils {
     return Objects.requireNonNullElseGet(specialPokemon, () -> firstEvolution.create(1));
   }
 
-  private static Species getFirstPreEvolution(Species species) {
+  public static Species getFirstPreEvolution(Species species) {
     while (species.getPreEvolution() != null) {
       Species preEvolution = species.getPreEvolution().getSpecies();
 

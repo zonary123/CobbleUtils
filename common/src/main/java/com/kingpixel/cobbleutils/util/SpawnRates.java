@@ -2,163 +2,240 @@ package com.kingpixel.cobbleutils.util;
 
 import com.cobblemon.mod.common.api.spawning.BestSpawner;
 import com.cobblemon.mod.common.api.spawning.CobblemonSpawnPools;
+import com.cobblemon.mod.common.api.spawning.detail.PokemonSpawnDetail;
 import com.cobblemon.mod.common.api.spawning.detail.SpawnDetail;
 import com.cobblemon.mod.common.api.spawning.multiplier.WeightMultiplier;
 import com.cobblemon.mod.common.pokemon.Pokemon;
 import com.cobblemon.mod.common.pokemon.Species;
 
-import java.math.BigDecimal;
-import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
 /**
- * The MIT License (MIT)
- * <p>
- * Copyright (c) 2023
- * <p>
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- * <p>
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- * <p>
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
+ * Calculates and caches estimated spawn rates and rarities for Pokémon species
+ * based on Cobblemon's world spawn pool and spawner bucket weights.
  */
 public class SpawnRates {
 
-  // Stores all rarities to easily reference for a price.
-  HashMap<String, Float> rarity;
+  private static final float EVOLUTION_RARITY_MULTIPLIER = 0.2f;
+  private static final String SPECIES_LANG_PREFIX = "cobblemon.species.";
+  private static final String SPECIES_LANG_SUFFIX = ".name";
+
+  // Volatile reference swapped atomically to provide lock-free reads and reload safety
+  volatile Map<String, Float> rarity = Collections.emptyMap();
 
   public SpawnRates() {
-    rarity = new HashMap<>();
-  }
-
-  public void init() {
-    ArrayList<SpawnDetail> spawnDetails = new ArrayList<>(CobblemonSpawnPools.WORLD_SPAWN_POOL.getDetails());
-    Map<String, Float> worldBuckets = BestSpawner.INSTANCE.getConfig().getWorldBuckets();
-
-    HashMap<String, HashMap<String, Float>> buckets = new HashMap<>();
-    Set<String> pokemon = new HashSet<>();
-
-    if (worldBuckets != null) {
-      for (String bucket : worldBuckets.keySet()) {
-        buckets.put(bucket, new HashMap<>());
-      }
-    }
-
-    populateBuckets(spawnDetails, buckets, pokemon);
-    HashMap<String, Float> totalWeights = calculateTotalWeights(buckets);
-    calculatePokemonRarities(pokemon, buckets, totalWeights, worldBuckets);
-  }
-
-  private void populateBuckets(
-    ArrayList<SpawnDetail> spawnDetails,
-    HashMap<String, HashMap<String, Float>> buckets,
-    Set<String> pokemon
-  ) {
-    for (SpawnDetail detail : spawnDetails) {
-      String bucket = detail.getBucket();
-      if (bucket == null || !buckets.containsKey(bucket)) continue;
-
-      float highestWeight = calculateHighestWeight(detail);
-      HashMap<String, Float> bucketMap = buckets.get(bucket);
-      String pokeName = detail.getName().getString();
-
-      if (!bucketMap.containsKey(pokeName) || highestWeight > bucketMap.get(pokeName)) {
-        bucketMap.put(pokeName, highestWeight);
-      }
-      pokemon.add(pokeName);
-    }
-  }
-
-  private float calculateHighestWeight(SpawnDetail detail) {
-    float weightMultiplier = 0;
-    for (WeightMultiplier multiplier : detail.getWeightMultipliers()) {
-      if (multiplier.getMultiplier() > weightMultiplier) {
-        weightMultiplier = multiplier.getMultiplier();
-      }
-    }
-    return Math.max(detail.getWeight() * weightMultiplier, detail.getWeight());
-  }
-
-  private HashMap<String, Float> calculateTotalWeights(HashMap<String, HashMap<String, Float>> buckets) {
-    HashMap<String, Float> totalWeights = new HashMap<>();
-    for (Map.Entry<String, HashMap<String, Float>> entry : buckets.entrySet()) {
-      float bucketTotalWeight = 0;
-      for (float weight : entry.getValue().values()) {
-        bucketTotalWeight += weight;
-      }
-      totalWeights.put(entry.getKey(), bucketTotalWeight);
-    }
-    return totalWeights;
-  }
-
-  private void calculatePokemonRarities(
-    Set<String> pokemon,
-    HashMap<String, HashMap<String, Float>> buckets,
-    HashMap<String, Float> totalWeights,
-    Map<String, Float> worldBuckets
-  ) {
-    for (String poke : pokemon) {
-      BigDecimal highestWeight = calculateHighestWeightForPokemon(poke, buckets, totalWeights, worldBuckets);
-      rarity.put(poke.toLowerCase(), highestWeight.multiply(BigDecimal.valueOf(100)).floatValue());
-    }
-  }
-
-  private BigDecimal calculateHighestWeightForPokemon(
-    String poke,
-    HashMap<String, HashMap<String, Float>> buckets,
-    HashMap<String, Float> totalWeights,
-    Map<String, Float> worldBuckets
-  ) {
-    BigDecimal highestWeight = BigDecimal.ZERO;
-    for (Map.Entry<String, HashMap<String, Float>> entry : buckets.entrySet()) {
-      String bucket = entry.getKey();
-      HashMap<String, Float> bucketMap = entry.getValue();
-
-      if (bucketMap.containsKey(poke)) {
-        float totalWeightInBucket = totalWeights.getOrDefault(bucket, 0f);
-        if (totalWeightInBucket <= 0) continue;
-
-        BigDecimal rarityInBucket = BigDecimal.valueOf(bucketMap.get(poke) / totalWeightInBucket);
-        float bucketWeight = worldBuckets != null ? worldBuckets.getOrDefault(bucket, 0f) : 0f;
-        BigDecimal totalWeight = rarityInBucket.multiply(BigDecimal.valueOf(bucketWeight));
-
-        if (totalWeight.compareTo(highestWeight) > 0) {
-          highestWeight = totalWeight;
-        }
-      }
-    }
-    return highestWeight;
   }
 
   /**
-   * Gets the rarity hashmap.
-   *
-   * @return rarity of given pokemon as a float.
+   * Initializes or recalculates the spawn rates cache from Cobblemon spawn pools.
+   * Thread-safe and atomic snapshot update.
    */
-  public float getRarity(Pokemon pokemon) {
-    if (rarity.isEmpty()) init();
-    var r = rarity.get(pokemon.getSpecies().showdownId());
-    return r == null ? -1 : r;
+  public synchronized void init() {
+    Map<String, Float> worldBuckets = BestSpawner.INSTANCE.getConfig().getWorldBuckets();
+    if (worldBuckets == null || worldBuckets.isEmpty()) {
+      return;
+    }
+
+    Collection<SpawnDetail> spawnDetails = CobblemonSpawnPools.WORLD_SPAWN_POOL.getDetails();
+    if (spawnDetails == null || spawnDetails.isEmpty()) {
+      return;
+    }
+
+    Map<String, Map<String, Float>> bucketPokemonWeights = new HashMap<>();
+    for (String bucket : worldBuckets.keySet()) {
+      bucketPokemonWeights.put(bucket, new HashMap<>());
+    }
+
+    Set<String> allPokemon = new HashSet<>();
+    populateBuckets(spawnDetails, bucketPokemonWeights, allPokemon);
+
+    Map<String, Float> bucketTotalWeights = calculateBucketTotals(bucketPokemonWeights);
+    Map<String, Float> computedRarities = computeRarities(allPokemon, bucketPokemonWeights, bucketTotalWeights, worldBuckets);
+
+    // Atomically swap the snapshot
+    this.rarity = Collections.unmodifiableMap(computedRarities);
   }
 
+  private void populateBuckets(
+    Collection<SpawnDetail> spawnDetails,
+    Map<String, Map<String, Float>> bucketPokemonWeights,
+    Set<String> allPokemon
+  ) {
+    for (SpawnDetail detail : spawnDetails) {
+      String bucket = detail.getBucket();
+      if (bucket == null) continue;
+
+      Map<String, Float> bucketMap = bucketPokemonWeights.get(bucket);
+      if (bucketMap == null) continue;
+
+      String speciesId = extractNormalizedSpeciesId(detail);
+      if (speciesId.isEmpty()) continue;
+
+      float weight = calculateEffectiveWeight(detail);
+      bucketMap.merge(speciesId, weight, Math::max);
+      allPokemon.add(speciesId);
+    }
+  }
+
+  private float calculateEffectiveWeight(SpawnDetail detail) {
+    float maxMultiplier = 0f;
+    for (WeightMultiplier multiplier : detail.getWeightMultipliers()) {
+      if (multiplier.getMultiplier() > maxMultiplier) {
+        maxMultiplier = multiplier.getMultiplier();
+      }
+    }
+    return Math.max(detail.getWeight() * maxMultiplier, detail.getWeight());
+  }
+
+  private Map<String, Float> calculateBucketTotals(Map<String, Map<String, Float>> bucketPokemonWeights) {
+    Map<String, Float> totals = new HashMap<>();
+    for (Map.Entry<String, Map<String, Float>> entry : bucketPokemonWeights.entrySet()) {
+      float sum = 0f;
+      for (float weight : entry.getValue().values()) {
+        sum += weight;
+      }
+      totals.put(entry.getKey(), sum);
+    }
+    return totals;
+  }
+
+  private Map<String, Float> computeRarities(
+    Set<String> allPokemon,
+    Map<String, Map<String, Float>> bucketPokemonWeights,
+    Map<String, Float> bucketTotalWeights,
+    Map<String, Float> worldBuckets
+  ) {
+    Map<String, Float> result = new HashMap<>();
+
+    for (String speciesId : allPokemon) {
+      double maxWeightedRate = 0.0;
+
+      for (Map.Entry<String, Map<String, Float>> entry : bucketPokemonWeights.entrySet()) {
+        String bucket = entry.getKey();
+        Map<String, Float> bucketMap = entry.getValue();
+
+        Float weight = bucketMap.get(speciesId);
+        if (weight == null) continue;
+
+        float totalWeightInBucket = bucketTotalWeights.getOrDefault(bucket, 0f);
+        if (totalWeightInBucket <= 0f) continue;
+
+        float bucketWeight = worldBuckets.getOrDefault(bucket, 0f);
+        double rateInBucket = (double) weight / (double) totalWeightInBucket;
+        double overallRate = rateInBucket * (double) bucketWeight * 100.0;
+
+        if (overallRate > maxWeightedRate) {
+          maxWeightedRate = overallRate;
+        }
+      }
+
+      result.put(speciesId, (float) maxWeightedRate);
+    }
+
+    return result;
+  }
+
+  private String extractNormalizedSpeciesId(SpawnDetail detail) {
+    String rawName = null;
+    if (detail instanceof PokemonSpawnDetail pokemonDetail && pokemonDetail.getPokemon() != null) {
+      rawName = pokemonDetail.getPokemon().getSpecies();
+    }
+    if (rawName == null || rawName.isBlank()) {
+      rawName = detail.getName().getString();
+    }
+    return normalizeSpeciesId(rawName);
+  }
+
+  private String normalizeSpeciesId(String name) {
+    if (name == null || name.isBlank()) return "";
+    String normalized = name.trim();
+    if (normalized.startsWith(SPECIES_LANG_PREFIX)) {
+      normalized = normalized.substring(SPECIES_LANG_PREFIX.length());
+      if (normalized.endsWith(SPECIES_LANG_SUFFIX)) {
+        normalized = normalized.substring(0, normalized.length() - SPECIES_LANG_SUFFIX.length());
+      }
+    }
+    if (normalized.contains(":")) {
+      normalized = normalized.substring(normalized.indexOf(':') + 1);
+    }
+    return normalized.toLowerCase().replace(" ", "").replace("_", "").replace("-", "");
+  }
+
+  private void ensureInitialized() {
+    if (rarity.isEmpty()) {
+      init();
+    }
+  }
+
+  /**
+   * Retrieves the spawn rarity percentage for a Pokemon.
+   *
+   * @param pokemon The Pokemon instance to query.
+   * @return Spawn rarity percentage (0-100), or -1 if unknown.
+   */
+  public float getRarity(Pokemon pokemon) {
+    ensureInitialized();
+    if (pokemon == null || pokemon.getSpecies() == null) return -1f;
+
+    String showdownId = pokemon.getSpecies().showdownId();
+    Float directRarity = rarity.get(showdownId);
+    if (directRarity != null) {
+      return directRarity;
+    }
+
+    // Fallback for evolved forms not directly registered in world spawn pools
+    Pokemon firstEvolution = PokemonUtils.getFirstEvolution(pokemon);
+    if (firstEvolution != null && firstEvolution.getSpecies() != null) {
+      String baseId = firstEvolution.getSpecies().showdownId();
+      if (!baseId.equals(showdownId)) {
+        Float baseRarity = rarity.get(baseId);
+        if (baseRarity != null) {
+          return baseRarity * EVOLUTION_RARITY_MULTIPLIER;
+        }
+      }
+    }
+
+    return -1f;
+  }
+
+  /**
+   * Retrieves the spawn rarity percentage for a Species.
+   *
+   * @param species The Species to query.
+   * @return Spawn rarity percentage (0-100), or -1 if unknown.
+   */
   public float getRarity(Species species) {
-    if (rarity.isEmpty()) init();
-    Pokemon p = species.create(1);
-    return getRarity(p);
+    ensureInitialized();
+    if (species == null) return -1f;
+
+    String showdownId = species.showdownId();
+    Float directRarity = rarity.get(showdownId);
+    if (directRarity != null) {
+      return directRarity;
+    }
+
+    // Direct pre-evolution traversal without creating dummy Pokemon entity
+    Species base = PokemonUtils.getFirstPreEvolution(species);
+    if (base != null && !base.showdownId().equals(showdownId)) {
+      Float baseRarity = rarity.get(base.showdownId());
+      if (baseRarity != null) {
+        return baseRarity * EVOLUTION_RARITY_MULTIPLIER;
+      }
+    }
+
+    return getRarity(species.create(1));
+  }
+
+  /**
+   * Returns an unmodifiable snapshot of the calculated rarity map.
+   */
+  public Map<String, Float> getRarityMap() {
+    ensureInitialized();
+    return rarity;
   }
 }

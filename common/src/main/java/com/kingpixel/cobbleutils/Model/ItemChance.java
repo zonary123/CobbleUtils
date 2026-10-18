@@ -14,6 +14,7 @@ import com.cobblemon.mod.common.api.pokemon.PokemonProperties;
 import com.cobblemon.mod.common.api.storage.NoPokemonStoreException;
 import com.cobblemon.mod.common.item.PokemonItem;
 import com.cobblemon.mod.common.pokemon.Pokemon;
+import com.google.gson.annotations.SerializedName;
 import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.api.EconomyApi;
 import com.kingpixel.cobbleutils.api.RewardsApi;
@@ -43,6 +44,7 @@ import java.util.regex.Pattern;
 public class ItemChance {
   public static final Map<String, List<ItemMod>> modItems = new HashMap<>();
   // Required properties
+  @SerializedName(value = "item", alternate = { "reward" })
   private String item;
   private double chance;
   // Optional Unique reward ID
@@ -121,18 +123,19 @@ public class ItemChance {
 
     public static void openMenu(ServerPlayerEntity player) {
       ChestTemplate template = ChestTemplate.builder(6)
-        .build();
+          .build();
 
       List<Button> buttons = new ArrayList<>();
       modItems.forEach((modid, items) -> {
         items.forEach(item -> {
           buttons.add(GooeyButton.builder()
-            .display(item.getItemStack().copy())
-            .with(DataComponentTypes.CUSTOM_NAME, AdventureTranslator.toNative("mod:" + modid + ":" + item.getItemId()))
-            .onClick((action) -> {
-              action.getPlayer().giveItemStack(item.getItemStack().copy());
-            })
-            .build());
+              .display(item.getItemStack().copy())
+              .with(DataComponentTypes.CUSTOM_NAME,
+                  AdventureTranslator.toNative("mod:" + modid + ":" + item.getItemId()))
+              .onClick((action) -> {
+                action.getPlayer().giveItemStack(item.getItemStack().copy());
+              })
+              .build());
         });
       });
 
@@ -140,9 +143,9 @@ public class ItemChance {
       template.fillFromList(buttons);
       ItemModel itemPrevious = CobbleUtils.language.getItemPrevious();
       template.set(45, LinkedPageButton.builder()
-        .display(itemPrevious.getItemStack())
-        .linkType(LinkType.Previous)
-        .build());
+          .display(itemPrevious.getItemStack())
+          .linkType(LinkType.Previous)
+          .build());
 
       ItemModel itemClose = CobbleUtils.language.getItemClose();
       template.set(49, itemClose.getButton(action -> {
@@ -151,17 +154,17 @@ public class ItemChance {
 
       ItemModel itemNext = CobbleUtils.language.getItemNext();
       template.set(53, LinkedPageButton.builder()
-        .display(itemNext.getItemStack())
-        .linkType(LinkType.Next)
-        .build());
+          .display(itemNext.getItemStack())
+          .linkType(LinkType.Next)
+          .build());
 
       LinkedPage.Builder linkedPageBuilder = LinkedPage.builder()
-        .title("Mod Rewards");
+          .title("Mod Rewards");
 
-      UIManager.openUIForcefully(player, PaginationHelper.createPagesFromPlaceholders(template, buttons, linkedPageBuilder));
+      UIManager.openUIForcefully(player,
+          PaginationHelper.createPagesFromPlaceholders(template, buttons, linkedPageBuilder));
     }
   }
-
 
   public static void addModItem(String modid, String itemId, ItemStack itemStack) {
     if (!modItems.containsKey(modid)) {
@@ -180,10 +183,14 @@ public class ItemChance {
    * @return The type of item chance.
    */
   public ItemChanceType getType() {
-    if (item.startsWith("pokemon:")) return ItemChanceType.POKEMON;
-    if (item.startsWith("command:")) return ItemChanceType.COMMAND;
-    if (item.startsWith("money:")) return ItemChanceType.MONEY;
-    if (item.startsWith("mod:")) return ItemChanceType.MOD;
+    if (item.startsWith("pokemon:"))
+      return ItemChanceType.POKEMON;
+    if (item.startsWith("command:"))
+      return ItemChanceType.COMMAND;
+    if (item.startsWith("money:"))
+      return ItemChanceType.MONEY;
+    if (item.startsWith("mod:"))
+      return ItemChanceType.MOD;
     return ItemChanceType.ITEM;
   }
 
@@ -204,14 +211,14 @@ public class ItemChance {
     itemChances.add(new ItemChance("item:1:minecraft:dirt#[minecraft:custom_model_data=1]", 1.0));
     itemChances.add(new ItemChance("pokemon:rattata alola", 1.0));
     itemChances.add(new ItemChance("command:lp user %player% permission set a", 1.0, "minecraft:emerald", "Give " +
-      "permission a"));
-    itemChances.add(new ItemChance("command:lp user %player% permission set a#lp user %player% permission set b", 1.0
-      , "minecraft:emerald", "Give permission a and b"));
+        "permission a"));
+    itemChances.add(new ItemChance("command:lp user %player% permission set a#lp user %player% permission set b", 1.0,
+        "minecraft:emerald", "Give permission a and b"));
     itemChances.add(new ItemChance("money:1", 1.0));
     itemChances.add(new ItemChance("money:tokens:1", 1.0));
     itemChances.add(new ItemChance("mod:cobblehunt:radar", 1.0));
     itemChances.add(new ItemChance("cobblemon:poke_ball|cobblemon:great_ball|cobblemon:ultra_ball|command:lp user " +
-      "%player% permission set a|pokemon:rattata alola", 1.0));
+        "%player% permission set a|pokemon:rattata alola", 1.0));
     return itemChances;
   }
 
@@ -239,6 +246,8 @@ public class ItemChance {
 
   private static final Pattern COMMAND_SPLIT_PATTERN = Pattern.compile("(?<!<)#");
   private static final String PREFIX_COMMAND = "command:";
+  private static final String INVALID_NUMBER_FORMAT = "Invalid number format: ";
+  private static final String BANNER_DELIMITER = "\n================================================================================";
 
   // Cache for parsed items to improve performance
   private static final Map<ItemChance, ItemStack> ITEM_CACHE = new ConcurrentHashMap<>();
@@ -263,7 +272,6 @@ public class ItemChance {
     }).copyWithCount(amount);
   }
 
-
   /**
    * Gives a reward to the player based on the item type and amount.
    *
@@ -279,7 +287,8 @@ public class ItemChance {
         ItemChance ic = RewardsApi.getReward(id);
         if (ic != null) {
           return giveReward(player, ic, amount);
-        } else return false;
+        } else
+          return false;
       }
       String[] parts = item.split("\\|");
 
@@ -323,11 +332,10 @@ public class ItemChance {
       } else if (item.startsWith("message:")) {
         String message = item.replace("message:", "");
         PlayerUtils.sendMessage(
-          player,
-          message,
-          CobbleUtils.config.getPrefix(),
-          TypeMessage.CHAT
-        );
+            player,
+            message,
+            CobbleUtils.config.getPrefix(),
+            TypeMessage.CHAT);
         return true;
       } else {
         itemStack = getCachedItem(itemChance, parseAmount(item.split(":")[1]) * amount).copy();
@@ -340,11 +348,12 @@ public class ItemChance {
       CobbleUtils.server.executeSync(() -> player.getInventory().offerOrDrop(finalItemStack));
       return true;
     } catch (Exception e) {
-      CobbleUtils.LOGGER_RAW.error("Error giving reward: " + e.getMessage());
+      String itemStr = itemChance != null ? itemChance.getItem() : "null";
+      CobbleUtils.LOGGER_RAW.error("Error giving reward for ItemChance '{}': {}\n{}",
+          itemStr, e.getMessage(), e);
       return false;
     }
   }
-
 
   private static Pokemon getRewardPokemon(String item) {
     String p = item.replace("pokemon:", "");
@@ -356,40 +365,25 @@ public class ItemChance {
   }
 
   private static boolean handleMoneyReward(ServerPlayerEntity player, String item) {
-    String[] parts = item.split(":");
-    BigDecimal money = BigDecimal.ZERO;
-    String currency = "dollars";
-    String economyId = "";
-
+    ParsedMoney parsed;
     try {
-      switch (parts.length) {
-        case 2:
-          money = parseAmountMoney(parts[1]);
-          break;
-        case 3:
-          currency = parts[1];
-          money = parseAmountMoney(parts[2]);
-          break;
-        case 4:
-          economyId = parts[1];
-          currency = parts[2];
-          money = parseAmountMoney(parts[3]);
-          break;
-        default:
-          money = parseAmountMoney(item.replace("money:", ""));
-          break;
-      }
+      parsed = parseMoney(item);
     } catch (NumberFormatException e) {
-      CobbleUtils.LOGGER_RAW.error("Invalid money format in item: " + item);
+      CobbleUtils.LOGGER_RAW.error(getInvalidRewardExceptionMessage(item, INVALID_NUMBER_FORMAT + e.getMessage()));
       return false;
     }
 
-    PlayerUtils.sendMessage(player,
-      CobbleUtils.language.getMessageReceiveMoney()
-        .replace("%amount%", EconomyApi.formatMoney(money, currency, economyId)),
-      "", TypeMessage.CHAT);
+    try {
+      PlayerUtils.sendMessage(player,
+          CobbleUtils.language.getMessageReceiveMoney()
+              .replace("%amount%", EconomyApi.formatMoney(parsed)),
+          "", TypeMessage.CHAT);
 
-    return EconomyApi.addMoney(player.getUuid(), money, currency, economyId);
+      return EconomyApi.addMoney(player, parsed);
+    } catch (Exception e) {
+      CobbleUtils.LOGGER_RAW.error(getInvalidRewardExceptionMessage(item, e.getMessage()), e);
+      return false;
+    }
   }
 
   private static ItemStack parseItemStack(String item, int amount) {
@@ -398,12 +392,12 @@ public class ItemChance {
     String[] itemSplit = split[0].split(":");
     String iditem = itemSplit[2] + ":" + itemSplit[3];
     itemStack = ItemUtils.parseItemId(iditem, amount);
-    if (split.length < 2) return itemStack;
+    if (split.length < 2)
+      return itemStack;
     String nbt = split[1];
     itemStack = ItemUtils.applyNbt(iditem, itemStack, nbt, amount);
     return itemStack;
   }
-
 
   /**
    * Gets the title of the item based on its type.
@@ -422,8 +416,7 @@ public class ItemChance {
     if (parts.length > 3) {
       amount = Integer.parseInt(parts[3]);
     }
-    ItemStack itemStack =
-      modItems.getOrDefault(modid, new ArrayList<>())
+    ItemStack itemStack = modItems.getOrDefault(modid, new ArrayList<>())
         .stream()
         .filter(i -> i.getItemId().equalsIgnoreCase(itemId))
         .findFirst()
@@ -452,10 +445,10 @@ public class ItemChance {
     List<String> lore = new ArrayList<>(getLore());
     lore.replaceAll(s -> s.replace("%chance%", percentage));
     return GooeyButton.builder()
-      .display(getItemStack())
-      .with(DataComponentTypes.CUSTOM_NAME, AdventureTranslator.toNative(title))
-      .with(DataComponentTypes.LORE, new LoreComponent(AdventureTranslator.toNativeL(lore)))
-      .build();
+        .display(getItemStack())
+        .with(DataComponentTypes.CUSTOM_NAME, AdventureTranslator.toNative(title))
+        .with(DataComponentTypes.LORE, new LoreComponent(AdventureTranslator.toNativeL(lore)))
+        .build();
   }
 
   private static final ConcurrentHashMap<String, ItemStack> REWARD_ITEM_STACK = new ConcurrentHashMap<>();
@@ -468,13 +461,15 @@ public class ItemChance {
    * @return The ItemStack of the reward.
    */
   private static ItemStack getRewardItemStack(String item, int amount) {
-    if (item == null || item.isEmpty()) return ItemStack.EMPTY;
+    if (item == null || item.isEmpty())
+      return ItemStack.EMPTY;
 
     String cacheKey = item + "|" + amount;
 
     // Check if already cached
     ItemStack cached = REWARD_ITEM_STACK.get(cacheKey);
-    if (cached != null) return cached.copy();
+    if (cached != null)
+      return cached.copy();
 
     // Resolve the ItemStack
     ItemStack resolved = resolveRewardItemStack(item, amount);
@@ -497,7 +492,8 @@ public class ItemChance {
 
       if (ic != null) {
         String nestedItem = ic.getItem();
-        if (nestedItem.equals(item)) return ItemStack.EMPTY; // Prevent infinite cycles
+        if (nestedItem.equals(item))
+          return ItemStack.EMPTY; // Prevent infinite cycles
         return getRewardItemStack(nestedItem, amount);
       }
     }
@@ -524,7 +520,6 @@ public class ItemChance {
     return itemStack;
   }
 
-
   private static ItemStack parseCommandItem(String item) {
     String command = item.replace("command:", "");
     for (Map.Entry<String, ItemModel> entry : CobbleUtils.config.getItemsCommands().entrySet()) {
@@ -536,36 +531,21 @@ public class ItemChance {
   }
 
   private static ItemStack parseMoneyItem(String item) {
-    String[] parts = item.split(":");
-    String currency = "money";
-    String economyId = "";
-    BigDecimal value;
-
+    ParsedMoney parsed;
     try {
-      switch (parts.length) {
-        case 2:
-          value = parseAmountMoney(parts[1]);
-          break;
-        case 3:
-          currency = parts[1];
-          value = parseAmountMoney(parts[2]);
-          break;
-        case 4:
-          economyId = parts[1];
-          currency = parts[2];
-          value = parseAmountMoney(parts[3]);
-          break;
-        default:
-          throw new IllegalArgumentException("Invalid Format: " + item);
-      }
+      parsed = parseMoney(item);
     } catch (NumberFormatException e) {
-      throw new IllegalArgumentException("Invalid value: " + item, e);
+      throw new IllegalArgumentException(getInvalidRewardExceptionMessage(item, INVALID_NUMBER_FORMAT + e.getMessage()),
+          e);
     }
 
-    ItemModel impactorItem = new ItemModel(CobbleUtils.language.getItemsEconomy().getOrDefault(currency,
-      new ItemModel(CobbleUtils.language.getItemMoney())));
-    impactorItem.setDisplayname(impactorItem.getDisplayname().replace("%amount%", EconomyApi.formatMoney(value,
-      currency, economyId)));
+    ItemModel impactorItem = new ItemModel(CobbleUtils.language.getItemsEconomy().getOrDefault(parsed.getCurrency(),
+        new ItemModel(CobbleUtils.language.getItemMoney())));
+    try {
+      impactorItem.setDisplayname(impactorItem.getDisplayname().replace("%amount%", EconomyApi.formatMoney(parsed)));
+    } catch (Exception e) {
+      throw new IllegalArgumentException(getInvalidRewardExceptionMessage(item, e.getMessage()), e);
+    }
 
     return impactorItem.getItemStack();
   }
@@ -583,7 +563,6 @@ public class ItemChance {
       return 1;
     }
   }
-
 
   public static String getTitle(ItemChance itemChance) {
     if (itemChance.getDisplayname() != null && !itemChance.getDisplayname().isEmpty())
@@ -635,47 +614,29 @@ public class ItemChance {
   }
 
   private static String getMoneyTitle(String item) {
-    String[] parts = item.split(":");
-    BigDecimal money = BigDecimal.ZERO;
-    String currency = "money";
-    String economyId = "";
-    String moneyString = "";
+    ParsedMoney parsed;
     try {
-      switch (parts.length) {
-        case 2:
-          moneyString = parts[1];
-          money = parseAmountMoney(moneyString);
-          break;
-        case 3:
-          currency = parts[1];
-          moneyString = parts[2];
-          money = parseAmountMoney(moneyString);
-          break;
-        case 4:
-          economyId = parts[1];
-          currency = parts[2];
-          moneyString = parts[3];
-          money = parseAmountMoney(moneyString);
-          break;
-        default:
-          throw new IllegalArgumentException("Formato inválido: " + item);
-      }
+      parsed = parseMoney(item);
     } catch (NumberFormatException e) {
-      CobbleUtils.LOGGER_RAW.error("Valor inválido en el item: " + item);
-      return "Formato de dinero inválido";
+      throw new IllegalArgumentException(getInvalidRewardExceptionMessage(item, INVALID_NUMBER_FORMAT + e.getMessage()),
+          e);
     }
 
-    ItemModel itemModel = CobbleUtils.language.getItemsEconomy().getOrDefault(currency,
-      new ItemModel(CobbleUtils.language.getItemMoney()));
+    ItemModel itemModel = CobbleUtils.language.getItemsEconomy().getOrDefault(parsed.getCurrency(),
+        new ItemModel(CobbleUtils.language.getItemMoney()));
     String format;
-    if (moneyString.contains("-")) {
-      String[] split = moneyString.split("-");
-      var min = BigDecimal.valueOf(Integer.parseInt(split[0]));
-      var max = BigDecimal.valueOf(Integer.parseInt(split[1]));
-      format = EconomyApi.formatMoney(min, currency, economyId) + " &f- " +
-        EconomyApi.formatMoney(max, currency, economyId);
-    } else {
-      format = EconomyApi.formatMoney(money, currency, economyId);
+    try {
+      if (parsed.getAmountString().contains("-")) {
+        String[] split = parsed.getAmountString().split("-");
+        var min = BigDecimal.valueOf(Integer.parseInt(split[0]));
+        var max = BigDecimal.valueOf(Integer.parseInt(split[1]));
+        format = EconomyApi.formatMoney(min, parsed) + " &f- " +
+            EconomyApi.formatMoney(max, parsed);
+      } else {
+        format = EconomyApi.formatMoney(parsed);
+      }
+    } catch (Exception e) {
+      throw new IllegalArgumentException(getInvalidRewardExceptionMessage(item, e.getMessage()), e);
     }
     return itemModel.getDisplayname().replace("%amount%", format);
   }
@@ -726,7 +687,6 @@ public class ItemChance {
     }
   }
 
-
   /**
    * Get a random reward from a list of item chances and give it to the player.
    *
@@ -760,18 +720,19 @@ public class ItemChance {
    * @param numberOfRewards The number of rewards to give.
    * @return The list of rewards given to the player.
    */
-  public static List<ItemChance> getRewards(List<ItemChance> itemChances, ServerPlayerEntity player, int numberOfRewards) {
+  public static List<ItemChance> getRewards(List<ItemChance> itemChances, ServerPlayerEntity player,
+      int numberOfRewards) {
     if (itemChances == null || itemChances.isEmpty()) {
       PlayerUtils.sendMessage(
-        player,
-        "No rewards available",
-        CobbleUtils.config.getPrefix(),
-        TypeMessage.CHAT
-      );
+          player,
+          "No rewards available",
+          CobbleUtils.config.getPrefix(),
+          TypeMessage.CHAT);
       return Collections.emptyList();
     }
 
-    // Filter valid rewards — unique items that are exhausted/on cooldown are excluded
+    // Filter valid rewards — unique items that are exhausted/on cooldown are
+    // excluded
     List<ItemChance> validRewards = new ArrayList<>();
     for (ItemChance itemChance : itemChances) {
       Boolean unique = itemChance.getUnique();
@@ -787,11 +748,10 @@ public class ItemChance {
 
     if (validRewards.isEmpty()) {
       PlayerUtils.sendMessage(
-        player,
-        "No rewards available",
-        CobbleUtils.config.getPrefix(),
-        TypeMessage.CHAT
-      );
+          player,
+          "No rewards available",
+          CobbleUtils.config.getPrefix(),
+          TypeMessage.CHAT);
       return Collections.emptyList();
     }
 
@@ -820,7 +780,8 @@ public class ItemChance {
 
     // Randomly select rewards, removing unique items from pool after selection
     for (int i = 0; i < numberOfRewards; i++) {
-      if (normalRewards.isEmpty() || totalChance <= 0) break;
+      if (normalRewards.isEmpty() || totalChance <= 0)
+        break;
       double randomPoint = Utils.getRandom().nextDouble(totalChance);
       double cumulativeChance = 0.0;
 
@@ -839,7 +800,8 @@ public class ItemChance {
             rewards.add(itemChance);
             normalRewards.remove(j);
             totalChance -= itemChance.getChance();
-            if (totalChance < 0) totalChance = 0;
+            if (totalChance < 0)
+              totalChance = 0;
           } else {
             rewards.add(itemChance);
           }
@@ -850,7 +812,6 @@ public class ItemChance {
     rewards.addAll(guaranteedRewards);
     return rewards;
   }
-
 
   /**
    * Gives all rewards from a list of item chances to the player.
@@ -887,9 +848,9 @@ public class ItemChance {
       List<String> lore = new ArrayList<>(itemChance.getLore());
       lore.replaceAll(s -> s.replace("%chance%", String.valueOf(itemChance.getChance())));
       buttons.add(GooeyButton.builder()
-        .display(itemChance.getItemStack())
-        .with(DataComponentTypes.LORE, new LoreComponent(AdventureTranslator.toNativeL(lore)))
-        .build());
+          .display(itemChance.getItemStack())
+          .with(DataComponentTypes.LORE, new LoreComponent(AdventureTranslator.toNativeL(lore)))
+          .build());
     }
     return buttons;
   }
@@ -903,8 +864,10 @@ public class ItemChance {
   }
 
   public ItemStack getIcon(String title, List<String> lore) {
-    if (title == null) title = this.getTitle();
-    if (lore == null) lore = this.getLore();
+    if (title == null)
+      title = this.getTitle();
+    if (lore == null)
+      lore = this.getLore();
     ItemStack itemStack;
     if (this.getDisplay() != null && !this.getDisplay().isEmpty()) {
       itemStack = getRewardItemStack(this.getDisplay(), 1);
@@ -917,5 +880,120 @@ public class ItemChance {
     }
 
     return itemStack;
+  }
+
+
+  /**
+   * Splits a string by delimiter while ignoring delimiters enclosed in single (') or double (\") quotes.
+   * Strips outer quotes from the resulting tokens.
+   */
+  public static List<String> splitRespectingQuotes(String input, char delimiter) {
+    List<String> tokens = new ArrayList<>();
+    StringBuilder current = new StringBuilder();
+    boolean inSingleQuote = false;
+    boolean inDoubleQuote = false;
+
+    for (int i = 0; i < input.length(); i++) {
+      char c = input.charAt(i);
+      if (c == '\'' && !inDoubleQuote) {
+        inSingleQuote = !inSingleQuote;
+      } else if (c == '"' && !inSingleQuote) {
+        inDoubleQuote = !inDoubleQuote;
+      } else if (c == delimiter && !inSingleQuote && !inDoubleQuote) {
+        tokens.add(current.toString().trim());
+        current.setLength(0);
+      } else {
+        current.append(c);
+      }
+    }
+    tokens.add(current.toString().trim());
+    return tokens;
+  }
+
+  /**
+   * Parses a raw money reward string into its constituent parts: economyId, currency, and amount.
+   * Supports quoted currencies (e.g. money:'mania:dollars':20) and unquoted multi-colon namespaced currencies.
+   *
+   * @param item The money reward string.
+   * @return The parsed money reward.
+   */
+  public static ParsedMoney parseMoney(String item) {
+    List<String> parts = splitRespectingQuotes(item, ':');
+    String economyId = "";
+    String currency = "money";
+    String amountString;
+
+    switch (parts.size()) {
+      case 2 -> amountString = parts.get(1);
+      case 3 -> {
+        currency = parts.get(1);
+        amountString = parts.get(2);
+      }
+      case 4 -> {
+        String candidateEconomy = parts.get(1);
+        if (EconomyApi.isEconomy(candidateEconomy)) {
+          economyId = candidateEconomy;
+          currency = parts.get(2);
+          amountString = parts.get(3);
+        } else {
+          currency = candidateEconomy + ":" + parts.get(2);
+          amountString = parts.get(3);
+        }
+      }
+      case 5 -> {
+        economyId = parts.get(1);
+        currency = parts.get(2) + ":" + parts.get(3);
+        amountString = parts.get(4);
+      }
+      default -> throw new IllegalArgumentException(
+          getInvalidRewardExceptionMessage(item, "Invalid number of arguments in money reward"));
+    }
+
+    BigDecimal amount = parseAmountMoney(amountString);
+    return new ParsedMoney(economyId, currency, amountString, amount);
+  }
+
+  /**
+   * Generates a descriptive error message when an ItemChance reward format or currency is invalid.
+   * Includes the exact configured reward item to allow quick searching across config files,
+   * along with categorized valid examples of reward formats.
+   *
+   * @param item   The raw reward string configured in ItemChance.
+   * @param reason The root cause or error details.
+   * @return The formatted error message.
+   */
+  public static String getInvalidRewardExceptionMessage(String item, String reason) {
+    StringBuilder builder = new StringBuilder();
+    builder.append(BANNER_DELIMITER)
+        .append("\n [CobbleUtils] INVALID REWARD DETECTED IN CONFIGURATION")
+        .append(BANNER_DELIMITER)
+        .append("\n • Offending reward string : '").append(item).append("'");
+    if (reason != null && !reason.isBlank()) {
+      builder.append("\n • Cause / Details         : ").append(reason);
+    }
+    builder.append("\n • Quick Fix Action        : Search your server configs for '").append(item).append("' and correct it.")
+        .append("\n--------------------------------------------------------------------------------")
+        .append("\n SUPPORTED FORMATS & EXAMPLES:")
+        .append("\n   [Money]")
+        .append("\n     - Default currency        : money:<amount>                      (e.g. 'money:100' or 'money:10-50')")
+        .append("\n     - Specific currency       : money:<currency>:<amount>           (e.g. 'money:pokedollars:100')")
+        .append("\n     - Namespaced currency     : money:'<namespace:curr>':<amount>   (e.g. money:'mania:dollars':20 or money:mania:dollars:20)")
+        .append("\n     - Specific economy & curr : money:<economy>:<currency>:<amount> (e.g. money:impactor:pokedollars:100 or money:impactor:'mania:dollars':20)")
+        .append("\n   [Items]")
+        .append("\n     - Simple item             : <modid>:<item>                      (e.g. 'cobblemon:poke_ball')")
+        .append("\n     - Item with amount        : item:<amount>:<modid>:<item>        (e.g. 'item:16:minecraft:diamond')")
+        .append("\n     - Item with NBT/Components: item:<amount>:<modid>:<item>#[nbt]  (e.g. 'item:1:minecraft:dirt#[minecraft:custom_model_data=1]')")
+        .append("\n   [Pokémon]")
+        .append("\n     - Cobblemon properties    : pokemon:<properties>                (e.g. 'pokemon:rattata alola' or 'pokemon:pikachu shiny=yes level=50')")
+        .append("\n   [Commands]")
+        .append("\n     - Server command          : command:<cmd>                       (e.g. 'command:lp user %player% permission set vip')")
+        .append("\n     - Multiple commands       : command:<cmd1>#<cmd2>               (e.g. 'command:heal %player%#feed %player%')")
+        .append("\n   [Mod Items]")
+        .append("\n     - Registered mod item     : mod:<modid>:<itemid>[:amount]       (e.g. 'mod:cobblehunt:radar' or 'mod:cobblehunt:radar:2')")
+        .append("\n   [Custom / Nested]")
+        .append("\n     - Referenced reward ID    : id:<reward_id>                      (e.g. 'id:battle')")
+        .append("\n     - Multi-option reward     : <reward1>|<reward2>|...             (e.g. 'cobblemon:poke_ball|cobblemon:ultra_ball')")
+        .append(BANNER_DELIMITER);
+    return builder.toString();
   }
 }

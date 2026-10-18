@@ -255,7 +255,7 @@ public class AdvancedItemChance {
       }
 
     } catch (Exception e) {
-      CobbleUtils.LOGGER_RAW.error("Error giving rewards to {}", playerUUID, e);
+      CobbleUtils.LOGGER_RAW.error("Error giving rewards to {}: {}", playerUUID, e.getMessage(), e);
       PlayerUtils.sendMessage(
         player,
         "%prefix% &cError while giving rewards. Contact admin. Time: " + new java.util.Date(),
@@ -445,7 +445,14 @@ public class AdvancedItemChance {
   }
 
   private ItemStack getDisplay(ItemChance itemChance) {
-    return itemChance.getIcon();
+    try {
+      return itemChance.getIcon();
+    } catch (IllegalArgumentException e) {
+      throw e;
+    } catch (Exception e) {
+      throw new IllegalArgumentException(ItemChance.getInvalidRewardExceptionMessage(
+        itemChance != null ? itemChance.getItem() : "null", e.getMessage()), e);
+    }
   }
 
   private List<ItemStack> getListDisplay(List<ItemChance> itemChances) {

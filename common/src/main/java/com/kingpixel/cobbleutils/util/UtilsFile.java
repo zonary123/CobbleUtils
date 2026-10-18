@@ -11,6 +11,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.internal.bind.DateTypeAdapter;
 import com.google.gson.reflect.TypeToken;
+import com.kingpixel.cobbleutils.CobbleUtils;
 import com.kingpixel.cobbleutils.Model.DataBaseType;
 import com.kingpixel.cobbleutils.Model.DurationValue;
 import com.kingpixel.cobbleutils.Model.ItemChance;
@@ -34,6 +35,7 @@ import javax.annotation.Nonnull;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
+import java.io.InputStream;
 import java.lang.reflect.Type;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
@@ -130,6 +132,14 @@ public final class UtilsFile {
   private static ReadWriteLock lock(Path path) {
     Path normalized = path.toAbsolutePath().normalize();
     return FILE_LOCKS.computeIfAbsent(normalized, p -> new ReentrantReadWriteLock());
+  }
+
+  private static void atomicMove(@Nonnull Path source, @Nonnull Path destination) throws IOException {
+    try {
+      Files.move(source, destination, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
+    } catch (AtomicMoveNotSupportedException e) {
+      Files.move(source, destination, StandardCopyOption.REPLACE_EXISTING);
+    }
   }
 
   /**
@@ -268,11 +278,7 @@ public final class UtilsFile {
         getGson().toJson(object, writer);
       }
 
-      try {
-        Files.move(tmp, path, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
-      } catch (AtomicMoveNotSupportedException e) {
-        Files.move(tmp, path, StandardCopyOption.REPLACE_EXISTING);
-      }
+      atomicMove(tmp, path);
     } finally {
       lock.writeLock().unlock();
     }
@@ -445,7 +451,7 @@ public final class UtilsFile {
         .filter(filter)
         .toList();
     } catch (IOException e) {
-      e.printStackTrace();
+      CobbleUtils.LOGGER_RAW.error("Failed to list files in folder " + folder + ": " + e.getMessage());
       return List.of();
     }
   }
@@ -531,11 +537,7 @@ public final class UtilsFile {
 
       Files.writeString(tmp, content, StandardCharsets.UTF_8, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
 
-      try {
-        Files.move(tmp, path, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
-      } catch (AtomicMoveNotSupportedException e) {
-        Files.move(tmp, path, StandardCopyOption.REPLACE_EXISTING);
-      }
+      atomicMove(tmp, path);
     } finally {
       lock.writeLock().unlock();
     }
@@ -558,6 +560,164 @@ public final class UtilsFile {
         throw new CompletionException(e);
       }
     });
+  }
+
+  /**
+   * Retrieves an open {@link InputStream} for a resource bundled inside the mod's JAR.
+   *
+   * @param clazz        The caller class whose {@link ClassLoader} will be queried.
+   * @param resourcePath The path of the resource inside the JAR (e.g. "WIKI.md" or "/assets/modid/...").
+   * @return An active InputStream, or null if the resource could not be found.
+   */
+  @Nullable
+  public static InputStream getResourceAsStream(@Nonnull Class<?> clazz, @Nonnull String resourcePath) {
+    String cleanPath = resourcePath.startsWith("/") ? resourcePath.substring(1) : resourcePath;
+    ClassLoader cl = clazz.getClassLoader();
+    InputStream in = cl != null ? cl.getResourceAsStream(cleanPath) : null;
+    if (in == null) {
+      in = clazz.getResourceAsStream(resourcePath.startsWith("/") ? resourcePath : "/" + resourcePath);
+    }
+    if (in == null) {
+      ClassLoader ctxCl = Thread.currentThread().getContextClassLoader();
+      if (ctxCl != null) {
+        in = ctxCl.getResourceAsStream(cleanPath);
+      }
+    }
+    return in;
+  }
+
+  /**
+   * Reads a bundled text resource from the mod's JAR and decodes it as a UTF-8 String.
+   *
+   * @param clazz        The caller class whose JAR contains the resource.
+   * @param resourcePath The path of the resource inside the JAR.
+   * @return The string content of the resource, or null if not found.
+   * @throws IOException If an I/O error occurs while reading the stream.
+   */
+  @Nullable
+  public static String readResource(@Nonnull Class<?> clazz, @Nonnull String resourcePath) throws IOException {
+    try (InputStream in = getResourceAsStream(clazz, resourcePath)) {
+      if (in == null) return null;
+      return new String(in.readAllBytes(), StandardCharsets.UTF_8);
+    }
+  }
+
+  /**
+   * Asynchronously reads a bundled text resource from the mod's JAR.
+   *
+   * @param clazz        The caller class whose JAR contains the resource.
+   * @param resourcePath The path of the resource inside the JAR.
+   * @return A CompletableFuture resolving to the text content, or null if not found.
+   */
+  public static CompletableFuture<@Nullable String> readResourceAsync(
+    @Nonnull Class<?> clazz,
+    @Nonnull String resourcePath
+  ) {
+    return ASYNC.supply(() -> {
+      try {
+        return readResource(clazz, resourcePath);
+      } catch (IOException e) {
+        throw new CompletionException(e);
+      }
+    });
+  }
+
+  /**
+   * Extracts a bundled resource from the mod's JAR directly to a destination path on disk.
+   * Automatically creates any necessary parent directories.
+   *
+   * @param clazz        The caller class whose JAR contains the resource.
+   * @param resourcePath The path of the resource inside the JAR (e.g. "WIKI.md").
+   * @param targetPath   The filesystem destination path.
+   * @param replace      Whether to overwrite the destination file if it already exists.
+   * @return True if the resource was successfully extracted and written, false otherwise.
+   */
+  public static boolean extractResource(
+    @Nonnull Class<?> clazz,
+    @Nonnull String resourcePath,
+    @Nonnull Path targetPath,
+    boolean replace
+  ) {
+    if (!replace && Files.exists(targetPath)) {
+      return false;
+    }
+
+    try (InputStream in = getResourceAsStream(clazz, resourcePath)) {
+      if (in == null) {
+        return false;
+      }
+
+      if (targetPath.getParent() != null) {
+        Files.createDirectories(targetPath.getParent());
+      }
+
+      ReadWriteLock lock = lock(targetPath);
+      lock.writeLock().lock();
+      try {
+        Path tmp = targetPath.resolveSibling(targetPath.getFileName() + ".tmp");
+        if (replace) {
+          Files.copy(in, tmp, StandardCopyOption.REPLACE_EXISTING);
+        } else {
+          Files.copy(in, tmp);
+        }
+
+        atomicMove(tmp, targetPath);
+        return true;
+      } finally {
+        lock.writeLock().unlock();
+      }
+    } catch (IOException e) {
+      CobbleUtils.LOGGER_RAW.error("Failed to extract resource " + resourcePath + " to " + targetPath + ": " + e.getMessage());
+      return false;
+    }
+  }
+
+  /**
+   * Asynchronously extracts a bundled resource from the mod's JAR to a destination path on disk.
+   *
+   * @param clazz        The caller class whose JAR contains the resource.
+   * @param resourcePath The path of the resource inside the JAR.
+   * @param targetPath   The filesystem destination path.
+   * @param replace      Whether to overwrite existing destination files.
+   * @return A CompletableFuture tracking the extraction outcome.
+   */
+  public static CompletableFuture<Boolean> extractResourceAsync(
+    @Nonnull Class<?> clazz,
+    @Nonnull String resourcePath,
+    @Nonnull Path targetPath,
+    boolean replace
+  ) {
+    return ASYNC.supply(() -> extractResource(clazz, resourcePath, targetPath, replace));
+  }
+
+  /**
+   * Extracts the bundled documentation wiki (checking "WIKI.md", "WIKI.MD", or "wiki.md")
+   * from the mod's JAR into the specified target directory.
+   * Overwrites the destination file so in-JAR documentation updates are always reflected on disk.
+   *
+   * @param clazz           The caller class belonging to the mod.
+   * @param targetDirectory The directory where WIKI.md will be placed (typically the mod's config folder).
+   * @return True if the wiki was located and successfully written to disk, false otherwise.
+   */
+  public static boolean extractWiki(@Nonnull Class<?> clazz, @Nonnull Path targetDirectory) {
+    Path targetPath = targetDirectory.resolve("WIKI.md");
+    return extractResource(clazz, "WIKI.md", targetPath, true)
+      || extractResource(clazz, "WIKI.MD", targetPath, true)
+      || extractResource(clazz, "wiki.md", targetPath, true);
+  }
+
+  /**
+   * Asynchronously extracts the bundled documentation wiki into the specified target directory.
+   *
+   * @param clazz           The caller class belonging to the mod.
+   * @param targetDirectory The directory where WIKI.md will be placed.
+   * @return A CompletableFuture resolving to true if the wiki was extracted successfully.
+   */
+  public static CompletableFuture<Boolean> extractWikiAsync(
+    @Nonnull Class<?> clazz,
+    @Nonnull Path targetDirectory
+  ) {
+    return ASYNC.supply(() -> extractWiki(clazz, targetDirectory));
   }
 
   /**

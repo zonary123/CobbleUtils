@@ -28,6 +28,7 @@ import com.kingpixel.cobbleutils.tasks.RegistryTasks;
 import com.kingpixel.cobbleutils.util.ChatPrompt;
 import com.kingpixel.cobbleutils.util.CobbleUtilsBridgeGTS;
 import com.kingpixel.cobbleutils.util.SpawnRates;
+import com.kingpixel.cobbleutils.util.UtilsFile;
 import com.kingpixel.cobbleutils.util.UtilsLogger;
 import com.kingpixel.cobbleutils.util.async.AsyncContext;
 import com.kingpixel.cobbleutils.util.async.UtilsAsync;
@@ -136,6 +137,7 @@ public class CobbleUtils {
     rewardsConfig.init();
     advancedRewardsConfig.init();
     DataBaseFactory.init(config.getDatabase());
+    UtilsFile.extractWiki(CobbleUtils.class, getPathMod());
   }
 
   private static void sign() {

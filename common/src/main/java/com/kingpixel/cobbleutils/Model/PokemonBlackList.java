@@ -305,8 +305,11 @@ public class PokemonBlackList {
 
     if (!this.rarities.isEmpty()) {
       String rarity = PokemonUtils.getRarityS(pokemon);
-      if (rarity != null && this.rarities.contains(rarity.toLowerCase().trim())) {
-        return cacheResult(showdownId, true);
+      if (rarity != null) {
+        String cleanRarity = rarity.toLowerCase().trim();
+        if (this.rarities.contains(cleanRarity) || ("unknown".equalsIgnoreCase(cleanRarity) && this.rarities.contains("common"))) {
+          return cacheResult(showdownId, true);
+        }
       }
     }
 
