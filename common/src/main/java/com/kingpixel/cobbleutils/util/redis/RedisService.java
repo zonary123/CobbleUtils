@@ -64,7 +64,16 @@ public class RedisService {
   public static RedisManager getOrCreateManager(RedisConfig config) {
     String connectionKey = (config.getHost() + ":" + config.getPort()).toLowerCase();
 
-    return MANAGERS.computeIfAbsent(connectionKey, k -> {
+    return MANAGERS.compute(connectionKey, (k, existing) -> {
+      if (existing != null && existing.getConnected().get() && existing.getJedisPool() != null && !existing.getJedisPool().isClosed()) {
+        return existing;
+      }
+      if (existing != null) {
+        try {
+          existing.close();
+        } catch (Exception ignored) {
+        }
+      }
       CobbleUtils.LOGGER_RAW.info("Creating new Redis connection for: " + connectionKey);
       RedisManager manager = new RedisManager(config);
       manager.init();
