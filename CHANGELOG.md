@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.9] - 2026-10-25
+
+### Fixed
+
+- **Database Stability on Server Shutdown**:
+  - Protected shared SQL database connections from being closed too early by other mods when stopping the server. All dependent mods can now safely finish saving their data without connection errors.
+
 ## [1.3.8] - 2026-10-18
 
 ### Added

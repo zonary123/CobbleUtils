@@ -8,6 +8,7 @@ import com.kingpixel.cobbleutils.util.async.UtilsAsync;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import lombok.Getter;
+import lombok.Setter;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -75,6 +76,13 @@ public class SQLManager {
    */
   @Getter
   private volatile boolean connected;
+
+  /**
+   * Whether this connection pool is managed centrally by SQLService.
+   */
+  @Getter
+  @Setter
+  private boolean shared = false;
 
   /**
    * Creates a new manager bound to the given configuration.
@@ -636,8 +644,15 @@ public class SQLManager {
 
   /**
    * Gracefully closes the HikariCP connection pool and releases all resources.
+   * Direct calls are ignored on shared pools unless CobbleUtils is shutting down.
    */
   public void close() {
+    if (shared && !SQLService.isShuttingDown()) {
+      CobbleUtils.LOGGER_RAW.warn(
+          "Direct call to SQLManager.close() ignored on shared pool ({}). Lifecycle is managed centrally by CobbleUtils on SERVER_STOPPED.",
+          config.getType());
+      return;
+    }
     connected = false;
     HikariDataSource ds = this.dataSource;
     if (ds != null && !ds.isClosed()) {

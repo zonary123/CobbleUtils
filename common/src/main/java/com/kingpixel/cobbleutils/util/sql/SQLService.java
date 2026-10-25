@@ -36,10 +36,9 @@ import java.util.concurrent.ConcurrentHashMap;
  * }</pre>
  *
  * <h3>Shutdown</h3>
- * Call {@link #shutdown()} during server stop to close all pools:
- * <pre>{@code
- * LifecycleEvent.SERVER_STOPPING.register(server -> SQLService.shutdown());
- * }</pre>
+ * Connection pools are managed centrally by {@link CobbleUtils} and shut down automatically
+ * during {@code LifecycleEvent.SERVER_STOPPED}. Other mods should NOT call {@link #shutdown()}
+ * or close managers directly.
  *
  * @see SQLManager
  * @see DataBaseConfig
@@ -52,6 +51,14 @@ public class SQLService {
    * Ensures a single HikariCP pool per unique database endpoint.
    */
   private static final Map<String, SQLManager> MANAGERS = new ConcurrentHashMap<>();
+  private static volatile boolean shuttingDown = false;
+
+  /**
+   * Whether CobbleUtils is currently executing a coordinated SQL pool shutdown.
+   */
+  public static boolean isShuttingDown() {
+    return shuttingDown;
+  }
 
   /**
    * Retrieves an existing {@link SQLManager} for the given database endpoint,
@@ -70,6 +77,7 @@ public class SQLService {
 
     return MANAGERS.compute(connectionKey, (key, existing) -> {
       if (existing != null && existing.isAlive()) {
+        existing.setShared(true);
         return existing;
       }
 
@@ -85,15 +93,19 @@ public class SQLService {
         closeQuietly(manager);
         throw new SQLManager.SQLManagerException("SQL manager created but connectivity check failed for " + config.getType(), null);
       }
+      manager.setShared(true);
       return manager;
     });
   }
 
   private static void closeQuietly(SQLManager manager) {
     try {
+      shuttingDown = true;
       manager.close();
     } catch (Exception e) {
       CobbleUtils.LOGGER_RAW.warn("Error while closing stale SQL manager", e);
+    } finally {
+      shuttingDown = false;
     }
   }
 
@@ -109,9 +121,14 @@ public class SQLService {
       CobbleUtils.LOGGER_RAW.info("No active SQL connection pools found.");
       return;
     }
-    MANAGERS.values().forEach(SQLManager::close);
-    MANAGERS.clear();
-    CobbleUtils.LOGGER_RAW.info("All SQL connection pools shut down successfully.");
+    shuttingDown = true;
+    try {
+      MANAGERS.values().forEach(SQLManager::close);
+      MANAGERS.clear();
+      CobbleUtils.LOGGER_RAW.info("All SQL connection pools shut down successfully.");
+    } finally {
+      shuttingDown = false;
+    }
   }
 
   public static int getActiveConnections() {
