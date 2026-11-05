@@ -59,6 +59,13 @@ public class RedisManager {
    */
   @Getter
   private final AtomicBoolean connected = new AtomicBoolean(false);
+
+  /**
+   * Returns true if connected to Redis.
+   */
+  public boolean isConnected() {
+    return connected.get();
+  }
   private final Map<String, RedisHandler> handlers = new ConcurrentHashMap<>();
   private ScheduledExecutorService healthExecutor;
 

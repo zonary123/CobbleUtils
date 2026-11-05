@@ -90,20 +90,47 @@ public class PlayerUtils {
       return;
     }
 
-    String fullMessage = message.replace("%prefix%", prefix);
+    String safePrefix = prefix == null ? "" : prefix;
+    String fullMessage = message.replace("%prefix%", safePrefix);
 
-    if (CobbleUtils.config.isRedisMessaging()) {
+    if (CobbleUtils.isRedisAvailable()) {
       switch (typeMessage) {
-        case CHAT -> RedisMessageHandler.sendPlayer(playerUUID, fullMessage, prefix);
-        case ACTIONBAR -> RedisMessageHandler.sendActionBarPlayer(playerUUID, fullMessage, prefix);
-        case ACTIONBAR_BROADCAST -> RedisMessageHandler.sendActionBarBroadcast(fullMessage, prefix);
-        case BROADCAST -> RedisMessageHandler.sendBroadcast(fullMessage, prefix);
+        case BROADCAST -> RedisMessageHandler.sendBroadcast(fullMessage, safePrefix);
+        case ACTIONBAR_BROADCAST -> RedisMessageHandler.sendActionBarBroadcast(fullMessage, safePrefix);
+        case CHAT, ACTIONBAR -> {
+          if (playerUUID == null) return;
+          ServerPlayerEntity player = CobbleUtils.server != null
+            ? CobbleUtils.server.getPlayerManager().getPlayer(playerUUID)
+            : null;
+          if (player != null) {
+            sendMessage(player, message, safePrefix, typeMessage);
+          } else {
+            if (typeMessage == TypeMessage.CHAT) {
+              RedisMessageHandler.sendPlayer(playerUUID, fullMessage, safePrefix);
+            } else {
+              RedisMessageHandler.sendActionBarPlayer(playerUUID, fullMessage, safePrefix);
+            }
+          }
+        }
       }
     } else {
       if (CobbleUtils.server == null) return;
-      ServerPlayerEntity player = CobbleUtils.server.getPlayerManager().getPlayer(playerUUID);
-      if (player != null) {
-        sendMessage(player, message, prefix, typeMessage);
+      switch (typeMessage) {
+        case BROADCAST -> broadcast(message, safePrefix);
+        case ACTIONBAR_BROADCAST -> {
+          var text = AdventureTranslator.toNative(message, safePrefix);
+          var playerList = CobbleUtils.server.getPlayerManager().getPlayerList();
+          for (ServerPlayerEntity serverPlayerEntity : playerList) {
+            serverPlayerEntity.sendMessage(text, true);
+          }
+        }
+        case CHAT, ACTIONBAR -> {
+          if (playerUUID == null) return;
+          ServerPlayerEntity player = CobbleUtils.server.getPlayerManager().getPlayer(playerUUID);
+          if (player != null) {
+            sendMessage(player, message, safePrefix, typeMessage);
+          }
+        }
       }
     }
   }
@@ -151,25 +178,30 @@ public class PlayerUtils {
       }
       return;
     }
+    String safePrefix = prefix == null ? "" : prefix;
     CobbleUtils.ASYNC.runAsync(() -> {
-        if (CobbleUtils.config.isRedisMessaging()) {
-          if (player == null) return;
-          sendMessage(player.getUuid(), message, prefix, typeMessage);
+        if (CobbleUtils.isRedisAvailable() &&
+            (typeMessage == TypeMessage.BROADCAST || typeMessage == TypeMessage.ACTIONBAR_BROADCAST)) {
+          sendMessage((UUID) null, message, safePrefix, typeMessage);
           return;
         }
 
         switch (typeMessage) {
-          case CHAT -> sendMessage(player, message, prefix);
-          case ACTIONBAR -> player.sendMessage(AdventureTranslator.toNative(message, prefix, player), true);
+          case CHAT -> {
+            if (player != null) sendMessage(player, message, safePrefix);
+          }
+          case ACTIONBAR -> {
+            if (player != null) player.sendMessage(AdventureTranslator.toNative(message, safePrefix, player), true);
+          }
           case ACTIONBAR_BROADCAST -> {
             if (CobbleUtils.server == null) return;
-            var text = AdventureTranslator.toNative(message, prefix);
+            var text = AdventureTranslator.toNative(message, safePrefix);
             var playerList = CobbleUtils.server.getPlayerManager().getPlayerList();
             for (ServerPlayerEntity serverPlayerEntity : playerList) {
               serverPlayerEntity.sendMessage(text, true);
             }
           }
-          case BROADCAST -> broadcast(message, prefix);
+          case BROADCAST -> broadcast(message, safePrefix);
         }
       })
       .orTimeout(30, TimeUnit.SECONDS)
@@ -182,7 +214,7 @@ public class PlayerUtils {
   @Deprecated
   public static void broadcast(String message) {
     if (!message.isEmpty()) {
-      if (CobbleUtils.config.isRedisMessaging()) {
+      if (CobbleUtils.isRedisAvailable()) {
         RedisMessageHandler.sendBroadcast(message, "");
       } else {
         if (CobbleUtils.server == null) return;
@@ -195,10 +227,11 @@ public class PlayerUtils {
   @Deprecated
   public static void broadcast(String message, String prefix) {
     if (!message.isEmpty()) {
-      if (CobbleUtils.config.isRedisMessaging()) {
-        RedisMessageHandler.sendBroadcast(message, prefix);
+      String safePrefix = prefix == null ? "" : prefix;
+      if (CobbleUtils.isRedisAvailable()) {
+        RedisMessageHandler.sendBroadcast(message, safePrefix);
       } else {
-        var text = AdventureTranslator.toNative(message, prefix);
+        var text = AdventureTranslator.toNative(message, safePrefix);
         if (CobbleUtils.server == null) return;
         var playerList = CobbleUtils.server.getPlayerManager().getPlayerList();
         playerList.forEach(player -> player.sendMessage(text));

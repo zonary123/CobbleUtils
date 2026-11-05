@@ -255,7 +255,7 @@ public abstract class Utils {
    * @param message Text sequence payload targeting dispatch.
    */
   public static void broadcastMessage(String message) {
-    if (CobbleUtils.config.isRedisMessaging()) {
+    if (CobbleUtils.isRedisAvailable()) {
       RedisMessageHandler.sendBroadcast(message, "");
     } else {
       MinecraftServer server = CobbleUtils.server;
@@ -273,7 +273,7 @@ public abstract class Utils {
    * @param message Native Text object payload.
    */
   public static void broadcastMessage(Text message) {
-    if (CobbleUtils.config.isRedisMessaging()) {
+    if (CobbleUtils.isRedisAvailable()) {
       String textAsString = message.getString();
       RedisMessageHandler.sendBroadcast(textAsString, "");
     } else {
@@ -293,10 +293,11 @@ public abstract class Utils {
    * @param prefix  System tag label string mapped to prepending layouts.
    */
   public static void broadcastMessage(String message, String prefix) {
-    if (CobbleUtils.config.isRedisMessaging()) {
-      RedisMessageHandler.sendBroadcast(message, prefix);
+    String safePrefix = prefix == null ? "" : prefix;
+    if (CobbleUtils.isRedisAvailable()) {
+      RedisMessageHandler.sendBroadcast(message, safePrefix);
     } else {
-      var text = AdventureTranslator.toNative(message, prefix);
+      var text = AdventureTranslator.toNative(message, safePrefix);
       MinecraftServer server = CobbleUtils.server;
       if (server == null) return;
       ArrayList<ServerPlayerEntity> players = new ArrayList<>(server.getPlayerManager().getPlayerList());

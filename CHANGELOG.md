@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.3.10] - 2026-11-05
+
+### Fixed
+
+- **Global Broadcast and Server Announcement Stability**:
+  - Fixed an error that could occur when sending global broadcasts or shop rotation alerts that do not target a specific player.
+- **Message System Resiliency & Local-First Delivery**:
+  - Messages sent to players connected to the local server are now delivered directly and immediately, eliminating unnecessary network latency.
+  - Added an automatic fallback to local delivery whenever Redis is offline or disconnected, ensuring messages and announcements are never lost.
+- **Prefix Formatting Safety**:
+  - Added safe handling for messages configured without a prefix, avoiding formatting errors.
+
 ## [1.3.9] - 2026-10-25
 
 ### Fixed

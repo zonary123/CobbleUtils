@@ -403,4 +403,13 @@ public class CobbleUtils {
       return Path.of("config", MOD_ID);
     }
   }
+
+  /**
+   * Checks whether Redis messaging is fully configured, initialized, and currently connected.
+   *
+   * @return true if Redis messaging is enabled and active.
+   */
+  public static boolean isRedisAvailable() {
+    return config != null && config.isRedisMessaging() && redisManager != null && redisManager.getConnected().get();
+  }
 }

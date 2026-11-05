@@ -49,18 +49,22 @@ public class RedisMessageHandler implements RedisHandler {
         case "broadcast" -> CobbleUtils.server.getPlayerManager().broadcast(formatted, false);
 
         case "player" -> {
-          if (!json.has("uuid")) return;
+          if (!json.has("uuid") || json.get("uuid").isJsonNull()) return;
           UUID uuid = UUID.fromString(json.get("uuid").getAsString());
           ServerPlayerEntity player =
             CobbleUtils.server.getPlayerManager().getPlayer(uuid);
           if (player != null) player.sendMessage(formatted);
         }
 
-        case "actionbar" -> CobbleUtils.server.getPlayerManager().getPlayerList()
-          .forEach(p -> p.sendMessage(formatted, true));
+        case "actionbar" -> {
+          var playerList = CobbleUtils.server.getPlayerManager().getPlayerList();
+          for (ServerPlayerEntity p : playerList) {
+            p.sendMessage(formatted, true);
+          }
+        }
 
         case "actionbar_player" -> {
-          if (!json.has("uuid")) return;
+          if (!json.has("uuid") || json.get("uuid").isJsonNull()) return;
           UUID uuid = UUID.fromString(json.get("uuid").getAsString());
           ServerPlayerEntity player =
             CobbleUtils.server.getPlayerManager().getPlayer(uuid);
@@ -97,18 +101,23 @@ public class RedisMessageHandler implements RedisHandler {
 
 
   private static void publish(String type, String content, UUID uuid, String prefix) {
-    JsonObject json = new JsonObject();
-    json.addProperty("type", type);
-    json.addProperty("content", content);
+    if (!CobbleUtils.isRedisAvailable()) return;
+    try {
+      JsonObject json = new JsonObject();
+      json.addProperty("type", type);
+      json.addProperty("content", content);
 
-    if (uuid != null) {
-      json.addProperty("uuid", uuid.toString());
+      if (uuid != null) {
+        json.addProperty("uuid", uuid.toString());
+      }
+
+      if (prefix != null && !prefix.isEmpty()) {
+        json.addProperty("prefix", prefix);
+      }
+
+      CobbleUtils.redisManager.publish(CHANNEL, json);
+    } catch (Exception e) {
+      CobbleUtils.LOGGER_RAW.error("Failed to publish Redis message to channel: " + CHANNEL, e);
     }
-
-    if (prefix != null && !prefix.isEmpty()) {
-      json.addProperty("prefix", prefix);
-    }
-
-    CobbleUtils.redisManager.publish(CHANNEL, json);
   }
 }
