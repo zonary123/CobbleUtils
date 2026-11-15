@@ -24,6 +24,8 @@ import com.kingpixel.cobbleutils.database.users.models.Storage;
 import com.kingpixel.cobbleutils.util.async.AsyncContext;
 import com.kingpixel.cobbleutils.util.async.UtilsAsync;
 import kotlin.ranges.IntRange;
+import net.fabricmc.loader.api.FabricLoader;
+import net.fabricmc.loader.api.ModContainer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.util.math.BlockPos;
@@ -38,9 +40,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Type;
 import java.math.BigDecimal;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.time.Instant;
+import java.util.Enumeration;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
@@ -572,6 +576,41 @@ public final class UtilsFile {
   @Nullable
   public static InputStream getResourceAsStream(@Nonnull Class<?> clazz, @Nonnull String resourcePath) {
     String cleanPath = resourcePath.startsWith("/") ? resourcePath.substring(1) : resourcePath;
+    try {
+      if (clazz.getProtectionDomain() != null && clazz.getProtectionDomain().getCodeSource() != null) {
+        URL codeSourceUrl = clazz.getProtectionDomain().getCodeSource().getLocation();
+        if (codeSourceUrl != null) {
+          try {
+            Path codeSourcePath = Path.of(codeSourceUrl.toURI());
+            for (ModContainer mod : FabricLoader.getInstance().getAllMods()) {
+              for (Path modPath : mod.getOrigin().getPaths()) {
+                if (codeSourcePath.equals(modPath) || codeSourcePath.startsWith(modPath) || modPath.startsWith(codeSourcePath)) {
+                  Optional<Path> found = mod.findPath(cleanPath);
+                  if (found.isPresent()) {
+                    return Files.newInputStream(found.get());
+                  }
+                }
+              }
+            }
+          } catch (Throwable ignored) {
+          }
+
+          ClassLoader cl = clazz.getClassLoader();
+          if (cl != null) {
+            Enumeration<URL> urls = cl.getResources(cleanPath);
+            String csPath = codeSourceUrl.getPath();
+            while (urls.hasMoreElements()) {
+              URL url = urls.nextElement();
+              if (url.getPath().contains(csPath)) {
+                return url.openStream();
+              }
+            }
+          }
+        }
+      }
+    } catch (Throwable ignored) {
+    }
+
     ClassLoader cl = clazz.getClassLoader();
     InputStream in = cl != null ? cl.getResourceAsStream(cleanPath) : null;
     if (in == null) {

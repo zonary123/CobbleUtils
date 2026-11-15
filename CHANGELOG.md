@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.3.11] - 2026-11-15
+
+### Fixed
+
+- **Resource & Documentation Extraction Classpath Isolation**:
+  - Fixed classpath resource collision and shadowing on Fabric/Architectury where calling `UtilsFile.extractWiki` or `UtilsFile.getResourceAsStream` could extract the base `CobbleUtils` documentation or resources instead of the caller mod's own assets.
+  - Implemented container-aware resource discovery via `FabricLoader` and code source path resolution, guaranteeing each mod extracts its own documentation cleanly.
+
 ## [1.3.10] - 2026-11-05
 
 ### Fixed
